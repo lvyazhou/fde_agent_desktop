@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天津市河西区GDP经营分析驾驶舱</title>
+    <!-- ECharts -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary-cyan: #00f6ff;
+            --primary-cyan-glow: rgba(0, 246, 255, 0.5);
+            --bg-deep-blue: #030a16;
+            --card-bg: rgba(6, 30, 93, 0.4);
+            --text-primary: #ffffff;
+            --text-secondary: #a6c0fe;
+            --success-green: #52c41a;
+            --danger-red: #ff4d4f;
+            --warning-orange: #faad14;
+            --purple-accent: #722ed1;
+            
+            --border-tech: 1px solid rgba(0, 246, 255, 0.3);
+            --font-family: 'DingTalk JinBuTi', 'Microsoft YaHei', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-deep-blue);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            overflow: hidden; /* Prevent body scroll for dashboard */
+            background-image: 
+                linear-gradient(rgba(0, 246, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 246, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Scanline effect */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            padding: 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Header */
+        .header {
+            height: 70px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="70"><path d="M0,70 L100,70 L120,40 Lcalc(100% - 120px),40 Lcalc(100% - 100px),70 L100%,70 L100%,0 L0,0 Z" fill="rgba(6,30,93,0.6)" stroke="%2300f6ff" stroke-width="1"/></svg>') no-repeat center;
+            background-size: 100% 100%;
+            padding: 0 30px;
+            margin-bottom: 15px;
+        }
+
+        .header-left, .header-right {
+            width: 25%;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-right {
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        .header-title {
+            width: 50%;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-cyan);
+            text-shadow: 0 0 10px var(--primary-cyan-glow);
+            letter-spacing: 2px;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 10px 20px;
+            background: var(--card-bg);
+            border: var(--border-tech);
+            border-radius: 4px;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .tech-select, .tech-input {
+            background: rgba(0, 246, 255, 0.1);
+            border: 1px solid rgba(0, 246, 255, 0.5);
+            color: var(--primary-cyan);
+            padding: 6px 12px;
+            border-radius: 2px;
+            outline: none;
+            font-family: inherit;
+        }
+        
+        .tech-select option {
+            background: var(--bg-deep-blue);
+            color: var(--text-primary);
+        }
+
+        .tech-btn {
+            background: rgba(0, 246, 255, 0.2);
+            border: 1px solid var(--primary-cyan);
+            color: var(--primary-cyan);
+            padding: 6px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tech-btn:hover {
+            background: var(--primary-cyan);
+            color: #000;
+            box-shadow: 0 0 10px var(--primary-cyan-glow);
+        }
+
+        /* Main Layout */
+        .main-content {
+            display: flex;
+            flex: 1;
+            gap: 15px;
+            height: calc(100% - 145px); /* Minus header and filter bar */
+        }
+
+        .side-panel {
+            width: 25%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .center-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Tech Cards */
+        .tech-card {
+            background: var(--card-bg);
+            border: var(--border-tech);
+            position: relative;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            box-shadow: inset 0 0 20px rgba(0, 246, 255, 0.05);
+        }
+
+        /* Card Corners */
+        .tech-card::before, .tech-card::after,
+        .tech-card-corner-bottom::before, .tech-card-corner-bottom::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-color: var(--primary-cyan);
+            border-style: solid;
+        }
+        
+        .tech-card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .tech-card::after { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+        .tech-card-corner-bottom::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+        .tech-card-corner-bottom::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 246, 255, 0.2);
+            padding-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            color: var(--text-primary);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: var(--primary-cyan);
+            box-shadow: 0 0 5px var(--primary-cyan);
+        }
+
+        .chart-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chart-tab {
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 2px 8px;
+            border: 1px solid transparent;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .chart-tab.active {
+            color: var(--primary-cyan);
+            border-color: var(--primary-cyan);
+            background: rgba(0, 246, 255, 0.1);
+        }
+
+        .chart-container {
+            flex: 1;
+            width: 100%;
+            position: relative;
+        }
+
+        /* KPIs Row */
+        .kpi-row {
+            display: flex;
+            gap: 15px;
+            height: 100px;
+            flex-shrink: 0;
+        }
+
+        .kpi-card {
+            flex: 1;
+            background: linear-gradient(135deg, rgba(6,30,93,0.8) 0%, rgba(3,10,22,0.9) 100%);
+            border: 1px solid rgba(0, 246, 255, 0.3);
+            border-radius: 4px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover, .kpi-card.active {
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 15px rgba(0, 246, 255, 0.3) inset;
+            transform: translateY(-2px);
+        }
+
+        .kpi-card.active::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--primary-cyan);
+            box-shadow: 0 0 10px var(--primary-cyan);
+        }
+
+        .kpi-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .kpi-value {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-cyan);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+
+        .kpi-unit {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-weight: normal;
+        }
+
+        .kpi-trend {
+            font-size: 12px;
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .trend-up { color: var(--success-green); }
+        .trend-down { color: var(--danger-red); }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(3, 10, 22, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .loading-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .loader {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 246, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-cyan);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Center Core Visualization placeholder */
+        .core-viz {
+            flex: 1.5;
+            position: relative;
+            background: radial-gradient(circle at center, rgba(0, 246, 255, 0.1) 0%, transparent 60%);
+        }
+
+        .core-title {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 5px var(--primary-cyan);
+            z-index: 2;
+        }
+
+        /* Sub-district List in Core */
+        .ranking-list {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            background: rgba(6, 30, 93, 0.6);
+            border: 1px solid rgba(0, 246, 255, 0.3);
+            padding: 10px;
+            z-index: 2;
+        }
+
+        .rank-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+        
+        .rank-item:last-child { margin-bottom: 0; }
+        
+        .rank-name { color: var(--text-secondary); }
+        .rank-val { color: var(--primary-cyan); font-family: 'Arial'; }
+
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="date-time" id="current-time" style="color: var(--text-secondary); font-size: 14px;"></div>
+            </div>
+            <div class="header-title">天津市河西区GDP经营分析驾驶舱</div>
+            <div class="header-right">
+                <button class="tech-btn" id="btn-refresh">
+                    <svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor"><path d="M909.1 209.3l-56.4 44.1C775.8 155.1 656.2 92 521.9 92 290 92 102.3 279.5 102.3 511.5 102.3 743.5 290 931 521.9 931c181.3 0 340.4-115.1 403-282.8.5-1.4.3-3-.6-4.2l-47.5-66.7c-.8-1.1-2.2-1.6-3.6-1.3l-1.9.4c-50.5 130.8-177.3 223.4-325.2 223.4-192.3 0-348.8-156.5-348.8-348.8 0-192.3 156.5-348.8 348.8-348.8 107.5 0 203.9 49.3 267.1 127.1l-68.5 53.5c-1.8 1.4-2.1 4-.6 5.8l173.1 202.4c1.2 1.4 3.3 1.6 4.8.4l201.3-157.3c1.7-1.3 2-3.8.5-5.6z"></path></svg>
+                    刷新
+                </button>
+                <button class="tech-btn" id="btn-fullscreen">
+                    <svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor"><path d="M290 236.4l43.9-43.9a8.01 8.01 0 00-4.7-13.6L114 150.3a8 8 0 00-8.9 8.9l28.6 215.3c.8 5.7 7.9 7.7 11.9 3.6l43.6-43.6 154.6 154.6c3.1 3.1 8.2 3.1 11.3 0l43.6-43.6c3.1-3.1 3.1-8.2 0-11.3L290 236.4zm352.7 187.3c3.1 3.1 8.2 3.1 11.3 0l154.6-154.6 43.6 43.6a8.01 8.01 0 0011.9-3.6l28.6-215.3a8 8 0 00-8.9-8.9L668.6 179c-5.7-.8-7.7 6.3-3.6 10.4l43.9 43.9-154.9 154.9c-3.1 3.1-3.1 8.2 0 11.3l43.6 43.6zM886 711.1l-43.6-43.6c-3.1-3.1-8.2-3.1-11.3 0L676.5 822l-43.9-43.9a8.01 8.01 0 00-13.6 4.7l-28.6 215.3a8 8 0 008.9 8.9l215.3-28.6c5.7-.8 7.7-7.9 3.6-11.9l-43.6-43.6L931 765.3c3.1-3.1 3.1-8.2 0-11.3l-45-42.9zM410.8 676.5c-3.1-3.1-8.2-3.1-11.3 0L244.9 831.1l-43.6-43.6a8.01 8.01 0 00-13.6 4.7L159.1 1008a8 8 0 008.9 8.9l215.3-28.6c5.7-.8 7.7-7.9 3.6-11.9l-43.9-43.9 154.9-154.9c3.1-3.1 3.1-8.2 0-11.3l-43.6-43.6z"></path></svg>
+                    全屏
+                </button>
+            </div>
+        </header>
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="filter-item">
+                <span class="filter-label">分析周期:</span>
+                <select class="tech-select" id="filter-period">
+                    <option value="2023">2023年度</option>
+                    <option value="2023Q1">2023 Q1</option>
+                    <option value="2023Q2">2023 Q2</option>
+                    <option value="2023Q3">2023 Q3</option>
+                    <option value="2023Q4">2023 Q4</option>
+                    <option value="2022">2022年度</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <span class="filter-label">重点产业:</span>
+                <select class="tech-select" id="filter-industry">
+                    <option value="all">全部产业</option>
+                    <option value="finance">金融服务业</option>
+                    <option value="design">设计服务业</option>
+                    <option value="business">商务服务业</option>
+                    <option value="tech">科技服务业</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <span class="filter-label">对比维度:</span>
+                <select class="tech-select" id="filter-compare">
+                    <option value="yoy">同比 (YoY)</option>
+                    <option value="mom">环比 (MoM)</option>
+                </select>
+            </div>
+            <button class="tech-btn" id="btn-query" style="margin-left: 20px;">查询分析</button>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left Panel -->
+            <div class="side-panel">
+                <div class="tech-card">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="card-header">
+                        <div class="card-title">产业结构分析 (三次产业)</div>
+                        <div class="chart-tabs" data-target="industryPie">
+                            <div class="chart-tab active" data-type="value">产值贡献</div>
+                            <div class="chart-tab" data-type="tax">税收贡献</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-industry-pie"></div>
+                    <div class="loading-overlay" id="loading-industryPie"><div class="loader"></div></div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="card-header">
+                        <div class="card-title">四大主导产业增加值趋势</div>
+                        <div class="chart-tabs" data-target="industryLine">
+                            <div class="chart-tab active" data-type="12m">近12个月</div>
+                            <div class="chart-tab" data-type="3y">近3年</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-industry-line"></div>
+                    <div class="loading-overlay" id="loading-industryLine"><div class="loader"></div></div>
+                </div>
+            </div>
+
+            <!-- Center Panel -->
+            <div class="center-panel">
+                <!-- KPIs -->
+                <div class="kpi-row">
+                    <div class="kpi-card active" data-kpi="gdp">
+                        <div class="kpi-title">地区生产总值 (GDP)</div>
+                        <div class="kpi-value"><span class="roll-num" data-val="1150.8">0</span><span class="kpi-unit">亿元</span></div>
+                        <div class="kpi-trend trend-up">同比 ↑ 5.2%</div>
+                    </div>
+                    <div class="kpi-card" data-kpi="tertiary">
+                        <div class="kpi-title">第三产业增加值</div>
+                        <div class="kpi-value"><span class="roll-num" data-val="1080.5">0</span><span class="kpi-unit">亿元</span></div>
+                        <div class="kpi-trend trend-up">同比 ↑ 6.1% (占比93.8%)</div>
+                    </div>
+                    <div class="kpi-card" data-kpi="tax">
+                        <div class="kpi-title">一般公共预算收入</div>
+                        <div class="kpi-value"><span class="roll-num" data-val="56.2">0</span><span class="kpi-unit">亿元</span></div>
+                        <div class="kpi-trend trend-up">同比 ↑ 8.5%</div>
+                    </div>
+                    <div class="kpi-card" data-kpi="investment">
+                        <div class="kpi-title">固定资产投资</div>
+                        <div class="kpi-value"><span class="roll-num" data-val="320.4">0</span><span class="kpi-unit">亿元</span></div>
+                        <div class="kpi-trend trend-down">同比 ↓ 1.2%</div>
+                    </div>
+                </div>
+
+                <!-- Core Visualization & Map -->
+                <div class="tech-card core-viz">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="core-title">河西区经济运行全景图</div>
+                    <div class="chart-container" id="chart-core-map"></div>
+                    <div class="loading-overlay" id="loading-coreMap"><div class="loader"></div></div>
+                    
+                    <div class="ranking-list">
+                        <div style="color:#fff; margin-bottom: 10px; font-weight:bold; border-bottom:1px solid rgba(0,246,255,0.3); padding-bottom:5px;">各街道经济贡献 TOP5</div>
+                        <div class="rank-item"><span class="rank-name">1. 马场街道</span><span class="rank-val">125亿</span></div>
+                        <div class="rank-item"><span class="rank-name">2. 大营门街道</span><span class="rank-val">108亿</span></div>
+                        <div class="rank-item"><span class="rank-name">3. 桃园街道</span><span class="rank-val">96亿</span></div>
+                        <div class="rank-item"><span class="rank-name">4. 友谊路街道</span><span class="rank-val">85亿</span></div>
+                        <div class="rank-item"><span class="rank-name">5. 天塔街道</span><span class="rank-val">72亿</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="side-panel">
+                <div class="tech-card">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="card-header">
+                        <div class="card-title">重点楼宇/园区税收贡献</div>
+                        <div class="chart-tabs" data-target="buildingBar">
+                            <div class="chart-tab active" data-type="tax">税收总额</div>
+                            <div class="chart-tab" data-type="density">坪效(税收密度)</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-building-bar"></div>
+                    <div class="loading-overlay" id="loading-buildingBar"><div class="loader"></div></div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="card-header">
+                        <div class="card-title">社会消费品零售总额分析</div>
+                        <div class="chart-tabs" data-target="retailLine">
+                            <div class="chart-tab active" data-type="amount">零售额与增速</div>
+                            <div class="chart-tab" data-type="type">业态分布</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-retail-line"></div>
+                    <div class="loading-overlay" id="loading-retailLine"><div class="loader"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Utilities ---
+        const $ = id => document.getElementById(id);
+        const $$ = selector => document.querySelectorAll(selector);
+        
+        // Colors from CSS
+        const colors = {
+            primary: '#00f6ff',
+            purple: '#722ed1',
+            green: '#52c41a',
+            orange: '#faad14',
+            red: '#ff4d4f',
+            text: '#fff',
+            textSec: '#a6c0fe',
+            bgGrid: 'rgba(0, 246, 255, 0.2)'
+        };
+
+        // Common ECharts styling
+        const commonOptions = {
+            backgroundColor: 'transparent',
+            tooltip: {
+                backgroundColor: 'rgba(3, 10, 22, 0.9)',
+                borderColor: colors.primary,
+                textStyle: { color: colors.text }
+            },
+            textStyle: { fontFamily: 'DingTalk JinBuTi, Microsoft YaHei, sans-serif' }
+        };
+
+        // --- Chart Instances ---
+        let charts = {};
+
+        // --- Chart Initialization ---
+        function initCharts() {
+            charts.industryPie = echarts.init($('chart-industry-pie'));
+            charts.industryLine = echarts.init($('chart-industry-line'));
+            charts.buildingBar = echarts.init($('chart-building-bar'));
+            charts.retailLine = echarts.init($('chart-retail-line'));
+            charts.coreMap = echarts.init($('chart-core-map'));
+
+            window.addEventListener('resize', () => {
+                Object.values(charts).forEach(chart => chart.resize());
+            });
+        }
+
+        // --- Chart Options Generators ---
+        
+        function getIndustryPieOption(type = 'value') {
+            const data = type === 'value' ? [
+                { value: 0.1, name: '第一产业' },
+                { value: 6.1, name: '第二产业' },
+                { value: 93.8, name: '第三产业' }
+            ] : [
+                { value: 0, name: '第一产业' },
+                { value: 8.5, name: '第二产业' },
+                { value: 91.5, name: '第三产业' }
+            ];
+
+            return {
+                ...commonOptions,
+                tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
+                legend: {
+                    bottom: '5%', left: 'center',
+                    textStyle: { color: colors.textSec },
+                    itemWidth: 10, itemHeight: 10
+                },
+                color: [colors.orange, colors.primary, colors.purple],
+                series: [
+                    {
+                        name: '产业结构',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        center: ['50%', '45%'],
+                        avoidLabelOverlap: false,
+                        itemStyle: {
+                            borderRadius: 5,
+                            borderColor: 'rgba(3, 10, 22, 1)',
+                            borderWidth: 2
+                        },
+                        label: { show: false, position: 'center' },
+                        emphasis: {
+                            label: {
+                                show: true,
+                                fontSize: 16,
+                                fontWeight: 'bold',
+                                color: colors.text
+                            }
+                        },
+                        labelLine: { show: false },
+                        data: data
+                    }
+                ]
+            };
+        }
+
+        function getIndustryLineOption(type = '12m') {
+            const xAxisData = type === '12m' ? 
+                ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'] :
+                ['2021','2022','2023'];
+                
+            return {
+                ...commonOptions,
+                tooltip: { trigger: 'axis' },
+                legend: {
+                    top: 0, right: 0,
+                    textStyle: { color: colors.textSec },
+                    itemWidth: 15, itemHeight: 4
+                },
+                grid: { top: 35, left: '3%', right: '4%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: false,
+                    data: xAxisData,
+                    axisLabel: { color: colors.textSec },
+                    axisLine: { lineStyle: { color: colors.bgGrid } }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: '亿元',
+                    nameTextStyle: { color: colors.textSec, padding: [0, 0, 0, -20] },
+                    axisLabel: { color: colors.textSec },
+                    splitLine: { lineStyle: { color: colors.bgGrid, type: 'dashed' } }
+                },
+                color: [colors.primary, colors.purple, colors.green, colors.orange],
+                series: [
+                    { name: '金融服务', type: 'line', smooth: true, data: type==='12m'? [120, 132, 101, 134, 90, 230, 210, 180, 200, 250, 260, 280] : [2100, 2350, 2680], areaStyle: { opacity: 0.1 } },
+                    { name: '设计服务', type: 'line', smooth: true, data: type==='12m'? [220, 182, 191, 234, 290, 330, 310, 320, 340, 350, 360, 380] : [3100, 3500, 3820] },
+                    { name: '商务服务', type: 'line', smooth: true, data: type==='12m'? [150, 232, 201, 154, 190, 330, 410, 380, 400, 420, 450, 480] : [3800, 4100, 4550] },
+                    { name: '科技服务', type: 'line', smooth: true, data: type==='12m'? [320, 332, 301, 334, 390, 330, 320, 380, 420, 450, 480, 520] : [3200, 3800, 4600] }
+                ]
+            };
+        }
+
+        function getBuildingBarOption(type = 'tax') {
+            const dataName = ['小白楼CBD', '新八大里', '陈塘科技商务区', '解放南路沿线', '友谊路金融街'];
+            const dataVal = type === 'tax' ? [15.2, 12.5, 9.8, 8.5, 18.6] : [1.2, 0.9, 0.7, 0.5, 1.5]; // 亿元 vs 万元/平米
+
+            return {
+                ...commonOptions,
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                grid: { top: 10, left: '3%', right: '10%', bottom: '3%', containLabel: true },
+                xAxis: {
+                    type: 'value',
+                    axisLabel: { color: colors.textSec },
+                    splitLine: { lineStyle: { color: colors.bgGrid, type: 'dashed' } }
+                },
+                yAxis: {
+                    type: 'category',
+                    data: dataName,
+                    axisLabel: { color: colors.textSec, width: 90, overflow: 'truncate' },
+                    axisLine: { lineStyle: { color: colors.bgGrid } }
+                },
+                series: [
+                    {
+                        name: type === 'tax' ? '税收(亿元)' : '坪效(万元/㎡)',
+                        type: 'bar',
+                        barWidth: '40%',
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                                { offset: 0, color: colors.primary },
+                                { offset: 1, color: 'rgba(0, 246, 255, 0.1)' }
+                            ]),
+                            borderRadius: [0, 4, 4, 0]
+                        },
+                        label: {
+                            show: true,
+                            position: 'right',
+                            color: colors.primary,
+                            formatter: '{c}'
+                        },
+                        data: dataVal
+                    }
+                ]
+            };
+        }
+
+        function getRetailLineOption(type = 'amount') {
+            if (type === 'type') {
+                 return {
+                    ...commonOptions,
+                    tooltip: { trigger: 'item' },
+                    legend: { top: 'bottom', textStyle: { color: colors.textSec } },
+                    series: [
+                        {
+                            name: '业态分布',
+                            type: 'pie',
+                            radius: [20, 80],
+                            center: ['50%', '45%'],
+                            roseType: 'area',
+                            itemStyle: { borderRadius: 4 },
+                            data: [
+                                { value: 40, name: '百货零售' },
+                                { value: 33, name: '餐饮服务' },
+                                { value: 28, name: '汽车销售' },
+                                { value: 22, name: '家电数码' },
+                                { value: 20, name: '文体娱休闲' }
+                            ]
+                        }
+                    ]
+                 };
+            }
+
+            return {
+                ...commonOptions,
+                tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+                legend: { top: 0, textStyle: { color: colors.textSec } },
+                grid: { top: 40, left: '3%', right: '3%', bottom: '3%', containLabel: true },
+                xAxis: [
+                    {
+                        type: 'category',
+                        data: ['Q1', 'Q2', 'Q3', 'Q4'],
+                        axisPointer: { type: 'shadow' },
+                        axisLabel: { color: colors.textSec }
+                    }
+                ],
+                yAxis: [
+                    {
+                        type: 'value',
+                        name: '零售额(亿元)',
+                        nameTextStyle: { color: colors.textSec },
+                        axisLabel: { color: colors.textSec },
+                        splitLine: { lineStyle: { color: colors.bgGrid, type: 'dashed' } }
+                    },
+                    {
+                        type: 'value',
+                        name: '增速(%)',
+                        nameTextStyle: { color: colors.textSec },
+                        axisLabel: { formatter: '{value} %', color: colors.textSec },
+                        splitLine: { show: false }
+                    }
+                ],
+                series: [
+                    {
+                        name: '社消零总额',
+                        type: 'bar',
+                        barWidth: '30%',
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: colors.purple },
+                                { offset: 1, color: 'rgba(114, 46, 209, 0.1)' }
+                            ])
+                        },
+                        data: [85.2, 92.5, 96.8, 110.5]
+                    },
+                    {
+                        name: '同比增速',
+                        type: 'line',
+                        yAxisIndex: 1,
+                        itemStyle: { color: colors.orange },
+                        data: [4.5, 5.2, 6.8, 8.5]
+                    }
+                ]
+            };
+        }
+
+        function getCoreMapOption() {
+            // Using a stylized scatter + lines chart to simulate a high-tech regional network
+            // since actual district geoJSON might not be available
+            
+            // Abstract points representing streets in Hexi
+            const points = [
+                { name: '马场街', value: [117.21, 39.11, 125] },
+                { name: '大营门', value: [117.22, 39.12, 108] },
+                { name: '桃园街', value: [117.20, 39.10, 96] },
+                { name: '友谊路', value: [117.21, 39.08, 85] },
+                { name: '天塔街', value: [117.18, 39.09, 72] },
+                { name: '陈塘庄', value: [117.24, 39.07, 65] },
+                { name: '挂甲寺', value: [117.23, 39.09, 58] },
+                { name: '下瓦房', value: [117.23, 39.11, 62] },
+                { name: '梅江', value: [117.22, 39.05, 80] },
+                { name: '太湖路', value: [117.24, 39.05, 45] }
+            ];
+
+            const links = points.map(p => ({
+                source: '马场街', // center node
+                target: p.name
+            })).filter(l => l.source !== l.target);
+
+            return {
+                ...commonOptions,
+                tooltip: {
+                    formatter: function(params) {
+                        if (params.seriesType === 'effectScatter') {
+                            return `${params.name}<br/>GDP贡献: <span style="color:${colors.primary};font-weight:bold;">${params.value[2]}</span> 亿元`;
+                        }
+                    }
+                },
+                grid: { show: false, top: 10, bottom: 10, left: 10, right: 10 },
+                xAxis: { type: 'value', show: false, min: 117.15, max: 117.27 },
+                yAxis: { type: 'value', show: false, min: 39.02, max: 39.15 },
+                series: [
+                    {
+                        type: 'effectScatter',
+                        coordinateSystem: 'cartesian2d',
+                        zlevel: 2,
+                        rippleEffect: { brushType: 'stroke', scale: 4 },
+                        label: {
+                            show: true,
+                            position: 'right',
+                            formatter: '{b}',
+                            color: colors.text,
+                            textBorderColor: '#000',
+                            textBorderWidth: 2
+                        },
+                        symbolSize: function (val) {
+                            return val[2] / 5; // scale by GDP
+                        },
+                        itemStyle: { color: colors.primary, shadowBlur: 10, shadowColor: colors.primary },
+                        data: points
+                    },
+                    {
+                        type: 'lines',
+                        coordinateSystem: 'cartesian2d',
+                        zlevel: 1,
+                        effect: {
+                            show: true,
+                            period: 6,
+                            trailLength: 0.7,
+                            color: '#fff',
+                            symbolSize: 3
+                        },
+                        lineStyle: {
+                            color: colors.primary,
+                            width: 0.5,
+                            opacity: 0.4,
+                            curveness: 0.2
+                        },
+                        data: links.map(link => {
+                            const source = points.find(p => p.name === link.source).value;
+                            const target = points.find(p => p.name === link.target).value;
+                            return { coords: [source, target] };
+                        })
+                    }
+                ]
+            };
+        }
+
+        // --- Loading Simulation ---
+        function showLoading(chartId) {
+            $(`loading-${chartId}`).classList.add('active');
+        }
+
+        function hideLoading(chartId) {
+            $(`loading-${chartId}`).classList.remove('active');
+        }
+
+        function reloadChart(chartId, optionFunc, typeParam, delay = 800) {
+            showLoading(chartId);
+            setTimeout(() => {
+                charts[chartId].setOption(optionFunc(typeParam), true);
+                hideLoading(chartId);
+            }, delay);
+        }
+
+        function reloadAllCharts() {
+            reloadChart('industryPie', getIndustryPieOption, $$('.chart-tabs[data-target="industryPie"] .active')[0].dataset.type);
+            reloadChart('industryLine', getIndustryLineOption, $$('.chart-tabs[data-target="industryLine"] .active')[0].dataset.type);
+            reloadChart('buildingBar', getBuildingBarOption, $$('.chart-tabs[data-target="buildingBar"] .active')[0].dataset.type);
+            reloadChart('retailLine', getRetailLineOption, $$('.chart-tabs[data-target="retailLine"] .active')[0].dataset.type);
+            
+            showLoading('coreMap');
+            setTimeout(() => {
+                charts.coreMap.setOption(getCoreMapOption(), true);
+                hideLoading('coreMap');
+            }, 1000);
+            
+            animateNumbers();
+        }
+
+        // --- Interactions Setup ---
+        
+        // 1. Chart Tabs (Card Dimension Tags)
+        $$('.chart-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const parent = this.parentElement;
+                const targetChart = parent.dataset.target;
+                
+                // Update active class
+                parent.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Reload specific chart
+                const type = this.dataset.type;
+                if (targetChart === 'industryPie') reloadChart(targetChart, getIndustryPieOption, type, 500);
+                if (targetChart === 'industryLine') reloadChart(targetChart, getIndustryLineOption, type, 500);
+                if (targetChart === 'buildingBar') reloadChart(targetChart, getBuildingBarOption, type, 500);
+                if (targetChart === 'retailLine') reloadChart(targetChart, getRetailLineOption, type, 500);
+            });
+        });
+
+        // 2. Filter Bar (Rich Query Conditions)
+        $('btn-query').addEventListener('click', () => {
+            reloadAllCharts();
+        });
+
+        $('btn-refresh').addEventListener('click', () => {
+            reloadAllCharts();
+        });
+
+        // 3. Central KPIs Click Linkage
+        $$('.kpi-card').forEach(card => {
+            card.addEventListener('click', function() {
+                $$('.kpi-card').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Trigger global update based on KPI selected
+                reloadAllCharts();
+            });
+        });
+
+        // 4. Fullscreen
+        $('btn-fullscreen').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        // Number Animation
+        function animateNumbers() {
+            $$('.roll-num').forEach(el => {
+                const target = parseFloat(el.dataset.val);
+                let current = 0;
+                const increment = target / 30; // 30 frames
+                
+                const updateNum = () => {
+                    current += increment;
+                    if (current < target) {
+                        el.innerText = current.toFixed(1);
+                        requestAnimationFrame(updateNum);
+                    } else {
+                        el.innerText = target.toFixed(1);
+                    }
+                };
+                updateNum();
+            });
+        }
+
+        // Time update
+        setInterval(() => {
+            const now = new Date();
+            $('current-time').innerText = now.toLocaleString('zh-CN', { 
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+        }, 1000);
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            
+            // Initial load
+            charts.industryPie.setOption(getIndustryPieOption());
+            charts.industryLine.setOption(getIndustryLineOption());
+            charts.buildingBar.setOption(getBuildingBarOption());
+            charts.retailLine.setOption(getRetailLineOption());
+            charts.coreMap.setOption(getCoreMapOption());
+            
+            animateNumbers();
+            
+            // Set initial time
+            $('current-time').innerText = new Date().toLocaleString('zh-CN');
+        });
+
+    </script>
+</body>
+</html>

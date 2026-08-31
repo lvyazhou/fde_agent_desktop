@@ -8,22 +8,23 @@
           <div class="w-11 h-11 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
             <i class="fa-solid fa-robot text-blue-600 text-lg"></i>
           </div>
-          <h2 class="text-lg font-bold text-slate-800">你好，我是 AI 产品设计智能体</h2>
+          <h2 class="text-lg font-bold text-slate-800">你好，我是 FDE产品设计</h2>
         </div>
 
         <!-- Capability description lines -->
-        <p class="text-xs text-slate-500 text-center mb-2">基于你的需求，一站式搞定产品功能清单和 HTML 原型设计：</p>
+        <p class="text-xs text-slate-500 text-center mb-2">FDE 项目经理的五阶段作战工作台 —— 从客户一句话到上线定稿:</p>
         <div class="text-center space-y-1 mb-2 max-w-2xl">
           <p class="text-[11px] text-slate-500 leading-relaxed">
-            <span class="text-amber-500">💡</span> <b class="text-slate-700">头脑风暴</b>：需求分析、竞品调研、用户痛点挖掘 ·
-            <span class="text-blue-500">📋</span> <b class="text-slate-700">功能清单</b>：模块拆解、优先级排序、MVP 规划
+            <span class="text-amber-500">①</span> <b class="text-slate-700">调研备弹</b> ·
+            <span class="text-blue-500">②</span> <b class="text-slate-700">需求沟通+原型</b>(对接确认表→PRD→可交互原型) ·
+            <span class="text-violet-500">③</span> <b class="text-slate-700">需求确认+智能体设计</b>
           </p>
           <p class="text-[11px] text-slate-500 leading-relaxed">
-            <span class="text-violet-500">🎨</span> <b class="text-slate-700">原型生成</b>：HTML 可点击原型、响应式布局、数据可视化 ·
-            <span class="text-teal-500">🔄</span> <b class="text-slate-700">原型迭代</b>：自然语言驱动修改
+            <span class="text-teal-500">④</span> <b class="text-slate-700">纳米Work 工作台上线</b> ·
+            <span class="text-rose-500">⑤</span> <b class="text-slate-700">客户试用+定稿</b> —— 每阶段输出即交付物,一环扣一环
           </p>
         </div>
-        <p class="text-[10px] text-slate-400 mb-5">按场景选择，或直接在下方输入问题：</p>
+        <p class="text-[10px] text-slate-400 mb-5">新建 FDE 项目按阶段推进,或在下方直接提问:</p>
 
         <!-- Feature cards: 4 cols x 2 rows -->
         <div class="w-full grid grid-cols-4 gap-3">
@@ -58,7 +59,7 @@
     </div>
 
     <!-- Fixed bottom input area -->
-    <div class="shrink-0 px-6 pb-3 pt-2 bg-[#f0f4f8]">
+    <div class="shrink-0 px-6 pb-3 pt-2 bg-white">
       <div class="max-w-3xl mx-auto">
         <div class="bg-white border border-slate-200 rounded-2xl shadow-sm">
           <textarea
@@ -159,33 +160,62 @@ const handleSend = () => {
 
 const featureCards = [
   {
-    key: 'brainstorming',
-    label: '头脑风暴',
-    icon: 'fa-solid fa-lightbulb',
+    key: 'stage1',
+    label: '① 调研备弹',
+    icon: 'fa-solid fa-book',
     quickQuestions: [
-      '帮我分析一下这个产品方向的可行性',
-      '有哪些竞品可以参考？',
-      '用户的核心痛点是什么？',
+      '这个行业有哪些政策/术语我该先备弹？',
+      '给我一套结构化调研的六项框架',
+      '进场破冰和 SPIN 挖痛点的话术',
     ],
   },
   {
-    key: 'spec',
-    label: '功能清单',
+    key: 'stage2',
+    label: '② 需求·原型',
     icon: 'fa-solid fa-list-check',
     quickQuestions: [
-      '根据讨论生成完整的功能清单',
-      '帮我梳理核心功能模块',
-      '哪些功能是 MVP 必须的？',
+      '根据对接确认表生成六字段功能清单',
+      '按 PRD 三层(目标/功能/交互)整理需求',
+      '基于功能清单生成可交互原型',
     ],
   },
   {
-    key: 'prototype',
-    label: '原型生成',
-    icon: 'fa-solid fa-palette',
+    key: 'stage3',
+    label: '③ 需求·智能体',
+    icon: 'fa-solid fa-diagram-project',
     quickQuestions: [
-      '基于功能清单生成 HTML 原型',
-      '先生成首页和核心流程页面',
-      '用现代简约风格设计界面',
+      '把这条业务链路拆成智能体矩阵',
+      '帮我填一个智能体的设计表(身份卡+五层拆解)',
+      '需求签字后把 PRD 和原型升级为定稿版',
+    ],
+  },
+  {
+    key: 'stage4',
+    label: '④ 工作台上线',
+    icon: 'fa-solid fa-server',
+    quickQuestions: [
+      '从功能清单反推 ER 数据模型',
+      '这个功能该关联哪个智能体、依赖哪些数据表？',
+      '梳理一份项目进度表',
+    ],
+  },
+  {
+    key: 'stage5',
+    label: '⑤ 试用定稿',
+    icon: 'fa-solid fa-clipboard-check',
+    quickQuestions: [
+      '把客户反馈按功能缺失/逻辑不通/体验问题分类',
+      '整理一份三轮迭代记录',
+      '30/60/90 天使用率盯防怎么做',
+    ],
+  },
+  {
+    key: 'export',
+    label: '交付物导出',
+    icon: 'fa-solid fa-download',
+    quickQuestions: [
+      '导出功能清单为 Word',
+      '导出完整项目为 ZIP',
     ],
   },
   {
@@ -194,17 +224,8 @@ const featureCards = [
     icon: 'fa-solid fa-rotate',
     quickQuestions: [
       '把导航改成侧边栏布局',
-      '给表格增加搜索和筛选功能',
-      '调整配色方案，更专业一些',
-    ],
-  },
-  {
-    key: 'export',
-    label: '项目导出',
-    icon: 'fa-solid fa-download',
-    quickQuestions: [
-      '导出完整项目为 ZIP',
-      '导出功能清单为 Word',
+      '给表格增加搜索和筛选',
+      '调整配色,更专业一些',
     ],
   },
   {
@@ -212,29 +233,9 @@ const featureCards = [
     label: '通用提问',
     icon: 'fa-solid fa-message',
     quickQuestions: [
-      '帮我写一份产品需求文档',
-      '分析一下技术可行性',
+      '帮我写一份需求确认表',
+      '这个方案的可行性分析',
       '给我一些 UI 设计建议',
-    ],
-  },
-  {
-    key: 'market',
-    label: '市场分析',
-    icon: 'fa-solid fa-chart-line',
-    quickQuestions: [
-      '分析目标市场的竞争格局',
-      '用户画像是什么样的？',
-      '商业模式建议',
-    ],
-  },
-  {
-    key: 'tech',
-    label: '技术方案',
-    icon: 'fa-solid fa-code',
-    quickQuestions: [
-      '推荐适合的技术栈',
-      '系统架构该怎么设计？',
-      '有哪些技术风险？',
     ],
   },
 ];

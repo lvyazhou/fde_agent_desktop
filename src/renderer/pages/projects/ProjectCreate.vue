@@ -17,9 +17,9 @@
           <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-700"></i>
         </div>
 
-        <h1 class="text-2xl font-bold text-slate-800 mb-2">描述你的产品想法</h1>
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">新建 FDE 项目</h1>
         <p class="text-sm text-slate-500 mb-8">
-          一句话描述即可，AI 会帮你扩展为完整的功能清单和可点击原型
+          填入客户需求或对接确认表要点,进入五阶段作战工作台 —— 从需求沟通到原型、智能体设计、上线定稿
         </p>
 
         <!-- Textarea -->
@@ -27,14 +27,14 @@
           <textarea
             v-model="requirement"
             rows="4"
-            :placeholder="'例如：给运营团队做一个数据复盘看板，能看各渠道转化漏斗和趋势'"
+            :placeholder="'例如:为某三甲医院运营部做门诊量异动归因智能体 —— 主任发现指标异常时,自动取数、归因、出建议'"
             class="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder:text-slate-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 transition-all"
             :disabled="submitting"
             @keydown.ctrl.enter="handleSubmit"
           ></textarea>
           <p class="text-xs text-slate-400 mt-2">
             <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i>
-            提示：描述越详细，生成的功能清单和原型越贴近你的预期
+            提示:需求/对接确认表越详细,阶段②生成的功能清单、PRD 与原型越贴近客户预期
           </p>
         </div>
 
@@ -50,7 +50,7 @@
           </template>
           <template v-else>
             <i class="fa-solid fa-rocket text-xs"></i>
-            <span>开始设计</span>
+            <span>创建 FDE 项目</span>
           </template>
         </button>
 

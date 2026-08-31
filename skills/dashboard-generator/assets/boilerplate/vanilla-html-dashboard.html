@@ -1,0 +1,526 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业级赛博朋克大屏 (Vanilla HTML)</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'DS-Digital';
+            src: local('Impact'); /* Fallback */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #030a16;
+            color: #fff;
+            font-family: "Microsoft YaHei", sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            background-image:
+                radial-gradient(circle at center, #0a1f3d 0%, #030a16 100%),
+                linear-gradient(rgba(11, 20, 40, 0.9), rgba(11, 20, 40, 0.9));
+            position: relative;
+        }
+
+        /* 赛博朋克网格线 + 全局暗角遮罩 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                linear-gradient(rgba(0, 246, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 246, 255, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
+            transform: perspective(1000px) rotateX(10deg) scale(1.2);
+            transform-origin: top center;
+            opacity: 0.6;
+        }
+
+        /* 屏幕扫描线扫描动画 */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* ===== 顶部标题栏 ===== */
+        .header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            background: linear-gradient(90deg, transparent 0%, rgba(0, 246, 255, 0.1) 20%, rgba(0, 246, 255, 0.2) 50%, rgba(0, 246, 255, 0.1) 80%, transparent 100%);
+            border-bottom: 2px solid rgba(0, 246, 255, 0.5);
+            box-shadow: 0 5px 20px rgba(0, 246, 255, 0.2);
+        }
+
+        .header::before, .header::after {
+            content: ''; position: absolute; bottom: -2px; width: 300px; height: 2px;
+            background: #fff; box-shadow: 0 0 10px #fff, 0 0 20px #00f6ff;
+        }
+        .header::before { left: 0; background: linear-gradient(90deg, transparent, #00f6ff); }
+        .header::after { right: 0; background: linear-gradient(-90deg, transparent, #00f6ff); }
+
+        .title {
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #fff;
+            text-transform: uppercase;
+            position: relative;
+            text-shadow:
+                0 0 5px #00f6ff, 0 0 10px #00f6ff, 0 0 20px #00f6ff, 0 0 40px #0077ff,
+                2px 2px 0px rgba(255, 0, 85, 0.8);
+            transform: skewX(-10deg);
+        }
+        
+        .title-wrapper {
+            position: relative;
+            padding: 0 40px;
+        }
+        .title-wrapper::before, .title-wrapper::after {
+            content: ''; position: absolute; top: 50%; transform: translateY(-50%); width: 20px; height: 40px; border: 3px solid #00f6ff;
+        }
+        .title-wrapper::before { left: 0; border-right: none; }
+        .title-wrapper::after { right: 0; border-left: none; }
+
+        /* 系统信息 */
+        .sys-info {
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 5px; z-index: 20;
+        }
+        .sys-time { font-family: 'DS-Digital', 'Impact', sans-serif; color: #00f6ff; font-size: 24px; letter-spacing: 2px; text-shadow: 0 0 10px #00f6ff; }
+        .sys-date { color: #a6c0fe; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 8px; height: 8px; background: #2ed573; border-radius: 50%; box-shadow: 0 0 8px #2ed573; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* 顶部丰富的查询条件栏 */
+        .filter-bar {
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%) scale(0.85); transform-origin: right center;
+            display: flex; gap: 15px; z-index: 20; align-items: center;
+        }
+        .filter-group { display: flex; align-items: center; gap: 5px; }
+        .filter-label { color: #00f6ff; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px rgba(0, 246, 255, 0.5); }
+        .cyber-select {
+            background: rgba(0, 30, 80, 0.6); border: 1px solid #00f6ff; color: #fff; padding: 4px 8px; font-size: 13px;
+            outline: none; cursor: pointer; box-shadow: inset 0 0 10px rgba(0, 246, 255, 0.2);
+            clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+        }
+        .cyber-select:hover { border-color: #fff; box-shadow: 0 0 10px #00f6ff; }
+        .cyber-select option { background: #030a16; color: #00f6ff; }
+        
+        .time-filter { display: flex; gap: 5px; }
+        .time-btn {
+            background: rgba(0, 119, 255, 0.2); border: 1px solid #00f6ff; color: #00f6ff; padding: 4px 10px; font-size: 14px;
+            cursor: pointer; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); transition: all 0.3s; font-weight: bold;
+        }
+        .time-btn:hover { background: rgba(0, 246, 255, 0.3); box-shadow: 0 0 10px #00f6ff; }
+        .time-btn.active { background: #00f6ff; color: #030a16; box-shadow: 0 0 15px #00f6ff; }
+        .fullscreen-btn { background: transparent; border: none; color: #00f6ff; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; margin-left: 5px; }
+        .fullscreen-btn:hover { color: #fff; transform: scale(1.1); filter: drop-shadow(0 0 5px #00f6ff); }
+        .fullscreen-btn svg { fill: currentColor; width: 22px; height: 22px; }
+
+        /* ===== 主容器 ===== */
+        .container {
+            position: absolute; top: 90px; left: 20px; right: 20px; bottom: 20px;
+            display: grid; grid-template-columns: 1fr 1.6fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; z-index: 10;
+        }
+
+        /* ===== 图表盒子 ===== */
+        .chart-box {
+            position: relative;
+            background: linear-gradient(135deg, rgba(6, 30, 93, 0.6) 0%, rgba(2, 10, 26, 0.8) 100%);
+            border: 1px solid rgba(0, 246, 255, 0.15);
+            box-shadow: inset 0 0 40px rgba(0, 140, 255, 0.15), 0 0 15px rgba(0, 246, 255, 0.05);
+            backdrop-filter: blur(8px);
+            padding: 15px; display: flex; flex-direction: column;
+            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+        .chart-box::before { content: ''; position: absolute; top: 0; left: 20px; width: 40px; height: 2px; background: #00f6ff; box-shadow: 0 0 10px #00f6ff; }
+        .chart-box::after { content: ''; position: absolute; bottom: 0; right: 20px; width: 40px; height: 2px; background: #00f6ff; box-shadow: 0 0 10px #00f6ff; }
+
+        .chart-title {
+            color: #fff; font-size: 18px; font-weight: bold; padding-left: 12px; margin-bottom: 10px;
+            background: linear-gradient(90deg, rgba(0, 246, 255, 0.3) 0%, transparent 100%);
+            line-height: 32px; border-left: 4px solid #00f6ff; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+        }
+        .chart { flex: 1; width: 100%; min-height: 0; }
+
+        /* 内部小Tab切换 (多维度标签) */
+        .chart-tabs { display: flex; gap: 5px; margin-right: 10px; }
+        .tab-btn {
+            background: transparent; border: 1px solid #0077ff; color: #00f6ff; padding: 2px 12px; font-size: 12px; cursor: pointer;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(0, 246, 255, 0.2); }
+        .tab-btn.active { background: #00f6ff; color: #030a16; font-weight: bold; box-shadow: 0 0 10px #00f6ff; }
+
+        /* 网格定位 */
+        .box-rank { grid-column: 1 / 2; grid-row: 1 / 2; }
+        .box-agent { grid-column: 1 / 2; grid-row: 2 / 3; }
+        .box-center { grid-column: 2 / 3; grid-row: 1 / 3; display: flex; flex-direction: column; background: transparent; border: none; box-shadow: none;}
+        .box-ind { grid-column: 3 / 4; grid-row: 1 / 2; }
+        .box-region { grid-column: 3 / 4; grid-row: 2 / 3; }
+
+        /* ===== 中间 KPI 与 环形图 ===== */
+        .center-kpi-row { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; flex-shrink: 0; }
+        .kpi-item {
+            background: linear-gradient(180deg, rgba(0,246,255,0.15) 0%, rgba(0,50,150,0.5) 100%);
+            border: 1px solid rgba(0, 246, 255, 0.4); border-top: 3px solid #00f6ff; border-bottom: 1px solid rgba(0, 246, 255, 0.1); border-radius: 4px;
+            padding: 10px 15px; text-align: center; flex: 1; min-width: 100px; box-shadow: 0 5px 15px rgba(0, 246, 255, 0.2); position: relative; overflow: hidden; transform: skewX(-5deg);
+            cursor: pointer; transition: all 0.3s;
+        }
+        .kpi-item:hover { transform: translateY(-5px) skewX(-5deg); box-shadow: 0 8px 25px rgba(0, 246, 255, 0.4); }
+        .kpi-item.active { background: linear-gradient(180deg, rgba(0,246,255,0.4) 0%, rgba(0,50,150,0.8) 100%); border-color: #00f6ff; }
+        .kpi-item::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-20deg); animation: sweep 4s infinite;
+        }
+        @keyframes sweep { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+
+        .kpi-item .label { color: #00f6ff; font-size: 12px; margin-bottom: 5px; font-weight:bold; letter-spacing:1px; transform: skewX(5deg); }
+        .kpi-item .value { color: #fff; font-size: 28px; font-weight: bold; font-family: 'Impact'; text-shadow: 0 0 10px #00f6ff, 2px 2px 0px #ff0055; transform: skewX(5deg); }
+        .kpi-item .unit { font-size: 14px; color: #a6c0fe; font-weight: normal; margin-left:5px;}
+        .kpi-item .trend { font-size: 12px; margin-top: 5px; transform: skewX(5deg); }
+        .trend.up { color: #ff4757; text-shadow: 0 0 5px #ff4757; }
+        .trend.down { color: #2ed573; text-shadow: 0 0 5px #2ed573; }
+        
+        /* 联动点击波纹特效 */
+        .ripple { position: absolute; border-radius: 50%; background: rgba(0, 246, 255, 0.6); transform: scale(0); animation: ripple-anim 0.6s linear; pointer-events: none; }
+        @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+        .center-ring-container { flex: 1.4; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; min-height: 0; }
+        .cyber-ring-bg { position: absolute; width: 80%; height: 80%; border-radius: 50%; border: 2px dashed rgba(0, 246, 255, 0.3); pointer-events: none; }
+        .cyber-ring-bg2 { position: absolute; width: 90%; height: 90%; border-radius: 50%; border: 1px solid rgba(0, 119, 255, 0.2); border-top: 3px solid rgba(0, 246, 255, 0.5); border-bottom: 3px solid rgba(255, 170, 0, 0.5); pointer-events: none; }
+
+        /* 时间与目标进度面板 */
+        .time-countdown {
+            position: absolute; top: 5px; left: 5px; z-index: 30; background: linear-gradient(-135deg, rgba(6, 30, 93, 0.8), rgba(2, 10, 26, 0.9));
+            border: 1px solid rgba(0, 246, 255, 0.4); padding: 10px 15px; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+            box-shadow: 0 0 20px rgba(0, 246, 255, 0.15);
+        }
+        .time-countdown .tc-title { color: #00f6ff; font-size: 12px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 0 5px rgba(0, 246, 255, 0.5); display: flex; justify-content: space-between; }
+        .time-countdown .tc-diff { color: #fff; font-size: 13px; margin-bottom: 8px; }
+        .time-countdown .tc-num { color: #00f6ff; font-size: 22px; font-family: 'Impact'; text-shadow: 0 0 10px #00f6ff; letter-spacing: 1px; }
+        
+        .target-panel {
+            position: absolute; top: 5px; right: 5px; z-index: 30; background: linear-gradient(135deg, rgba(6, 30, 93, 0.8), rgba(2, 10, 26, 0.9));
+            border: 1px solid rgba(255, 71, 87, 0.4); padding: 10px 15px; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.15);
+        }
+        .target-panel .t-title { color: #ffaa00; font-size: 12px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 0 5px rgba(255, 170, 0, 0.5); display: flex; justify-content: space-between; }
+        .target-panel .t-diff { color: #fff; font-size: 13px; margin-bottom: 8px; }
+        .target-panel .t-num { color: #ff4757; font-size: 22px; font-family: 'Impact'; text-shadow: 0 0 10px #ff4757; letter-spacing: 1px; }
+        
+        .progress-wrap { width: 140px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; position: relative; }
+        .progress-inner-blue { height: 100%; background: linear-gradient(-90deg, #00f6ff, #0077ff); width: 65%; box-shadow: 0 0 10px #00f6ff; }
+        .progress-inner-red { height: 100%; background: linear-gradient(90deg, #ffaa00, #ff4757); width: 78%; box-shadow: 0 0 10px #ff4757; }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="sys-info">
+            <div class="sys-time" id="sysTime">00:00:00</div>
+            <div class="sys-date">
+                <div class="status-dot"></div>
+                <span id="sysDate">YYYY/MM/DD SYSTEM ONLINE</span>
+            </div>
+        </div>
+        <div class="title-wrapper">
+            <div class="title">VANILLA CYBER DASHBOARD</div>
+        </div>
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span class="filter-label">维度:</span>
+                <select class="cyber-select" onchange="mockGlobalLoading()">
+                    <option value="all">全网视角</option>
+                    <option value="core">核心节点</option>
+                    <option value="edge">边缘网络</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">状态:</span>
+                <select class="cyber-select" onchange="mockGlobalLoading()">
+                    <option value="active">运行中</option>
+                    <option value="warning">告警中</option>
+                </select>
+            </div>
+            <div class="time-filter">
+                <button class="time-btn active">双周</button>
+                <button class="time-btn">本月</button>
+                <button class="time-btn">半年</button>
+                <button class="time-btn">一年</button>
+            </div>
+            <button class="fullscreen-btn" title="全屏展示" onclick="toggleFullscreen()">
+                <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- 左侧 -->
+        <div class="chart-box box-rank">
+            <div class="chart-title">
+                <span>1. 业务排名分析</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cL1, 'amount')">按金额</button>
+                    <button class="tab-btn" onclick="switchDim(this, cL1, 'count')">按单量</button>
+                </div>
+            </div>
+            <div id="chart-left-1" class="chart"></div>
+        </div>
+
+        <!-- 左下 -->
+        <div class="chart-box box-agent">
+            <div class="chart-title">
+                <span>2. 多维构成</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cL2, 'type')">类型视角</button>
+                    <button class="tab-btn" onclick="switchDim(this, cL2, 'value')">价值视角</button>
+                </div>
+            </div>
+            <div id="chart-left-2" class="chart"></div>
+        </div>
+
+        <!-- 中间 -->
+        <div class="box-center">
+            <div class="center-kpi-row">
+                <div class="kpi-item active" onclick="handleKpiClick(this, 'amount', event)">
+                    <div class="label">总签单金额</div>
+                    <div class="value">5,680<span class="unit">万</span></div>
+                    <div class="trend up">同比双周 ▲ 12.5%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'order', event)">
+                    <div class="label">订单总量</div>
+                    <div class="value">845<span class="unit">单</span></div>
+                    <div class="trend up">同比双周 ▲ 8.3%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'customer', event)">
+                    <div class="label">覆盖客户</div>
+                    <div class="value">320<span class="unit">家</span></div>
+                    <div class="trend down">同比双周 ▼ 2.1%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'node', event)">
+                    <div class="label">活跃节点</div>
+                    <div class="value">68<span class="unit">个</span></div>
+                    <div class="trend up">同比双周 ▲ 5.0%</div>
+                </div>
+            </div>
+            
+            <div class="center-ring-container">
+                <div class="time-countdown">
+                    <div class="tc-title"><span>▶ 时间进度</span> <span>65%</span></div>
+                    <div class="tc-diff">今年还剩 <span class="tc-num">128</span> 天</div>
+                    <div class="progress-wrap"><div class="progress-inner-blue"></div></div>
+                </div>
+                <div class="target-panel">
+                    <div class="t-title"><span>★ 目标冲刺</span> <span>78%</span></div>
+                    <div class="t-diff">距离目标还差 <span class="t-num">2,200</span> 万</div>
+                    <div class="progress-wrap"><div class="progress-inner-red"></div></div>
+                </div>
+                <div class="cyber-ring-bg"></div>
+                <div class="cyber-ring-bg2"></div>
+                <div id="chart-center-pie" style="width:100%; height:100%; position:absolute; top:0; left:0; z-index:10;"></div>
+            </div>
+            
+            <div class="chart-box" style="flex:0.8; min-height:0; display:flex; flex-direction:column; padding:10px 15px;">
+                <div class="chart-title" style="margin-bottom:0; font-size:15px; border-left:3px solid #ffaa00; background:linear-gradient(90deg, rgba(255, 170, 0, 0.2) 0%, transparent 100%);">
+                    5. 数据变化走势
+                </div>
+                <div id="chart-center-line" class="chart"></div>
+            </div>
+        </div>
+
+        <!-- 右上 -->
+        <div class="chart-box box-ind">
+            <div class="chart-title">
+                <span>3. 行业渗透画像</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cR1, 'radar')">综合能力</button>
+                    <button class="tab-btn" onclick="switchDim(this, cR1, 'bar')">细分得分</button>
+                </div>
+            </div>
+            <div id="chart-right-1" class="chart"></div>
+        </div>
+
+        <!-- 右下 -->
+        <div class="chart-box box-region">
+            <div class="chart-title">
+                <span>4. 全国区域分布</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active">TOP/BOT</button>
+                </div>
+            </div>
+            <div style="display:flex; flex:1; min-height:0; gap:10px; margin-top: 10px;">
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <div style="color:#00f6ff; font-size:12px; text-align:center; margin-bottom:5px;">▲ 核心区域 TOP 5</div>
+                    <div id="chart-right-top" style="flex:1;"></div>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <div style="color:#ffaa00; font-size:12px; text-align:center; margin-bottom:5px;">▼ 边缘区域 BOT 5</div>
+                    <div id="chart-right-bot" style="flex:1;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全屏控制
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // 全局加载模拟 (响应丰富查询条件)
+        function mockGlobalLoading() {
+            allCharts.forEach(chart => {
+                chart.showLoading({ text: 'QUERYING...', color: '#00f6ff', textColor: '#00f6ff', maskColor: 'rgba(3, 10, 22, 0.8)' });
+            });
+            setTimeout(() => {
+                allCharts.forEach(chart => chart.hideLoading());
+            }, 800);
+        }
+
+        // 卡片多维度Tab切换模拟
+        function switchDim(btn, chartInstance, dimType) {
+            const tabs = btn.parentElement.querySelectorAll('.tab-btn');
+            tabs.forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+
+            chartInstance.showLoading({ text: 'SWITCHING...', color: '#00f6ff', textColor: '#00f6ff', maskColor: 'rgba(3, 10, 22, 0.8)' });
+            setTimeout(() => {
+                chartInstance.hideLoading();
+                // 在实际项目中，这里会根据 dimType 传入新数据
+                const currentOption = chartInstance.getOption();
+                // 简单随机扰动模拟数据变化
+                if (currentOption.series && currentOption.series[0].data) {
+                    currentOption.series[0].data = currentOption.series[0].data.map(v => typeof v === 'number' ? Math.max(10, v + (Math.random() * 40 - 20)) : v);
+                    chartInstance.setOption(currentOption);
+                }
+            }, 500);
+        }
+
+        // 中心 KPI 点击联动 (带波纹与加载状态)
+        function handleKpiClick(element, type, event) {
+            // 1. 移除旧的active
+            document.querySelectorAll('.kpi-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            // 2. 添加波纹特效
+            const circle = document.createElement('span');
+            const rect = element.getBoundingClientRect();
+            circle.style.width = circle.style.height = Math.max(rect.width, rect.height) + 'px';
+            circle.style.left = (event.clientX - rect.left - rect.width/2) + 'px';
+            circle.style.top = (event.clientY - rect.top - rect.height/2) + 'px';
+            circle.classList.add('ripple');
+            element.appendChild(circle);
+            setTimeout(() => circle.remove(), 600);
+
+            // 3. 联动图表加载与数据更新 (更新中间的趋势图)
+            cCLine.showLoading({ text: 'SYNCING...', color: '#00f6ff', textColor: '#00f6ff', maskColor: 'rgba(3, 10, 22, 0.8)' });
+            
+            setTimeout(() => {
+                cCLine.hideLoading();
+                // 根据点击的KPI类型生成新的模拟趋势数据
+                const baseData = type === 'amount' ? [120, 150, 200, 180, 250, 300, 280, 350, 400, 380, 450, 500] :
+                                 type === 'order' ? [50, 80, 60, 90, 120, 110, 150, 140, 180, 160, 200, 220] :
+                                 type === 'customer' ? [20, 25, 22, 30, 35, 40, 38, 45, 50, 55, 60, 65] :
+                                 [10, 12, 15, 14, 18, 20, 25, 22, 28, 30, 35, 40];
+                
+                cCLine.setOption({
+                    series: [
+                        { name: '当前值', data: baseData },
+                        { name: '目标值', data: baseData.map(v => v * 0.8) }
+                    ]
+                });
+            }, 600);
+        }
+
+        // 时钟更新
+        function updateClock() {
+            const now = new Date();
+            var days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            document.getElementById('sysDate').innerText = now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0') + ' ' + days[now.getDay()] + ' SYSTEM ONLINE';
+            document.getElementById('sysTime').innerText = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // ECharts 初始化配置
+        const opt = { backgroundColor: 'transparent', tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#00f6ff', textStyle: { color: '#fff' } } };
+        
+        // 1. 左侧排名 (柱状图)
+        const cL1 = echarts.init(document.getElementById('chart-left-1'));
+        cL1.setOption({ ...opt, grid: { top: 5, bottom: 5, left: 10, right: 60, containLabel: true }, xAxis: { type: 'value', show: false }, yAxis: { type: 'category', data: ['产品E', '产品D', '产品C', '产品B', '产品A'], axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#a6c0fe', fontSize: 13 } }, series: [{ type: 'bar', barWidth: 18, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'#002c5f'},{offset:1,color:'#00f6ff'}]), borderRadius: [0,8,8,0] }, label: { show: true, position: 'right', formatter: '{c}万', color: '#00f6ff' }, data: [150, 200, 350, 600, 800] }] });
+
+        // 2. 左侧多维 (堆叠图)
+        const cL2 = echarts.init(document.getElementById('chart-left-2'));
+        cL2.setOption({ ...opt, grid: { top: 10, bottom: 20, left: 10, right: 10, containLabel: true }, xAxis: { type: 'category', data: ['W1', 'W2', 'W3', 'W4'], axisLine: { lineStyle: { color: 'rgba(0,246,255,0.3)' } }, axisLabel: { color: '#a6c0fe' } }, yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(0,246,255,0.1)', type: 'dashed' } }, axisLabel: { color: '#a6c0fe' } }, series: [{ name: 'A类', type: 'bar', stack: 'total', barWidth: 15, itemStyle: { color: '#00f6ff' }, data: [120, 132, 101, 134] }, { name: 'B类', type: 'bar', stack: 'total', barWidth: 15, itemStyle: { color: '#0077ff' }, data: [220, 182, 191, 234] }, { name: 'C类', type: 'bar', stack: 'total', barWidth: 15, itemStyle: { color: '#ffaa00' }, data: [150, 232, 201, 154] }] });
+
+        // 3. 右侧画像 (雷达图)
+        const cR1 = echarts.init(document.getElementById('chart-right-1'));
+        cR1.setOption({ ...opt, radar: { indicator: [{name: '技术', max: 100}, {name: '服务', max: 100}, {name: '安全', max: 100}, {name: '管理', max: 100}, {name: '运营', max: 100}, {name: '品牌', max: 100}], splitNumber: 4, axisName: { color: '#a6c0fe' }, splitLine: { lineStyle: { color: ['rgba(0,246,255,0.1)', 'rgba(0,246,255,0.2)', 'rgba(0,246,255,0.4)', 'rgba(0,246,255,0.6)'] } }, splitArea: { show: false }, axisLine: { lineStyle: { color: 'rgba(0,246,255,0.5)' } } }, series: [{ type: 'radar', data: [{ value: [80, 90, 85, 70, 75, 88], name: '行业A', areaStyle: { color: 'rgba(0,246,255,0.3)' }, lineStyle: { color: '#00f6ff' }, itemStyle: { color: '#00f6ff' } }, { value: [60, 70, 95, 80, 65, 78], name: '行业B', areaStyle: { color: 'rgba(255,170,0,0.3)' }, lineStyle: { color: '#ffaa00' }, itemStyle: { color: '#ffaa00' } }] }] });
+
+        // 4. 右侧区域 (上下两个横向柱状图)
+        const cRTop = echarts.init(document.getElementById('chart-right-top'));
+        cRTop.setOption({ ...opt, grid: { top: 5, bottom: 5, left: 10, right: 30, containLabel: true }, xAxis: { type: 'value', show: false }, yAxis: { type: 'category', data: ['北京', '上海', '广东', '浙江', '江苏'].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#a6c0fe', fontSize: 11 } }, series: [{ type: 'bar', barWidth: 8, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'transparent'},{offset:1,color:'#00f6ff'}]) }, label: { show: true, position: 'right', formatter: '{c}', color: '#00f6ff', fontSize: 10 }, data: [850, 720, 680, 540, 490].reverse() }] });
+
+        const cRBot = echarts.init(document.getElementById('chart-right-bot'));
+        cRBot.setOption({ ...opt, grid: { top: 5, bottom: 5, left: 10, right: 30, containLabel: true }, xAxis: { type: 'value', show: false }, yAxis: { type: 'category', data: ['新疆', '西藏', '青海', '宁夏', '甘肃'].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#a6c0fe', fontSize: 11 } }, series: [{ type: 'bar', barWidth: 8, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'transparent'},{offset:1,color:'#ffaa00'}]) }, label: { show: true, position: 'right', formatter: '{c}', color: '#ffaa00', fontSize: 10 }, data: [12, 15, 28, 35, 42].reverse() }] });
+
+        // 5. 中间趋势 (折线图)
+        const cCLine = echarts.init(document.getElementById('chart-center-line'));
+        cCLine.setOption({ ...opt, grid: { top: 20, bottom: 20, left: 20, right: 20, containLabel: true }, xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], boundaryGap: false, axisLine: { lineStyle: { color: 'rgba(0,246,255,0.3)' } }, axisLabel: { color: '#a6c0fe' } }, yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(0,246,255,0.1)', type: 'dashed' } }, axisLabel: { color: '#a6c0fe' } }, series: [{ name: '签单额', type: 'line', smooth: true, symbol: 'none', lineStyle: { width: 3, color: '#00f6ff', shadowColor: '#00f6ff', shadowBlur: 10 }, areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(0,246,255,0.5)'},{offset:1,color:'rgba(0,246,255,0)'}]) }, data: [120, 150, 200, 180, 250, 300, 280, 350, 400, 380, 450, 500] }, { name: '目标额', type: 'line', smooth: true, symbol: 'none', lineStyle: { width: 2, color: '#ff4757', type: 'dashed' }, data: [100, 100, 150, 150, 200, 200, 250, 250, 300, 300, 350, 350] }] });
+
+        // 6. 中间环形图 (3D效果模拟)
+        const cCPie = echarts.init(document.getElementById('chart-center-pie'));
+        cCPie.setOption({ ...opt, title: { text: '78%', subtext: '总达成率', left: 'center', top: 'center', textStyle: { color: '#00f6ff', fontSize: 32, fontFamily: 'Impact', textShadowColor: '#00f6ff', textShadowBlur: 10 }, subtextStyle: { color: '#a6c0fe', fontSize: 14 } }, series: [{ type: 'pie', radius: ['60%', '75%'], center: ['50%', '50%'], avoidLabelOverlap: false, itemStyle: { borderColor: '#030a16', borderWidth: 2 }, label: { show: false }, data: [{ value: 78, name: '已完成', itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,1,[{offset:0,color:'#00f6ff'},{offset:1,color:'#0077ff'}]) } }, { value: 22, name: '未完成', itemStyle: { color: 'rgba(255,255,255,0.1)' } }] }] });
+
+        // 跨图表联动点击交互示例 (Cross-chart linking)
+        let activeFilter = -1;
+        const allCharts = [cL1, cL2, cR1, cRTop, cRBot, cCLine, cCPie];
+
+        // 绑定左侧图表的点击事件，控制其他图表透明度来模拟高亮
+        cL1.on('click', function(params) {
+            activeFilter = (activeFilter === params.dataIndex) ? -1 : params.dataIndex;
+            
+            allCharts.forEach(chart => {
+                if (chart === cL1) return; // 跳过自己
+                // 派发downplay和highlight事件来模拟联动
+                if (activeFilter === -1) {
+                    chart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+                } else {
+                    chart.dispatchAction({ type: 'downplay', seriesIndex: 0 }); // 先取消所有
+                    chart.dispatchAction({ type: 'highlight', seriesIndex: 0, dataIndex: activeFilter });
+                }
+            });
+        });
+
+        // 窗口缩放适配
+        window.addEventListener('resize', function() {
+            allCharts.forEach(chart => chart.resize());
+        });
+    </script>
+</body>
+</html>

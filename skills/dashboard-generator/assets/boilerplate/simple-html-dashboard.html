@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业级商务分析大屏 (Business Vanilla HTML)</title>
+    <!-- 引入 ECharts -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        /* 基础变量与商务主题 (Corporate/Business Theme) */
+        :root {
+            --bg-color: #0f172a; /* 柔和深蓝背景 */
+            --card-bg: rgba(30, 41, 59, 0.7); /* 卡片底色 */
+            --primary-blue: #3b82f6; /* 商务蓝 */
+            --gold-color: #f59e0b; /* 强调金 */
+            --text-main: #f8fafc;
+            --text-sec: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border-color: rgba(148, 163, 184, 0.15);
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            /* 移除赛博朋克的扫描线和高亮网格，改用极其微妙的纹理或纯色 */
+            background-image: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%);
+        }
+
+        /* 头部区域 - 干净的边框和布局 */
+        header {
+            height: 70px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            background: rgba(15, 23, 42, 0.8);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .header-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-main);
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .header-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 24px;
+            background: var(--primary-blue);
+            border-radius: 2px;
+        }
+
+        /* 过滤控制栏 - 商务风格的按钮和下拉框 */
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .biz-select, .biz-btn {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--border-color);
+            color: var(--text-sec);
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .biz-select:hover, .biz-btn:hover {
+            border-color: var(--primary-blue);
+            color: var(--text-main);
+        }
+
+        .biz-btn.active {
+            background: var(--primary-blue);
+            border-color: var(--primary-blue);
+            color: white;
+        }
+
+        /* 主要布局网格 */
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: 16px;
+            padding: 16px;
+            min-height: 0;
+            z-index: 10;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            min-height: 0;
+        }
+
+        /* 商务风卡片 - 移除霓虹发光，改用柔和阴影和圆角 */
+        .biz-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--card-shadow);
+            flex: 1;
+            min-height: 0;
+            position: relative;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* 卡片内标签页切换 */
+        .chart-tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(15, 23, 42, 0.5);
+            padding: 4px;
+            border-radius: 6px;
+        }
+        .chart-tab {
+            font-size: 12px;
+            color: var(--text-sec);
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .chart-tab:hover {
+            color: var(--text-main);
+        }
+        .chart-tab.active {
+            color: var(--primary-blue);
+            background: rgba(59, 130, 246, 0.1);
+            font-weight: 500;
+        }
+
+        /* 图表容器核心样式 */
+        .chart-container {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            position: relative;
+        }
+
+        /* KPI 区域 (顶部水平排列) */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 0;
+            flex: 0 0 auto;
+        }
+
+        .kpi-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+
+        .kpi-card:hover, .kpi-card.active {
+            transform: translateY(-2px);
+            border-color: var(--primary-blue);
+        }
+
+        .kpi-title {
+            color: var(--text-sec);
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .kpi-change {
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 500;
+        }
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.5); }
+    </style>
+</head>
+<body>
+
+    <!-- 头部及过滤控制 -->
+    <header>
+        <div class="header-title">企业业务数据分析看板</div>
+        <div class="controls">
+            <select class="biz-select" onchange="mockGlobalLoading()">
+                <option value="all">全部分公司</option>
+                <option value="hq">总部直营</option>
+                <option value="branch">区域分支</option>
+            </select>
+            <div style="width: 1px; height: 20px; background: var(--border-color); margin: 0 4px;"></div>
+            <button class="biz-btn active">本月</button>
+            <button class="biz-btn">本季</button>
+            <button class="biz-btn">本年</button>
+            <button class="biz-btn" onclick="toggleFullscreen()" style="margin-left: 8px;">
+                <svg viewBox="0 0 24 24" width="14" height="14" style="fill: currentColor; vertical-align: middle;"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主体网格内容 -->
+    <div class="main-container">
+        
+        <!-- 左侧列 -->
+        <div class="col left-col">
+            <div class="biz-card">
+                <div class="card-header">
+                    <div class="card-title">业务模块占比</div>
+                    <div class="chart-tabs">
+                        <div class="chart-tab active" onclick="switchDim(this, chartLeft1)">营收</div>
+                        <div class="chart-tab" onclick="switchDim(this, chartLeft1)">利润</div>
+                    </div>
+                </div>
+                <div id="chart-left-1" class="chart-container"></div>
+            </div>
+            
+            <div class="biz-card">
+                <div class="card-header">
+                    <div class="card-title">渠道转化漏斗</div>
+                </div>
+                <div id="chart-left-2" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- 中间列 -->
+        <div class="col center-col">
+            <!-- 核心 KPI -->
+            <div class="kpi-row">
+                <div class="kpi-card active" onclick="handleKpiClick(this, 'revenue')">
+                    <div class="kpi-title">总营业收入 (万元)</div>
+                    <div class="kpi-value">12,850.50</div>
+                    <div class="kpi-change trend-up">↑ +15.2% 同比</div>
+                </div>
+                <div class="kpi-card" onclick="handleKpiClick(this, 'profit')">
+                    <div class="kpi-title">净利润 (万元)</div>
+                    <div class="kpi-value">3,420.20</div>
+                    <div class="kpi-change trend-up">↑ +8.4% 同比</div>
+                </div>
+                <div class="kpi-card" onclick="handleKpiClick(this, 'users')">
+                    <div class="kpi-title">新增企业客户</div>
+                    <div class="kpi-value">845</div>
+                    <div class="kpi-change trend-down">↓ -2.1% 环比</div>
+                </div>
+                <div class="kpi-card" onclick="handleKpiClick(this, 'satisfaction')">
+                    <div class="kpi-title">客户满意度</div>
+                    <div class="kpi-value">98.5%</div>
+                    <div class="kpi-change trend-up">↑ +0.5% 环比</div>
+                </div>
+            </div>
+
+            <!-- 主图表 -->
+            <div class="biz-card">
+                <div class="card-header">
+                    <div class="card-title">核心指标趋势分析</div>
+                    <div class="chart-tabs">
+                        <div class="chart-tab active">月度走势</div>
+                        <div class="chart-tab">季度对比</div>
+                    </div>
+                </div>
+                <div id="chart-center" class="chart-container"></div>
+            </div>
+        </div>
+
+        <!-- 右侧列 -->
+        <div class="col right-col">
+            <div class="biz-card">
+                <div class="card-header">
+                    <div class="card-title">大区业绩排名 TOP5</div>
+                </div>
+                <div id="chart-right-1" class="chart-container"></div>
+            </div>
+
+            <div class="biz-card">
+                <div class="card-header">
+                    <div class="card-title">综合能力评估</div>
+                </div>
+                <div id="chart-right-2" class="chart-container"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 通用图表配置 (商务风格)
+        const commonOptions = {
+            backgroundColor: 'transparent',
+            textStyle: { fontFamily: 'inherit' },
+            tooltip: {
+                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                borderColor: 'rgba(148, 163, 184, 0.2)',
+                textStyle: { color: '#f8fafc' },
+                padding: [8, 12]
+            }
+        };
+
+        const chartInstances = [];
+
+        // 初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            // 左1: 饼图
+            const chartLeft1 = echarts.init(document.getElementById('chart-left-1'));
+            window.chartLeft1 = chartLeft1;
+            chartLeft1.setOption({
+                ...commonOptions,
+                tooltip: { trigger: 'item' },
+                legend: { bottom: 0, textStyle: { color: '#94a3b8' }, icon: 'circle', itemWidth: 10 },
+                series: [{
+                    type: 'pie',
+                    radius: ['45%', '70%'],
+                    center: ['50%', '45%'],
+                    itemStyle: { borderRadius: 4, borderColor: '#1e293b', borderWidth: 2 },
+                    label: { show: false },
+                    data: [
+                        { value: 1048, name: '软件服务', itemStyle: { color: '#3b82f6' } },
+                        { value: 735, name: '硬件销售', itemStyle: { color: '#10b981' } },
+                        { value: 580, name: '技术咨询', itemStyle: { color: '#f59e0b' } },
+                        { value: 484, name: '运维托管', itemStyle: { color: '#8b5cf6' } }
+                    ]
+                }]
+            });
+            chartInstances.push(chartLeft1);
+
+            // 左2: 漏斗图 (用柱状图模拟或直接漏斗图)
+            const chartLeft2 = echarts.init(document.getElementById('chart-left-2'));
+            chartLeft2.setOption({
+                ...commonOptions,
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                grid: { top: 10, right: 10, bottom: 20, left: 50 },
+                xAxis: { type: 'value', show: false },
+                yAxis: { type: 'category', data: ['访问', '咨询', '意向', '合同', '成单'].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#94a3b8' } },
+                series: [{
+                    type: 'bar',
+                    barWidth: '50%',
+                    itemStyle: { color: '#3b82f6', borderRadius: [0, 4, 4, 0] },
+                    label: { show: true, position: 'right', color: '#f8fafc' },
+                    data: [10000, 8000, 4000, 1200, 800].reverse()
+                }]
+            });
+            chartInstances.push(chartLeft2);
+
+            // 中间: 双轴趋势图
+            const chartCenter = echarts.init(document.getElementById('chart-center'));
+            window.chartCenter = chartCenter;
+            chartCenter.setOption({
+                ...commonOptions,
+                tooltip: { trigger: 'axis' },
+                legend: { top: 0, textStyle: { color: '#94a3b8' } },
+                grid: { top: 40, right: 40, bottom: 20, left: 40, containLabel: true },
+                xAxis: { type: 'category', data: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'], axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94a3b8' } },
+                yAxis: [
+                    { type: 'value', name: '金额 (万)', nameTextStyle: { color: '#94a3b8' }, splitLine: { lineStyle: { color: '#1e293b', type: 'dashed' } }, axisLabel: { color: '#94a3b8' } },
+                    { type: 'value', name: '增速 (%)', nameTextStyle: { color: '#94a3b8' }, splitLine: { show: false }, axisLabel: { color: '#94a3b8' } }
+                ],
+                series: [
+                    { name: '营收', type: 'bar', barWidth: '30%', itemStyle: { color: '#3b82f6', borderRadius: [4, 4, 0, 0] }, data: [850, 920, 1080, 1150, 1000, 1250, 1400, 1350, 1500, 1650, 1800, 2100] },
+                    { name: '利润率', type: 'line', yAxisIndex: 1, smooth: true, itemStyle: { color: '#10b981' }, areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{offset: 0, color: 'rgba(16, 185, 129, 0.2)'}, {offset: 1, color: 'rgba(16, 185, 129, 0)'}]) }, data: [12, 13, 11, 14, 15, 15.5, 16, 14.5, 17, 18, 19, 21] }
+                ]
+            });
+            chartInstances.push(chartCenter);
+
+            // 右1: 横向排行
+            const chartRight1 = echarts.init(document.getElementById('chart-right-1'));
+            chartRight1.setOption({
+                ...commonOptions,
+                tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                grid: { top: 10, right: 30, bottom: 10, left: 50 },
+                xAxis: { type: 'value', show: false },
+                yAxis: { type: 'category', data: ['华东区', '华南区', '华北区', '华中区', '西南区'].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#94a3b8' } },
+                series: [{
+                    type: 'bar',
+                    barWidth: '40%',
+                    itemStyle: { 
+                        color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [{offset: 0, color: '#3b82f6'}, {offset: 1, color: 'rgba(59, 130, 246, 0.2)'}]),
+                        borderRadius: [0, 4, 4, 0] 
+                    },
+                    label: { show: true, position: 'right', color: '#f8fafc', formatter: '{c}w' },
+                    data: [4500, 3800, 3200, 2800, 2100].reverse()
+                }]
+            });
+            chartInstances.push(chartRight1);
+
+            // 右2: 雷达图
+            const chartRight2 = echarts.init(document.getElementById('chart-right-2'));
+            chartRight2.setOption({
+                ...commonOptions,
+                radar: {
+                    indicator: [
+                        { name: '销售', max: 100 }, { name: '服务', max: 100 }, { name: '研发', max: 100 }, 
+                        { name: '运营', max: 100 }, { name: '管理', max: 100 }, { name: '市场', max: 100 }
+                    ],
+                    radius: '60%',
+                    splitNumber: 4,
+                    axisName: { color: '#94a3b8' },
+                    splitLine: { lineStyle: { color: ['#1e293b'] } },
+                    splitArea: { show: false },
+                    axisLine: { lineStyle: { color: '#334155' } }
+                },
+                series: [{
+                    type: 'radar',
+                    data: [
+                        { value: [85, 90, 80, 88, 70, 85], name: '本期评估', itemStyle: { color: '#3b82f6' }, areaStyle: { color: 'rgba(59, 130, 246, 0.3)' } },
+                        { value: [75, 80, 75, 80, 65, 75], name: '上期评估', itemStyle: { color: '#94a3b8' }, lineStyle: { type: 'dashed' }, areaStyle: { color: 'transparent' } }
+                    ]
+                }]
+            });
+            chartInstances.push(chartRight2);
+
+            // 窗口变化自适应
+            window.addEventListener('resize', () => {
+                chartInstances.forEach(c => c.resize());
+            });
+        });
+
+        // 交互逻辑
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        function mockGlobalLoading() {
+            chartInstances.forEach(c => c.showLoading({ text: '加载中...', color: '#3b82f6', textColor: '#94a3b8', maskColor: 'rgba(15, 23, 42, 0.7)' }));
+            setTimeout(() => chartInstances.forEach(c => c.hideLoading()), 600);
+        }
+
+        function switchDim(btn, chartInstance) {
+            const parent = btn.parentElement;
+            parent.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            
+            chartInstance.showLoading({ text: '', color: '#3b82f6', maskColor: 'rgba(15, 23, 42, 0.7)' });
+            setTimeout(() => {
+                chartInstance.hideLoading();
+                // 模拟数据变化
+                const opt = chartInstance.getOption();
+                if(opt.series[0].data) {
+                    opt.series[0].data = opt.series[0].data.map(v => typeof v === 'number' ? v * (0.8 + Math.random()*0.4) : v);
+                    chartInstance.setOption(opt);
+                }
+            }, 400);
+        }
+
+        function handleKpiClick(el, type) {
+            document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            
+            if(window.chartCenter) {
+                window.chartCenter.showLoading({ text: '更新数据...', color: '#3b82f6', textColor: '#94a3b8', maskColor: 'rgba(15, 23, 42, 0.7)' });
+                setTimeout(() => window.chartCenter.hideLoading(), 500);
+            }
+        }
+    </script>
+</body>
+</html>

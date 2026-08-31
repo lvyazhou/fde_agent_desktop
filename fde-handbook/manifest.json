@@ -1,0 +1,314 @@
+{
+  "generatedAt": "2026-08-31T11:54:58.880Z",
+  "source": "100 FDE作战手册(核心文档快照)",
+  "stages": [
+    {
+      "id": 1,
+      "key": "research",
+      "name": "调研准备 + 备弹知识",
+      "short": "调研备弹",
+      "dir": "01",
+      "items": [
+        {
+          "file": "0-阶段一规范说明.md",
+          "title": "阶段一规范说明",
+          "type": "md",
+          "category": "spec",
+          "previewable": true
+        },
+        {
+          "file": "00-阶段一导读·按天推进大纲.md",
+          "title": "阶段一导读·按天推进大纲",
+          "type": "md",
+          "category": "spec",
+          "previewable": true
+        },
+        {
+          "file": "1-备弹知识库【知识】.docx",
+          "title": "备弹知识库",
+          "type": "docx",
+          "category": "knowledge",
+          "previewable": true,
+          "previewHtml": "1-备弹知识库【知识】.html"
+        },
+        {
+          "file": "2-调研框架SOP【知识】.docx",
+          "title": "调研框架SOP",
+          "type": "docx",
+          "category": "knowledge",
+          "previewable": true,
+          "previewHtml": "2-调研框架SOP【知识】.html"
+        },
+        {
+          "file": "3-调研话术卡【知识】.md",
+          "title": "调研话术卡",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        }
+      ],
+      "counts": {
+        "knowledge": 3,
+        "deliverable": 0
+      }
+    },
+    {
+      "id": 2,
+      "key": "requirement-prototype",
+      "name": "需求沟通 + 原型设计",
+      "short": "沟通·原型",
+      "dir": "02",
+      "items": [
+        {
+          "file": "0-阶段二规范说明.md",
+          "title": "阶段二规范说明",
+          "type": "md",
+          "category": "spec",
+          "previewable": true
+        },
+        {
+          "file": "1-产品原型设计规范【知识】.docx",
+          "title": "产品原型设计规范",
+          "type": "docx",
+          "category": "knowledge",
+          "previewable": true,
+          "previewHtml": "1-产品原型设计规范【知识】.html"
+        },
+        {
+          "file": "2-需求与数据对接确认表【交付】（含组织关系）.docx",
+          "title": "需求与数据对接确认表 (含组织关系)",
+          "type": "docx",
+          "category": "deliverable",
+          "previewable": true,
+          "previewHtml": "2-需求与数据对接确认表【交付】（含组织关系）.html"
+        },
+        {
+          "file": "3-产品原型Demo【交付】.md",
+          "title": "产品原型Demo",
+          "type": "md",
+          "category": "deliverable",
+          "previewable": true
+        },
+        {
+          "file": "3-AI需求能力清单【交付】.docx",
+          "title": "AI需求能力清单",
+          "type": "docx",
+          "category": "deliverable",
+          "previewable": true,
+          "previewHtml": "3-AI需求能力清单【交付】.html"
+        }
+      ],
+      "counts": {
+        "knowledge": 1,
+        "deliverable": 3
+      }
+    },
+    {
+      "id": 3,
+      "key": "confirm-agent",
+      "name": "需求确认 + 智能体设计",
+      "short": "需求确认·智能体",
+      "dir": "03",
+      "items": [
+        {
+          "file": "0-阶段三规范说明.md",
+          "title": "阶段三规范说明",
+          "type": "md",
+          "category": "spec",
+          "previewable": true
+        },
+        {
+          "file": "1-智能体设计表【交付】.md",
+          "title": "智能体设计表",
+          "type": "md",
+          "category": "deliverable",
+          "previewable": true
+        },
+        {
+          "file": "10-Eval评测标准模板【知识】.md",
+          "title": "Eval评测标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "2-需求最终确认表【交付】.docx",
+          "title": "需求最终确认表",
+          "type": "docx",
+          "category": "deliverable",
+          "previewable": true,
+          "previewHtml": "2-需求最终确认表【交付】.html"
+        },
+        {
+          "file": "2.4-产品需求文档PRD(模板)【交付】.md",
+          "title": "产品需求文档PRD(模板)",
+          "type": "md",
+          "category": "deliverable",
+          "previewable": true
+        },
+        {
+          "file": "2.5-产品需求文档PRD(范例)【交付】.md",
+          "title": "产品需求文档PRD(范例)",
+          "type": "md",
+          "category": "deliverable",
+          "previewable": true
+        },
+        {
+          "file": "3-项目任务计划表【交付】.docx",
+          "title": "项目任务计划表",
+          "type": "docx",
+          "category": "deliverable",
+          "previewable": true,
+          "previewHtml": "3-项目任务计划表【交付】.html"
+        },
+        {
+          "file": "4-项目验收标准表【交付】.docx",
+          "title": "项目验收标准表",
+          "type": "docx",
+          "category": "deliverable",
+          "previewable": true,
+          "previewHtml": "4-项目验收标准表【交付】.html"
+        },
+        {
+          "file": "5-知识库配置标准模板【知识】.md",
+          "title": "知识库配置标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "6-提示词工程标准模板【知识】.md",
+          "title": "提示词工程标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "7-技能Skill标准模板【知识】.md",
+          "title": "技能Skill标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "8-连接器标准模板【知识】.md",
+          "title": "连接器标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "9-AB测试标准模板【知识】.md",
+          "title": "AB测试标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        }
+      ],
+      "counts": {
+        "knowledge": 6,
+        "deliverable": 6
+      }
+    },
+    {
+      "id": 4,
+      "key": "nano-workbench",
+      "name": "纳米Work 行业工作台",
+      "short": "工作台上线",
+      "dir": "04",
+      "items": [
+        {
+          "file": "0-阶段四规范说明.md",
+          "title": "阶段四规范说明",
+          "type": "md",
+          "category": "spec",
+          "previewable": true
+        },
+        {
+          "file": "1-纳米Work工作台实现规范【知识】.md",
+          "title": "纳米Work工作台实现规范",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "2-纳米Work工作台开发标准【知识】.md",
+          "title": "纳米Work工作台开发标准",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "3-纳米Work智能体接入规范【知识】.md",
+          "title": "纳米Work智能体接入规范",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "4-纳米Work项目进度表【交付】.md",
+          "title": "纳米Work项目进度表",
+          "type": "md",
+          "category": "deliverable",
+          "previewable": true
+        }
+      ],
+      "counts": {
+        "knowledge": 3,
+        "deliverable": 1
+      }
+    },
+    {
+      "id": 5,
+      "key": "trial-optimize",
+      "name": "客户试用 + 智能体优化",
+      "short": "试用·定稿",
+      "dir": "05",
+      "items": [
+        {
+          "file": "0-阶段五规范说明.md",
+          "title": "阶段五规范说明",
+          "type": "md",
+          "category": "spec",
+          "previewable": true
+        },
+        {
+          "file": "1-客户反馈跟踪表【交付】.docx",
+          "title": "客户反馈跟踪表",
+          "type": "docx",
+          "category": "deliverable",
+          "previewable": true,
+          "previewHtml": "1-客户反馈跟踪表【交付】.html"
+        },
+        {
+          "file": "2-三轮迭代记录表【交付】.docx",
+          "title": "三轮迭代记录表",
+          "type": "docx",
+          "category": "deliverable",
+          "previewable": true,
+          "previewHtml": "2-三轮迭代记录表【交付】.html"
+        },
+        {
+          "file": "3-使用率盯防表【交付】.docx",
+          "title": "使用率盯防表",
+          "type": "docx",
+          "category": "deliverable",
+          "previewable": true,
+          "previewHtml": "3-使用率盯防表【交付】.html"
+        },
+        {
+          "file": "4-项目交付签字表【交付】.docx",
+          "title": "项目交付签字表",
+          "type": "docx",
+          "category": "deliverable",
+          "previewable": true,
+          "previewHtml": "4-项目交付签字表【交付】.html"
+        }
+      ],
+      "counts": {
+        "knowledge": 0,
+        "deliverable": 4
+      }
+    }
+  ]
+}

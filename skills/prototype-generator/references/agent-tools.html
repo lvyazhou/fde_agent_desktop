@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<!--
+============================================================================
+ 智能体工具页模板 agent-tools.html （★铁律必带页 — 做 AI 产品原型必生成）
+============================================================================
+ 三栏智能体工作台：左=智能体列表(按能力分组) / 中=对话区 / 右=知识库+技能。
+ 用法：复制此文件到原型根目录改名 agent-tools.html，然后只改两处业务数据——
+   ① <nav> 里的顶部导航链接（改成本产品的页面）
+   ② <script> 里的 groups 数组（换成本产品该有的 8-12 个智能体）
+ ★★ groups 里现在这组（线索研判/话术生成/健康分析…）是"代理商运营"产品的
+    占位样例，务必删掉重写！按【本产品的系统功能】倒推智能体：先列产品有哪些
+    功能模块，每个核心功能配一个替用户动脑子的智能体，knowledge/skills 也要贴
+    本产品。检验：智能体名字换个产品还成立=太通用没设计；还带"代理商/线索"=没改干净。
+ 骨架/CSS/交互逻辑照搬不动。头像统一用 image/bot.png（已按铁律固定）。
+ 依赖：Tailwind CDN + Alpine 3.13 + Font Awesome 6.4（页面已引）。
+ 记得：把技能 images/ 下的 icon.png、bot.png 复制到原型 image/ 目录。
+============================================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能体工具 - {产品名}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body { font-family: 'PingFang SC', -apple-system, sans-serif; background: #f5f7fa; color: #333; margin: 0; }
+.top-nav { background: #fff; height: 48px; border-bottom: 1px solid #e8ecf0; display: flex; align-items: center; padding: 0 16px; flex-shrink: 0; position: sticky; top: 0; z-index: 30; }
+.top-nav .logo { display: flex; align-items: center; gap: 8px; margin-right: 32px; font-size: 15px; font-weight: 600; color: #1e3a8a; white-space: nowrap; }
+.top-nav .logo img { width: 24px; height: 24px; border-radius: 4px; }
+.top-nav-item { color: #666; font-size: 13px; padding: 0 16px; height: 48px; display: flex; align-items: center; gap: 6px; white-space: nowrap; text-decoration: none; border-bottom: 2px solid transparent; transition: all .2s; }
+.top-nav-item:hover { color: #2563eb; }
+.top-nav-item.active { color: #2563eb; font-weight: 500; border-bottom-color: #2563eb; }
+.ag-list { width:260px; background:#fff; border-right:1px solid #e8ecf0; display:flex; flex-direction:column; flex-shrink:0; }
+.ag-item { padding:9px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:9px; transition:all .15s; }
+.ag-item:hover { background:#f5f7fa; }
+.ag-item.active { background:#eff6ff; }
+.ag-ctx { width:300px; background:#fff; border-left:1px solid #e8ecf0; flex-shrink:0; overflow-y:auto; }
+.q-card { background:#fff; border:1px solid #e8ecf0; border-radius:12px; cursor:pointer; transition:all .18s; }
+.q-card:hover { border-color:#bfdbfe; box-shadow:0 4px 16px rgba(37,99,235,.08); }
+.msc::-webkit-scrollbar{width:6px;} .msc::-webkit-scrollbar-thumb{background:#e0e5eb;border-radius:3px;}
+</style>
+</head>
+<body x-data="agentTools()" x-init="init()">
+
+<!-- ① 顶部导航：改成本产品的页面链接，agent-tools 这条保持 active -->
+<nav class="top-nav">
+  <div class="logo"><img src="image/icon.png" alt="">{产品名}</div>
+  <a href="index.html" class="top-nav-item"><i class="fa fa-bolt"></i>模块一</a>
+  <a href="module2.html" class="top-nav-item"><i class="fa fa-heart-pulse"></i>模块二</a>
+  <a href="chat.html" class="top-nav-item"><i class="fa fa-comments"></i>问参谋</a>
+  <a href="agent-tools.html" class="top-nav-item active"><i class="fa fa-toolbox"></i>智能体工具</a>
+  <div class="ml-auto flex items-center gap-4 text-[13px] text-[#475569]">
+    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#059669]"></span>智能体在线</span>
+    <span>{日期}</span>
+    <span><i class="fa fa-user-circle mr-1"></i>{用户名}</span>
+  </div>
+</nav>
+
+<div class="flex" style="height: calc(100vh - 48px);">
+  <!-- 左栏：智能体列表（按能力分组） -->
+  <aside class="ag-list">
+    <div class="px-4 py-3.5 border-b border-[#e8ecf0] flex items-center gap-2.5 flex-shrink-0">
+      <span class="w-9 h-9 rounded-lg bg-[#eff6ff] text-[#2563eb] flex items-center justify-center"><i class="fa fa-toolbox"></i></span>
+      <div><div class="text-[14px] font-semibold text-[#1e3a8a]">智能体工具</div><div class="text-[12px] text-[#999]">共 <span x-text="total"></span> 个智能体</div></div>
+    </div>
+    <div class="flex-1 overflow-y-auto p-3 space-y-3 msc">
+      <template x-for="g in groups" :key="g.name">
+        <div>
+          <div class="flex items-center gap-2 px-2 mb-1.5">
+            <i class="fa text-[#2563eb] text-xs" :class="g.icon"></i>
+            <span class="text-[12.5px] font-medium text-[#475569]" x-text="g.name"></span>
+            <span class="ml-auto text-[11px] text-[#999]" x-text="g.agents.length"></span>
+          </div>
+          <div class="space-y-0.5">
+            <template x-for="a in g.agents" :key="a.name">
+              <div class="ag-item" :class="cur && cur.name===a.name ? 'active':''" @click="select(a)">
+                <img src="image/bot.png" class="w-8 h-8 rounded-lg object-cover flex-shrink-0" alt="">
+                <div class="min-w-0"><div class="text-[13px] font-medium text-[#333] truncate" x-text="a.name"></div><div class="text-[11.5px] text-[#999] truncate" x-text="a.tag"></div></div>
+                <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#059669] flex-shrink-0"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+  </aside>
+
+  <!-- 中栏：对话区 -->
+  <div class="flex-1 flex flex-col min-w-0" x-show="cur">
+    <div class="px-6 py-3 border-b border-[#e8ecf0] bg-white flex items-center gap-3 flex-shrink-0">
+      <img src="image/bot.png" class="w-10 h-10 rounded-xl object-cover flex-shrink-0" alt="">
+      <div><div class="flex items-center gap-2"><span class="text-[15px] font-semibold text-[#1e3a8a]" x-text="cur?cur.name:''"></span><span class="text-[11px] px-2 py-0.5 rounded bg-[#eff6ff] text-[#1e40af]" x-text="cur?cur.tag:''"></span></div><div class="text-[12px] text-[#999]" x-text="cur?cur.role:''"></div></div>
+    </div>
+    <div class="flex-1 overflow-y-auto msc px-6 py-6" x-ref="msgs">
+      <div x-show="msgs.length>0" class="max-w-[760px] mx-auto space-y-4">
+        <template x-for="(m,mi) in msgs" :key="mi">
+          <div>
+            <div x-show="m.role==='user'" class="flex justify-end"><div class="rounded-xl rounded-br-sm bg-[#2563eb] text-white px-4 py-2.5 text-[14px] max-w-[80%]" x-text="m.text"></div></div>
+            <div x-show="m.role==='ai'" class="flex gap-2.5">
+              <img src="image/bot.png" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 mt-0.5" alt="">
+              <div class="rounded-xl rounded-bl-sm bg-white border border-[#e8ecf0] px-4 py-3 text-[14px] leading-relaxed flex-1 min-w-0">
+                <div x-html="m.html"></div><span x-show="m.typing" class="inline-block w-0.5 h-4 bg-[#2563eb] animate-pulse ml-0.5 align-middle"></span>
+                <div x-show="!m.typing && m.follows && m.follows.length" class="flex flex-wrap gap-2 mt-3">
+                  <template x-for="ff in m.follows" :key="ff"><span class="text-[12.5px] px-3 py-1.5 rounded-full border border-[#bfdbfe] text-[#1e40af] bg-[#eff6ff] cursor-pointer hover:bg-[#dbeafe]" @click="ask(ff)" x-text="ff"></span></template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div x-show="msgs.length===0" class="max-w-[720px] mx-auto text-center">
+        <img src="image/bot.png" class="w-16 h-16 rounded-2xl object-cover mx-auto mb-4" alt="">
+        <div class="text-[18px] font-semibold text-[#1e3a8a] mb-1.5" x-text="cur?cur.name:''"></div>
+        <div class="text-[13px] text-[#475569] mb-7" x-text="cur?cur.role:''"></div>
+        <div class="grid grid-cols-2 gap-3 text-left">
+          <template x-for="q in (cur?cur.quick:[])" :key="q">
+            <div class="q-card p-4 flex items-center gap-3" @click="ask(q)">
+              <span class="w-8 h-8 rounded-lg bg-[#eff6ff] text-[#2563eb] flex items-center justify-center flex-shrink-0"><i class="fa fa-wand-magic-sparkles"></i></span>
+              <span class="text-[13.5px] text-[#333]" x-text="q"></span>
+            </div>
+          </template>
+        </div>
+        <div class="text-[12px] text-[#999] mt-8"><i class="fa fa-circle-info mr-1"></i>智能体生成内容均为草稿态，人工拥有最终决定权</div>
+      </div>
+    </div>
+    <div class="px-6 py-4 border-t border-[#e8ecf0] bg-white flex-shrink-0">
+      <div class="max-w-[720px] mx-auto flex items-end gap-3 rounded-xl border border-[#e8ecf0] px-4 py-2.5 focus-within:border-[#2563eb]">
+        <textarea x-model="input" @keydown.enter.prevent="ask(input)" rows="1" placeholder="向智能体提问… (Enter 发送 / Shift+Enter 换行)" class="flex-1 resize-none outline-none text-[14px] bg-transparent max-h-24"></textarea>
+        <button @click="ask(input)" class="w-9 h-9 rounded-lg bg-[#2563eb] text-white flex items-center justify-center hover:bg-[#1d4ed8]"><i class="fa fa-paper-plane"></i></button>
+      </div>
+      <div class="text-[11px] text-[#999] mt-2 text-center max-w-[720px] mx-auto"><i class="fa fa-shield-halved mr-1"></i>内容脱敏 · 人机协助 · 由 360 安全大脑驱动</div>
+    </div>
+  </div>
+
+  <!-- 右栏：智能体详情（知识库 + 技能 + 建议追问） -->
+  <aside class="ag-ctx" x-show="cur">
+    <div class="p-4 space-y-5">
+      <div class="text-[13px] font-semibold text-[#1e3a8a] flex items-center gap-1.5"><i class="fa fa-circle-info text-[#2563eb]"></i>智能体详情</div>
+      <div>
+        <div class="text-[12px] text-[#1e40af] font-medium mb-2 flex items-center gap-1.5"><i class="fa fa-wave-square"></i>运行状态</div>
+        <div class="rounded-lg bg-[#f8fafc] border border-[#e8ecf0] p-3 text-[12.5px] space-y-1.5">
+          <div class="flex justify-between"><span class="text-[#475569]" x-text="cur?cur.name:''"></span><span class="text-[#059669]">● 在线</span></div>
+          <div class="flex justify-between"><span class="text-[#999]">当前阶段</span><span class="text-[#475569]">就绪</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="text-[12px] text-[#1e40af] font-medium mb-2 flex items-center gap-1.5"><i class="fa fa-book"></i>知识库</div>
+        <div class="space-y-1.5">
+          <template x-for="k in (cur?cur.knowledge:[])" :key="k">
+            <div class="rounded-lg bg-[#f8fafc] border border-[#e8ecf0] px-3 py-1.5 text-[12px] text-[#475569] flex items-center gap-2"><i class="fa fa-database text-[#2563eb] text-[11px]"></i><span x-text="k"></span></div>
+          </template>
+        </div>
+      </div>
+      <div>
+        <div class="text-[12px] text-[#1e40af] font-medium mb-2 flex items-center gap-1.5"><i class="fa fa-bolt"></i>技能</div>
+        <div class="flex flex-wrap gap-1.5">
+          <template x-for="s in (cur?cur.skills:[])" :key="s"><span class="text-[11.5px] px-2.5 py-1 rounded-full bg-[#eff6ff] text-[#1e40af]" x-text="s"></span></template>
+        </div>
+      </div>
+      <div>
+        <div class="text-[12px] text-[#1e40af] font-medium mb-2 flex items-center gap-1.5"><i class="fa fa-lightbulb"></i>建议追问</div>
+        <div class="space-y-1.5">
+          <template x-for="q in (cur?cur.quick:[])" :key="'sug'+q">
+            <div class="rounded-lg bg-[#f8fafc] border border-[#e8ecf0] px-3 py-1.5 text-[12px] text-[#475569] cursor-pointer hover:border-[#bfdbfe] hover:text-[#1e40af] flex items-center gap-2" @click="ask(q)"><i class="fa fa-angle-right text-[#2563eb]"></i><span x-text="q"></span></div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+function agentTools() {
+  return {
+    input:'', cur:null, msgs:[], replying:false,
+    // ② 【改这里】把 groups 换成本产品该有的智能体（8-12 个，按能力分 2-3 组）
+    //    每个智能体 = { name, tag, icon(仅右栏详情/分组用), role, quick[], knowledge[], skills[] }
+    //    用产品专家视角拆全：这个产品域里，用户会需要哪些智能体替他研判/生成/分析/编排。
+    //    下面是"代理商运营"示例，照葫芦画瓢换成你的领域。
+    groups:[
+      { name:'线索获取', icon:'fa-magnifying-glass', agents:[
+        { name:'线索研判智能体', tag:'线索分析', icon:'fa-chart-line', role:'从全量线索里挑出高价值、可转化的机会', quick:['本周有哪些高价值线索','哪些线索该优先跟','西部区域线索质量如何'], knowledge:['线索池','转化历史库','区域画像'], skills:['线索评分','转化预测','优先级排序'] },
+        { name:'客户画像智能体', tag:'画像洞察', icon:'fa-id-card', role:'为每个客户生成 360 度画像，辅助判断策略', quick:['某客户的完整画像','这家的决策链是谁','画像里有哪些风险点'], knowledge:['客户主数据','工商信息','历史交互记录'], skills:['画像生成','关系图谱','风险标注'] }
+      ]},
+      { name:'运营跟进', icon:'fa-headset', agents:[
+        { name:'掉队研判智能体', tag:'风险预警', icon:'fa-triangle-exclamation', role:'识别正在掉队/流失的对象，给出为什么和多严重', quick:['现在哪些在掉队','某家为什么要黄','谁的流失概率最高'], knowledge:['健康度模型','流失样本库','跟进记录'], skills:['掉队识别','流失预测','归因分析'] },
+        { name:'话术生成智能体', tag:'内容生成', icon:'fa-wand-magic-sparkles', role:'按场景生成沟通话术（唤醒/关怀/促单/升级），人只改不写', quick:['拟个回访话术','生成一条促单消息','换个更亲切的语气'], knowledge:['话术模板库','标杆案例','行业术语表'], skills:['话术生成','多风格改写','脱敏处理'] },
+        { name:'跟进计划智能体', tag:'行动编排', icon:'fa-list-check', role:'把研判结果变成可执行的今日/本周跟进计划', quick:['帮我排本周优先级','这几家怎么安排','生成今日待办'], knowledge:['跟进 SOP','人员排期','历史执行效果'], skills:['计划编排','任务分派','效果追踪'] }
+      ]},
+      { name:'分析交付', icon:'fa-chart-pie', agents:[
+        { name:'健康度分析智能体', tag:'数据分析', icon:'fa-heart-pulse', role:'解读全盘/区域/单个对象的分布与趋势', quick:['整体健康度如何','这个月走势','哪个区域最需要关注'], knowledge:['健康度全量','区域基准','趋势历史'], skills:['分布分析','趋势解读','对比分析'] },
+        { name:'报告生成智能体', tag:'报表输出', icon:'fa-file-lines', role:'一键生成周报/月报/专项分析，可导出', quick:['生成本周周报','出一份专项分析','导出季度复盘'], knowledge:['报告模板','指标口径','历史报告'], skills:['报告生成','图表编排','一键导出'] },
+        { name:'复盘总结智能体', tag:'经验沉淀', icon:'fa-clipboard-check', role:'复盘效果，沉淀"什么动作有效"反哺模型', quick:['本月哪些最有效','失败案例的共性','该调整哪些策略'], knowledge:['执行结果库','效果标注','策略库'], skills:['效果复盘','经验提炼','策略优化'] }
+      ]}
+    ],
+    get total(){ return this.groups.reduce((n,g)=>n+g.agents.length,0); },
+    init(){ this.cur = this.groups[0].agents[0]; },
+    select(a){ this.cur = a; this.msgs=[]; },
+    ask(q){
+      q=(q||'').trim(); if(!q||this.replying) return; this.input='';
+      this.msgs.push({role:'user',text:q}); this.scrollB();
+      const a=this.cur;
+      // 回答格式铁律：先结论、再依据
+      const ans='<b class="text-[#1e3a8a]">'+a.name+'已完成研判，先给结论。</b><br>这个问题涉及'+(a.knowledge[0]||'相关数据')+'，我检索了知识库并跑了模型，调用【'+a.skills[0]+'】能力生成结果。<br><br>依据：结合规则与历史样本，结论可直接落地。要更细的可以让我出一份专项分析。';
+      const follows=a.quick.slice(0,2);
+      this.msgs.push({role:'ai',html:'',full:ans,typing:true,follows});
+      this.replying=true; this.scrollB();
+      this.streamMsg(this.msgs.length-1);
+    },
+    // 流式打字（Alpine 异步铁律：改字符串 slice、标签整段跳过，不缓存裸引用）
+    streamMsg(idx){
+      const full=this.msgs[idx].full; let i=0;
+      const t=setInterval(()=>{
+        i++;
+        while(i<full.length && full[i-1]==='<'){ const c=full.indexOf('>',i); i=(c===-1?full.length:c+1); }
+        this.msgs[idx].html=full.slice(0,i); this.scrollB();
+        if(i>=full.length){ clearInterval(t); this.msgs[idx].html=full; this.msgs[idx].typing=false; this.replying=false; this.scrollB(); }
+      },18);
+    },
+    scrollB(){ this.$nextTick(()=>{ const el=this.$refs.msgs; if(el) el.scrollTop=el.scrollHeight; }); },
+  };
+}
+</script>
+</body>
+</html>

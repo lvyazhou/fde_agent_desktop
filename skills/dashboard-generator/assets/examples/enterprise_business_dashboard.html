@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业全面经营分析驾驶舱 - ENTERPRISE BUSINESS DASHBOARD</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'DS-Digital';
+            src: local('Impact');
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #030a16;
+            color: #fff;
+            font-family: "Microsoft YaHei", sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            background-image:
+                radial-gradient(circle at center, #0a1736 0%, #030a16 100%),
+                linear-gradient(rgba(11, 20, 40, 0.9), rgba(11, 20, 40, 0.9));
+            position: relative;
+        }
+
+        /* 赛博朋克网格线 + 全局暗角遮罩 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                linear-gradient(rgba(0, 246, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 246, 255, 0.04) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+            pointer-events: none;
+            transform: perspective(1000px) rotateX(15deg) scale(1.1);
+            transform-origin: top center;
+            opacity: 0.5;
+        }
+
+        /* 屏幕扫描线扫描动画 */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* ===== 顶部标题栏 ===== */
+        .header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            background: linear-gradient(90deg, transparent 0%, rgba(0, 119, 255, 0.15) 20%, rgba(0, 246, 255, 0.2) 50%, rgba(0, 119, 255, 0.15) 80%, transparent 100%);
+            border-bottom: 2px solid rgba(0, 246, 255, 0.5);
+            box-shadow: 0 5px 30px rgba(0, 119, 255, 0.2);
+        }
+
+        .header::before, .header::after {
+            content: ''; position: absolute; bottom: -2px; width: 300px; height: 2px;
+            background: #fff; box-shadow: 0 0 10px #fff, 0 0 20px #00f6ff;
+        }
+        .header::before { left: 0; background: linear-gradient(90deg, transparent, #00f6ff); }
+        .header::after { right: 0; background: linear-gradient(-90deg, transparent, #00f6ff); }
+
+        .title {
+            font-size: 36px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #fff;
+            position: relative;
+            text-shadow:
+                0 0 5px #00f6ff, 0 0 10px #00f6ff, 0 0 20px #0077ff, 0 0 40px #002c5f,
+                3px 3px 0px rgba(114, 46, 209, 0.8);
+            transform: skewX(-10deg);
+        }
+        
+        .title-wrapper {
+            position: relative;
+            padding: 0 60px;
+        }
+        .title-wrapper::before, .title-wrapper::after {
+            content: ''; position: absolute; top: 50%; transform: translateY(-50%); width: 25px; height: 40px; border: 3px solid #00f6ff;
+        }
+        .title-wrapper::before { left: 0; border-right: none; }
+        .title-wrapper::after { right: 0; border-left: none; }
+
+        /* 系统信息 */
+        .sys-info {
+            position: absolute; left: 25px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 5px; z-index: 20;
+        }
+        .sys-time { font-family: 'DS-Digital', 'Impact', sans-serif; color: #00f6ff; font-size: 26px; letter-spacing: 2px; text-shadow: 0 0 10px #00f6ff; }
+        .sys-date { color: #a6c0fe; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 10px; height: 10px; background: #2ed573; border-radius: 50%; box-shadow: 0 0 10px #2ed573; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* 顶部丰富的查询条件栏 */
+        .filter-bar {
+            position: absolute; right: 25px; top: 50%; transform: translateY(-50%) scale(0.9); transform-origin: right center;
+            display: flex; gap: 20px; z-index: 20; align-items: center;
+        }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-label { color: #00f6ff; font-size: 15px; font-weight: bold; text-shadow: 0 0 5px rgba(0, 246, 255, 0.5); }
+        .cyber-select {
+            background: rgba(0, 30, 80, 0.6); border: 1px solid #00f6ff; color: #fff; padding: 6px 12px; font-size: 14px;
+            outline: none; cursor: pointer; box-shadow: inset 0 0 10px rgba(0, 246, 255, 0.2);
+            clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+            transition: all 0.3s;
+        }
+        .cyber-select:hover { border-color: #fff; box-shadow: 0 0 15px #00f6ff; }
+        .cyber-select option { background: #030a16; color: #00f6ff; }
+        
+        .time-filter { display: flex; gap: 6px; }
+        .time-btn {
+            background: rgba(0, 119, 255, 0.2); border: 1px solid #00f6ff; color: #00f6ff; padding: 6px 14px; font-size: 14px;
+            cursor: pointer; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); transition: all 0.3s; font-weight: bold;
+        }
+        .time-btn:hover { background: rgba(0, 246, 255, 0.3); box-shadow: 0 0 12px #00f6ff; }
+        .time-btn.active { background: #00f6ff; color: #030a16; box-shadow: 0 0 15px #00f6ff; }
+        .fullscreen-btn { background: transparent; border: none; color: #00f6ff; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; margin-left: 5px; }
+        .fullscreen-btn:hover { color: #fff; transform: scale(1.15); filter: drop-shadow(0 0 8px #00f6ff); }
+        .fullscreen-btn svg { fill: currentColor; width: 24px; height: 24px; }
+
+        /* ===== 主容器 ===== */
+        .container {
+            position: absolute; top: 105px; left: 25px; right: 25px; bottom: 25px;
+            display: grid; grid-template-columns: 1fr 1.6fr 1fr; grid-template-rows: 1fr 1fr; gap: 25px; z-index: 10;
+        }
+
+        /* ===== 图表盒子 ===== */
+        .chart-box {
+            position: relative;
+            background: linear-gradient(135deg, rgba(6, 30, 93, 0.6) 0%, rgba(2, 10, 26, 0.8) 100%);
+            border: 1px solid rgba(0, 246, 255, 0.2);
+            box-shadow: inset 0 0 30px rgba(0, 140, 255, 0.1), 0 0 15px rgba(0, 246, 255, 0.05);
+            backdrop-filter: blur(8px);
+            padding: 16px; display: flex; flex-direction: column;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+        }
+        .chart-box::before { content: ''; position: absolute; top: 0; left: 20px; width: 60px; height: 3px; background: #00f6ff; box-shadow: 0 0 12px #00f6ff; }
+        .chart-box::after { content: ''; position: absolute; bottom: 0; right: 20px; width: 60px; height: 3px; background: #722ed1; box-shadow: 0 0 12px #722ed1; }
+
+        .chart-title {
+            color: #fff; font-size: 18px; font-weight: bold; padding-left: 12px; margin-bottom: 15px;
+            background: linear-gradient(90deg, rgba(0, 246, 255, 0.3) 0%, transparent 100%);
+            line-height: 32px; border-left: 4px solid #00f6ff; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+        }
+        .chart { flex: 1; width: 100%; min-height: 0; }
+
+        /* 内部小Tab切换 (多维度标签) */
+        .chart-tabs { display: flex; gap: 8px; margin-right: 10px; }
+        .tab-btn {
+            background: transparent; border: 1px solid #0077ff; color: #00f6ff; padding: 4px 16px; font-size: 12px; cursor: pointer;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(0, 246, 255, 0.2); }
+        .tab-btn.active { background: #00f6ff; color: #030a16; font-weight: bold; box-shadow: 0 0 10px #00f6ff; }
+
+        /* 网格定位 */
+        .box-left-top { grid-column: 1 / 2; grid-row: 1 / 2; }
+        .box-left-bot { grid-column: 1 / 2; grid-row: 2 / 3; }
+        .box-center { grid-column: 2 / 3; grid-row: 1 / 3; display: flex; flex-direction: column; background: transparent; border: none; box-shadow: none; padding: 0;}
+        .box-right-top { grid-column: 3 / 4; grid-row: 1 / 2; }
+        .box-right-bot { grid-column: 3 / 4; grid-row: 2 / 3; }
+
+        /* ===== 中间 KPI ===== */
+        .center-kpi-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 25px; flex-shrink: 0; }
+        .kpi-item {
+            background: linear-gradient(180deg, rgba(0,246,255,0.1) 0%, rgba(0,50,150,0.5) 100%);
+            border: 1px solid rgba(0, 246, 255, 0.3); border-top: 3px solid #00f6ff; border-bottom: 2px solid rgba(114, 46, 209, 0.5); border-radius: 4px;
+            padding: 15px 10px; text-align: center; flex: 1; min-width: 0; box-shadow: 0 5px 20px rgba(0, 246, 255, 0.15); position: relative; overflow: hidden; transform: skewX(-6deg);
+            cursor: pointer; transition: all 0.3s;
+        }
+        .kpi-item:hover { transform: translateY(-5px) skewX(-6deg); box-shadow: 0 8px 25px rgba(0, 246, 255, 0.3); border-color: #00f6ff; }
+        .kpi-item.active { background: linear-gradient(180deg, rgba(0,246,255,0.3) 0%, rgba(114,46,209,0.5) 100%); border-color: #00f6ff; box-shadow: 0 0 20px rgba(0, 246, 255, 0.5); }
+        .kpi-item::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transform: skewX(-20deg); animation: sweep 4s infinite;
+        }
+        @keyframes sweep { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+
+        .kpi-item .label { color: #a6c0fe; font-size: 14px; margin-bottom: 8px; font-weight:bold; letter-spacing:1px; transform: skewX(6deg); }
+        .kpi-item .value { color: #fff; font-size: 32px; font-weight: bold; font-family: 'Impact'; text-shadow: 0 0 10px #00f6ff, 2px 2px 0px #722ed1; transform: skewX(6deg); }
+        .kpi-item .unit { font-size: 15px; color: #a6c0fe; font-weight: normal; margin-left:4px; font-family: "Microsoft YaHei";}
+        .kpi-item .trend { font-size: 13px; margin-top: 8px; transform: skewX(6deg); font-weight: bold; }
+        .trend.up { color: #ff4757; text-shadow: 0 0 5px #ff4757; }
+        .trend.down { color: #2ed573; text-shadow: 0 0 5px #2ed573; }
+        
+        /* 联动点击波纹特效 */
+        .ripple { position: absolute; border-radius: 50%; background: rgba(0, 246, 255, 0.6); transform: scale(0); animation: ripple-anim 0.6s ease-out; pointer-events: none; }
+        @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+        /* ===== 中间核心可视化 ===== */
+        .center-core-container { flex: 1.4; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; min-height: 0; }
+        
+        /* 目标进度面板 */
+        .target-panel {
+            position: absolute; top: 0; left: 0; z-index: 30; background: linear-gradient(-135deg, rgba(6, 30, 93, 0.8), rgba(2, 10, 26, 0.9));
+            border: 1px solid rgba(0, 246, 255, 0.4); padding: 12px 20px; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+            box-shadow: 0 0 20px rgba(0, 246, 255, 0.15); backdrop-filter: blur(5px);
+        }
+        .target-panel .t-title { color: #00f6ff; font-size: 14px; font-weight: bold; margin-bottom: 8px; text-shadow: 0 0 5px rgba(0, 246, 255, 0.5); display: flex; justify-content: space-between; }
+        .target-panel .t-diff { color: #fff; font-size: 13px; margin-bottom: 10px; }
+        .target-panel .t-num { color: #00f6ff; font-size: 24px; font-family: 'Impact'; text-shadow: 0 0 10px #00f6ff; letter-spacing: 1px; }
+        
+        .progress-wrap { width: 160px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; position: relative; }
+        .progress-inner-blue { height: 100%; background: linear-gradient(90deg, #0077ff, #00f6ff); width: 85%; box-shadow: 0 0 10px #00f6ff; }
+        
+        /* 预算健康度面板 */
+        .budget-panel {
+            position: absolute; top: 0; right: 0; z-index: 30; background: linear-gradient(135deg, rgba(6, 30, 93, 0.8), rgba(2, 10, 26, 0.9));
+            border: 1px solid rgba(255, 170, 0, 0.4); padding: 12px 20px; clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+            box-shadow: 0 0 20px rgba(255, 170, 0, 0.15); backdrop-filter: blur(5px);
+        }
+        .budget-panel .b-title { color: #ffaa00; font-size: 14px; font-weight: bold; margin-bottom: 8px; text-shadow: 0 0 5px rgba(255, 170, 0, 0.5); display: flex; justify-content: space-between; }
+        .budget-panel .b-diff { color: #fff; font-size: 13px; margin-bottom: 10px; }
+        .budget-panel .b-num { color: #ffaa00; font-size: 24px; font-family: 'Impact'; text-shadow: 0 0 10px #ffaa00; letter-spacing: 1px; }
+        .progress-inner-orange { height: 100%; background: linear-gradient(90deg, #ff4757, #ffaa00); width: 62%; box-shadow: 0 0 10px #ffaa00; }
+
+        /* 赛博风背景装饰 */
+        .cyber-ring-bg { position: absolute; width: 75%; height: 75%; border-radius: 50%; border: 2px dashed rgba(0, 246, 255, 0.3); pointer-events: none; animation: spin 40s linear infinite;}
+        .cyber-ring-bg2 { position: absolute; width: 88%; height: 88%; border-radius: 50%; border: 1px solid rgba(0, 119, 255, 0.2); border-top: 4px solid rgba(0, 246, 255, 0.6); border-bottom: 4px solid rgba(114, 46, 209, 0.6); pointer-events: none; animation: spin-reverse 25s linear infinite;}
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
+
+        /* 中下趋势图 */
+        .center-bottom-box { flex: 0.8; min-height: 0; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(6, 30, 93, 0.4), rgba(2, 10, 26, 0.8)); border: 1px solid rgba(0, 246, 255, 0.2); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 15px 100%, 0 calc(100% - 15px)); padding: 10px 15px; position: relative; }
+        .center-bottom-box::before { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 150px; height: 3px; background: #00f6ff; box-shadow: 0 0 15px #00f6ff; }
+        
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="sys-info">
+            <div class="sys-time" id="sysTime">00:00:00</div>
+            <div class="sys-date">
+                <div class="status-dot"></div>
+                <span id="sysDate">YYYY/MM/DD SYSTEM ONLINE</span>
+            </div>
+        </div>
+        <div class="title-wrapper">
+            <div class="title">企业全面经营分析驾驶舱</div>
+        </div>
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span class="filter-label">核算部门:</span>
+                <select class="cyber-select" onchange="mockGlobalLoading()">
+                    <option value="all">集团总部</option>
+                    <option value="sales">销售中心</option>
+                    <option value="rd">研发中心</option>
+                    <option value="ops">运营中心</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">业务大区:</span>
+                <select class="cyber-select" onchange="mockGlobalLoading()">
+                    <option value="global">全球市场</option>
+                    <option value="apac">亚太大区</option>
+                    <option value="emea">欧洲大区</option>
+                    <option value="na">北美大区</option>
+                </select>
+            </div>
+            <div class="time-filter">
+                <button class="time-btn">本月</button>
+                <button class="time-btn active">本季度</button>
+                <button class="time-btn">本财年</button>
+            </div>
+            <button class="fullscreen-btn" title="全屏展示" onclick="toggleFullscreen()">
+                <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- 左侧 上: 产品线营收 -->
+        <div class="chart-box box-left-top">
+            <div class="chart-title">
+                <span>01 产品线营收趋势</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cLTop, 'revenue')">营收额</button>
+                    <button class="tab-btn" onclick="switchDim(this, cLTop, 'margin')">毛利率</button>
+                </div>
+            </div>
+            <div id="chart-left-top" class="chart"></div>
+        </div>
+
+        <!-- 左侧 下: 分支机构业绩 -->
+        <div class="chart-box box-left-bot">
+            <div class="chart-title">
+                <span>02 核心机构业绩排名</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cLBot, 'sales')">销售额</button>
+                    <button class="tab-btn" onclick="switchDim(this, cLBot, 'growth')">增长率</button>
+                </div>
+            </div>
+            <div id="chart-left-bot" class="chart"></div>
+        </div>
+
+        <!-- 中间 核心区域 -->
+        <div class="box-center">
+            <!-- 核心 KPI -->
+            <div class="center-kpi-row">
+                <div class="kpi-item active" onclick="handleKpiClick(this, 'revenue', event)">
+                    <div class="label">本期总营收</div>
+                    <div class="value">8.42<span class="unit">亿</span></div>
+                    <div class="trend up">同比上升 ▲ 15.3%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'profit', event)">
+                    <div class="label">归母净利润</div>
+                    <div class="value">1.65<span class="unit">亿</span></div>
+                    <div class="trend up">同比上升 ▲ 8.7%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'cost', event)">
+                    <div class="label">综合运营成本</div>
+                    <div class="value">4.12<span class="unit">亿</span></div>
+                    <div class="trend down">同比下降 ▼ 2.4%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'customer', event)">
+                    <div class="label">新增企业客户</div>
+                    <div class="value">1,250<span class="unit">家</span></div>
+                    <div class="trend up">同比上升 ▲ 12.1%</div>
+                </div>
+            </div>
+            
+            <!-- 炫酷中心图: 仪表盘 -->
+            <div class="center-core-container">
+                <div class="target-panel">
+                    <div class="t-title"><span>▶ 年度营收目标</span> <span>85%</span></div>
+                    <div class="t-diff">距离年度目标还差 <span class="t-num">1.58</span> 亿</div>
+                    <div class="progress-wrap"><div class="progress-inner-blue"></div></div>
+                </div>
+                <div class="budget-panel">
+                    <div class="b-title"><span>★ 成本预算控制</span> <span>62%</span></div>
+                    <div class="b-diff">可用预算余额 <span class="b-num">2.45</span> 亿</div>
+                    <div class="progress-wrap"><div class="progress-inner-orange"></div></div>
+                </div>
+
+                <div class="cyber-ring-bg"></div>
+                <div class="cyber-ring-bg2"></div>
+                
+                <!-- 复杂的3D环形图/仪表盘 -->
+                <div id="chart-center-core" style="width:100%; height:100%; position:absolute; top:0; left:0; z-index:10;"></div>
+            </div>
+            
+            <!-- 底部走势图: 营收与成本双轴趋势 -->
+            <div class="center-bottom-box">
+                <div class="chart-title" style="margin-bottom:5px; font-size:15px; border-left:3px solid #ffaa00; background:transparent;">
+                    05 营收与利润动态走势 (近12个月)
+                </div>
+                <div id="chart-center-line" class="chart"></div>
+            </div>
+        </div>
+
+        <!-- 右侧 上: 支出结构 -->
+        <div class="chart-box box-right-top">
+            <div class="chart-title">
+                <span>03 费用支出结构</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cRTop, 'type')">按类型</button>
+                    <button class="tab-btn" onclick="switchDim(this, cRTop, 'dept')">按部门</button>
+                </div>
+            </div>
+            <div id="chart-right-top" class="chart"></div>
+        </div>
+
+        <!-- 右侧 下: 销售漏斗 -->
+        <div class="chart-box box-right-bot">
+            <div class="chart-title">
+                <span>04 销售转化漏斗</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active">客户旅程</button>
+                </div>
+            </div>
+            <div id="chart-right-bot" class="chart"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全屏控制
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // 全局加载模拟 (响应丰富查询条件)
+        function mockGlobalLoading() {
+            allCharts.forEach(chart => {
+                if(chart) chart.showLoading({ text: 'DATA PROCESSING...', color: '#00f6ff', textColor: '#00f6ff', maskColor: 'rgba(3, 10, 22, 0.8)' });
+            });
+            setTimeout(() => {
+                allCharts.forEach(chart => { if(chart) chart.hideLoading(); });
+            }, 800);
+        }
+
+        // 卡片多维度Tab切换模拟
+        function switchDim(btn, chartInstance, dimType) {
+            const tabs = btn.parentElement.querySelectorAll('.tab-btn');
+            tabs.forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+
+            chartInstance.showLoading({ text: 'SWITCHING DIMENSION...', color: '#00f6ff', textColor: '#00f6ff', maskColor: 'rgba(3, 10, 22, 0.8)' });
+            setTimeout(() => {
+                chartInstance.hideLoading();
+                const currentOption = chartInstance.getOption();
+                
+                // 模拟数据变化
+                if (currentOption.series && currentOption.series.length > 0) {
+                    currentOption.series.forEach(s => {
+                        if (s.data && Array.isArray(s.data)) {
+                            s.data = s.data.map(v => {
+                                if (typeof v === 'number') return Math.max(10, Math.floor(v * (0.5 + Math.random())));
+                                if (v && v.value !== undefined) {
+                                    return { ...v, value: Math.max(10, Math.floor(v.value * (0.5 + Math.random()))) };
+                                }
+                                return v;
+                            });
+                        }
+                    });
+                    chartInstance.setOption(currentOption);
+                }
+            }, 500);
+        }
+
+        // 中心 KPI 点击联动 (带波纹与加载状态)
+        function handleKpiClick(element, type, event) {
+            document.querySelectorAll('.kpi-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            const circle = document.createElement('span');
+            const rect = element.getBoundingClientRect();
+            circle.style.width = circle.style.height = Math.max(rect.width, rect.height) + 'px';
+            circle.style.left = (event.clientX - rect.left - rect.width/2) + 'px';
+            circle.style.top = (event.clientY - rect.top - rect.height/2) + 'px';
+            circle.classList.add('ripple');
+            element.appendChild(circle);
+            setTimeout(() => circle.remove(), 600);
+
+            // 联动更新底部走势图
+            cCLine.showLoading({ text: 'ANALYZING TREND...', color: '#00f6ff', textColor: '#00f6ff', maskColor: 'rgba(3, 10, 22, 0.8)' });
+            
+            setTimeout(() => {
+                cCLine.hideLoading();
+                let data1 = [], data2 = [];
+                for(let i=0; i<12; i++) {
+                    let base1 = type === 'revenue' ? 80 : type === 'profit' ? 30 : type === 'cost' ? 50 : 120;
+                    let base2 = type === 'revenue' ? 20 : type === 'profit' ? 10 : type === 'cost' ? 15 : 20;
+                    data1.push(Math.floor(base1 + Math.random() * base1 * 0.4));
+                    data2.push(Math.floor(base2 + Math.random() * base2 * 0.4));
+                }
+                
+                cCLine.setOption({
+                    series: [
+                        { name: type === 'revenue' ? '总营收' : type === 'profit' ? '净利润' : type === 'cost' ? '运营成本' : '新增客户', data: data1 },
+                        { name: '环比指标', data: data2 }
+                    ]
+                });
+            }, 600);
+        }
+
+        // 时钟更新
+        function updateClock() {
+            const now = new Date();
+            var days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            document.getElementById('sysDate').innerText = now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0') + ' ' + days[now.getDay()] + ' SYSTEM ACTIVE';
+            document.getElementById('sysTime').innerText = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // ================= ECharts 配置 =================
+        const baseOpt = { backgroundColor: 'transparent', tooltip: { backgroundColor: 'rgba(3,10,22,0.9)', borderColor: '#00f6ff', textStyle: { color: '#fff' } } };
+        
+        // 1. 左上：产品线营收 (堆叠柱状图)
+        const cLTop = echarts.init(document.getElementById('chart-left-top'));
+        cLTop.setOption({
+            ...baseOpt,
+            grid: { top: 30, bottom: 20, left: 10, right: 10, containLabel: true },
+            legend: { top: 0, textStyle: { color: '#a6c0fe' }, itemWidth: 10, itemHeight: 10 },
+            xAxis: { type: 'category', data: ['Q1', 'Q2', 'Q3', 'Q4'], axisLine: { lineStyle: { color: 'rgba(0,246,255,0.3)' } }, axisLabel: { color: '#a6c0fe' } },
+            yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(0,246,255,0.1)', type: 'dashed' } }, axisLabel: { color: '#a6c0fe' } },
+            series: [
+                { name: 'SaaS订阅', type: 'bar', stack: 'total', barWidth: 20, itemStyle: { color: '#00f6ff' }, data: [120, 150, 180, 220] },
+                { name: '私有化部署', type: 'bar', stack: 'total', barWidth: 20, itemStyle: { color: '#0077ff' }, data: [80, 100, 120, 150] },
+                { name: '增值服务', type: 'bar', stack: 'total', barWidth: 20, itemStyle: { color: '#722ed1', borderRadius: [4,4,0,0] }, data: [50, 60, 75, 90] }
+            ]
+        });
+
+        // 2. 左下：核心机构业绩排名 (横向柱状图)
+        const cLBot = echarts.init(document.getElementById('chart-left-bot'));
+        cLBot.setOption({
+            ...baseOpt,
+            grid: { top: 10, bottom: 5, left: 10, right: 50, containLabel: true },
+            xAxis: { type: 'value', show: false },
+            yAxis: { type: 'category', data: ['华南分公司', '华东分公司', '华北分公司', '西南分公司', '西北分公司'].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#a6c0fe', fontSize: 12 } },
+            series: [{
+                type: 'bar', barWidth: 14,
+                itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'rgba(0,246,255,0.1)'},{offset:1,color:'#00f6ff'}]), borderRadius: [0,4,4,0] },
+                label: { show: true, position: 'right', formatter: '{c}万', color: '#00f6ff', fontFamily: 'Impact', fontSize: 13 },
+                data: [8500, 7200, 6800, 5400, 4200].reverse()
+            }]
+        });
+
+        // 3. 右上：费用支出结构 (南丁格尔玫瑰图)
+        const cRTop = echarts.init(document.getElementById('chart-right-top'));
+        cRTop.setOption({
+            ...baseOpt,
+            tooltip: { trigger: 'item', formatter: '{b} : {c}万 ({d}%)' },
+            legend: { right: 0, top: 'center', orient: 'vertical', textStyle: { color: '#a6c0fe' }, itemWidth: 10, itemHeight: 10 },
+            series: [{
+                name: '费用结构', type: 'pie', radius: ['20%', '80%'], center: ['40%', '50%'],
+                roseType: 'radius', itemStyle: { borderRadius: 4, borderColor: '#030a16', borderWidth: 2 },
+                label: { show: false },
+                data: [
+                    { value: 350, name: '研发费用', itemStyle: { color: '#00f6ff' } },
+                    { value: 280, name: '销售费用', itemStyle: { color: '#0077ff' } },
+                    { value: 150, name: '管理费用', itemStyle: { color: '#722ed1' } },
+                    { value: 120, name: '营销费用', itemStyle: { color: '#ffaa00' } },
+                    { value: 80,  name: '财务费用', itemStyle: { color: '#ff4757' } }
+                ]
+            }]
+        });
+
+        // 4. 右下：销售转化漏斗
+        const cRBot = echarts.init(document.getElementById('chart-right-bot'));
+        cRBot.setOption({
+            ...baseOpt,
+            series: [{
+                name: '销售漏斗', type: 'funnel', left: '10%', top: 20, bottom: 20, width: '80%',
+                min: 0, max: 100, minSize: '20%', maxSize: '100%',
+                sort: 'desc', gap: 2,
+                label: { show: true, position: 'inside', formatter: '{b}: {c}%', color: '#fff', textShadowColor: 'rgba(0,0,0,0.8)', textShadowBlur: 3 },
+                itemStyle: { borderColor: '#030a16', borderWidth: 2 },
+                data: [
+                    { value: 100, name: '市场线索', itemStyle: { color: '#00f6ff' } },
+                    { value: 80, name: '意向沟通', itemStyle: { color: '#0077ff' } },
+                    { value: 50, name: '方案报价', itemStyle: { color: '#722ed1' } },
+                    { value: 30, name: '商务谈判', itemStyle: { color: '#ffaa00' } },
+                    { value: 15, name: '成功签约', itemStyle: { color: '#ff4757' } }
+                ]
+            }]
+        });
+
+        // 5. 底部趋势图 (双轴折线+面积图)
+        const cCLine = echarts.init(document.getElementById('chart-center-line'));
+        cCLine.setOption({
+            ...baseOpt,
+            grid: { top: 30, bottom: 20, left: 20, right: 20, containLabel: true },
+            legend: { top: 0, textStyle: { color: '#a6c0fe' }, itemWidth: 15, itemHeight: 10 },
+            tooltip: { trigger: 'axis', axisPointer: { type: 'cross', label: { backgroundColor: '#00f6ff', color: '#000' } } },
+            xAxis: { type: 'category', data: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'], boundaryGap: false, axisLine: { lineStyle: { color: 'rgba(0,246,255,0.3)' } }, axisLabel: { color: '#a6c0fe' } },
+            yAxis: [
+                { type: 'value', name: '金额(万)', nameTextStyle: { color: '#a6c0fe' }, splitLine: { lineStyle: { color: 'rgba(0,246,255,0.1)', type: 'dashed' } }, axisLabel: { color: '#a6c0fe' } },
+                { type: 'value', name: '利润率', nameTextStyle: { color: '#a6c0fe' }, splitLine: { show: false }, axisLabel: { color: '#a6c0fe', formatter: '{value}%' } }
+            ],
+            series: [
+                { name: '总营收', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 3, color: '#00f6ff', shadowColor: '#00f6ff', shadowBlur: 8 }, areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(0,246,255,0.5)'},{offset:1,color:'rgba(0,246,255,0)'}]) }, data: [120, 150, 180, 160, 210, 250, 240, 280, 320, 310, 360, 420] },
+                { name: '环比指标', type: 'bar', barWidth: 8, itemStyle: { color: 'rgba(114, 46, 209, 0.6)', borderRadius: [2,2,0,0] }, data: [100, 120, 140, 150, 180, 200, 220, 250, 280, 290, 320, 350] },
+                { name: '净利润率', type: 'line', yAxisIndex: 1, smooth: true, symbol: 'none', lineStyle: { width: 2, color: '#ffaa00', type: 'dashed' }, data: [15, 16, 18, 17, 20, 22, 21, 23, 25, 24, 26, 28] }
+            ]
+        });
+
+        // 6. 炫酷中心 3D环形图/仪表盘
+        const cCCore = echarts.init(document.getElementById('chart-center-core'));
+        cCCore.setOption({
+            ...baseOpt,
+            series: [
+                {
+                    type: 'gauge', radius: '65%', center: ['50%', '55%'],
+                    startAngle: 210, endAngle: -30,
+                    min: 0, max: 100, splitNumber: 10,
+                    axisLine: { lineStyle: { width: 15, color: [ [0.6, '#ff4757'], [0.8, '#ffaa00'], [1, '#00f6ff'] ] } },
+                    pointer: { itemStyle: { color: 'auto' }, width: 6, length: '60%' },
+                    axisTick: { distance: -20, length: 8, lineStyle: { color: '#fff', width: 2 } },
+                    splitLine: { distance: -25, length: 14, lineStyle: { color: '#fff', width: 3 } },
+                    axisLabel: { color: '#a6c0fe', distance: 30, fontSize: 12 },
+                    detail: { valueAnimation: true, formatter: '{value}%', color: '#00f6ff', fontSize: 36, fontFamily: 'Impact', textShadowColor: '#00f6ff', textShadowBlur: 10, offsetCenter: [0, '60%'] },
+                    title: { offsetCenter: [0, '35%'], color: '#a6c0fe', fontSize: 14 },
+                    data: [{ value: 85, name: '综合健康度指数' }]
+                },
+                // 内圈装饰
+                {
+                    type: 'gauge', radius: '45%', center: ['50%', '55%'],
+                    startAngle: 210, endAngle: -30,
+                    min: 0, max: 100,
+                    axisLine: { lineStyle: { width: 2, color: [[1, 'rgba(0, 246, 255, 0.3)']] } },
+                    pointer: { show: false }, axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false }, detail: { show: false }
+                }
+            ]
+        });
+
+        // 跨图表联动点击交互示例
+        let activeFilter = -1;
+        const allCharts = [cLTop, cLBot, cRTop, cRBot, cCLine, cCCore];
+
+        cLBot.on('click', function(params) {
+            activeFilter = (activeFilter === params.dataIndex) ? -1 : params.dataIndex;
+            
+            allCharts.forEach(chart => {
+                if (chart === cLBot || !chart) return;
+                if (activeFilter === -1) {
+                    chart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+                } else {
+                    chart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+                    chart.dispatchAction({ type: 'highlight', seriesIndex: 0, dataIndex: activeFilter });
+                }
+            });
+        });
+
+        // 窗口缩放适配
+        window.addEventListener('resize', function() {
+            allCharts.forEach(chart => { if(chart) chart.resize(); });
+        });
+    </script>
+</body>
+</html>

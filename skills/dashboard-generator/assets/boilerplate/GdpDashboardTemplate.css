@@ -1,0 +1,356 @@
+/* GdpDashboardTemplate.css */
+/* 政务/宏观经济分析风格 - 严肃、大气、深蓝色底、青色/金色点缀 */
+
+.gdp-dashboard-container {
+    background-color: #030a16;
+    color: #ffffff;
+    font-family: 'DingTalk JinBuTi', 'Microsoft YaHei', sans-serif;
+    min-height: 100vh;
+    background-image: 
+        linear-gradient(rgba(0, 246, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 246, 255, 0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* 底部发光与扫描线 */
+.gdp-dashboard-container::before {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 30%;
+    background: linear-gradient(0deg, rgba(0, 246, 255, 0.05) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.gdp-dashboard-container::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 2;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+}
+
+/* ===== 顶部异形标题栏 ===== */
+.gdp-header {
+    height: 70px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* 政务大屏经典异形切角头部背景 */
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="70"><path d="M0,70 L100,70 L120,40 Lcalc(100% - 120px),40 Lcalc(100% - 100px),70 L100%,70 L100%,0 L0,0 Z" fill="rgba(6,30,93,0.6)" stroke="%2300f6ff" stroke-width="1"/></svg>') no-repeat center;
+    background-size: 100% 100%;
+    padding: 0 30px;
+    z-index: 100;
+    position: relative;
+    margin-bottom: 10px;
+}
+
+.gdp-header-left, .gdp-header-right {
+    width: 30%;
+    display: flex;
+    align-items: center;
+}
+
+.gdp-header-right {
+    justify-content: flex-end;
+    gap: 15px;
+}
+
+.gdp-header-title {
+    width: 40%;
+    text-align: center;
+    font-size: 28px;
+    font-weight: bold;
+    color: #00f6ff;
+    text-shadow: 0 0 10px rgba(0, 246, 255, 0.5);
+    letter-spacing: 4px;
+}
+
+/* ===== 过滤器区域 ===== */
+.gdp-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 0 15px 15px 15px;
+    padding: 10px 20px;
+    background: rgba(6, 30, 93, 0.4);
+    border: 1px solid rgba(0, 246, 255, 0.3);
+    border-radius: 4px;
+    z-index: 10;
+    position: relative;
+}
+
+.gdp-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gdp-filter-label {
+    color: #a6c0fe;
+    font-size: 14px;
+}
+
+/* 科技风自定义下拉框 */
+.gdp-custom-select-wrapper {
+    position: relative;
+    user-select: none;
+    min-width: 150px;
+}
+
+.gdp-custom-select-trigger {
+    background: rgba(0, 246, 255, 0.1);
+    border: 1px solid rgba(0, 246, 255, 0.5);
+    color: #00f6ff;
+    padding: 6px 12px;
+    border-radius: 2px;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s;
+}
+
+.gdp-custom-select-trigger:hover {
+    background: rgba(0, 246, 255, 0.2);
+    box-shadow: 0 0 10px rgba(0, 246, 255, 0.3);
+}
+
+.gdp-custom-select-trigger .arrow {
+    font-size: 10px;
+    transition: transform 0.3s;
+}
+
+.gdp-custom-select-wrapper.open .arrow {
+    transform: rotate(180deg);
+}
+
+.gdp-custom-options {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    background: #030a16;
+    border: 1px solid rgba(0, 246, 255, 0.5);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transform: translateY(-5px);
+    transition: all 0.2s;
+    z-index: 200;
+}
+
+.gdp-custom-select-wrapper.open .gdp-custom-options {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: all;
+    transform: translateY(0);
+}
+
+.gdp-custom-option {
+    display: block;
+    padding: 8px 12px;
+    color: #a6c0fe;
+    cursor: pointer;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(0, 246, 255, 0.1);
+}
+
+.gdp-custom-option:last-child {
+    border-bottom: none;
+}
+
+.gdp-custom-option:hover, .gdp-custom-option.selected {
+    background: rgba(0, 246, 255, 0.2);
+    color: #00f6ff;
+}
+
+.gdp-time-btn {
+    background: rgba(0, 246, 255, 0.1);
+    border: 1px solid rgba(0, 246, 255, 0.5);
+    color: #00f6ff;
+    padding: 6px 15px;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-radius: 2px;
+    font-size: 14px;
+}
+
+.gdp-time-btn:hover {
+    background: rgba(0, 246, 255, 0.3);
+    box-shadow: 0 0 10px rgba(0, 246, 255, 0.5);
+}
+
+.gdp-time-btn.active {
+    background: #00f6ff;
+    color: #030a16;
+    font-weight: bold;
+}
+
+/* ===== 主体布局 (典型的两侧面板+中间地图布局) ===== */
+.gdp-dashboard-content {
+    display: flex;
+    flex: 1;
+    gap: 15px;
+    padding: 0 15px 15px 15px;
+    height: calc(100vh - 155px);
+    z-index: 10;
+    position: relative;
+}
+
+.gdp-side-panel {
+    width: 25%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.gdp-center-panel {
+    width: 50%;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* ===== 科技风面板卡片 ===== */
+.gdp-tech-card {
+    background: rgba(6, 30, 93, 0.4);
+    border: 1px solid rgba(0, 246, 255, 0.3);
+    position: relative;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    box-shadow: inset 0 0 20px rgba(0, 246, 255, 0.05);
+    min-height: 0;
+}
+
+/* 四角装饰框 */
+.gdp-tech-card::before, .gdp-tech-card::after {
+    content: ''; position: absolute; width: 10px; height: 10px; border-color: #00f6ff; border-style: solid;
+}
+.gdp-tech-card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+.gdp-tech-card::after { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+
+.gdp-card-corners {
+    position: absolute; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+}
+.gdp-card-corners::before, .gdp-card-corners::after {
+    content: ''; position: absolute; width: 10px; height: 10px; border-color: #00f6ff; border-style: solid;
+}
+.gdp-card-corners::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+.gdp-card-corners::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+.gdp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    background: linear-gradient(90deg, rgba(0,246,255,0.2) 0%, transparent 100%);
+    padding: 5px 10px;
+    border-left: 3px solid #00f6ff;
+}
+
+.gdp-card-title {
+    font-size: 16px;
+    color: #00f6ff;
+    font-weight: bold;
+}
+
+.gdp-chart-tabs {
+    display: flex;
+    gap: 5px;
+}
+
+.gdp-tab-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 246, 255, 0.3);
+    color: #a6c0fe;
+    padding: 2px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 2px;
+}
+.gdp-tab-btn.active {
+    background: rgba(0, 246, 255, 0.2);
+    color: #00f6ff;
+    border-color: #00f6ff;
+}
+
+.gdp-chart-wrapper {
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    position: relative;
+}
+
+/* ===== 核心大数字 KPI 区 (常用于中间面板顶部) ===== */
+.gdp-core-kpi-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 15px;
+}
+
+.gdp-core-kpi-box {
+    flex: 1;
+    background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><rect x="0" y="0" width="100%" height="100%" fill="rgba(0,246,255,0.05)" stroke="%2300f6ff" stroke-width="1" stroke-dasharray="5 5"/></svg>');
+    padding: 15px;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.gdp-core-kpi-box:hover, .gdp-core-kpi-box.active {
+    background-color: rgba(0, 246, 255, 0.15);
+    box-shadow: inset 0 0 20px rgba(0, 246, 255, 0.3);
+}
+
+.gdp-core-kpi-box::before {
+    content: ''; position: absolute; left: 0; top: 20%; height: 60%; width: 4px; background: #00f6ff;
+}
+
+.gdp-kpi-title {
+    color: #a6c0fe;
+    font-size: 16px;
+    margin-bottom: 5px;
+}
+
+.gdp-kpi-value {
+    color: #faad14; /* 金色大字突出政务政绩 */
+    font-size: 36px;
+    font-weight: bold;
+    font-family: 'Arial', sans-serif;
+    text-shadow: 0 0 10px rgba(250, 173, 20, 0.5);
+}
+
+.gdp-kpi-unit {
+    font-size: 14px;
+    color: #a6c0fe;
+    margin-left: 5px;
+}
+
+.gdp-kpi-trend {
+    margin-top: 5px;
+    font-size: 14px;
+}
+
+/* 涟漪 */
+.gdp-ripple {
+    position: absolute; border-radius: 50%; background: rgba(0, 246, 255, 0.5); transform: scale(0); animation: gdp-ripple-anim 0.6s linear; pointer-events: none;
+}
+@keyframes gdp-ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+/* ===== 滚动条 ===== */
+.gdp-dashboard-container ::-webkit-scrollbar { width: 4px; height: 4px; }
+.gdp-dashboard-container ::-webkit-scrollbar-track { background: rgba(3, 10, 22, 0.8); }
+.gdp-dashboard-container ::-webkit-scrollbar-thumb { background: rgba(0, 246, 255, 0.4); }
+.gdp-dashboard-container ::-webkit-scrollbar-thumb:hover { background: #00f6ff; }

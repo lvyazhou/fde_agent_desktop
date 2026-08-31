@@ -28,14 +28,14 @@
       <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-6">
         <i class="fa-solid fa-lightbulb text-3xl text-blue-500"></i>
       </div>
-      <h3 class="text-lg font-semibold text-slate-700 mb-2">还没有项目</h3>
-      <p class="text-sm text-slate-500 mb-6">开始你的第一个产品设计，只需一句话描述你的想法</p>
+      <h3 class="text-lg font-semibold text-slate-700 mb-2">还没有 FDE 项目</h3>
+      <p class="text-sm text-slate-500 mb-6">创建第一个 FDE 项目,按五阶段作战链推进:调研备弹 → 需求原型 → 智能体设计 → 工作台上线 → 试用定稿</p>
       <RouterLink
         to="/projects/new"
         class="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-700/20"
       >
         <i class="fa-solid fa-rocket text-xs"></i>
-        <span>开始你的第一个产品设计</span>
+        <span>创建第一个 FDE 项目</span>
       </RouterLink>
     </div>
 

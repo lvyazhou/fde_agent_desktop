@@ -112,7 +112,7 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between py-2">
             <span class="text-sm text-slate-600">应用名称</span>
-            <span class="text-sm text-slate-800">产设大师</span>
+            <span class="text-sm text-slate-800">FDE产品设计</span>
           </div>
           <div class="flex items-center justify-between py-2 border-t border-slate-50">
             <span class="text-sm text-slate-600">版本号</span>

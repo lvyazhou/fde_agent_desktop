@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>赛博龙虾经营分析驾驶舱 - CYBER LOBSTER DASHBOARD</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'DS-Digital';
+            src: local('Impact'); /* Fallback */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #02050a;
+            color: #fff;
+            font-family: "Microsoft YaHei", sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            background-image:
+                radial-gradient(circle at center, #0a1128 0%, #02050a 100%),
+                linear-gradient(rgba(10, 15, 30, 0.9), rgba(10, 15, 30, 0.9));
+            position: relative;
+        }
+
+        /* 赛博朋克网格线 + 全局暗角遮罩 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                linear-gradient(rgba(255, 42, 85, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 246, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
+            transform: perspective(1000px) rotateX(15deg) scale(1.2);
+            transform-origin: top center;
+            opacity: 0.7;
+        }
+
+        /* 屏幕扫描线扫描动画 */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.3) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+
+        /* ===== 顶部标题栏 ===== */
+        .header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 85px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 42, 85, 0.1) 20%, rgba(255, 42, 85, 0.2) 50%, rgba(255, 42, 85, 0.1) 80%, transparent 100%);
+            border-bottom: 2px solid rgba(255, 42, 85, 0.5);
+            box-shadow: 0 5px 30px rgba(255, 42, 85, 0.3);
+        }
+
+        .header::before, .header::after {
+            content: ''; position: absolute; bottom: -2px; width: 350px; height: 2px;
+            background: #fff; box-shadow: 0 0 10px #fff, 0 0 20px #ff2a55;
+        }
+        .header::before { left: 0; background: linear-gradient(90deg, transparent, #ff2a55); }
+        .header::after { right: 0; background: linear-gradient(-90deg, transparent, #00f6ff); }
+
+        .title {
+            font-size: 38px;
+            font-weight: 900;
+            letter-spacing: 8px;
+            color: #fff;
+            text-transform: uppercase;
+            position: relative;
+            text-shadow:
+                0 0 5px #ff2a55, 0 0 10px #ff2a55, 0 0 20px #ff2a55, 0 0 40px #ff0055,
+                3px 3px 0px rgba(0, 246, 255, 0.8);
+            transform: skewX(-12deg);
+        }
+        
+        .title-wrapper {
+            position: relative;
+            padding: 0 50px;
+        }
+        .title-wrapper::before, .title-wrapper::after {
+            content: ''; position: absolute; top: 50%; transform: translateY(-50%); width: 20px; height: 40px; border: 3px solid #ff2a55;
+            box-shadow: inset 0 0 10px rgba(255, 42, 85, 0.5);
+        }
+        .title-wrapper::before { left: 0; border-right: none; }
+        .title-wrapper::after { right: 0; border-left: none; border-color: #00f6ff; box-shadow: inset 0 0 10px rgba(0, 246, 255, 0.5); }
+
+        /* 系统信息 */
+        .sys-info {
+            position: absolute; left: 25px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 5px; z-index: 20;
+        }
+        .sys-time { font-family: 'DS-Digital', 'Impact', sans-serif; color: #00f6ff; font-size: 26px; letter-spacing: 2px; text-shadow: 0 0 10px #00f6ff; }
+        .sys-date { color: #a6c0fe; font-size: 13px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 10px; height: 10px; background: #2ed573; border-radius: 50%; box-shadow: 0 0 10px #2ed573; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* 顶部丰富的查询条件栏 */
+        .filter-bar {
+            position: absolute; right: 20px; top: 50%; transform: translateY(-50%) scale(0.9); transform-origin: right center;
+            display: flex; gap: 18px; z-index: 20; align-items: center;
+        }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-label { color: #ff2a55; font-size: 15px; font-weight: bold; text-shadow: 0 0 5px rgba(255, 42, 85, 0.6); }
+        .cyber-select {
+            background: rgba(20, 0, 30, 0.7); border: 1px solid #ff2a55; color: #fff; padding: 5px 10px; font-size: 14px;
+            outline: none; cursor: pointer; box-shadow: inset 0 0 12px rgba(255, 42, 85, 0.3);
+            clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+            transition: all 0.3s;
+        }
+        .cyber-select:hover { border-color: #00f6ff; box-shadow: 0 0 12px #00f6ff, inset 0 0 12px rgba(0, 246, 255, 0.3); }
+        .cyber-select option { background: #02050a; color: #ff2a55; }
+        
+        .time-filter { display: flex; gap: 6px; }
+        .time-btn {
+            background: rgba(255, 42, 85, 0.15); border: 1px solid #ff2a55; color: #ff2a55; padding: 5px 12px; font-size: 14px;
+            cursor: pointer; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); transition: all 0.3s; font-weight: bold;
+        }
+        .time-btn:hover { background: rgba(255, 42, 85, 0.3); box-shadow: 0 0 12px #ff2a55; }
+        .time-btn.active { background: #ff2a55; color: #02050a; box-shadow: 0 0 18px #ff2a55; border-color: #fff; }
+        .fullscreen-btn { background: transparent; border: none; color: #00f6ff; cursor: pointer; padding: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; margin-left: 5px; }
+        .fullscreen-btn:hover { color: #fff; transform: scale(1.15); filter: drop-shadow(0 0 8px #00f6ff); }
+        .fullscreen-btn svg { fill: currentColor; width: 24px; height: 24px; }
+
+        /* ===== 主容器 ===== */
+        .container {
+            position: absolute; top: 100px; left: 20px; right: 20px; bottom: 20px;
+            display: grid; grid-template-columns: 1fr 1.8fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; z-index: 10;
+        }
+
+        /* ===== 图表盒子 ===== */
+        .chart-box {
+            position: relative;
+            background: linear-gradient(135deg, rgba(20, 5, 25, 0.65) 0%, rgba(5, 15, 30, 0.85) 100%);
+            border: 1px solid rgba(255, 42, 85, 0.2);
+            box-shadow: inset 0 0 40px rgba(255, 42, 85, 0.1), 0 0 20px rgba(0, 246, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 16px; display: flex; flex-direction: column;
+            clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+        }
+        .chart-box::before { content: ''; position: absolute; top: 0; left: 20px; width: 50px; height: 3px; background: #ff2a55; box-shadow: 0 0 12px #ff2a55; }
+        .chart-box::after { content: ''; position: absolute; bottom: 0; right: 20px; width: 50px; height: 3px; background: #00f6ff; box-shadow: 0 0 12px #00f6ff; }
+
+        .chart-title {
+            color: #fff; font-size: 18px; font-weight: bold; padding-left: 14px; margin-bottom: 12px;
+            background: linear-gradient(90deg, rgba(255, 42, 85, 0.3) 0%, transparent 100%);
+            line-height: 34px; border-left: 4px solid #ff2a55; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+        .chart { flex: 1; width: 100%; min-height: 0; }
+
+        /* 内部小Tab切换 (多维度标签) */
+        .chart-tabs { display: flex; gap: 6px; margin-right: 12px; }
+        .tab-btn {
+            background: transparent; border: 1px solid #ff2a55; color: #ff2a55; padding: 3px 14px; font-size: 12px; cursor: pointer;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(255, 42, 85, 0.2); }
+        .tab-btn.active { background: #ff2a55; color: #02050a; font-weight: bold; box-shadow: 0 0 10px #ff2a55; }
+
+        /* 网格定位 */
+        .box-left-top { grid-column: 1 / 2; grid-row: 1 / 2; }
+        .box-left-bot { grid-column: 1 / 2; grid-row: 2 / 3; }
+        .box-center { grid-column: 2 / 3; grid-row: 1 / 3; display: flex; flex-direction: column; background: transparent; border: none; box-shadow: none; padding: 0;}
+        .box-right-top { grid-column: 3 / 4; grid-row: 1 / 2; }
+        .box-right-bot { grid-column: 3 / 4; grid-row: 2 / 3; }
+
+        /* ===== 中间 KPI ===== */
+        .center-kpi-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 25px; flex-shrink: 0; }
+        .kpi-item {
+            background: linear-gradient(180deg, rgba(255,42,85,0.1) 0%, rgba(20,0,40,0.6) 100%);
+            border: 1px solid rgba(255, 42, 85, 0.3); border-top: 3px solid #ff2a55; border-bottom: 2px solid rgba(0, 246, 255, 0.5); border-radius: 6px;
+            padding: 12px 15px; text-align: center; flex: 1; box-shadow: 0 8px 20px rgba(255, 42, 85, 0.15); position: relative; overflow: hidden; transform: skewX(-8deg);
+            cursor: pointer; transition: all 0.3s;
+        }
+        .kpi-item:hover { transform: translateY(-5px) skewX(-8deg); box-shadow: 0 12px 30px rgba(255, 42, 85, 0.4); border-color: #ff2a55; }
+        .kpi-item.active { background: linear-gradient(180deg, rgba(255,42,85,0.4) 0%, rgba(50,0,50,0.8) 100%); border-color: #00f6ff; box-shadow: 0 0 20px rgba(0, 246, 255, 0.4); }
+        .kpi-item::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transform: skewX(-20deg); animation: sweep 3.5s infinite;
+        }
+        @keyframes sweep { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+
+        .kpi-item .label { color: #00f6ff; font-size: 14px; margin-bottom: 6px; font-weight:bold; letter-spacing:2px; transform: skewX(8deg); text-shadow: 0 0 5px rgba(0, 246, 255, 0.5); }
+        .kpi-item .value { color: #fff; font-size: 32px; font-weight: bold; font-family: 'Impact'; text-shadow: 0 0 12px #ff2a55, 2px 2px 0px #b300ff; transform: skewX(8deg); letter-spacing: 1px;}
+        .kpi-item .unit { font-size: 16px; color: #a6c0fe; font-weight: normal; margin-left:6px; font-family: "Microsoft YaHei";}
+        .kpi-item .trend { font-size: 13px; margin-top: 8px; transform: skewX(8deg); }
+        .trend.up { color: #ff2a55; text-shadow: 0 0 8px #ff2a55; }
+        .trend.down { color: #00f6ff; text-shadow: 0 0 8px #00f6ff; }
+        
+        /* 联动点击波纹特效 */
+        .ripple { position: absolute; border-radius: 50%; background: rgba(255, 42, 85, 0.6); transform: scale(0); animation: ripple-anim 0.6s ease-out; pointer-events: none; }
+        @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+        /* ===== 中间核心地球/龙虾图 ===== */
+        .center-core-container { flex: 1.5; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 20px; min-height: 0; }
+        
+        /* 赛博风格装饰环 */
+        .cyber-ring-1 { position: absolute; width: 85%; height: 85%; border-radius: 50%; border: 2px dashed rgba(255, 42, 85, 0.4); animation: spin 30s linear infinite; pointer-events: none; }
+        .cyber-ring-2 { position: absolute; width: 75%; height: 75%; border-radius: 50%; border: 3px solid transparent; border-top-color: #00f6ff; border-bottom-color: #b300ff; animation: spin-reverse 20s linear infinite; pointer-events: none; box-shadow: 0 0 20px rgba(0, 246, 255, 0.2) inset; }
+        .cyber-ring-3 { position: absolute; width: 95%; height: 95%; border-radius: 50%; border: 1px dotted rgba(0, 246, 255, 0.5); animation: spin 45s linear infinite; pointer-events: none; }
+        
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
+
+        /* 中心徽标面板 */
+        .center-logo-panel {
+            position: absolute; width: 140px; height: 140px; background: radial-gradient(circle, rgba(255, 42, 85, 0.2) 0%, rgba(10, 0, 20, 0.8) 70%);
+            border-radius: 50%; border: 2px solid #ff2a55; box-shadow: 0 0 30px #ff2a55, inset 0 0 20px #ff2a55;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 15;
+            animation: pulse-glow 2s infinite alternate;
+        }
+        .center-logo-panel h2 { color: #fff; font-family: 'Impact'; font-size: 28px; letter-spacing: 2px; text-shadow: 0 0 10px #ff2a55; margin-bottom: 5px; }
+        .center-logo-panel span { color: #00f6ff; font-size: 12px; font-weight: bold; letter-spacing: 3px; text-shadow: 0 0 5px #00f6ff; }
+        
+        @keyframes pulse-glow { 0% { box-shadow: 0 0 20px #ff2a55, inset 0 0 10px #ff2a55; } 100% { box-shadow: 0 0 50px #ff2a55, inset 0 0 30px #ff2a55; } }
+
+        /* 浮动信息卡片 */
+        .float-card {
+            position: absolute; z-index: 30; background: linear-gradient(135deg, rgba(20, 5, 25, 0.85), rgba(5, 15, 30, 0.95));
+            border: 1px solid rgba(0, 246, 255, 0.4); padding: 12px 18px; 
+            box-shadow: 0 0 20px rgba(0, 246, 255, 0.2); backdrop-filter: blur(5px);
+        }
+        .float-card.left { top: 10%; left: 0; clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 0 100%); border-left: 4px solid #00f6ff; }
+        .float-card.right { bottom: 10%; right: 0; clip-path: polygon(0 0, 100% 0, 100% 100%, 15px 100%, 0 calc(100% - 15px)); border-right: 4px solid #ff2a55; border-color: rgba(255, 42, 85, 0.4); box-shadow: 0 0 20px rgba(255, 42, 85, 0.2); }
+        
+        .float-card .fc-title { color: #fff; font-size: 13px; font-weight: bold; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;}
+        .float-card.left .fc-title { color: #00f6ff; text-shadow: 0 0 5px #00f6ff; }
+        .float-card.right .fc-title { color: #ff2a55; text-shadow: 0 0 5px #ff2a55; }
+        .float-card .fc-val { color: #fff; font-size: 24px; font-family: 'Impact'; letter-spacing: 1px; }
+
+        /* 中下趋势图 */
+        .center-bottom-box { flex: 0.9; min-height: 0; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(10, 15, 30, 0.4), rgba(5, 10, 20, 0.8)); border: 1px solid rgba(0, 246, 255, 0.2); border-radius: 8px; padding: 10px 15px; position: relative; }
+        .center-bottom-box::before { content: ''; position: absolute; top: -1px; left: 50%; transform: translateX(-50%); width: 100px; height: 2px; background: #00f6ff; box-shadow: 0 0 15px #00f6ff; }
+        
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="sys-info">
+            <div class="sys-time" id="sysTime">00:00:00</div>
+            <div class="sys-date">
+                <div class="status-dot"></div>
+                <span id="sysDate">YYYY/MM/DD SYSTEM ONLINE</span>
+            </div>
+        </div>
+        <div class="title-wrapper">
+            <div class="title">CYBER LOBSTER 经营大屏</div>
+        </div>
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span class="filter-label">品类:</span>
+                <select class="cyber-select" onchange="mockGlobalLoading()">
+                    <option value="all">全品类龙虾</option>
+                    <option value="boston">波士顿龙虾</option>
+                    <option value="aussie">澳洲岩龙虾</option>
+                    <option value="spiny">锦绣龙虾</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">物流状态:</span>
+                <select class="cyber-select" onchange="mockGlobalLoading()">
+                    <option value="all">全部状态</option>
+                    <option value="transit">冷链运输中</option>
+                    <option value="warehouse">仓储保鲜</option>
+                </select>
+            </div>
+            <div class="time-filter">
+                <button class="time-btn active">今日实时</button>
+                <button class="time-btn">本周</button>
+                <button class="time-btn">本月</button>
+            </div>
+            <button class="fullscreen-btn" title="全屏展示" onclick="toggleFullscreen()">
+                <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- 左侧 上: 产区捕捞量排名 -->
+        <div class="chart-box box-left-top">
+            <div class="chart-title">
+                <span>01 全球核心产区捕捞量</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cLTop, 'volume')">按产量</button>
+                    <button class="tab-btn" onclick="switchDim(this, cLTop, 'value')">按产值</button>
+                </div>
+            </div>
+            <div id="chart-left-top" class="chart"></div>
+        </div>
+
+        <!-- 左侧 下: 规格与品质多维分析 -->
+        <div class="chart-box box-left-bot">
+            <div class="chart-title">
+                <span>02 规格与评级分布</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cLBot, 'weight')">克重分布</button>
+                    <button class="tab-btn" onclick="switchDim(this, cLBot, 'grade')">等级A/B/C</button>
+                </div>
+            </div>
+            <div id="chart-left-bot" class="chart"></div>
+        </div>
+
+        <!-- 中间 核心区域 -->
+        <div class="box-center">
+            <!-- 核心 KPI -->
+            <div class="center-kpi-row">
+                <div class="kpi-item active" onclick="handleKpiClick(this, 'catch', event)">
+                    <div class="label">实时捕捞总量</div>
+                    <div class="value">12,450<span class="unit">吨</span></div>
+                    <div class="trend up">较昨日同期 ▲ 5.2%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'revenue', event)">
+                    <div class="label">累计交易额</div>
+                    <div class="value">8.65<span class="unit">亿</span></div>
+                    <div class="trend up">较昨日同期 ▲ 8.9%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'loss', event)">
+                    <div class="label">运输损耗率</div>
+                    <div class="value">1.24<span class="unit">%</span></div>
+                    <div class="trend down">较上周平均 ▼ 0.3%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'active', event)">
+                    <div class="label">活跃捕捞船只</div>
+                    <div class="value">1,284<span class="unit">艘</span></div>
+                    <div class="trend up">实时在线 ▲ 12艘</div>
+                </div>
+            </div>
+            
+            <!-- 炫酷中心图 -->
+            <div class="center-core-container">
+                <div class="float-card left">
+                    <div class="fc-title"><span>▶</span> 活鲜存栏健康度</div>
+                    <div class="fc-val" style="color:#00f6ff; text-shadow:0 0 10px #00f6ff;">98.5%</div>
+                    <div style="font-size:12px; color:#a6c0fe; margin-top:4px;">水质指标: 优 (A+)</div>
+                </div>
+                
+                <div class="float-card right">
+                    <div class="fc-title"><span>★</span> 冷链节点异常</div>
+                    <div class="fc-val" style="color:#ff2a55; text-shadow:0 0 10px #ff2a55;">3 <span style="font-size:14px;font-family:'Microsoft YaHei';">处</span></div>
+                    <div style="font-size:12px; color:#a6c0fe; margin-top:4px;">需人工干预调度</div>
+                </div>
+
+                <div class="cyber-ring-1"></div>
+                <div class="cyber-ring-2"></div>
+                <div class="cyber-ring-3"></div>
+                
+                <div class="center-logo-panel">
+                    <h2>LOBSTER</h2>
+                    <span>CYBER-CORE</span>
+                </div>
+                
+                <!-- 环绕的散点图或关系图 -->
+                <div id="chart-center-core" style="width:100%; height:100%; position:absolute; top:0; left:0; z-index:10;"></div>
+            </div>
+            
+            <!-- 底部走势图 -->
+            <div class="center-bottom-box">
+                <div class="chart-title" style="margin-bottom:5px; font-size:15px; border-left:3px solid #00f6ff; background:transparent;">
+                    05 24小时交易量与价格指数走势
+                </div>
+                <div id="chart-center-line" class="chart"></div>
+            </div>
+        </div>
+
+        <!-- 右侧 上: 客户画像 -->
+        <div class="chart-box box-right-top">
+            <div class="chart-title">
+                <span>03 消费终端画像</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cRTop, 'type')">渠道分类</button>
+                    <button class="tab-btn" onclick="switchDim(this, cRTop, 'radar')">偏好特征</button>
+                </div>
+            </div>
+            <div id="chart-right-top" class="chart"></div>
+        </div>
+
+        <!-- 右侧 下: 实时预警/动态 -->
+        <div class="chart-box box-right-bot">
+            <div class="chart-title">
+                <span>04 供应链枢纽状态</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active">吞吐量</button>
+                </div>
+            </div>
+            <div id="chart-right-bot" class="chart"></div>
+        </div>
+    </div>
+
+    <script>
+        // 全屏控制
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // 全局加载模拟 (响应丰富查询条件)
+        function mockGlobalLoading() {
+            allCharts.forEach(chart => {
+                if(chart) chart.showLoading({ text: 'DATA SYNCING...', color: '#ff2a55', textColor: '#ff2a55', maskColor: 'rgba(5, 10, 20, 0.8)' });
+            });
+            setTimeout(() => {
+                allCharts.forEach(chart => { if(chart) chart.hideLoading(); });
+            }, 800);
+        }
+
+        // 卡片多维度Tab切换模拟
+        function switchDim(btn, chartInstance, dimType) {
+            const tabs = btn.parentElement.querySelectorAll('.tab-btn');
+            tabs.forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+
+            chartInstance.showLoading({ text: 'SWITCHING DIM...', color: '#00f6ff', textColor: '#00f6ff', maskColor: 'rgba(5, 10, 20, 0.8)' });
+            setTimeout(() => {
+                chartInstance.hideLoading();
+                const currentOption = chartInstance.getOption();
+                
+                // 模拟数据变化
+                if (currentOption.series && currentOption.series.length > 0) {
+                    currentOption.series.forEach(s => {
+                        if (s.data && Array.isArray(s.data)) {
+                            s.data = s.data.map(v => {
+                                if (typeof v === 'number') return Math.max(5, Math.floor(v + (Math.random() * 50 - 25)));
+                                if (v && v.value && Array.isArray(v.value)) {
+                                    return { ...v, value: v.value.map(val => Math.max(10, Math.floor(val + (Math.random() * 20 - 10)))) };
+                                }
+                                if (v && typeof v.value === 'number') {
+                                    return { ...v, value: Math.max(5, Math.floor(v.value + (Math.random() * 50 - 25))) };
+                                }
+                                return v;
+                            });
+                        }
+                    });
+                    chartInstance.setOption(currentOption);
+                }
+            }, 600);
+        }
+
+        // 中心 KPI 点击联动 (带波纹与加载状态)
+        function handleKpiClick(element, type, event) {
+            document.querySelectorAll('.kpi-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            const circle = document.createElement('span');
+            const rect = element.getBoundingClientRect();
+            circle.style.width = circle.style.height = Math.max(rect.width, rect.height) + 'px';
+            circle.style.left = (event.clientX - rect.left - rect.width/2) + 'px';
+            circle.style.top = (event.clientY - rect.top - rect.height/2) + 'px';
+            circle.classList.add('ripple');
+            element.appendChild(circle);
+            setTimeout(() => circle.remove(), 600);
+
+            // 联动更新底部走势图
+            cCLine.showLoading({ text: 'ANALYZING TREND...', color: '#ff2a55', textColor: '#ff2a55', maskColor: 'rgba(5, 10, 20, 0.8)' });
+            
+            setTimeout(() => {
+                cCLine.hideLoading();
+                let data1 = [], data2 = [];
+                for(let i=0; i<12; i++) {
+                    let base = type === 'catch' ? 1000 : type === 'revenue' ? 800 : type === 'loss' ? 10 : 500;
+                    data1.push(Math.floor(base + Math.random() * base * 0.5));
+                    data2.push(Math.floor(base * 0.8 + Math.random() * base * 0.4));
+                }
+                
+                cCLine.setOption({
+                    series: [
+                        { name: '当前周期', data: data1 },
+                        { name: '环比基准', data: data2 }
+                    ]
+                });
+            }, 700);
+        }
+
+        // 时钟更新
+        function updateClock() {
+            const now = new Date();
+            var days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            document.getElementById('sysDate').innerText = now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0') + ' ' + days[now.getDay()] + ' SYS_ON';
+            document.getElementById('sysTime').innerText = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // ================= ECharts 配置 =================
+        const baseOpt = { backgroundColor: 'transparent', tooltip: { backgroundColor: 'rgba(5,10,20,0.9)', borderColor: '#ff2a55', textStyle: { color: '#fff' } } };
+        
+        // 1. 左上：产区排名 (横向柱状图)
+        const cLTop = echarts.init(document.getElementById('chart-left-top'));
+        cLTop.setOption({
+            ...baseOpt,
+            grid: { top: 10, bottom: 5, left: 10, right: 50, containLabel: true },
+            xAxis: { type: 'value', show: false },
+            yAxis: { type: 'category', data: ['南非好望角', '西澳海岸', '新西兰南岛', '美国缅因州', '加拿大哈利法克斯'].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#a6c0fe', fontSize: 13, fontWeight: 'bold' } },
+            series: [{
+                type: 'bar', barWidth: 16,
+                itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'rgba(255,42,85,0.1)'},{offset:1,color:'#ff2a55'}]), borderRadius: [0,4,4,0] },
+                label: { show: true, position: 'right', formatter: '{c} T', color: '#ff2a55', fontFamily: 'Impact', fontSize: 14 },
+                data: [850, 1200, 1560, 2400, 3100].reverse()
+            }]
+        });
+
+        // 2. 左下：规格与品质多维 (玫瑰图)
+        const cLBot = echarts.init(document.getElementById('chart-left-bot'));
+        cLBot.setOption({
+            ...baseOpt,
+            tooltip: { trigger: 'item', formatter: '{b} : {c} ({d}%)' },
+            legend: { bottom: 0, textStyle: { color: '#a6c0fe' }, itemWidth: 10, itemHeight: 10 },
+            series: [{
+                name: '规格分布', type: 'pie', radius: ['20%', '75%'], center: ['50%', '45%'],
+                roseType: 'area', itemStyle: { borderRadius: 4, borderColor: '#02050a', borderWidth: 2 },
+                label: { color: '#00f6ff', formatter: '{b}\n{c}' },
+                labelLine: { lineStyle: { color: 'rgba(0, 246, 255, 0.5)' } },
+                data: [
+                    { value: 400, name: 'S级 (300g-)', itemStyle: { color: '#00f6ff' } },
+                    { value: 850, name: 'M级 (300-500g)', itemStyle: { color: '#0077ff' } },
+                    { value: 1200, name: 'L级 (500-800g)', itemStyle: { color: '#722ed1' } },
+                    { value: 650, name: 'XL级 (800g+)', itemStyle: { color: '#ff2a55' } },
+                    { value: 300, name: 'Jumbo (1.2kg+)', itemStyle: { color: '#ffaa00' } }
+                ]
+            }]
+        });
+
+        // 3. 右上：客户画像 (雷达图)
+        const cRTop = echarts.init(document.getElementById('chart-right-top'));
+        cRTop.setOption({
+            ...baseOpt,
+            radar: {
+                indicator: [
+                    {name: '高端餐饮', max: 100}, {name: '生鲜超市', max: 100}, {name: '电商平台', max: 100}, 
+                    {name: '批发市场', max: 100}, {name: '出口贸易', max: 100}, {name: '社区团购', max: 100}
+                ],
+                splitNumber: 4, axisName: { color: '#00f6ff' },
+                splitLine: { lineStyle: { color: ['rgba(255,42,85,0.1)', 'rgba(255,42,85,0.2)', 'rgba(255,42,85,0.4)', 'rgba(255,42,85,0.6)'] } },
+                splitArea: { show: false }, axisLine: { lineStyle: { color: 'rgba(255,42,85,0.5)' } }
+            },
+            series: [{
+                type: 'radar',
+                data: [
+                    { value: [95, 70, 85, 60, 90, 40], name: '波士顿龙虾', areaStyle: { color: 'rgba(255,42,85,0.3)' }, lineStyle: { color: '#ff2a55', width: 2 }, itemStyle: { color: '#ff2a55' } },
+                    { value: [80, 90, 75, 85, 50, 65], name: '澳洲岩龙', areaStyle: { color: 'rgba(0,246,255,0.3)' }, lineStyle: { color: '#00f6ff', width: 2 }, itemStyle: { color: '#00f6ff' } }
+                ]
+            }]
+        });
+
+        // 4. 右下：供应链枢纽状态 (双轴折柱图)
+        const cRBot = echarts.init(document.getElementById('chart-right-bot'));
+        cRBot.setOption({
+            ...baseOpt,
+            grid: { top: 30, bottom: 25, left: 10, right: 10, containLabel: true },
+            legend: { top: 0, textStyle: { color: '#a6c0fe' }, itemWidth: 12, itemHeight: 12 },
+            xAxis: { type: 'category', data: ['上海港', '广州港', '大连港', '青岛港', '深圳港'], axisLine: { lineStyle: { color: 'rgba(0,246,255,0.3)' } }, axisLabel: { color: '#a6c0fe' } },
+            yAxis: [
+                { type: 'value', name: '吞吐(吨)', nameTextStyle: { color: '#a6c0fe' }, splitLine: { lineStyle: { color: 'rgba(0,246,255,0.1)', type: 'dashed' } }, axisLabel: { color: '#a6c0fe' } },
+                { type: 'value', name: '周转(天)', nameTextStyle: { color: '#a6c0fe' }, splitLine: { show: false }, axisLabel: { color: '#a6c0fe' } }
+            ],
+            series: [
+                { name: '吞吐量', type: 'bar', barWidth: 12, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#00f6ff'},{offset:1,color:'rgba(0,119,255,0.2)'}]), borderRadius: [4,4,0,0] }, data: [1200, 980, 850, 760, 1100] },
+                { name: '平均周转', type: 'line', yAxisIndex: 1, smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 3, color: '#ffaa00' }, itemStyle: { color: '#ffaa00', borderColor: '#fff' }, data: [2.5, 3.1, 4.2, 3.8, 2.1] }
+            ]
+        });
+
+        // 5. 底部趋势图 (折线面积图)
+        const cCLine = echarts.init(document.getElementById('chart-center-line'));
+        cCLine.setOption({
+            ...baseOpt,
+            grid: { top: 15, bottom: 5, left: 15, right: 15, containLabel: true },
+            tooltip: { trigger: 'axis', axisPointer: { type: 'cross', label: { backgroundColor: '#ff2a55' } } },
+            xAxis: { type: 'category', data: ['00:00','02:00','04:00','06:00','08:00','10:00','12:00','14:00','16:00','18:00','20:00','22:00'], boundaryGap: false, axisLine: { lineStyle: { color: 'rgba(255,42,85,0.3)' } }, axisLabel: { color: '#a6c0fe' } },
+            yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,42,85,0.1)', type: 'dashed' } }, axisLabel: { color: '#a6c0fe' } },
+            series: [
+                { name: '当前周期', type: 'line', smooth: true, symbol: 'none', lineStyle: { width: 3, color: '#ff2a55', shadowColor: '#ff2a55', shadowBlur: 10 }, areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(255,42,85,0.6)'},{offset:1,color:'rgba(255,42,85,0)'}]) }, data: [400, 350, 320, 500, 800, 1200, 1400, 1300, 1500, 1800, 1600, 900] },
+                { name: '环比基准', type: 'line', smooth: true, symbol: 'none', lineStyle: { width: 2, color: '#00f6ff', type: 'dashed' }, data: [380, 360, 310, 480, 750, 1100, 1350, 1250, 1450, 1700, 1550, 850] }
+            ]
+        });
+
+        // 6. 炫酷中心关系图 (模拟粒子效果)
+        const cCCore = echarts.init(document.getElementById('chart-center-core'));
+        
+        // 构造中心放射状的节点数据
+        const nodes = [{ name: 'CORE', value: 100, symbolSize: 50, itemStyle: { color: 'transparent' } }];
+        const links = [];
+        const colors = ['#00f6ff', '#ff2a55', '#b300ff', '#ffaa00'];
+        
+        for (let i = 0; i < 20; i++) {
+            nodes.push({
+                name: `N${i}`, value: Math.random() * 50,
+                symbolSize: Math.random() * 15 + 5,
+                itemStyle: { color: colors[i % colors.length], shadowBlur: 10, shadowColor: colors[i % colors.length] }
+            });
+            links.push({ source: 'CORE', target: `N${i}`, lineStyle: { width: Math.random() * 2 + 0.5, opacity: 0.3, curveness: 0.2, color: colors[i % colors.length] } });
+        }
+
+        cCCore.setOption({
+            series: [{
+                type: 'graph', layout: 'force',
+                data: nodes, links: links,
+                roam: false,
+                force: { repulsion: 150, gravity: 0.1, edgeLength: 80 },
+                lineStyle: { color: 'source' },
+                itemStyle: { borderColor: '#fff', borderWidth: 0.5 }
+            }]
+        });
+
+        // 跨图表联动点击交互示例
+        let activeFilter = -1;
+        const allCharts = [cLTop, cLBot, cRTop, cRBot, cCLine, cCCore];
+
+        cLTop.on('click', function(params) {
+            activeFilter = (activeFilter === params.dataIndex) ? -1 : params.dataIndex;
+            
+            allCharts.forEach(chart => {
+                if (chart === cLTop || !chart) return;
+                if (activeFilter === -1) {
+                    chart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+                } else {
+                    chart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+                    chart.dispatchAction({ type: 'highlight', seriesIndex: 0, dataIndex: activeFilter });
+                }
+            });
+        });
+
+        // 窗口缩放适配
+        window.addEventListener('resize', function() {
+            allCharts.forEach(chart => { if(chart) chart.resize(); });
+        });
+    </script>
+</body>
+</html>

@@ -9,8 +9,8 @@
           <div class="w-7 h-7 rounded-lg bg-blue-700 flex items-center justify-center shadow-sm">
             <i class="fa-solid fa-wand-magic-sparkles text-white text-xs"></i>
           </div>
-          <span class="font-semibold text-slate-800 text-sm">产设大师</span>
-          <span class="text-xs text-slate-400 hidden sm:inline">智能体协作网格</span>
+          <span class="font-semibold text-slate-800 text-sm">FDE产品设计</span>
+          <span class="text-xs text-slate-400 hidden sm:inline">五阶段作战工作台</span>
         </div>
 
         <!-- Nav links -->
@@ -20,7 +20,15 @@
             class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all"
             :class="isHomeRoute ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'"
           >
-            <i class="fa-solid fa-comments text-[11px]" :class="isHomeRoute ? 'text-blue-700' : 'text-slate-400'"></i>
+            <i class="fa-solid fa-table-columns text-[11px]" :class="isHomeRoute ? 'text-blue-700' : 'text-slate-400'"></i>
+            <span>工作台</span>
+          </RouterLink>
+          <RouterLink
+            to="/chat"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] transition-all"
+            :class="isChatRoute ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'"
+          >
+            <i class="fa-solid fa-comments text-[11px]" :class="isChatRoute ? 'text-blue-700' : 'text-slate-400'"></i>
             <span>智能对话</span>
           </RouterLink>
           <RouterLink
@@ -73,6 +81,7 @@ const isMaximized = ref(false);
 const appVersion = ref('v1.0.0');
 
 const isHomeRoute = computed(() => route.path === '/');
+const isChatRoute = computed(() => route.path === '/chat');
 const isProjectsRoute = computed(() => route.path.startsWith('/projects'));
 const isSettingsRoute = computed(() => route.path === '/settings');
 

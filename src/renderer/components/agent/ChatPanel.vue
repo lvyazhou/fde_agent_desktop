@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="flex-1 flex flex-col min-w-0 relative bg-[#f0f4f8]">
+  <div class="flex-1 flex flex-col min-w-0 relative bg-white">
     <!-- Messages area -->
     <div ref="chatContainerRef" class="flex-1 overflow-y-auto px-4 pt-5" :class="messages.length > 0 ? 'pb-[160px]' : ''">
       <!-- Loading state -->
@@ -24,43 +24,34 @@
       />
 
       <!-- Message list -->
-      <div v-else class="w-full max-w-4xl mx-auto space-y-6">
+      <div v-else class="w-full max-w-4xl mx-auto space-y-7">
 
         <!-- Message list -->
         <div
           v-for="(msg, idx) in messages"
           :key="idx"
           :data-msg-index="idx"
-          class="flex gap-4 w-full group transition-all duration-300 rounded-2xl relative"
-          :class="msg.role === 'user' ? 'justify-end' : ''"
+          class="flex flex-col w-full group transition-all duration-300 relative"
+          :class="msg.role === 'user' ? 'items-end' : 'items-start'"
         >
-          <!-- Assistant Avatar -->
-          <div v-if="msg.role === 'assistant'" class="shrink-0 w-10 h-10 rounded-[16px] bg-white border border-blue-100/80 flex items-center justify-center shadow-sm self-start mt-1 overflow-hidden">
-            <i class="fa-solid fa-robot text-blue-500 text-sm"></i>
-          </div>
-
-          <!-- Spacer for user alignment -->
-          <div v-if="msg.role === 'user'" class="shrink-0 w-10 h-10 invisible"></div>
-
           <!-- User Message -->
-          <div v-if="msg.role === 'user'" class="relative w-full flex-1 min-w-0 max-w-[80%] flex flex-col items-end">
+          <div v-if="msg.role === 'user'" class="relative max-w-[80%] flex flex-col items-end">
             <!-- User image attachments -->
             <div v-if="msg.attachments && msg.attachments.length > 0" class="flex flex-wrap gap-2 mb-2 justify-end">
               <img
                 v-for="(att, ai) in msg.attachments"
                 :key="ai"
                 :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data"
-                class="max-w-[200px] max-h-[150px] object-cover rounded-xl border border-white/30 shadow-sm"
+                class="max-w-[200px] max-h-[150px] object-cover rounded-xl border border-slate-200 shadow-sm"
               />
             </div>
-            <div class="rounded-[20px] rounded-br-[6px] px-4 py-3 leading-relaxed text-sm bg-gradient-to-br from-blue-500 to-indigo-700 text-white shadow-md shadow-blue-500/20 whitespace-pre-wrap break-words border border-blue-400/20 inline-block text-left">
+            <div class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words inline-block text-left">
               {{ msg.content }}
             </div>
-            <div v-if="msg.timestamp" class="text-[10px] text-slate-400/80 mt-1 mr-1 font-medium">{{ msg.timestamp }}</div>
           </div>
 
           <!-- Assistant Message -->
-          <div v-else class="w-full flex-1 min-w-0 flex flex-col items-start">
+          <div v-else class="w-full flex flex-col items-start">
             <!-- Thinking Steps -->
             <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0" class="mb-3">
               <button
@@ -110,79 +101,134 @@
               </div>
             </div>
 
-            <!-- Message content -->
-            <div v-if="msg.content" class="rounded-[20px] rounded-bl-[6px] px-4 py-3 leading-relaxed text-[13px] bg-white shadow-sm border border-slate-100 prose prose-sm prose-slate max-w-none" v-html="renderAssistantContent(msg.content)">
+            <!-- Message content: Doubao-style, no bubble, plain text on background -->
+            <div v-if="msg.content" class="w-full leading-[1.75] text-[15px] text-slate-800 prose prose-slate max-w-none" v-html="renderAssistantContent(msg.content)">
             </div>
-            <div v-if="msg.timestamp" class="text-[11px] text-slate-400/80 mt-1.5 ml-1 font-medium">{{ msg.timestamp }}</div>
-          </div>
 
-          <!-- User Avatar -->
-          <div v-if="msg.role === 'user'" class="shrink-0 w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shadow-sm self-start mt-1">
-            <i class="fa-solid fa-user text-white text-xs"></i>
+            <!-- Action bar (always visible) -->
+            <div v-if="msg.content" class="flex items-center gap-0.5 mt-2">
+              <button @click="copyMessage(msg.content, idx)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer" :title="copiedIdx === idx ? '已复制' : '复制'">
+                <i class="text-[13px]" :class="copiedIdx === idx ? 'fa-solid fa-check text-emerald-500' : 'fa-regular fa-copy'"></i>
+              </button>
+              <button @click="msg.feedback = msg.feedback === 'up' ? null : 'up'" class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer" :class="msg.feedback === 'up' ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'" title="赞">
+                <i class="text-[13px]" :class="msg.feedback === 'up' ? 'fa-solid fa-thumbs-up' : 'fa-regular fa-thumbs-up'"></i>
+              </button>
+              <button @click="msg.feedback = msg.feedback === 'down' ? null : 'down'" class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer" :class="msg.feedback === 'down' ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'" title="踩">
+                <i class="text-[13px]" :class="msg.feedback === 'down' ? 'fa-solid fa-thumbs-down' : 'fa-regular fa-thumbs-down'"></i>
+              </button>
+              <button @click="$emit('regenerate', idx)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer" title="重新生成">
+                <i class="fa-solid fa-rotate-right text-[13px]"></i>
+              </button>
+
+              <!-- More menu: 反馈 + 删除 -->
+              <div class="relative">
+                <button @click.stop="menuIdx = menuIdx === idx ? null : idx" class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer" :class="menuIdx === idx ? 'text-slate-700 bg-slate-100' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'" title="更多">
+                  <i class="fa-solid fa-ellipsis text-[13px]"></i>
+                </button>
+                <div v-if="menuIdx === idx" class="absolute left-0 top-full mt-1 w-32 bg-white border border-slate-200/80 rounded-xl shadow-lg shadow-slate-900/10 py-1 z-30 overflow-hidden">
+                  <button @click="$emit('feedback', idx); menuIdx = null" class="w-full px-3 py-2 flex items-center gap-2.5 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <i class="fa-regular fa-comment-dots text-[12px] text-slate-400 w-4"></i>反馈
+                  </button>
+                  <button @click="$emit('delete', idx); menuIdx = null" class="w-full px-3 py-2 flex items-center gap-2.5 text-[13px] text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer">
+                    <i class="fa-regular fa-trash-can text-[12px] w-4"></i>删除
+                  </button>
+                </div>
+              </div>
+
+              <span v-if="msg.timestamp" class="text-[12px] text-slate-400 ml-2 self-center">{{ msg.timestamp }}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Floating input area (hidden when welcome hero is shown - it has its own input) -->
-    <div v-if="messages.length > 0" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#f0f4f8] via-[#f0f4f8] to-transparent pt-8 pb-4 px-4">
-      <div class="w-full max-w-3xl mx-auto relative">
+    <div v-if="messages.length > 0" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-10 pb-5 px-4">
+      <div class="w-full max-w-4xl mx-auto relative">
         <!-- Slash command palette -->
-        <div v-if="showSlashMenu" class="absolute bottom-full mb-1 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden z-20 max-h-[200px] overflow-y-auto">
+        <div v-if="showSlashMenu" class="absolute bottom-full mb-2 left-2 right-2 bg-white border border-slate-200/80 rounded-2xl shadow-xl shadow-slate-900/5 overflow-hidden z-20 max-h-[220px] overflow-y-auto">
           <div
             v-for="(cmd, ci) in filteredCommands"
             :key="cmd.name || ci"
             @click="selectCommand(cmd)"
-            class="px-4 py-2 hover:bg-blue-50 cursor-pointer flex items-center gap-3 text-[12px] transition-colors"
+            class="px-4 py-2.5 hover:bg-blue-50/70 cursor-pointer flex items-center gap-3 text-[12px] transition-colors"
           >
-            <span class="text-blue-600 font-mono font-semibold">/{{ cmd.name }}</span>
-            <span class="text-slate-500">{{ cmd.hint || cmd.description || '' }}</span>
+            <span class="text-blue-600 font-mono font-semibold shrink-0">/{{ cmd.name }}</span>
+            <span class="text-slate-500 truncate">{{ cmd.hint || cmd.description || '' }}</span>
           </div>
           <div v-if="filteredCommands.length === 0" class="px-4 py-3 text-[11px] text-slate-400 text-center">无匹配命令</div>
         </div>
-        <div class="bg-white/80 backdrop-blur-xl border border-white shadow-lg rounded-[22px] p-3">
-          <textarea
-            ref="inputRef"
-            v-model="inputText"
-            :placeholder="isStreaming ? 'AI 正在响应中...' : '描述你想要的产品功能...'"
-            rows="2"
-            :disabled="isStreaming"
-            class="w-full resize-none text-[13px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-relaxed px-2"
-            @keydown.ctrl.enter.prevent="sendMessage"
-            @keydown.meta.enter.prevent="sendMessage"
-          ></textarea>
+
+        <!-- Doubao-style composer -->
+        <div
+          class="group/composer rounded-[26px] border transition-all duration-200"
+          :class="isFocused ? 'bg-white border-blue-400/70 shadow-[0_6px_28px_-8px_rgba(59,130,246,0.28)]' : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]'"
+        >
           <!-- Attachment preview -->
-          <div v-if="chatAttachments.length > 0" class="flex items-center gap-2 px-1 py-1 flex-wrap">
+          <div v-if="chatAttachments.length > 0" class="flex items-center gap-2 px-5 pt-4 flex-wrap">
             <div v-for="(att, ai) in chatAttachments" :key="ai" class="relative group/att">
-              <img :src="'data:' + att.media_type + ';base64,' + att.data" class="w-10 h-10 object-cover rounded-lg border border-slate-200" />
-              <button @click="chatAttachments.splice(ai, 1)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[8px] flex items-center justify-center opacity-0 group-hover/att:opacity-100 transition-opacity cursor-pointer">
+              <img :src="'data:' + att.media_type + ';base64,' + att.data" class="w-14 h-14 object-cover rounded-xl border border-slate-200" />
+              <button @click="chatAttachments.splice(ai, 1)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center transition-colors cursor-pointer shadow-sm">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </div>
           </div>
-          <div class="flex items-center justify-between mt-1 px-1">
-            <div class="flex items-center gap-2">
-              <span class="text-[11px] text-slate-400">Ctrl + Enter 发送</span>
-              <button @click="pickImage" class="text-slate-400 hover:text-blue-600 transition-colors cursor-pointer" title="上传图片" :disabled="isStreaming">
-                <i class="fa-solid fa-paperclip text-xs"></i>
+
+          <textarea
+            ref="inputRef"
+            v-model="inputText"
+            :placeholder="isStreaming ? 'AI 正在响应中…' : '发消息、输入 / 唤起指令，Ctrl + Enter 发送'"
+            rows="1"
+            :disabled="isStreaming"
+            @input="autoGrow"
+            @focus="isFocused = true"
+            @blur="isFocused = false"
+            class="w-full resize-none text-[14px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-6 px-5 pt-4 pb-1 max-h-[168px] scrollbar-hide disabled:opacity-60"
+            @keydown.ctrl.enter.prevent="sendMessage"
+            @keydown.meta.enter.prevent="sendMessage"
+          ></textarea>
+
+          <!-- Bottom toolbar -->
+          <div class="flex items-center justify-between px-3 pb-3 pt-1.5">
+            <div class="flex items-center gap-1.5">
+              <button
+                @click="pickImage"
+                :disabled="isStreaming"
+                class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                title="上传图片"
+              >
+                <i class="fa-solid fa-paperclip text-sm"></i>
+              </button>
+              <button
+                @click="triggerSlash"
+                :disabled="isStreaming"
+                class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                title="指令"
+              >
+                <i class="fa-solid fa-slash text-sm"></i>
               </button>
             </div>
-            <button
-              v-if="isStreaming"
-              @click="$emit('cancel')"
-              class="w-9 h-9 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-colors shadow-sm cursor-pointer"
-            >
-              <i class="fa-solid fa-stop text-xs"></i>
-            </button>
-            <button
-              v-else
-              @click="sendMessage"
-              :disabled="!inputText.trim()"
-              class="w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm"
-              :class="inputText.trim() ? 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
-            >
-              <i class="fa-solid fa-arrow-up text-sm"></i>
-            </button>
+
+            <div class="flex items-center gap-2.5">
+              <span class="hidden sm:inline text-[11px] text-slate-400 select-none">Ctrl + Enter 发送</span>
+              <button
+                v-if="isStreaming"
+                @click="$emit('cancel')"
+                class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                title="停止生成"
+              >
+                <span class="w-3 h-3 rounded-[3px] bg-white"></span>
+              </button>
+              <button
+                v-else
+                @click="sendMessage"
+                :disabled="!inputText.trim() && chatAttachments.length === 0"
+                class="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
+                :class="(inputText.trim() || chatAttachments.length > 0) ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white cursor-pointer shadow-md shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/40 active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
+              >
+                <i class="fa-solid fa-arrow-up text-sm"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -191,7 +237,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, watch, computed } from 'vue';
+import { ref, nextTick, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { marked } from 'marked';
 import WelcomeHero from './WelcomeHero.vue';
 
@@ -204,12 +250,46 @@ defineProps({
   availableCommands: { type: Array, default: () => [] },
 });
 
-const emit = defineEmits(['send', 'send-quick', 'send-with-attachments', 'cancel', 'navigate', 'fork']);
+const emit = defineEmits(['send', 'send-quick', 'send-with-attachments', 'cancel', 'navigate', 'fork', 'regenerate', 'feedback', 'delete']);
 
 const inputText = ref('');
 const inputRef = ref(null);
 const chatContainerRef = ref(null);
 const chatAttachments = ref([]);
+const isFocused = ref(false);
+const copiedIdx = ref(null);
+const menuIdx = ref(null);
+
+// Auto-grow textarea like Doubao (single line -> expands up to max-h)
+const autoGrow = () => {
+  const el = inputRef.value;
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 168) + 'px';
+};
+
+const triggerSlash = () => {
+  if (!inputText.value.startsWith('/')) {
+    inputText.value = '/' + inputText.value;
+  }
+  showSlashMenu.value = true;
+  inputRef.value?.focus();
+};
+
+const copyMessage = async (content, idx) => {
+  try {
+    await navigator.clipboard.writeText(content || '');
+    copiedIdx.value = idx;
+    setTimeout(() => { if (copiedIdx.value === idx) copiedIdx.value = null; }, 1500);
+  } catch {
+    // ignore clipboard failures
+  }
+};
+
+// Close the "more" menu when clicking anywhere outside it
+const closeMenu = () => { menuIdx.value = null; };
+onMounted(() => document.addEventListener('click', closeMenu));
+onBeforeUnmount(() => document.removeEventListener('click', closeMenu));
 
 const pickImage = () => {
   const input = document.createElement('input');
@@ -269,6 +349,9 @@ const sendMessage = () => {
   }
   inputText.value = '';
   chatAttachments.value = [];
+  nextTick(() => {
+    if (inputRef.value) inputRef.value.style.height = 'auto';
+  });
 };
 
 const scrollToBottom = () => {
@@ -318,8 +401,8 @@ defineExpose({ scrollToBottom, scrollToMessage });
 <style scoped>
 /* Ensure markdown content renders correctly inside chat bubbles */
 :deep(.prose) {
-  font-size: 13px;
-  line-height: 1.7;
+  font-size: 15px;
+  line-height: 1.75;
 }
 :deep(.prose p) {
   margin-top: 0.5em;

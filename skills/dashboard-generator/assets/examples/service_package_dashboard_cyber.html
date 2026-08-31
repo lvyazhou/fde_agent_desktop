@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业级赛博朋克大屏 (Vanilla HTML)</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'DS-Digital';
+            src: url('https://cdn.jsdelivr.net/gh/ds-digital/font/DS-DIGI.TTF');
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #030a16;
+            color: #fff;
+            font-family: "Microsoft YaHei", sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            /* 深邃科技蓝背景底纹 */
+            background-image:
+                radial-gradient(circle at center, #0a1f3d 0%, #030a16 100%),
+                linear-gradient(rgba(11, 20, 40, 0.9), rgba(11, 20, 40, 0.9));
+            position: relative;
+        }
+
+        /* 赛博朋克网格线 + 全局暗角遮罩 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                linear-gradient(rgba(0, 246, 255, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 246, 255, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
+            /* 增加透视倾斜感，使背景网格有立体景深 */
+            transform: perspective(1000px) rotateX(10deg) scale(1.2);
+            transform-origin: top center;
+            opacity: 0.6;
+        }
+
+        /* 屏幕扫描线扫描动画 (CRT Scanline) */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* ===== 顶部标题栏 (赛博朋克风重塑) ===== */
+        .header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            /* 替换原先的平庸背景，采用赛博朋克风格的几何线条切割背景 */
+            background:
+                linear-gradient(90deg, transparent 0%, rgba(0, 246, 255, 0.1) 20%, rgba(0, 246, 255, 0.2) 50%, rgba(0, 246, 255, 0.1) 80%, transparent 100%);
+            border-bottom: 2px solid rgba(0, 246, 255, 0.5);
+            box-shadow: 0 5px 20px rgba(0, 246, 255, 0.2);
+        }
+
+        /* 顶部两侧装饰线条 */
+        .header::before, .header::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            width: 300px;
+            height: 2px;
+            background: #fff;
+            box-shadow: 0 0 10px #fff, 0 0 20px #00f6ff;
+        }
+        .header::before { left: 0; background: linear-gradient(90deg, transparent, #00f6ff); }
+        .header::after { right: 0; background: linear-gradient(-90deg, transparent, #00f6ff); }
+
+        .title {
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #fff;
+            text-transform: uppercase;
+            position: relative;
+            text-shadow:
+                0 0 5px #00f6ff,
+                0 0 10px #00f6ff,
+                0 0 20px #00f6ff,
+                0 0 40px #0077ff,
+                2px 2px 0px rgba(255, 0, 85, 0.8); /* 加入一点赛博红蓝错位感 */
+            transform: skewX(-10deg); /* 赛博朋克经典斜体速度感 */
+        }
+        
+        /* 标题边框修饰框 */
+        .title-wrapper {
+            position: relative;
+            padding: 0 40px;
+        }
+        .title-wrapper::before, .title-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 40px;
+            border: 3px solid #00f6ff;
+        }
+        .title-wrapper::before { left: 0; border-right: none; }
+        .title-wrapper::after { right: 0; border-left: none; }
+
+        /* 左上角系统时间与状态信息 */
+        .sys-info {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 20;
+        }
+        .sys-time {
+            font-family: 'DS-Digital', 'Impact', sans-serif;
+            color: #00f6ff;
+            font-size: 24px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #00f6ff;
+        }
+        .sys-date {
+            color: #a6c0fe;
+            font-size: 12px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        /* 闪烁的状态点 */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #2ed573;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #2ed573;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* 时间筛选器 */
+        .time-filter {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            /* 增加 scale 整体按比例缩小 15%，彻底解决重叠问题 */
+            transform: translateY(-50%) scale(0.85);
+            transform-origin: right center;
+            display: flex;
+            gap: 5px;
+            z-index: 20;
+        }
+        
+        .time-btn {
+            background: rgba(0, 119, 255, 0.2);
+            border: 1px solid #00f6ff;
+            color: #00f6ff;
+            padding: 4px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .time-btn:hover {
+            background: rgba(0, 246, 255, 0.3);
+            box-shadow: 0 0 10px #00f6ff;
+        }
+        .time-btn.active {
+            background: #00f6ff;
+            color: #030a16;
+            box-shadow: 0 0 15px #00f6ff;
+        }
+        
+        .cyber-date-input {
+            background: transparent;
+            border: none;
+            color: #00f6ff;
+            font-family: "Microsoft YaHei";
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+        }
+        /* 修改默认日历图标颜色 (部分浏览器适用) */
+        ::-webkit-calendar-picker-indicator {
+            filter: invert(1) sepia(1) saturate(5) hue-rotate(175deg);
+            cursor: pointer;
+        }
+
+        /* ===== 主容器：十字星包围布局 ===== */
+        .container {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            display: grid;
+            /* 左中右 三列，中间留宽给圆环和KPI */
+            /* 之前3个加起来是100%，加上gap:20px就会超出容器导致右边看不见，改为自适应和计算 */
+            grid-template-columns: 1fr 1.6fr 1fr;
+            /* 上下两行 */
+            grid-template-rows: 1fr 1fr;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        /* ===== 图表盒子基础样式（赛博风框） ===== */
+        .chart-box {
+            position: relative;
+            background: linear-gradient(135deg, rgba(6, 30, 93, 0.6) 0%, rgba(2, 10, 26, 0.8) 100%);
+            border: 1px solid rgba(0, 246, 255, 0.15);
+            box-shadow:
+                inset 0 0 40px rgba(0, 140, 255, 0.15),
+                0 0 15px rgba(0, 246, 255, 0.05); /* 外发光 */
+            backdrop-filter: blur(8px);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            /* 切角设计 clip-path */
+            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+
+        /* 顶部和底部的赛博风短横线装饰 */
+        .chart-box::before {
+            content: ''; position: absolute; top: 0; left: 20px; width: 40px; height: 2px; background: #00f6ff; box-shadow: 0 0 10px #00f6ff;
+        }
+        .chart-box::after {
+            content: ''; position: absolute; bottom: 0; right: 20px; width: 40px; height: 2px; background: #00f6ff; box-shadow: 0 0 10px #00f6ff;
+        }
+        
+        /* 移除旧的四角由于clip-path导致的冲突 */
+        .box-corner-tr { display:none; }
+        .box-corner-bl { display:none; }
+
+        /* 盒子标题 */
+        .chart-title {
+            color: #fff;
+            font-size: 18px;
+            font-weight: bold;
+            padding-left: 12px;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, rgba(0, 246, 255, 0.3) 0%, transparent 100%);
+            line-height: 32px;
+            border-left: 4px solid #00f6ff;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .chart-title .sub {
+            font-size: 12px;
+            font-weight: normal;
+            color: #ffaa00;
+            margin-left: auto;
+            margin-right: 10px;
+            text-shadow: 0 0 5px rgba(255,170,0,0.5);
+            cursor: pointer;
+        }
+
+        .chart {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+        }
+
+        /* ===== 网格分布对应 ===== */
+        .box-rank { grid-column: 1 / 2; grid-row: 1 / 2; } /* 左上：销售金额排名 */
+        .box-agent { grid-column: 1 / 2; grid-row: 2 / 3; } /* 左下：代理商与类型整合 */
+        .box-center { grid-column: 2 / 3; grid-row: 1 / 3; display: flex; flex-direction: column; background: transparent; border: none; box-shadow: none;} /* 中间核心区 */
+        .box-ind { grid-column: 3 / 4; grid-row: 1 / 2; } /* 右上：行业 */
+        .box-region { grid-column: 3 / 4; grid-row: 2 / 3; } /* 右下：全国区域独立展示 */
+
+        /* ===== 中间核心区：KPI + 大环形图 ===== */
+        .center-kpi-row {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .kpi-item {
+            background: linear-gradient(180deg, rgba(0,246,255,0.15) 0%, rgba(0,50,150,0.5) 100%);
+            border: 1px solid rgba(0, 246, 255, 0.4);
+            border-top: 3px solid #00f6ff; /* 顶部高亮切割边 */
+            border-bottom: 1px solid rgba(0, 246, 255, 0.1);
+            border-radius: 4px; /* 赛博朋克少用大圆角 */
+            padding: 10px 15px;
+            text-align: center;
+            flex: 1;
+            min-width: 100px;
+            box-shadow: 0 5px 15px rgba(0, 246, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+            transform: skewX(-5deg); /* KPI块也做轻微倾斜 */
+        }
+        
+        /* KPI块扫光动画 */
+        .kpi-item::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: skewX(-20deg);
+            animation: sweep 4s infinite;
+        }
+        @keyframes sweep { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+
+        .kpi-item .label { color: #00f6ff; font-size: 12px; margin-bottom: 5px; font-weight:bold; letter-spacing:1px; transform: skewX(5deg); }
+        .kpi-item .value { color: #fff; font-size: 28px; font-weight: bold; font-family: 'Impact'; text-shadow: 0 0 10px #00f6ff, 2px 2px 0px #ff0055; transform: skewX(5deg); }
+        .kpi-item .unit { font-size: 14px; color: #a6c0fe; font-weight: normal; margin-left:5px;}
+        
+        .kpi-item .trend {
+            font-size: 12px;
+            margin-top: 5px;
+            transform: skewX(5deg);
+        }
+        .trend.up { color: #ff4757; text-shadow: 0 0 5px #ff4757; }
+        .trend.down { color: #2ed573; text-shadow: 0 0 5px #2ed573; }
+
+        /* 发光环形外圈装饰 */
+        .center-ring-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 移除原有的动画属性，变成静态装饰环 */
+        .cyber-ring-bg {
+            position: absolute;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            border: 2px dashed rgba(0, 246, 255, 0.3);
+            pointer-events: none;
+        }
+        .cyber-ring-bg2 {
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 119, 255, 0.2);
+            border-top: 3px solid rgba(0, 246, 255, 0.5);
+            border-bottom: 3px solid rgba(255, 170, 0, 0.5);
+            pointer-events: none;
+        }
+
+        /* 全屏按钮极简 Icon 样式 */
+        .fullscreen-btn {
+            background: transparent;
+            border: none;
+            color: #00f6ff;
+            cursor: pointer;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+        .fullscreen-btn:hover {
+            color: #fff;
+            transform: scale(1.1);
+            text-shadow: 0 0 10px #00f6ff;
+        }
+        .fullscreen-btn svg {
+            fill: currentColor;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* 联动重置提示 */
+        .filter-alert {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff4757;
+            background: rgba(255, 71, 87, 0.15);
+            border: 1px solid #ff4757;
+            padding: 5px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+            z-index: 100;
+        }
+        .filter-alert.active { display: block; }
+        
+        /* 年度目标冲刺面板 */
+        .target-panel {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            z-index: 30;
+            background: linear-gradient(135deg, rgba(6, 30, 93, 0.8), rgba(2, 10, 26, 0.9));
+            border: 1px solid rgba(255, 71, 87, 0.4);
+            padding: 10px 15px;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.15);
+        }
+        .target-panel .t-title {
+            color: #ffaa00; font-size: 12px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 0 5px rgba(255, 170, 0, 0.5);
+            display: flex; justify-content: space-between;
+        }
+        .target-panel .t-diff {
+            color: #fff; font-size: 13px; margin-bottom: 8px;
+        }
+        .target-panel .t-num {
+            color: #ff4757; font-size: 22px; font-family: 'Impact'; text-shadow: 0 0 10px #ff4757; letter-spacing: 1px;
+        }
+        .t-progress-wrap {
+            width: 140px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; position: relative;
+        }
+        .t-progress-inner {
+            height: 100%; background: linear-gradient(90deg, #ffaa00, #ff4757); width: 0%; box-shadow: 0 0 10px #ff4757; transition: width 0.6s ease;
+        }
+
+        /* 时间流逝倒计时面板 (放在目标面板左侧) */
+        .time-countdown {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            z-index: 30;
+            background: linear-gradient(-135deg, rgba(6, 30, 93, 0.8), rgba(2, 10, 26, 0.9));
+            border: 1px solid rgba(0, 246, 255, 0.4);
+            padding: 10px 15px;
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+            box-shadow: 0 0 20px rgba(0, 246, 255, 0.15);
+        }
+        .time-countdown .tc-title {
+            color: #00f6ff; font-size: 12px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 0 5px rgba(0, 246, 255, 0.5);
+            display: flex; justify-content: space-between;
+        }
+        .time-countdown .tc-diff {
+            color: #fff; font-size: 13px; margin-bottom: 8px;
+        }
+        .time-countdown .tc-num {
+            color: #00f6ff; font-size: 22px; font-family: 'Impact'; text-shadow: 0 0 10px #00f6ff; letter-spacing: 1px;
+        }
+        .tc-progress-wrap {
+            width: 140px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; position: relative;
+        }
+        .tc-progress-inner {
+            height: 100%; background: linear-gradient(-90deg, #00f6ff, #0077ff); width: 0%; box-shadow: 0 0 10px #00f6ff; transition: width 0.6s ease;
+        }
+
+        /* 内部小Tab切换 (机甲切割风) */
+        .tab-btn {
+            background: transparent;
+            border: 1px solid #0077ff;
+            color: #00f6ff;
+            padding: 2px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 5px;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(0, 246, 255, 0.2); }
+        .tab-btn.active {
+            background: #00f6ff;
+            color: #030a16;
+            font-weight: bold;
+            box-shadow: 0 0 10px #00f6ff;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="sys-info">
+            <div class="sys-time" id="sysTime">00:00:00</div>
+            <div class="sys-date">
+                <div class="status-dot"></div>
+                <span id="sysDate">YYYY/MM/DD SYSTEM ONLINE</span>
+            </div>
+        </div>
+        <div class="title-wrapper">
+            <div class="title">商业化渠道服务包分析大屏</div>
+        </div>
+        
+        <div class="time-filter">
+            <button class="time-btn active" onclick="switchTime(this)">双周</button>
+            <button class="time-btn" onclick="switchTime(this)">本月</button>
+            <button class="time-btn" onclick="switchTime(this)">半年</button>
+            <button class="time-btn" onclick="switchTime(this)">一年</button>
+            <div style="display:flex; align-items:center; gap:2px; margin-left:5px; border:1px solid rgba(0,246,255,0.4); padding:2px 5px; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);">
+                <input type="date" class="cyber-date-input" value="2025-01-01" style="width:100px;">
+                <span style="color:#00f6ff; font-size:12px; margin:0 2px;">至</span>
+                <input type="date" class="cyber-date-input" value="2025-12-31" style="width:100px;">
+                <button class="time-btn" style="margin-left:5px; padding:2px 8px; font-size:12px;" onclick="switchTime(this, true)">检索</button>
+            </div>
+            <!-- 全屏按钮 -->
+            <button class="fullscreen-btn" onclick="toggleFullScreen()" title="全屏展示">
+                <svg viewBox="0 0 24 24">
+                    <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- 左侧：销售规模排名 -->
+        <div class="chart-box box-rank">
+            <div class="box-corner-tr"></div><div class="box-corner-bl"></div>
+            <div class="chart-title">
+                1. 服务包销售榜单
+                <span class="sub" title="点击下方柱子可全盘联动计算">※ 联动源</span>
+            </div>
+            <div id="chartRank" class="chart"></div>
+        </div>
+
+        <!-- 中间：核心KPI与环形中枢 -->
+        <div class="box-center">
+            <div class="center-kpi-row">
+                <div class="kpi-item">
+                    <div class="label">总签单金额</div>
+                    <div class="value">5,680<span class="unit">万</span></div>
+                    <div class="trend up">同比双周 ▲ 12.5%</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="label">订单总量</div>
+                    <div class="value">845<span class="unit">单</span></div>
+                    <div class="trend up">同比双周 ▲ 8.3%</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="label">覆盖客户</div>
+                    <div class="value">320<span class="unit">家</span></div>
+                    <div class="trend down">同比双周 ▼ 2.1%</div>
+                </div>
+                <div class="kpi-item">
+                    <div class="label">活跃代理</div>
+                    <div class="value">68<span class="unit">家</span></div>
+                    <div class="trend up">同比双周 ▲ 5.0%</div>
+                </div>
+            </div>
+            <div class="center-ring-container" style="flex:1.4; min-height:0; margin-bottom:15px;">
+                
+                <!-- 新增：今年剩余时间倒计时面板 (放在左侧) -->
+                <div class="time-countdown">
+                    <div class="tc-title"><span>▶ 时间进度</span> <span id="timePct">0%</span></div>
+                    <div class="tc-diff">今年还剩 <span class="tc-num" id="timeDiff">0</span> 天</div>
+                    <div class="tc-progress-wrap"><div class="tc-progress-inner" id="timeBar"></div></div>
+                </div>
+
+                <!-- 新增：年度冲刺倒计时面板 -->
+                <div class="target-panel">
+                    <div class="t-title"><span>★ 破亿冲刺</span> <span id="targetPct">0%</span></div>
+                    <div class="t-diff">距商业化1亿目标还差 <span class="t-num" id="targetDiff">0</span> 万</div>
+                    <div class="t-progress-wrap"><div class="t-progress-inner" id="targetBar"></div></div>
+                </div>
+
+                <div class="cyber-ring-bg"></div>
+                <div class="cyber-ring-bg2"></div>
+                <div id="chartPie" style="width:100%; height:100%; position:absolute; top:0; left:0; z-index:10;"></div>
+                <div class="filter-alert" id="filterAlert" onclick="resetFilter()">
+                    [ 解除锁定：<span id="filterName">当前包</span> ]
+                </div>
+            </div>
+            
+            <!-- 新增：中间下方销售趋势分析图 (已美化重构) -->
+            <div class="chart-box" style="flex:0.8; min-height:0; padding:10px 15px;">
+                <div class="chart-title" style="margin-bottom:0; font-size:15px; border-left:3px solid #ffaa00; background:linear-gradient(90deg, rgba(255, 170, 0, 0.2) 0%, transparent 100%);">
+                    5. 签单与单量走势
+                </div>
+                <div id="chartTrend" class="chart"></div>
+            </div>
+        </div>
+
+        <!-- 左下：代理商大盘整合 (代理类型 + 代理商排行) -->
+        <div class="chart-box box-agent">
+            <div class="box-corner-tr"></div><div class="box-corner-bl"></div>
+            <div class="chart-title" style="justify-content: flex-start;">
+                2. 代理商分析
+                <div style="margin-left:auto; display:flex;">
+                    <button class="tab-btn active" onclick="switchAgentTab(0)" id="btnAgTab0">代理商类型</button>
+                    <button class="tab-btn" onclick="switchAgentTab(1)" id="btnAgTab1">代理商排名</button>
+                </div>
+            </div>
+            
+            <!-- 视图0：代理商四类型 -->
+            <div id="viewAgentType" style="display:flex; flex:1; flex-direction:column; min-height:0;">
+                <div id="chartAgentType" style="flex:1;"></div>
+            </div>
+            
+            <!-- 视图1：代理商排行Top/Bot -->
+            <div id="viewAgentRank" style="display:none; flex:1; min-height:0; gap:10px;">
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <div style="color:#00f6ff; font-size:12px; text-align:center; margin-bottom:5px;">▲ 优势代理 TOP 5</div>
+                    <div id="chartAgTop" style="flex:1;"></div>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <div style="color:#ffaa00; font-size:12px; text-align:center; margin-bottom:5px;">▼ 潜力代理 BOT 5</div>
+                    <div id="chartAgBot" style="flex:1;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右上：行业分布 -->
+        <div class="chart-box box-ind">
+            <div class="box-corner-tr"></div><div class="box-corner-bl"></div>
+            <div class="chart-title">3. 渗透行业画像</div>
+            <div style="display:flex; flex:1; min-height:0; flex-direction:column;">
+                <div id="chartInd" style="flex:1;"></div>
+            </div>
+        </div>
+
+        <!-- 右下：全国区域分布独立展示 -->
+        <div class="chart-box box-region">
+            <div class="box-corner-tr"></div><div class="box-corner-bl"></div>
+            <div class="chart-title">4. 全国区域分布</div>
+            <div style="display:flex; flex:1; min-height:0; gap:10px;">
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <div style="color:#00f6ff; font-size:12px; text-align:center; margin-bottom:5px;">▲ 核心区域 TOP 5</div>
+                    <div id="chartRegTop" style="flex:1;"></div>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <div style="color:#ffaa00; font-size:12px; text-align:center; margin-bottom:5px;">▼ 边缘区域 BOT 5</div>
+                    <div id="chartRegBot" style="flex:1;"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ==================== 核心数据区 (以"一年"为基础数据) ====================
+        var packages = ['勒索保', '网站保', '情报保', '数据保', '7X24小时保', '合规保', 'APP保', '演练保', '防诈保', '财务保'];
+        // 全年总额度约 10,000 万 (1个亿)
+        var basePkgAmounts = [3200, 2100, 1500, 1000, 800, 600, 350, 200, 150, 100];
+        // 全年总订单数约 6100 单
+        var basePkgOrders = [1800, 1200, 950, 700, 500, 400, 250, 150, 100, 50];
+
+        var blues = ['#00f6ff','#0077ff','#20b2aa','#5da0e3','#8abde8','#b4d5f0','#d5e8f7', '#6366f1', '#a855f7', '#ff6b81'];
+        var currentFilter = -1; // -1 表示无单点锁定
+        var timeFactor = 2 / 52; // 默认选中"双周"
+
+        // 行业/企业规模数据 (按全年总盘配比，并刻意营造偏科现象和大量 0 数据)
+        var allIndNames = ['医疗', '教育', '中型企业', '大型企业', '小型企业'];
+        var allIndData = [
+            [250, 200,  50,   0,  80,  40,   0,  20,   0,   0], // 医疗
+            [150, 120,   0,  80,  50, 150,   0,  10,   0,   0], // 教育
+            [500, 350, 180, 120, 100,  70,  50,   0,  10,   5], // 中型企业
+            [800, 450, 400, 250, 200, 100,  80,  50,  30,  10], // 大型企业
+            [150, 100,  50,  20,  10,   0,   0,   0,   0,   0]  // 小型企业
+        ];
+
+        // 区域数据 (边缘区域基本是0)
+        var allRegNames = ['广东','北京','上海','浙江','江苏','宁夏','青海','海南','西藏','新疆'];
+        var allRegData = [
+            [600,300,200,150,100, 80, 50, 30, 20, 10], // 广东全能
+            [400,250,150,100,  0, 50, 40, 20,  0,  0], // 北京部分服务盲区
+            [280,120, 80, 60, 50, 40,  0,  0, 10,  5], // 上海
+            [150, 90, 70,  0, 40,  0, 20,  0,  0,  0], // 浙江
+            [100, 70,  0, 40, 30, 20, 15, 10,  0,  0], // 江苏
+            [ 25, 15,  0,  8,  0,  4,  0,  0,  0,  0], // 宁夏几乎只卖俩包
+            [ 20,  0,  8,  6,  0,  0,  0,  2,  0,  0], // 青海
+            [  0, 10,  8,  0,  4,  3,  0,  0,  0,  0], // 海南
+            [ 12,  0,  5,  0,  0,  0,  2,  0,  0,  0], // 西藏
+            [ 10,  5,  0,  0,  3,  0,  0,  0,  0,  0]  // 新疆
+        ];
+
+        // 代理商类型 (4种，有些渠道没有能力售卖复杂的高级包)
+        var agTypeNames = ['安全云代理商', '安全云联运商', '安全云联运商(二代)', '地市级区域独代'];
+        var agTypeData = [
+            [800, 500, 400, 200, 120,  80, 60, 40, 20, 10], // 核心类型全卖
+            [600, 350, 180, 120, 100,  70,  0, 30, 20,  0],
+            [400, 150, 120,   0,  60,  50, 30,  0, 10,  0],
+            [200, 120,  90,  70,   0,   0, 20,  0,  0,  2]  // 地市级渠道几乎不卖高级服务
+        ];
+
+        // 核心代理数据补充 (各个代理商有自己的优势产品)
+        var allAgentNames = [
+            '天津朗言安全技术服务有限公司', '杭州怀遥科技有限公司', '济南易信云科技服务有限公司', '深圳市恒鑫运科技有限公司', '河南省力戈电子科技有限公司',
+            '广州查尔科技有限公司', '成都云创未来商贸有限公司', '山西中科信和工贸有限公司', '深圳市大触创新科技有限公司', '安徽嘉源利志信息科技有限公司'
+        ];
+        var allAgentData = [
+            [500,  0,150,100, 80, 60, 50,  0, 20,  0], // 天津朗言：专注特定几款
+            [100,400,120, 80,  0, 50, 40, 20,  0,  5], // 杭州怀遥：网站保优势大
+            [200,150,100,  0, 50, 40,  0, 10,  5,  0],
+            [150,100, 80, 50, 40,  0, 20,  0,  0,  0],
+            [ 80, 80, 60, 40,  0, 20, 10,  0,  0,  0],
+            [ 30,  0, 15,  0,  8,  5,  4,  0,  0,  0], // 广州查尔：中小代理
+            [ 25, 15, 10,  8,  6,  0,  0,  0,  0,  0],
+            [ 20, 10,  0,  6,  5,  3,  0,  0,  0,  0],
+            [  0,  8,  6,  5,  4,  0,  2,  0,  0,  0],
+            [ 10,  0,  5,  0,  3,  2,  0,  0,  0,  0]
+        ];
+
+        // ==================== 动态比例换算 ====================
+        function getScaledData(arr) {
+            // 移除 Math.max(1)，允许数据为 0 甚至四舍五入为 0，以制造稀疏感
+            return arr.map(v => v === 0 ? 0 : Math.round(v * timeFactor));
+        }
+        function getScaledMat(mat) {
+            return mat.map(row => row.map(v => v === 0 ? 0 : Math.round(v * timeFactor)));
+        }
+
+        // ==================== 顶部时间筛选逻辑 ====================
+        function switchTime(btn, isCustom = false) {
+            // 移除所有激活状态
+            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+            // 激活当前点击的按钮
+            btn.classList.add('active');
+            
+            // 模拟数据刷新动画感（清空再重绘）
+            allCharts.forEach(c => c.clear());
+            
+            var timeText = isCustom ? '自定义' : btn.innerText;
+            
+            // 根据真实时间周期科学等比例拆分全年1个亿的数据
+            if(timeText === '双周') timeFactor = 2 / 52;
+            else if(timeText === '本月') timeFactor = 1 / 12;
+            else if(timeText === '半年') timeFactor = 6 / 12;
+            else if(timeText === '一年') timeFactor = 1.0;
+            else if(isCustom) {
+                // 自定义时间段，随机给个系数模拟，通常代表一个非标准大周期
+                timeFactor = 0.3 + Math.random() * 0.5;
+            }
+
+            // 更新KPI数字模拟 (以全年为基础 bases)
+            document.querySelectorAll('.kpi-item .value').forEach((el, index) => {
+                var bases = [10000, 6100, 1500, 120]; // 年签单1亿，订单6100，覆盖1500家，活跃120家代理
+                var units = ['万', '单', '家', '家'];
+                var newVal = Math.floor(bases[index] * timeFactor);
+                // 保证KPI至少有1作为展示托底（即使今日数据低，也可以象征性有点活跃）
+                if(newVal < 1 && bases[index] > 0) newVal = 1;
+                // 格式化千分位
+                newVal = newVal.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                el.innerHTML = newVal + '<span class="unit">' + units[index] + '</span>';
+            });
+            
+            // 更新KPI趋势文案
+            document.querySelectorAll('.kpi-item .trend').forEach(el => {
+                var isUp = Math.random() > 0.3;
+                var randPct = (Math.random() * 20).toFixed(1);
+                el.className = isUp ? 'trend up' : 'trend down';
+                var arrow = isUp ? '▲' : '▼';
+                el.innerText = '环比' + timeText + ' ' + arrow + ' ' + randPct + '%';
+            });
+
+            // 延迟重新渲染图表
+            setTimeout(function() {
+                updateAll();
+            }, 300);
+        }
+
+        // ==================== 系统时钟与状态 ====================
+        function updateClock() {
+            var now = new Date();
+            var h = String(now.getHours()).padStart(2, '0');
+            var m = String(now.getMinutes()).padStart(2, '0');
+            var s = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById('sysTime').innerText = h + ':' + m + ':' + s;
+            
+            var y = now.getFullYear();
+            var mo = String(now.getMonth() + 1).padStart(2, '0');
+            var d = String(now.getDate()).padStart(2, '0');
+            var days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            var day = days[now.getDay()];
+            document.getElementById('sysDate').innerText = y + '/' + mo + '/' + d + ' ' + day + ' SYSTEM ONLINE';
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ==================== 初始化图表 ====================
+        var cRank = echarts.init(document.getElementById('chartRank'));
+        var cPie = echarts.init(document.getElementById('chartPie'));
+        var cAgType = echarts.init(document.getElementById('chartAgentType'));
+        var cAgTop = echarts.init(document.getElementById('chartAgTop'));
+        var cAgBot = echarts.init(document.getElementById('chartAgBot'));
+        var cInd = echarts.init(document.getElementById('chartInd'));
+        var cRegTop = echarts.init(document.getElementById('chartRegTop'));
+        var cRegBot = echarts.init(document.getElementById('chartRegBot'));
+        var cTrend = echarts.init(document.getElementById('chartTrend'));
+        
+        var allCharts = [cRank, cPie, cInd, cAgType, cAgTop, cAgBot, cRegTop, cRegBot, cTrend];
+
+        // 代理商模块内 Tab 切换逻辑
+        function switchAgentTab(idx) {
+            document.getElementById('btnAgTab0').className = idx === 0 ? 'tab-btn active' : 'tab-btn';
+            document.getElementById('btnAgTab1').className = idx === 1 ? 'tab-btn active' : 'tab-btn';
+            
+            document.getElementById('viewAgentType').style.display = idx === 0 ? 'flex' : 'none';
+            document.getElementById('viewAgentRank').style.display = idx === 1 ? 'flex' : 'none';
+            
+            // 解决display:none导致ECharts获取不到宽度的问题，需延时触发resize
+            setTimeout(function() {
+                if(idx === 0) {
+                    cAgType.resize();
+                } else {
+                    cAgTop.resize();
+                    cAgBot.resize();
+                }
+            }, 50);
+        }
+
+        // ==================== 排序与计算提取 ====================
+        // 真联动核心算法：根据选中的包(或总计)提取并排序
+        function getRanked(names, dataMat) {
+            var comb = names.map((n, i) => {
+                // 如果未锁定包，则根据所有包的总和作为排序依据
+                var val = currentFilter === -1 ? dataMat[i].reduce((a,b)=>a+(b||0), 0) : dataMat[i][currentFilter];
+                return { n:n, d:dataMat[i], val:val };
+            });
+            comb.sort((a,b) => b.val - a.val); // 从大到小倒序
+            
+            var top = comb.slice(0,5);
+            var validBot = comb.filter(x => x.val > 0);
+            var bot = validBot.length > 0 ? validBot.slice(-5) : comb.slice(-5);
+            
+            return {
+                tN: top.map(x=>x.n), tD: top.map(x=>x.d),
+                bN: bot.map(x=>x.n), bD: bot.map(x=>x.d)
+            };
+        }
+
+        // 渲染子分支（水平柱状图），复用统一模板
+        // 参数 rev: 是否翻转(Top要求翻转使得第一名在最上)
+        function renderSubBar(ci, names, dataMat, isTop) {
+            if(!names || names.length===0) return;
+            
+            var rn = isTop ? names.slice().reverse() : names.slice();
+            var rd = isTop ? dataMat.slice().reverse() : dataMat.slice();
+            
+            var series = [];
+            // 无筛选：堆叠全显
+            if (currentFilter === -1) {
+                series = packages.map((pkg, pi) => ({
+                    name: pkg, type:'bar', stack:'T', barWidth:24, // 进一步加粗柱子
+                    // 如果数据为 0，不在图表强行占位，利用 Echarts 的自然渲染（不配置特殊高度）
+                    itemStyle: { color: blues[pi%blues.length] },
+                    data: rd.map(r => r[pi] > 0 ? r[pi] : null) // 把 0 换成 null，在堆叠图中就完全不会渲染细线
+                }));
+                
+                // 新增一个透明的0值辅助列，专门用来在堆叠图最右侧显示各行“总金额”
+                var sumArr = rd.map(r => r.reduce((a,b)=>a+(b||0), 0));
+                series.push({
+                    name: '总计辅助列', type: 'bar', stack: 'T', barWidth: 24,
+                    itemStyle: { color: 'transparent' }, // 完全透明
+                    tooltip: { show: false }, // 隐藏提示框
+                    label: {
+                        show: true,
+                        position: 'right',
+                        color: '#00f6ff', // 使用荧光蓝作为总计数字颜色
+                        fontSize: 12,
+                        fontWeight: 'bold',
+                        formatter: p => sumArr[p.dataIndex] > 0 ? sumArr[p.dataIndex] + '万' : ''
+                    },
+                    data: rd.map(() => 0) // 数值为0，堆叠在最后面
+                });
+
+            } else {
+                // 有筛选：剥离单独显选中包
+                series = [{
+                    name: packages[currentFilter], type:'bar', barWidth:24, // 进一步加粗柱子
+                    itemStyle: { color: blues[currentFilter%blues.length], borderRadius:[0,4,4,0] },
+                    label: { show:true, position:'right', color:'#00f6ff', fontSize:12, fontWeight:'bold', formatter: p => p.value>0 ? p.value + '万' : '' },
+                    data: rd.map(r => r[currentFilter])
+                }];
+            }
+
+            ci.setOption({
+                tooltip: {
+                    trigger:'axis',
+                    axisPointer:{type:'shadow'},
+                    backgroundColor:'rgba(0,0,0,0.8)',
+                    textStyle: { color: '#fff' }, // 设置 tooltip 文字为白色
+                    // confine: true 可以将 tooltip 限制在图表的区域内，防止超出浏览器边界
+                    confine: true,
+                    order: 'valueDesc', // 将 Tooltip 内部的各项服务包严格按照金额从大到小（倒叙）排序
+                    valueFormatter: (value) => (value || 0) + ' 万元' // 拦截 null 或 undefined，直接显示为 0 万元
+                },
+                // 添加图例(Legend)，改在Bottom图表(下半部分)的最下方显示
+                legend: !isTop ? {
+                    show: true,
+                    type: 'scroll',
+                    bottom: 0, // 移到底部
+                    textStyle: { color: '#a6c0fe', fontSize: 11 },
+                    itemWidth: 12,
+                    itemHeight: 12,
+                    pageIconColor: '#00f6ff',
+                    pageTextStyle: { color: '#fff' }
+                } : { show: false },
+                // 调整 grid：只有下方图表需要给 bottom 留出位置放图例，增加 right 以容纳右侧的总计数字
+                grid: { top: 5, bottom: !isTop ? 25 : 5, left: 10, right: 55, containLabel:true },
+                xAxis: { type:'value', show:false },
+                yAxis: {
+                    type:'category', data:rn,
+                    axisLine:{show:false}, axisTick:{show:false},
+                    // 为了防止过长的文本挤压图形，设定统一的文本宽度，并增大字体
+                    axisLabel:{ color:'#a6c0fe', fontSize:13, width:85, overflow:'truncate' }
+                },
+                series: series
+            }, true);
+        }
+
+        // ==================== 主渲染入口 ====================
+        function updateAll() {
+            var pkgAmounts = getScaledData(basePkgAmounts);
+            var pkgOrders = getScaledData(basePkgOrders);
+            var totalAmount = pkgAmounts.reduce((a,b)=>a+b, 0);
+
+            // 1. 左侧排名 (修改为带订单数的展示方式，双柱或标签叠加均可，此处采用右侧显示 "金额 | 订单数")
+            var revPkg = packages.slice().reverse();
+            var revAmt = pkgAmounts.slice().reverse();
+            var revOrd = pkgOrders.slice().reverse();
+
+            cRank.setOption({
+                tooltip: {
+                    trigger:'axis',
+                    backgroundColor:'rgba(0,0,0,0.8)',
+                    textStyle: { color: '#fff' }, // 设置 tooltip 文字为白色
+                    formatter: function(params) {
+                        var idx = params[0].dataIndex;
+                        return revPkg[idx] + '<br/>金额: ' + revAmt[idx] + '万元<br/>订单: ' + revOrd[idx] + '单';
+                    }
+                },
+                grid: { top:5, bottom:5, left:10, right:60, containLabel:true }, // 增加 right 以容纳更长的文字
+                xAxis: { type:'value', show:false },
+                yAxis: { type:'category', data:revPkg, axisLine:{show:false}, axisTick:{show:false}, axisLabel:{color:'#a6c0fe', fontSize:13, interval:0, width:75, overflow:'truncate'} },
+                series: [{
+                    name:'金额(万)', type:'bar', barWidth: 18, // 柱子加粗
+                    data: revAmt.map((v, i) => {
+                        var ri = packages.length - 1 - i;
+                        var c = new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'#002c5f'},{offset:1,color:'#00f6ff'}]);
+                        if (currentFilter !== -1 && currentFilter !== ri) c = 'rgba(0, 119, 255, 0.15)';
+                        if (currentFilter === ri) c = '#00f6ff';
+                        
+                        return {
+                            value: v,
+                            itemStyle: { color:c, borderRadius:[0,8,8,0] },
+                            label:{
+                                show:true,
+                                position:'right',
+                                color:'#fff',
+                                formatter: function() {
+                                    return '{amt|' + v + '万}  {ord|' + revOrd[i] + '单}';
+                                },
+                                rich: {
+                                    amt: { color: '#00f6ff', fontSize: 12, fontWeight: 'bold' },
+                                    ord: { color: '#ffaa00', fontSize: 11 }
+                                }
+                            }
+                        };
+                    })
+                }]
+            });
+
+            // 2. 中间南丁格尔玫瑰图（带环比对比）
+            // 我们将普通的环形图改为外圈显示当前销售额（粗），内圈叠加一个较暗或半透明的数据环表示"上一个周期(环比)"的量
+            var outerPieData = [];
+            var innerPieData = [];
+            
+            // 获取当前选择的时间维度（双周、本月等）用于文案展示
+            var activeTimeBtn = document.querySelector('.time-btn.active');
+            var timeText = activeTimeBtn ? activeTimeBtn.innerText : '双周';
+
+            packages.forEach((p, i) => {
+                var c = blues[i % blues.length];
+                var dimC = 'rgba(0, 119, 255, 0.1)';
+                
+                var isDimmed = currentFilter !== -1 && currentFilter !== i;
+                var itemColor = isDimmed ? dimC : (currentFilter === i ? '#00f6ff' : c);
+                
+                // 模拟上一周期的环比数据，有高有低 (0.8 ~ 1.2倍)
+                var lastVal = Math.round(pkgAmounts[i] * (0.8 + (i % 3) * 0.2));
+                
+                // 外圈（当前数据）
+                outerPieData.push({
+                    name: p,
+                    value: pkgAmounts[i],
+                    itemStyle: { color: itemColor, borderColor:'#030a16', borderWidth:2 }
+                });
+                
+                // 内圈（对比数据）
+                innerPieData.push({
+                    name: p + ' (' + timeText + '前)',
+                    value: lastVal,
+                    itemStyle: {
+                        color: isDimmed ? dimC : itemColor,
+                        opacity: 0.3, // 半透明以区分
+                        borderColor:'#030a16',
+                        borderWidth: 1
+                    }
+                });
+            });
+
+            var cName = currentFilter === -1 ? "全盘" : packages[currentFilter];
+            var cVal = currentFilter === -1 ? totalAmount : pkgAmounts[currentFilter];
+            var cPct = currentFilter === -1 ? 100 : Math.round(cVal / totalAmount * 100);
+            
+            // 选中的包计算一个动态的环比趋势展示在中间，并追加具体数字
+            var currentTrendText = '';
+            if(currentFilter !== -1) {
+                var cLastVal = Math.round(pkgAmounts[currentFilter] * (0.8 + (currentFilter % 3) * 0.2));
+                var trendPct = cLastVal === 0 ? 0 : (((pkgAmounts[currentFilter] - cLastVal) / cLastVal) * 100).toFixed(1);
+                var isTrendUp = trendPct >= 0;
+                currentTrendText = `\n{t|环比${timeText} ${isTrendUp ? '▲' : '▼'} ${Math.abs(trendPct)}%}\n{dt|本期: ${cVal}万  |  上期: ${cLastVal}万}`;
+            } else {
+                // 全盘的模拟环比
+                var totalLastVal = Math.round(totalAmount * 0.88); // 模拟总体上期约为本期88% (即上涨约12.5%)
+                currentTrendText = `\n{t|环比${timeText} ▲ 12.5%}\n{dt|本期: ${cVal}万  |  上期: ${totalLastVal}万}`;
+            }
+
+            cPie.setOption({
+                tooltip: {
+                    trigger:'item',
+                    formatter:'{b}: {c}万元',
+                    backgroundColor:'rgba(0,0,0,0.8)',
+                    textStyle: { color: '#fff' }
+                },
+                series: [
+                    {
+                        // 外圈：当前期
+                        name: '当前期',
+                        type:'pie',
+                        radius:['60%','80%'],
+                        center:['50%','50%'],
+                        label: {
+                            show:true, position:'center',
+                            formatter: `{n|${cName}}\n{v|${cPct}%}${currentTrendText}`,
+                            rich: {
+                                n:{fontSize:16, color:'#a6c0fe', padding:[0,0,5,0]},
+                                v:{fontSize:42, fontWeight:'bold', color:'#fff', fontFamily:'Impact', textShadow:'0 0 10px #00f6ff'},
+                                t:{fontSize:18, color: currentTrendText.includes('▲') ? '#ff4757' : '#2ed573', padding:[10,0,0,0], fontWeight:'bold', textShadow:'0 0 5px rgba(0,0,0,0.8)'},
+                                dt:{fontSize:15, color:'#a6c0fe', padding:[8,0,0,0]}
+                            }
+                        },
+                        data: outerPieData
+                    },
+                    {
+                        // 内圈：上一期（用于环比视觉对比）
+                        name: '上一期',
+                        type:'pie',
+                        radius:['45%','55%'],
+                        center:['50%','50%'],
+                        label: { show: false },
+                        itemStyle: { borderRadius: 0 },
+                        data: innerPieData
+                    }
+                ]
+            });
+
+            // 3. 右上：行业动态计算 (统一展示，不需要拆分Top/Bot)
+            var scaledInd = getScaledMat(allIndData);
+            var combInd = allIndNames.map((n, i) => {
+                var val = currentFilter === -1 ? scaledInd[i].reduce((a,b)=>a+(b||0), 0) : scaledInd[i][currentFilter];
+                return { n:n, d:scaledInd[i], val:val };
+            });
+            combInd.sort((a,b) => b.val - a.val); // 行业倒序排序
+            
+            // 为了让统一的行业图表能看到图例，我们单独配置一个渲染模式，借用 rendersubbar 的 false 参数展示图例并自己 reverse 数据
+            var indNamesSorted = combInd.map(x=>x.n).reverse();
+            var indDataSorted = combInd.map(x=>x.d).reverse();
+            // 这里传入 isTop=false 来显示图例，但传入已经手动反转好的数据，避免 getRanked 和 renderSubBar 的内置逻辑冲突
+            renderSubBar(cInd, indNamesSorted, indDataSorted, false);
+
+            // 4. 左下：代理商整合
+            var scaledAgType = getScaledMat(agTypeData);
+            var combAg = agTypeNames.map((n, i) => {
+                var val = currentFilter === -1 ? scaledAgType[i].reduce((a,b)=>a+(b||0), 0) : scaledAgType[i][currentFilter];
+                return { n:n, d:scaledAgType[i], val:val };
+            });
+            combAg.sort((a,b) => b.val - a.val); // 代理商类型也进行倒序排序
+            renderSubBar(cAgType, combAg.map(x=>x.n), combAg.map(x=>x.d), true);
+
+            // 这里必须加上 setTimeout 来确保如果在另一个 Tab，图表仍能被正确渲染
+            var agR = getRanked(allAgentNames, getScaledMat(allAgentData));
+            renderSubBar(cAgTop, agR.tN, agR.tD, true);
+            renderSubBar(cAgBot, agR.bN, agR.bD, false);
+
+            // 5. 右下：区域动态计算
+            var regR = getRanked(allRegNames, getScaledMat(allRegData));
+            renderSubBar(cRegTop, regR.tN, regR.tD, true);
+            renderSubBar(cRegBot, regR.bN, regR.bD, false);
+
+            // ===== 倒计时时间计算 =====
+            var now = new Date();
+            var year = now.getFullYear();
+            var isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+            var totalDays = isLeap ? 366 : 365;
+            
+            // 计算今年过了多少天
+            var start = new Date(year, 0, 1); // 1月1日
+            var pastDays = Math.floor((now - start) / (1000 * 60 * 60 * 24)) + 1;
+            var leftDays = totalDays - pastDays;
+            
+            var tPct = (pastDays / totalDays * 100).toFixed(1);
+            if(tPct > 100) tPct = 100;
+
+            document.getElementById('timeDiff').innerText = leftDays;
+            document.getElementById('timePct').innerText = tPct + '%';
+            document.getElementById('timeBar').style.width = tPct + '%';
+
+
+            // 目标冲刺面板联动更新 (以1亿/10000万为目标)
+            var globalAmt = pkgAmounts.reduce((a,b)=>a+b, 0); // 全盘金额(随时间维度变化)
+            var targetAmt = 10000;
+            var diff = targetAmt - globalAmt;
+            if(diff < 0) diff = 0;
+            var pct = (globalAmt / targetAmt * 100).toFixed(1);
+            if(pct > 100) pct = 100;
+            
+            document.getElementById('targetDiff').innerText = diff.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            document.getElementById('targetPct').innerText = pct + '%';
+            document.getElementById('targetBar').style.width = pct + '%';
+
+            // 6. 中间下方：销售趋势感知联动图 (增加订单数量双Y轴)
+            var timePoints = [];
+            var amtDataPoints = [];
+            var ordDataPoints = [];
+            var amtBaseVal = currentFilter === -1 ? totalAmount : pkgAmounts[currentFilter];
+            
+            // 计算订单基础数据
+            var totalOrders = pkgOrders.reduce((a,b)=>a+b, 0);
+            var ordBaseVal = currentFilter === -1 ? totalOrders : pkgOrders[currentFilter];
+
+            var namePrefix = currentFilter === -1 ? "全盘" : packages[currentFilter];
+
+            // 根据选中的时间维度，智能刻画 X 轴
+            if(timeText === '双周') {
+                // 计算当前时间的前14天作为节点刻度
+                timePoints = [];
+                var d = new Date();
+                for(let i=14; i>=0; i-=2) { // 每隔2天取一个点，凑7个点让折线图平滑
+                    var pastDate = new Date(d.getTime() - i * 24 * 60 * 60 * 1000);
+                    var m = pastDate.getMonth() + 1;
+                    var day = pastDate.getDate();
+                    timePoints.push(m + '/' + day);
+                }
+            }
+            else if(timeText === '本月') { timePoints = ['1日','5日','10日','15日','20日','25日','30日']; }
+            else if(timeText === '半年') { timePoints = ['1月','2月','3月','4月','5月','6月']; }
+            else if(timeText === '一年') { timePoints = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月']; }
+            else { timePoints = ['起点','节点1','节点2','节点3','终点']; } // 自定义时间段的X轴
+
+            // 模拟具有波动的平滑数据曲线
+            var avgAmtBase = amtBaseVal / timePoints.length;
+            var avgOrdBase = ordBaseVal / timePoints.length;
+            for(let i=0; i<timePoints.length; i++) {
+                // 制造赛博朋克风的波动感，共用一个波动基数让金额和单量趋势大体同频
+                let randomFactor = 0.4 + Math.random() * 1.2;
+                
+                let waveAmt = avgAmtBase === 0 ? 0 : avgAmtBase * randomFactor;
+                amtDataPoints.push(Math.round(waveAmt));
+                
+                let waveOrd = avgOrdBase === 0 ? 0 : avgOrdBase * randomFactor;
+                ordDataPoints.push(Math.round(waveOrd));
+            }
+
+            cTrend.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'cross' },
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    textStyle: { color: '#fff' }
+                },
+                legend: {
+                    data: ['金额(万)', '单量(笔)'],
+                    textStyle: { color: '#a6c0fe', fontSize: 11 },
+                    top: 5,
+                    right: 10,
+                    icon: 'roundRect',
+                    itemWidth: 12,
+                    itemHeight: 8
+                },
+                grid: { top: 35, bottom: 5, left: 10, right: 10, containLabel: true },
+                xAxis: {
+                    type: 'category',
+                    boundaryGap: true, // 为了让柱子居中，需要设为 true
+                    data: timePoints,
+                    axisLabel: { color: '#a6c0fe', fontSize: 11, margin: 12 },
+                    axisTick: { show: false },
+                    axisLine: { lineStyle: { color: 'rgba(0, 246, 255, 0.3)' } }
+                },
+                yAxis: [
+                    {
+                        type: 'value',
+                        splitLine: { lineStyle: { color: 'rgba(0, 246, 255, 0.08)', type: 'dashed' } },
+                        axisLabel: { color: '#00f6ff', fontSize: 11 }
+                    },
+                    {
+                        type: 'value',
+                        splitLine: { show: false },
+                        axisLabel: { show: false } // 隐藏右侧文字，界面更干净
+                    }
+                ],
+                series: [
+                    {
+                        name: '单量(笔)',
+                        type: 'bar',
+                        yAxisIndex: 1, // 绑定到隐形的右Y轴
+                        barWidth: '35%',
+                        itemStyle: {
+                            borderRadius: [4, 4, 0, 0],
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(0, 119, 255, 0.6)' },
+                                { offset: 1, color: 'rgba(0, 119, 255, 0.1)' }
+                            ])
+                        },
+                        data: ordDataPoints
+                    },
+                    {
+                        name: '金额(万)',
+                        type: 'line',
+                        yAxisIndex: 0,
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 6,
+                        showSymbol: false, // 只有 hover 时才显示圆点，平常隐藏
+                        itemStyle: { color: '#00f6ff', borderColor: '#fff', borderWidth: 2 },
+                        lineStyle: { width: 3, color: '#00f6ff', shadowColor: 'rgba(0, 246, 255, 0.6)', shadowBlur: 8 },
+                        areaStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                { offset: 0, color: 'rgba(0, 246, 255, 0.3)' },
+                                { offset: 1, color: 'rgba(0, 246, 255, 0)' }
+                            ])
+                        },
+                        data: amtDataPoints
+                    }
+                ]
+            });
+
+            setTimeout(function() {
+                allCharts.forEach(c => c.resize());
+            }, 100);
+
+            // 处理锁定提示状态
+            var alertBox = document.getElementById('filterAlert');
+            if(currentFilter !== -1) {
+                alertBox.className = 'filter-alert active';
+                document.getElementById('filterName').innerText = packages[currentFilter];
+            } else {
+                alertBox.className = 'filter-alert';
+            }
+        }
+
+        // ==================== 交互事件绑定 ====================
+        cRank.on('click', function(p) {
+            var realI = packages.length - 1 - p.dataIndex;
+            currentFilter = (currentFilter === realI) ? -1 : realI;
+            updateAll();
+        });
+        cPie.on('click', function(p) {
+            // 注意双层饼图，所以要对内圈数据做一点名字剥离判断，否则可能选错索引
+            var iName = p.name.replace(/ \(.+\)$/, '');
+            var dIdx = packages.indexOf(iName);
+            if(dIdx !== -1) {
+                currentFilter = (currentFilter === dIdx) ? -1 : dIdx;
+                updateAll();
+            }
+        });
+
+        // 鼠标移入中间饼图时，直接在中心显示 Hover 的数据详情，移出时恢复原状
+        cPie.on('mouseover', function(p) {
+            // 只有没有锁定单一维度时才允许 hover 展示，防止点击锁定状态下视觉乱跳
+            if (currentFilter !== -1) return;
+            
+            // 获取真实的服务包名称
+            var iName = p.name.replace(/ \(.+\)$/, '');
+            var dIdx = packages.indexOf(iName);
+            if(dIdx === -1) return;
+            
+            var cName = iName;
+            var cVal = p.value;
+            var isInner = p.seriesIndex === 1; // 1是内圈(上一期)，0是外圈
+            
+            var activeTimeBtn = document.querySelector('.time-btn.active');
+            var timeText = activeTimeBtn ? activeTimeBtn.innerText : '双周';
+            var extLabel = isInner ? ` (${timeText}前)` : ' (当前期)';
+            
+            var pkgAmounts = getScaledData(basePkgAmounts);
+            var totalAmount = pkgAmounts.reduce((a,b)=>a+b, 0);
+
+            // 计算占比 (当前 Hover 值 / 总数)
+            var cPct = Math.round(cVal / totalAmount * 100);
+
+            // Hover 时候如果要显示当前期和上期的对比
+            var lastVal = Math.round(pkgAmounts[dIdx] * (0.8 + (dIdx % 3) * 0.2));
+            var trendPct = lastVal === 0 ? 0 : (((pkgAmounts[dIdx] - lastVal) / lastVal) * 100).toFixed(1);
+            var isTrendUp = trendPct >= 0;
+
+            // 实时更新饼图的中心 label 样式，临时覆盖原先的配置
+            cPie.setOption({
+                series: [
+                    {
+                        label: {
+                            formatter: `{n|${cName}${extLabel}}\n{v|${cPct}%}\n{t|环比${timeText} ${isTrendUp ? '▲' : '▼'} ${Math.abs(trendPct)}%}\n{dt|本期: ${pkgAmounts[dIdx]}万  |  上期: ${lastVal}万}`,
+                            rich: {
+                                n:{fontSize:16, color:'#ffaa00', padding:[0,0,5,0]},
+                                v:{fontSize:42, fontWeight:'bold', color:'#fff', fontFamily:'Impact', textShadow:'0 0 15px #ffaa00'},
+                                t:{fontSize:18, color: isTrendUp ? '#ff4757' : '#2ed573', padding:[10,0,0,0], fontWeight:'bold', textShadow:'0 0 5px rgba(0,0,0,0.8)'},
+                                dt:{fontSize:15, color:'#a6c0fe', padding:[8,0,0,0]}
+                            }
+                        }
+                    }
+                ]
+            });
+        });
+
+        // 鼠标移出时，重新把原本基于 currentFilter 的逻辑刷回来
+        cPie.on('mouseout', function(p) {
+            if (currentFilter === -1) {
+                updateAll();
+            }
+        });
+
+        function resetFilter() {
+            currentFilter = -1;
+            updateAll();
+        }
+        window.addEventListener('resize', () => allCharts.forEach(c => c.resize()));
+
+        // ==================== 全屏功能 ====================
+        function toggleFullScreen() {
+            var doc = window.document;
+            var docEl = doc.documentElement;
+
+            var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+
+            if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl);
+            } else {
+                cancelFullScreen.call(doc);
+            }
+        }
+
+        // 初次加载渲染
+        updateAll();
+    </script>
+</body>
+</html>

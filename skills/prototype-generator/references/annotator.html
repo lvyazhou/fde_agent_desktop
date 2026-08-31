@@ -1,0 +1,238 @@
+<!--
+  ═══════════════════════════════════════════════════════════════
+  原型批注组件 annotator —— 评审时给"跟客户需求不一致的地方"打标签
+  用法：把这整段（CSS + HTML + JS）粘贴到任意原型页面 </body> 前即可。
+  纯原生 JS，不依赖 Alpine，不干扰页面业务逻辑。按页面路径分别存 localStorage。
+  ═══════════════════════════════════════════════════════════════
+-->
+<style>
+  #anno-fab { position:fixed; right:20px; bottom:20px; z-index:9998; width:48px; height:48px; border-radius:50%; background:#2563eb; color:#fff; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(37,99,235,.35); display:flex; align-items:center; justify-content:center; font-size:18px; transition:all .2s; }
+  #anno-fab:hover { background:#1d4ed8; }
+  #anno-fab.on { background:#dc2626; box-shadow:0 4px 12px rgba(220,38,38,.35); }
+  #anno-fab .badge { position:absolute; top:-4px; right:-4px; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#dc2626; color:#fff; font-size:11px; line-height:18px; text-align:center; font-weight:600; }
+  body.anno-mode { cursor:crosshair; }
+  body.anno-mode #anno-fab { cursor:pointer; }
+  /* 页面上的标记点 */
+  .anno-pin { position:absolute; z-index:9990; width:22px; height:22px; border-radius:50% 50% 50% 0; transform:rotate(-45deg) translate(-50%,-50%); cursor:pointer; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.25); font-size:0; transition:opacity .2s; }
+  .anno-pin span { transform:rotate(45deg); display:block; width:100%; height:100%; }
+  body:not(.anno-mode) .anno-pin { opacity:.45; }
+  body:not(.anno-mode) .anno-pin:hover { opacity:1; }
+  .anno-t-mismatch { background:#dc2626; }
+  .anno-t-confirm  { background:#d97706; }
+  .anno-t-change   { background:#2563eb; }
+  .anno-t-idea     { background:#059669; }
+  .anno-pin.resolved { background:#94a3b8 !important; }
+  /* 落点后的输入气泡 */
+  #anno-pop { position:fixed; z-index:9999; width:280px; background:#fff; border:1px solid #e8ecf0; border-radius:12px; box-shadow:0 8px 28px rgba(0,0,0,.15); padding:12px; display:none; }
+  #anno-pop .tags { display:flex; gap:6px; margin-bottom:8px; }
+  #anno-pop .tag { flex:1; text-align:center; font-size:11px; padding:5px 0; border-radius:6px; cursor:pointer; border:1.5px solid transparent; color:#fff; opacity:.55; transition:opacity .15s; }
+  #anno-pop .tag.sel { opacity:1; border-color:#333; }
+  #anno-pop textarea { width:100%; box-sizing:border-box; height:60px; border:1px solid #e8ecf0; border-radius:8px; padding:8px; font-size:13px; resize:none; outline:none; font-family:inherit; }
+  #anno-pop textarea:focus { border-color:#2563eb; }
+  #anno-pop .btns { display:flex; gap:8px; margin-top:8px; }
+  #anno-pop button { flex:1; padding:7px 0; border-radius:7px; font-size:12.5px; cursor:pointer; border:none; }
+  #anno-pop .ok { background:#2563eb; color:#fff; }
+  #anno-pop .cancel { background:#f5f7fa; color:#475569; border:1px solid #e8ecf0; }
+  /* 右侧清单面板 */
+  #anno-panel { position:fixed; right:0; top:0; bottom:0; z-index:9997; width:340px; background:#fff; border-left:1px solid #e8ecf0; box-shadow:-4px 0 20px rgba(0,0,0,.08); transform:translateX(100%); transition:transform .25s; display:flex; flex-direction:column; }
+  #anno-panel.open { transform:translateX(0); }
+  #anno-panel header { height:52px; padding:0 16px; display:flex; align-items:center; border-bottom:1px solid #e8ecf0; flex-shrink:0; }
+  #anno-panel header .title { font-size:14px; font-weight:600; color:#1e3a8a; flex:1; }
+  #anno-panel header button { background:none; border:none; cursor:pointer; color:#999; font-size:16px; padding:4px 8px; }
+  #anno-list { flex:1; overflow-y:auto; padding:12px; }
+  #anno-list:empty::after { content:'还没有批注。开启批注模式，点页面任意位置就能打标签。'; display:block; color:#999; font-size:12.5px; text-align:center; padding:30px 12px; line-height:1.7; }
+  .anno-card { border:1px solid #e8ecf0; border-radius:10px; padding:10px; margin-bottom:8px; cursor:pointer; transition:border-color .15s; }
+  .anno-card:hover { border-color:#bfdbfe; }
+  .anno-card .head { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+  .anno-card .lbl { font-size:11px; padding:1px 7px; border-radius:4px; color:#fff; }
+  .anno-card.done { opacity:.55; }
+  .anno-card.done .txt { text-decoration:line-through; }
+  .anno-card .loc { font-size:11.5px; color:#1e40af; background:#eff6ff; border-radius:5px; padding:3px 7px; margin-bottom:5px; line-height:1.4; word-break:break-all; }
+  .anno-card .txt { font-size:13px; color:#333; line-height:1.5; word-break:break-all; }
+  .anno-card .acts { display:flex; gap:12px; margin-top:6px; font-size:11.5px; }
+  .anno-card .acts span { color:#999; cursor:pointer; }
+  .anno-card .acts span:hover { color:#2563eb; }
+  #anno-panel footer { padding:12px 16px; border-top:1px solid #e8ecf0; flex-shrink:0; display:flex; gap:8px; }
+  #anno-panel footer button { flex:1; padding:8px 0; border-radius:8px; font-size:12.5px; cursor:pointer; border:1px solid #e8ecf0; background:#fff; color:#475569; }
+  #anno-panel footer button.primary { background:#2563eb; color:#fff; border-color:#2563eb; }
+</style>
+
+<button id="anno-fab" title="批注模式"><i class="fa fa-comment-dots"></i><span class="badge" style="display:none">0</span></button>
+
+<div id="anno-pop">
+  <div class="tags">
+    <div class="tag anno-t-mismatch" data-tag="mismatch">需求不符</div>
+    <div class="tag anno-t-confirm" data-tag="confirm">待确认</div>
+    <div class="tag anno-t-change" data-tag="change">客户要改</div>
+    <div class="tag anno-t-idea" data-tag="idea">建议</div>
+  </div>
+  <textarea placeholder="写下这里跟客户需求哪里不一致…"></textarea>
+  <div class="btns"><button class="cancel">取消</button><button class="ok">保存批注</button></div>
+</div>
+
+<aside id="anno-panel">
+  <header>
+    <span class="title">批注清单 <span id="anno-count" style="color:#999;font-weight:400"></span></span>
+    <button id="anno-close"><i class="fa fa-times"></i></button>
+  </header>
+  <div id="anno-list"></div>
+  <footer>
+    <button id="anno-export" class="primary"><i class="fa fa-file-export"></i> 导出清单</button>
+    <button id="anno-clear"><i class="fa fa-trash"></i> 清空</button>
+  </footer>
+</aside>
+
+<script>
+(function(){
+  const TAGS = {
+    mismatch: {name:'需求不符', cls:'anno-t-mismatch', color:'#dc2626'},
+    confirm:  {name:'待确认',   cls:'anno-t-confirm',  color:'#d97706'},
+    change:   {name:'客户要改', cls:'anno-t-change',   color:'#2563eb'},
+    idea:     {name:'建议',     cls:'anno-t-idea',     color:'#059669'},
+  };
+  const KEY = 'anno::' + location.pathname.split('/').pop();  // 按页面存
+  let annos = JSON.parse(localStorage.getItem(KEY) || '[]');
+  let mode = false, pending = null, curTag = 'mismatch';
+
+  const fab = document.getElementById('anno-fab');
+  const badge = fab.querySelector('.badge');
+  const pop = document.getElementById('anno-pop');
+  const popTa = pop.querySelector('textarea');
+  const panel = document.getElementById('anno-panel');
+  const list = document.getElementById('anno-list');
+
+  function save(){ localStorage.setItem(KEY, JSON.stringify(annos)); render(); }
+  function uid(){ return 'a' + Date.now() + Math.floor(performance.now()); }
+
+  // 渲染页面标记点 + 右侧清单 + 徽标
+  function render(){
+    document.querySelectorAll('.anno-pin').forEach(e=>e.remove());
+    annos.forEach(a=>{
+      const pin = document.createElement('div');
+      pin.className = 'anno-pin ' + TAGS[a.tag].cls + (a.done?' resolved':'');
+      pin.style.left = a.x + 'px'; pin.style.top = a.y + 'px';
+      pin.title = TAGS[a.tag].name + '：' + a.text;
+      pin.onclick = (e)=>{ e.stopPropagation(); panel.classList.add('open'); const c=document.getElementById('card-'+a.id); if(c) c.scrollIntoView({block:'center'}); };
+      document.body.appendChild(pin);
+    });
+    const n = annos.filter(a=>!a.done).length;
+    badge.style.display = annos.length ? 'block' : 'none';
+    badge.textContent = annos.length;
+    document.getElementById('anno-count').textContent = annos.length ? `共 ${annos.length} 条 · 待处理 ${n}` : '';
+    list.innerHTML = annos.map(a=>`
+      <div class="anno-card ${a.done?'done':''}" id="card-${a.id}">
+        <div class="head"><span class="lbl" style="background:${TAGS[a.tag].color}">${TAGS[a.tag].name}</span></div>
+        ${a.target&&a.target.type ? `<div class="loc">📍 ${(a.target.type+(a.target.label?'「'+a.target.label+'」':'')+(a.target.context?' · '+a.target.context:'')).replace(/</g,'&lt;')}</div>` : ''}
+        <div class="txt">${a.text.replace(/</g,'&lt;')}</div>
+        <div class="acts">
+          <span data-act="done" data-id="${a.id}">${a.done?'↩ 重开':'✓ 已解决'}</span>
+          <span data-act="del" data-id="${a.id}">✕ 删除</span>
+        </div>
+      </div>`).join('');
+  }
+
+  // 抓取被点元素的定位描述——让批注能喂给大模型精确改
+  function describeTarget(el){
+    if(!el || el===document.body) return {type:'页面', label:'', context:'', selector:''};
+    // 1. 元素类型 + 自身文字
+    const tag = el.tagName.toLowerCase();
+    let type = '元素', self = (el.innerText||el.textContent||'').trim().replace(/\s+/g,' ').slice(0,30);
+    if(tag==='button' || el.getAttribute('role')==='button' || el.closest('button')){ type='按钮'; const b=el.closest('button')||el; self=(b.innerText||'').trim().replace(/\s+/g,' ').slice(0,30); }
+    else if(tag==='a'){ type='链接'; }
+    else if(tag==='input'||tag==='textarea'){ type='输入框'; self = el.placeholder||el.value||''; }
+    else if(/^h[1-6]$/.test(tag)){ type='标题'; }
+    else if(tag==='img'){ type='图片'; self = el.alt||'图片'; }
+    else if(tag==='i'||el.querySelector('img,i.fa')){ type='图标'; }
+    // 2. 往上找区块上下文（卡片/section 里最近的一个标题性文字）
+    let context = '';
+    let p = el;
+    for(let i=0;i<6 && p;i++){
+      p = p.parentElement; if(!p) break;
+      // 找这个容器里第一个"像标题"的文字
+      const h = p.querySelector('h1,h2,h3,h4,.text-\\[15px\\],[class*="font-semibold"],[class*="font-bold"]');
+      if(h){ const t=(h.innerText||'').trim().replace(/\s+/g,' ').slice(0,24); if(t && t!==self){ context=t; break; } }
+    }
+    // 3. 生成一个粗略选择器（class 首个 + 文字）便于人工复核
+    let selector = tag;
+    if(el.id) selector += '#'+el.id;
+    else if(el.className && typeof el.className==='string'){ const c=el.className.split(' ').filter(x=>x&&!x.startsWith('anno')).slice(0,2).join('.'); if(c) selector += '.'+c; }
+    return { type, label: self, context, selector };
+  }
+
+  // 落点：批注模式下点页面
+  document.addEventListener('click', (e)=>{
+    if(!mode) return;
+    if(e.target.closest('#anno-fab,#anno-pop,#anno-panel,.anno-pin')) return;
+    pending = { x: e.pageX, y: e.pageY, target: describeTarget(e.target) };
+    curTag = 'mismatch';
+    popTa.value = '';
+    pop.querySelectorAll('.tag').forEach(t=>t.classList.toggle('sel', t.dataset.tag==='mismatch'));
+    pop.style.left = Math.min(e.clientX, window.innerWidth-296) + 'px';
+    pop.style.top = Math.min(e.clientY, window.innerHeight-200) + 'px';
+    pop.style.display = 'block';
+    popTa.focus();
+  });
+
+  pop.querySelectorAll('.tag').forEach(t=>t.onclick=()=>{ curTag=t.dataset.tag; pop.querySelectorAll('.tag').forEach(x=>x.classList.toggle('sel',x===t)); });
+  pop.querySelector('.cancel').onclick = ()=>{ pop.style.display='none'; pending=null; };
+  pop.querySelector('.ok').onclick = ()=>{
+    const text = popTa.value.trim(); if(!text||!pending) return;
+    annos.push({ id:uid(), x:pending.x, y:pending.y, target:pending.target, tag:curTag, text, done:false });
+    pop.style.display='none'; pending=null; save(); panel.classList.add('open');
+  };
+
+  // 清单操作（事件委托）
+  list.onclick = (e)=>{
+    const s = e.target.closest('[data-act]'); if(!s) return;
+    const id = s.dataset.id, a = annos.find(x=>x.id===id); if(!a) return;
+    if(s.dataset.act==='done') a.done = !a.done;
+    if(s.dataset.act==='del') annos = annos.filter(x=>x.id!==id);
+    save();
+  };
+
+  // FAB 切换批注模式
+  fab.onclick = ()=>{
+    mode = !mode;
+    document.body.classList.toggle('anno-mode', mode);
+    fab.classList.toggle('on', mode);
+    fab.querySelector('i').className = mode ? 'fa fa-xmark' : 'fa fa-comment-dots';
+    if(mode) panel.classList.add('open'); else pop.style.display='none';
+  };
+  document.getElementById('anno-close').onclick = ()=>panel.classList.remove('open');
+
+  // 导出 Markdown（面向大模型：带元素定位，能直接照着改）
+  document.getElementById('anno-export').onclick = ()=>{
+    if(!annos.length){ alert('还没有批注'); return; }
+    const page = document.title || location.pathname;
+    const file = location.pathname.split('/').pop();
+    let md = `# 原型修改需求清单\n\n`;
+    md += `> 页面：${page}（文件 \`${file}\`）\n`;
+    md += `> 导出时间：${new Date().toLocaleString('zh-CN')}\n`;
+    md += `> 说明：以下是评审时标注的、与客户需求不一致的地方。每条含【定位】（改哪个元素、在哪个区块）和【要求】（改成什么），可直接据此修改原型。\n\n`;
+    const LBL = {mismatch:'需求不符（必改）', confirm:'待确认', change:'客户要改', idea:'建议优化'};
+    Object.keys(TAGS).forEach(k=>{
+      const items = annos.filter(a=>a.tag===k);
+      if(!items.length) return;
+      md += `## ${LBL[k]}（${items.length} 条）\n\n`;
+      items.forEach((a,i)=>{
+        const t = a.target || {};
+        const loc = t.type
+          ? `${t.type}${t.label?`「${t.label}」`:''}${t.context?`（位于：${t.context}）`:''}`
+          : '（未记录定位）';
+        md += `${i+1}. **定位**：${loc}\n`;
+        md += `   **要求**：${a.text}${a.done?' _（已解决）_':''}\n`;
+        if(t.selector) md += `   **参考选择器**：\`${t.selector}\`\n`;
+        md += '\n';
+      });
+    });
+    const blob = new Blob([md], {type:'text/markdown'});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url; link.download = `原型修改清单-${file}-${Date.now()}.md`; link.click();
+    URL.revokeObjectURL(url);
+  };
+  document.getElementById('anno-clear').onclick = ()=>{ if(confirm('确定清空本页全部批注？')){ annos=[]; save(); } };
+
+  render();
+})();
+</script>

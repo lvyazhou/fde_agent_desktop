@@ -37,6 +37,15 @@ const validInvokeChannels = new Set([
   'hermes:permission-respond',
   'hermes:browse-skills',
   'hermes:generate-suggestions',
+  // FDE 作战手册知识库
+  'handbook:get-manifest',
+  'handbook:read-md',
+  'handbook:read-html',
+  'handbook:open',
+  'handbook:save-as',
+  // 环境自检 + 连通性
+  'env:check',
+  'env:test-connection',
 ]);
 
 const validSendChannels = new Set([
@@ -143,5 +152,20 @@ contextBridge.exposeInMainWorld('api', {
   // Skills
   skills: {
     scanLocal() { return invoke('skills:scan-local'); },
+  },
+
+  // FDE 作战手册知识库(工作台)
+  handbook: {
+    getManifest() { return invoke('handbook:get-manifest'); },
+    readMd(stage, file) { return invoke('handbook:read-md', { stage, file }); },
+    readHtml(stage, file) { return invoke('handbook:read-html', { stage, file }); },
+    open(stage, file) { return invoke('handbook:open', { stage, file }); },
+    saveAs(stage, file) { return invoke('handbook:save-as', { stage, file }); },
+  },
+
+  // 环境自检 + LLM 连通性(首次启动向导)
+  env: {
+    check() { return invoke('env:check'); },
+    testConnection(params) { return invoke('env:test-connection', params); },
   },
 });

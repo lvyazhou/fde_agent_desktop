@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业级商务分析大屏 (Business Vanilla HTML)</title>
+    <!-- 引入 ECharts -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        /* 基础变量与赛博主题 */
+        :root {
+            --bg-color: #030814;
+            --card-bg: rgba(6, 30, 93, 0.45);
+            --primary-cyan: #00f6ff;
+            --gold-color: #faad14;
+            --text-main: #ffffff;
+            --text-sec: #a6c0fe;
+            --success: #2ed573;
+            --danger: #ff4d4f;
+            --purple: #b37feb;
+            --border-glow: 0 0 10px rgba(0, 246, 255, 0.3), inset 0 0 20px rgba(0, 246, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Consolas', 'Courier New', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden; /* 防止出现原生滚动条 */
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: 
+                linear-gradient(rgba(0, 246, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 246, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            position: relative;
+        }
+
+        /* CRT 扫描线特效 */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        /* 头部区域 */
+        header {
+            height: 80px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 30px;
+            background: linear-gradient(180deg, rgba(0, 246, 255, 0.15) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(0, 246, 255, 0.3);
+            position: relative;
+            z-index: 100;
+        }
+
+        .header-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--gold-color);
+            text-shadow: 0 0 15px rgba(250, 173, 20, 0.6);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .header-title::before {
+            content: '';
+            display: inline-block;
+            width: 8px;
+            height: 28px;
+            background: var(--gold-color);
+            box-shadow: 0 0 10px var(--gold-color);
+        }
+
+        /* 过滤控制栏 */
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .cyber-select, .cyber-btn {
+            background: rgba(3, 10, 22, 0.8);
+            border: 1px solid var(--primary-cyan);
+            color: var(--primary-cyan);
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 0 5px rgba(0, 246, 255, 0.2);
+        }
+
+        .cyber-select:hover, .cyber-btn:hover {
+            background: rgba(0, 246, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 246, 255, 0.5);
+        }
+
+        /* 自定义下拉框样式 */
+        .custom-select-wrapper {
+            position: relative;
+            user-select: none;
+            min-width: 200px;
+        }
+        .custom-select-trigger {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+        .custom-select-trigger .arrow {
+            font-size: 10px;
+            transition: transform 0.3s;
+            flex-shrink: 0;
+        }
+        .custom-select-wrapper.open .arrow {
+            transform: rotate(180deg);
+        }
+        .custom-select-wrapper.open .custom-select-trigger {
+            background: rgba(0, 246, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 246, 255, 0.5);
+        }
+        .custom-options {
+            position: absolute;
+            display: block;
+            top: calc(100% + 5px);
+            left: 0;
+            right: 0;
+            background: rgba(6, 30, 93, 0.95);
+            border: 1px solid var(--primary-cyan);
+            border-radius: 4px;
+            box-shadow: 0 5px 20px rgba(0, 246, 255, 0.3);
+            backdrop-filter: blur(10px);
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transform: translateY(-10px);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            z-index: 100;
+            overflow: hidden;
+        }
+        .custom-select-wrapper.open .custom-options {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
+            transform: translateY(0);
+        }
+        .custom-option {
+            display: block;
+            padding: 10px 15px;
+            color: var(--text-sec);
+            cursor: pointer;
+            transition: all 0.2s;
+            border-bottom: 1px solid rgba(0, 246, 255, 0.1);
+            font-size: 14px;
+            font-family: 'Consolas', 'Courier New', 'Microsoft YaHei', sans-serif;
+        }
+        .custom-option:last-child {
+            border-bottom: none;
+        }
+        .custom-option:hover {
+            background: rgba(0, 246, 255, 0.1);
+            color: var(--primary-cyan);
+            padding-left: 20px;
+        }
+        .custom-option.selected {
+            background: rgba(0, 246, 255, 0.15);
+            color: var(--primary-cyan);
+            text-shadow: 0 0 8px rgba(0, 246, 255, 0.5);
+        }
+
+        .cyber-btn.active {
+            background: var(--primary-cyan);
+            color: var(--bg-color);
+            font-weight: bold;
+        }
+
+        /* 主要布局网格 */
+        .main-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 3fr 5fr 3fr;
+            gap: 20px;
+            padding: 20px;
+            min-height: 0; /* 极其重要：防止 flex 子项高度溢出 */
+            z-index: 10;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            min-height: 0;
+        }
+
+        /* 科技风卡片 */
+        .tech-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(0, 246, 255, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--border-glow);
+            backdrop-filter: blur(5px);
+            flex: 1;
+            min-height: 0; /* 极其重要：防止图表高度塌陷 */
+        }
+
+        /* 卡片四角装饰 */
+        .tech-card::before, .tech-card::after {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border: 2px solid var(--primary-cyan);
+            transition: all 0.3s;
+        }
+        .tech-card::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .tech-card::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 246, 255, 0.2);
+            padding-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            color: var(--primary-cyan);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* 卡片内标签页切换 */
+        .chart-tabs {
+            display: flex;
+            gap: 10px;
+        }
+        .chart-tab {
+            font-size: 12px;
+            color: var(--text-sec);
+            cursor: pointer;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .chart-tab.active {
+            color: var(--gold-color);
+            border-color: var(--gold-color);
+            background: rgba(250, 173, 20, 0.1);
+        }
+
+        /* 图表容器核心样式 (避免塌陷) */
+        .chart-container {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .chart-dom {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+        }
+
+        /* KPI 区域 (中间顶部) */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 0;
+            flex: 0 0 auto;
+        }
+
+        .kpi-card {
+            background: linear-gradient(135deg, rgba(6, 30, 93, 0.8), rgba(3, 10, 22, 0.9));
+            border: 1px solid rgba(0, 246, 255, 0.3);
+            border-radius: 6px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--gold-color);
+            box-shadow: 0 5px 15px rgba(250, 173, 20, 0.3);
+        }
+
+        .kpi-card.active {
+            border-color: var(--gold-color);
+            background: rgba(250, 173, 20, 0.1);
+            box-shadow: inset 0 0 20px rgba(250, 173, 20, 0.2);
+        }
+
+        /* 涟漪点击特效 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            transform: scale(0);
+            animation: ripple 0.6s linear;
+            background-color: rgba(250, 173, 20, 0.4);
+        }
+        @keyframes ripple {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        .kpi-title {
+            color: var(--text-sec);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .kpi-value {
+            font-size: 26px;
+            font-weight: bold;
+            color: var(--gold-color);
+            text-shadow: 0 0 10px rgba(250, 173, 20, 0.5);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+        }
+        .kpi-unit {
+            font-size: 12px;
+            color: var(--text-sec);
+            font-weight: normal;
+        }
+        .kpi-change {
+            font-size: 13px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .trend-up { color: var(--success); }
+        .trend-down { color: var(--danger); }
+
+        /* 中间列的主图表区域需要更高 */
+        .center-col .tech-card {
+            flex: 1;
+        }
+
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(3, 10, 22, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 246, 255, 0.3); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-cyan); }
+    </style>
+</head>
+<body>
+
+    <!-- 头部及过滤控制 -->
+    <header>
+        <div class="header-title">
+            XAU/USD 黄金市场多维全景态势盘
+        </div>
+        <div class="controls">
+            <div class="custom-select-wrapper" id="marketSelectWrapper">
+                <div class="cyber-select custom-select-trigger">
+                    <span>全球核心市场综合</span>
+                    <div class="arrow">▼</div>
+                </div>
+                <div class="custom-options">
+                    <span class="custom-option selected" data-value="global">全球核心市场综合</span>
+                    <span class="custom-option" data-value="comex">COMEX 纽约期金</span>
+                    <span class="custom-option" data-value="sge">SGE 上海黄金交易所</span>
+                    <span class="custom-option" data-value="london">伦敦现货金</span>
+                </div>
+            </div>
+            <div style="width: 1px; height: 20px; background: rgba(0,246,255,0.3); margin: 0 10px;"></div>
+            <button class="cyber-btn active" data-time="24h">24H</button>
+            <button class="cyber-btn" data-time="7d">7天</button>
+            <button class="cyber-btn" data-time="1m">1个月</button>
+            <button class="cyber-btn" data-time="1y">1年</button>
+            <button class="cyber-btn" id="refreshBtn" style="margin-left: 10px;">
+                ↻ 实时刷新
+            </button>
+            <button class="cyber-btn" id="fullscreenBtn" style="border-color: var(--gold-color); color: var(--gold-color);">
+                ⛶ 全屏
+            </button>
+        </div>
+    </header>
+
+    <!-- 主体网格内容 -->
+    <div class="main-container">
+        
+        <!-- 左侧列：成分股与资金流 -->
+        <div class="col left-col">
+            <div class="tech-card">
+                <div class="card-header">
+                    <div class="card-title">▤ 全球主要金矿股表现 (Top 10)</div>
+                    <div class="chart-tabs">
+                        <div class="chart-tab active" data-target="stock-chart" data-type="gain">涨幅榜</div>
+                        <div class="chart-tab" data-target="stock-chart" data-type="loss">跌幅榜</div>
+                        <div class="chart-tab" data-target="stock-chart" data-type="vol">成交量</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div id="stock-chart" class="chart-dom"></div>
+                </div>
+            </div>
+            
+            <div class="tech-card">
+                <div class="card-header">
+                    <div class="card-title">◎ 市场主力资金流向分析</div>
+                    <div class="chart-tabs">
+                        <div class="chart-tab active" data-target="fund-chart" data-type="today">今日</div>
+                        <div class="chart-tab" data-target="fund-chart" data-type="week">本周净流</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div id="fund-chart" class="chart-dom"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 中间列：核心KPI与主K线图 -->
+        <div class="col center-col">
+            <div class="kpi-row">
+                <div class="kpi-card active" data-kpi="price" onclick="handleKpiClick(event, this)">
+                    <div class="kpi-title">现货黄金均价 (XAU/USD)</div>
+                    <div class="kpi-value" id="kpi-price">2,385.60 <span class="kpi-unit">USD/oz</span></div>
+                    <div class="kpi-change trend-up">▲ +1.24% (+29.40) 今日</div>
+                </div>
+                <div class="kpi-card" data-kpi="volume" onclick="handleKpiClick(event, this)">
+                    <div class="kpi-title">全球24H交易总量</div>
+                    <div class="kpi-value" id="kpi-vol">18.5 <span class="kpi-unit">M oz</span></div>
+                    <div class="kpi-change trend-up">▲ +5.2% 较昨日</div>
+                </div>
+                <div class="kpi-card" data-kpi="etf" onclick="handleKpiClick(event, this)">
+                    <div class="kpi-title">全球黄金ETF持仓量</div>
+                    <div class="kpi-value" id="kpi-etf">3,120.5 <span class="kpi-unit">Tons</span></div>
+                    <div class="kpi-change trend-down">▼ -0.15% (流出 4.8t)</div>
+                </div>
+                <div class="kpi-card" data-kpi="sentiment" onclick="handleKpiClick(event, this)">
+                    <div class="kpi-title">避险情绪指数 (VIX相关)</div>
+                    <div class="kpi-value" style="color: var(--primary-cyan)" id="kpi-sent">78.5 <span class="kpi-unit">极度贪婪</span></div>
+                    <div class="kpi-change trend-up">▲ +12% 风险偏好上升</div>
+                </div>
+            </div>
+
+            <div class="tech-card" style="border-color: var(--gold-color); box-shadow: 0 0 15px rgba(250, 173, 20, 0.15);">
+                <div class="card-header">
+                    <div class="card-title" style="color: var(--gold-color);">📈 黄金现货实时行情与技术分析 (K线联动)</div>
+                    <div class="chart-tabs">
+                        <div class="chart-tab active" data-target="main-chart" data-type="kline">日K线图</div>
+                        <div class="chart-tab" data-target="main-chart" data-type="depth">买卖深度图</div>
+                        <div class="chart-tab" data-target="main-chart" data-type="trend">分时走势</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div id="main-chart" class="chart-dom"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧列：宏观相关性与期权分布 -->
+        <div class="col right-col">
+            <div class="tech-card">
+                <div class="card-header">
+                    <div class="card-title">❂ 宏观经济指标相关性分析</div>
+                </div>
+                <div class="chart-container">
+                    <div id="macro-chart" class="chart-dom"></div>
+                </div>
+            </div>
+
+            <div class="tech-card">
+                <div class="card-header">
+                    <div class="card-title">▚ COMEX期金未平仓合约分布</div>
+                    <div class="chart-tabs">
+                        <div class="chart-tab active" data-target="options-chart" data-type="callput">看涨/看跌比</div>
+                        <div class="chart-tab" data-target="options-chart" data-type="price">按行权价</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div id="options-chart" class="chart-dom"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. 基础配置与工具函数
+        // ==========================================
+        const charts = {}; // 存储图表实例
+        
+        // ECharts 通用深色主题配置
+        const getBaseOption = () => ({
+            backgroundColor: 'transparent',
+            textStyle: { fontFamily: 'Consolas, sans-serif' },
+            tooltip: {
+                trigger: 'axis',
+                backgroundColor: 'rgba(3, 10, 22, 0.9)',
+                borderColor: '#00f6ff',
+                textStyle: { color: '#fff' },
+                axisPointer: { type: 'cross', label: { backgroundColor: '#00f6ff', color: '#000' } }
+            },
+            grid: { top: 35, right: 15, bottom: 25, left: 45, containLabel: true }
+        });
+
+        // 生成模拟的 K 线数据
+        function generateKLineData(count, startPrice = 2300) {
+            let data = [];
+            let times = [];
+            let vols = [];
+            let curr = startPrice;
+            let now = new Date();
+            now.setDate(now.getDate() - count);
+            
+            for (let i = 0; i < count; i++) {
+                let open = curr + (Math.random() - 0.5) * 20;
+                let close = open + (Math.random() - 0.5) * 30;
+                let low = Math.min(open, close) - Math.random() * 15;
+                let high = Math.max(open, close) + Math.random() * 15;
+                let vol = Math.random() * 1000 + 500;
+                
+                curr = close;
+                let dateStr = [now.getFullYear(), (now.getMonth() + 1).toString().padStart(2, '0'), now.getDate().toString().padStart(2, '0')].join('-');
+                
+                times.push(dateStr);
+                data.push([open.toFixed(2), close.toFixed(2), low.toFixed(2), high.toFixed(2)]);
+                vols.push(vol.toFixed(0));
+                now.setDate(now.getDate() + 1);
+            }
+            return { times, data, vols };
+        }
+
+        // ==========================================
+        // 2. 图表初始化与渲染函数
+        // ==========================================
+        
+        function renderStockChart(type = 'gain') {
+            const chart = charts['stock-chart'];
+            chart.showLoading({ text: 'Loading Data...', color: '#00f6ff', textColor: '#fff', maskColor: 'rgba(3,10,22,0.8)' });
+            
+            setTimeout(() => {
+                const names = ['Newmont(NEM)', 'Barrick(GOLD)', 'Agnico(AEM)', 'Franco-Nevada', 'Gold Fields', 'Kinross', 'AngloGold', 'Royal Gold', 'Sibanye', 'Zijin(紫金)'];
+                let data = names.map(() => (Math.random() * 8 + 1).toFixed(2));
+                let color = '#2ed573';
+                
+                if (type === 'loss') {
+                    data = names.map(() => -(Math.random() * 5 + 0.5).toFixed(2));
+                    color = '#ff4d4f';
+                    data.sort((a,b) => a - b);
+                } else if (type === 'vol') {
+                    data = names.map(() => (Math.random() * 50 + 10).toFixed(0));
+                    color = '#b37feb';
+                    data.sort((a,b) => b - a);
+                } else {
+                    data.sort((a,b) => b - a);
+                }
+
+                const option = {
+                    ...getBaseOption(),
+                    grid: { top: 10, right: 30, bottom: 10, left: 10, containLabel: true },
+                    xAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.1)', type: 'dashed' } }, axisLabel: { color: '#a6c0fe' } },
+                    yAxis: { type: 'category', data: names.reverse(), axisLabel: { color: '#a6c0fe', fontSize: 11 }, axisLine: { lineStyle: { color: 'rgba(0,246,255,0.3)' } } },
+                    series: [{
+                        type: 'bar',
+                        data: data.reverse(),
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [
+                                { offset: 0, color: color },
+                                { offset: 1, color: 'rgba(0,0,0,0)' }
+                            ]),
+                            borderRadius: [0, 4, 4, 0]
+                        },
+                        label: { show: true, position: type==='loss'?'left':'right', color: '#fff', formatter: (p) => type==='vol' ? p.value+'M' : p.value+'%' }
+                    }]
+                };
+                chart.hideLoading();
+                chart.setOption(option);
+            }, 500);
+        }
+
+        function renderFundChart() {
+            const chart = charts['fund-chart'];
+            const option = {
+                ...getBaseOption(),
+                tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+                legend: { bottom: 0, textStyle: { color: '#a6c0fe' }, itemWidth: 10, itemHeight: 10 },
+                series: [{
+                    name: '资金流向',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['50%', '45%'],
+                    avoidLabelOverlap: false,
+                    itemStyle: {
+                        borderRadius: 5,
+                        borderColor: '#030814',
+                        borderWidth: 2
+                    },
+                    label: { show: false },
+                    data: [
+                        { value: 1048, name: '机构多头流入', itemStyle: { color: '#2ed573' } },
+                        { value: 735, name: '散户多头流入', itemStyle: { color: '#00f6ff' } },
+                        { value: 580, name: '空头平仓', itemStyle: { color: '#faad14' } },
+                        { value: 484, name: '机构空头流出', itemStyle: { color: '#ff4d4f' } },
+                        { value: 300, name: '散户获利了结', itemStyle: { color: '#b37feb' } }
+                    ]
+                }]
+            };
+            chart.setOption(option);
+        }
+
+        function renderMainChart(type = 'kline') {
+            const chart = charts['main-chart'];
+            chart.showLoading({ text: '分析计算中...', color: '#faad14', textColor: '#faad14', maskColor: 'rgba(3,10,22,0.8)' });
+            
+            setTimeout(() => {
+                let option = getBaseOption();
+                
+                if (type === 'kline') {
+                    const kData = generateKLineData(90);
+                    option = {
+                        ...option,
+                        grid: [
+                            { left: '10%', right: '8%', height: '50%' },
+                            { left: '10%', right: '8%', top: '65%', height: '20%' }
+                        ],
+                        xAxis: [
+                            { type: 'category', data: kData.times, axisLine: { onZero: false, lineStyle:{color:'rgba(0,246,255,0.3)'} }, axisLabel: { color: '#a6c0fe' } },
+                            { type: 'category', gridIndex: 1, data: kData.times, show: false }
+                        ],
+                        yAxis: [
+                            { scale: true, splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: { color: '#a6c0fe' } },
+                            { scale: true, gridIndex: 1, splitNumber: 2, axisLabel: { show: false }, splitLine: { show: false } }
+                        ],
+                        dataZoom: [
+                            { type: 'inside', xAxisIndex: [0, 1], start: 50, end: 100 },
+                            { show: true, xAxisIndex: [0, 1], type: 'slider', bottom: '2%', start: 50, end: 100, textStyle: { color: '#a6c0fe' } }
+                        ],
+                        series: [
+                            {
+                                name: 'XAU/USD',
+                                type: 'candlestick',
+                                data: kData.data,
+                                itemStyle: { color: '#2ed573', color0: '#ff4d4f', borderColor: '#2ed573', borderColor0: '#ff4d4f' }
+                            },
+                            {
+                                name: '成交量',
+                                type: 'bar',
+                                xAxisIndex: 1,
+                                yAxisIndex: 1,
+                                data: kData.vols,
+                                itemStyle: { color: '#00f6ff', opacity: 0.5 }
+                            },
+                            {
+                                name: 'MA10',
+                                type: 'line',
+                                data: kData.data.map((item, idx) => {
+                                    if(idx < 9) return null;
+                                    let sum = 0;
+                                    for(let i=0; i<10; i++) sum += parseFloat(kData.data[idx-i][1]);
+                                    return (sum/10).toFixed(2);
+                                }),
+                                smooth: true,
+                                lineStyle: { color: '#faad14', width: 2 },
+                                symbol: 'none'
+                            }
+                        ]
+                    };
+                } else if (type === 'depth') {
+                    // 模拟深度图
+                    let bids = Array.from({length: 50}, (_, i) => [2350 - i, Math.random() * 100 + i*5]).reverse();
+                    let asks = Array.from({length: 50}, (_, i) => [2350 + i, Math.random() * 100 + i*5]);
+                    option = {
+                        ...option,
+                        tooltip: { trigger: 'axis', axisPointer: { type: 'line' } },
+                        xAxis: { type: 'value', min: 'dataMin', max: 'dataMax', axisLabel:{color:'#a6c0fe'}, splitLine:{show:false} },
+                        yAxis: { type: 'value', axisLabel:{color:'#a6c0fe'}, splitLine:{lineStyle:{color:'rgba(255,255,255,0.05)'}} },
+                        series: [
+                            { name: '买盘(Bids)', type: 'line', step: 'end', data: bids, areaStyle: { color: 'rgba(46, 213, 115, 0.3)' }, lineStyle: { color: '#2ed573' }, symbol: 'none' },
+                            { name: '卖盘(Asks)', type: 'line', step: 'start', data: asks, areaStyle: { color: 'rgba(255, 77, 79, 0.3)' }, lineStyle: { color: '#ff4d4f' }, symbol: 'none' }
+                        ]
+                    };
+                }
+                
+                chart.hideLoading();
+                chart.setOption(option, true);
+            }, 800);
+        }
+
+        function renderMacroChart() {
+            const chart = charts['macro-chart'];
+            const option = {
+                ...getBaseOption(),
+                radar: {
+                    indicator: [
+                        { name: '美元指数(DXY)', max: 100 },
+                        { name: '美国10年期国债收益率', max: 100 },
+                        { name: '全球通胀(CPI)', max: 100 },
+                        { name: '标普500指数', max: 100 },
+                        { name: '原油价格', max: 100 },
+                        { name: '地缘政治风险指数', max: 100 }
+                    ],
+                    shape: 'circle',
+                    splitNumber: 5,
+                    axisName: { color: '#a6c0fe' },
+                    splitLine: { lineStyle: { color: ['rgba(0, 246, 255, 0.1)', 'rgba(0, 246, 255, 0.2)', 'rgba(0, 246, 255, 0.4)', 'rgba(0, 246, 255, 0.6)', 'rgba(0, 246, 255, 0.8)'].reverse() } },
+                    splitArea: { show: false },
+                    axisLine: { lineStyle: { color: 'rgba(0, 246, 255, 0.3)' } }
+                },
+                series: [{
+                    name: '相关性系数',
+                    type: 'radar',
+                    data: [
+                        {
+                            value: [85, 90, 60, 40, 70, 95],
+                            name: '当前周期权重',
+                            areaStyle: { color: 'rgba(250, 173, 20, 0.4)' },
+                            lineStyle: { color: '#faad14' },
+                            itemStyle: { color: '#faad14' }
+                        },
+                        {
+                            value: [60, 50, 80, 70, 50, 40],
+                            name: '历史平均权重',
+                            areaStyle: { color: 'rgba(0, 246, 255, 0.2)' },
+                            lineStyle: { color: '#00f6ff', type: 'dashed' },
+                            itemStyle: { color: '#00f6ff' }
+                        }
+                    ]
+                }]
+            };
+            chart.setOption(option);
+        }
+
+        function renderOptionsChart(type = 'callput') {
+            const chart = charts['options-chart'];
+            let option = getBaseOption();
+            
+            if (type === 'callput') {
+                option = {
+                    ...option,
+                    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+                    legend: { textStyle: { color: '#a6c0fe' } },
+                    xAxis: { type: 'category', data: ['2406合约', '2408合约', '2410合约', '2412合约', '2502合约'], axisLabel: {color: '#a6c0fe'} },
+                    yAxis: { type: 'value', splitLine: { lineStyle: { color: 'rgba(255,255,255,0.05)' } }, axisLabel: {color: '#a6c0fe'} },
+                    series: [
+                        { name: '看涨期权(Call)', type: 'bar', stack: 'total', itemStyle: { color: '#2ed573' }, data: [320, 302, 301, 334, 390] },
+                        { name: '看跌期权(Put)', type: 'bar', stack: 'total', itemStyle: { color: '#ff4d4f' }, data: [120, 132, 101, 134, 90] }
+                    ]
+                };
+            } else {
+                let prices = ['2200', '2250', '2300', '2350', '2400', '2450', '2500'];
+                option = {
+                    ...option,
+                    xAxis: { type: 'value', splitLine: { show: false }, axisLabel: {color: '#a6c0fe'} },
+                    yAxis: { type: 'category', data: prices, axisLabel: {color: '#a6c0fe'} },
+                    series: [
+                        { name: '未平仓合约量', type: 'bar', data: [150, 230, 420, 850, 630, 320, 110], itemStyle: { color: '#b37feb', borderRadius: [0, 4, 4, 0] } }
+                    ]
+                };
+            }
+            chart.setOption(option, true);
+        }
+
+        // ==========================================
+        // 3. 交互与事件绑定
+        // ==========================================
+
+        // 全局图表加载动画
+        function triggerGlobalRefresh() {
+            Object.values(charts).forEach(c => {
+                c.showLoading({ text: 'Data Sync...', color: '#00f6ff', maskColor: 'rgba(3,10,22,0.6)' });
+                setTimeout(() => c.hideLoading(), 800 + Math.random() * 500);
+            });
+            
+            // 更新一些 KPI 数值增加动效
+            const el = document.getElementById('kpi-price');
+            const current = 2385.60;
+            const target = current + (Math.random() * 10 - 5);
+            el.innerHTML = `${target.toFixed(2)} <span class="kpi-unit">USD/oz</span>`;
+        }
+
+        // KPI 点击联动
+        window.handleKpiClick = function(event, element) {
+            // 1. 涟漪特效
+            const circle = document.createElement('span');
+            const diameter = Math.max(element.clientWidth, element.clientHeight);
+            const radius = diameter / 2;
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${event.clientX - element.getBoundingClientRect().left - radius}px`;
+            circle.style.top = `${event.clientY - element.getBoundingClientRect().top - radius}px`;
+            circle.classList.add('ripple');
+            
+            const existingRipple = element.querySelector('.ripple');
+            if (existingRipple) existingRipple.remove();
+            element.appendChild(circle);
+
+            // 2. 状态切换
+            document.querySelectorAll('.kpi-card').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+
+            // 3. 联动主图表
+            const kpiType = element.getAttribute('data-kpi');
+            const chart = charts['main-chart'];
+            chart.showLoading({ text: `分析 [${kpiType}] 维度数据...`, color: '#faad14', maskColor: 'rgba(3,10,22,0.8)' });
+            setTimeout(() => {
+                renderMainChart('kline'); // 演示目的，重新加载K线图
+            }, 600);
+        };
+
+        // 标签页切换事件绑定
+        document.querySelectorAll('.chart-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const parent = this.parentElement;
+                parent.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+
+                const target = this.getAttribute('data-target');
+                const type = this.getAttribute('data-type');
+                
+                if (target === 'stock-chart') renderStockChart(type);
+                if (target === 'fund-chart') renderFundChart(type);
+                if (target === 'main-chart') renderMainChart(type);
+                if (target === 'options-chart') renderOptionsChart(type);
+            });
+        });
+
+        // 过滤栏按钮事件
+        document.querySelectorAll('.controls .cyber-btn[data-time]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.controls .cyber-btn[data-time]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                triggerGlobalRefresh();
+            });
+        });
+
+        // 自定义下拉框交互逻辑
+        const selectWrapper = document.getElementById('marketSelectWrapper');
+        const selectTrigger = selectWrapper.querySelector('.custom-select-trigger');
+        const customOptions = selectWrapper.querySelectorAll('.custom-option');
+
+        selectTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            selectWrapper.classList.toggle('open');
+        });
+
+        customOptions.forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.stopPropagation();
+                customOptions.forEach(opt => opt.classList.remove('selected'));
+                this.classList.add('selected');
+                selectTrigger.querySelector('span').textContent = this.textContent;
+                selectWrapper.classList.remove('open');
+                
+                // 模拟原生 select 的 change 事件，并触发刷新
+                triggerGlobalRefresh();
+            });
+        });
+
+        // 点击页面其他区域关闭下拉框
+        document.addEventListener('click', function() {
+            selectWrapper.classList.remove('open');
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', triggerGlobalRefresh);
+
+        // 全屏切换
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // ==========================================
+        // 4. 生命周期管理
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            // 初始化 ECharts 实例
+            ['stock-chart', 'fund-chart', 'main-chart', 'macro-chart', 'options-chart'].forEach(id => {
+                const dom = document.getElementById(id);
+                if (dom) {
+                    charts[id] = echarts.init(dom);
+                }
+            });
+
+            // 初始渲染
+            renderStockChart();
+            renderFundChart();
+            renderMainChart();
+            renderMacroChart();
+            renderOptionsChart();
+
+            // 响应式 Resize
+            window.addEventListener('resize', () => {
+                Object.values(charts).forEach(chart => chart.resize());
+            });
+        });
+
+    </script>
+</body>
+</html>

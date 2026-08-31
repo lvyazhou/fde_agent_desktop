@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球黄金市场分析大屏 (Gold Market Dashboard)</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        @font-face {
+            font-family: 'DS-Digital';
+            src: local('Impact'); /* Fallback */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background-color: #030a16;
+            color: #fff;
+            font-family: "Microsoft YaHei", sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            background-image:
+                radial-gradient(circle at center, #1a1600 0%, #030a16 100%),
+                linear-gradient(rgba(26, 22, 0, 0.9), rgba(11, 20, 40, 0.9));
+            position: relative;
+        }
+
+        /* 赛博朋克网格线 + 全局暗角遮罩 (使用偏金色/黄色调) */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                linear-gradient(rgba(255, 215, 0, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 215, 0, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+            pointer-events: none;
+            transform: perspective(1000px) rotateX(10deg) scale(1.2);
+            transform-origin: top center;
+            opacity: 0.6;
+        }
+
+        /* 屏幕扫描线扫描动画 */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.3;
+        }
+
+        /* ===== 顶部标题栏 ===== */
+        .header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 215, 0, 0.1) 20%, rgba(255, 215, 0, 0.2) 50%, rgba(255, 215, 0, 0.1) 80%, transparent 100%);
+            border-bottom: 2px solid rgba(255, 215, 0, 0.5);
+            box-shadow: 0 5px 20px rgba(255, 215, 0, 0.2);
+        }
+
+        .header::before, .header::after {
+            content: ''; position: absolute; bottom: -2px; width: 300px; height: 2px;
+            background: #fff; box-shadow: 0 0 10px #fff, 0 0 20px #ffd700;
+        }
+        .header::before { left: 0; background: linear-gradient(90deg, transparent, #ffd700); }
+        .header::after { right: 0; background: linear-gradient(-90deg, transparent, #ffd700); }
+
+        .title {
+            font-size: 34px;
+            font-weight: 900;
+            letter-spacing: 6px;
+            color: #fff;
+            text-transform: uppercase;
+            position: relative;
+            text-shadow:
+                0 0 5px #ffd700, 0 0 10px #ffd700, 0 0 20px #ffd700, 0 0 40px #ffaa00,
+                2px 2px 0px rgba(255, 0, 85, 0.8);
+            transform: skewX(-10deg);
+        }
+        
+        .title-wrapper {
+            position: relative;
+            padding: 0 40px;
+        }
+        .title-wrapper::before, .title-wrapper::after {
+            content: ''; position: absolute; top: 50%; transform: translateY(-50%); width: 20px; height: 40px; border: 3px solid #ffd700;
+        }
+        .title-wrapper::before { left: 0; border-right: none; }
+        .title-wrapper::after { right: 0; border-left: none; }
+
+        /* 系统信息 */
+        .sys-info {
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 5px; z-index: 20;
+        }
+        .sys-time { font-family: 'DS-Digital', 'Impact', sans-serif; color: #ffd700; font-size: 24px; letter-spacing: 2px; text-shadow: 0 0 10px #ffd700; }
+        .sys-date { color: #ffe87a; font-size: 12px; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        .status-dot { width: 8px; height: 8px; background: #2ed573; border-radius: 50%; box-shadow: 0 0 8px #2ed573; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        /* 顶部丰富的查询条件栏 */
+        .filter-bar {
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%) scale(0.85); transform-origin: right center;
+            display: flex; gap: 15px; z-index: 20; align-items: center;
+        }
+        .filter-group { display: flex; align-items: center; gap: 5px; }
+        .filter-label { color: #ffd700; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); }
+        .cyber-select {
+            background: rgba(80, 60, 0, 0.6); border: 1px solid #ffd700; color: #fff; padding: 4px 8px; font-size: 13px;
+            outline: none; cursor: pointer; box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.2);
+            clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+        }
+        .cyber-select:hover { border-color: #fff; box-shadow: 0 0 10px #ffd700; }
+        .cyber-select option { background: #030a16; color: #ffd700; }
+        
+        .time-filter { display: flex; gap: 5px; }
+        .time-btn {
+            background: rgba(255, 215, 0, 0.1); border: 1px solid #ffd700; color: #ffd700; padding: 4px 10px; font-size: 14px;
+            cursor: pointer; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); transition: all 0.3s; font-weight: bold;
+        }
+        .time-btn:hover { background: rgba(255, 215, 0, 0.3); box-shadow: 0 0 10px #ffd700; }
+        .time-btn.active { background: #ffd700; color: #030a16; box-shadow: 0 0 15px #ffd700; }
+        .fullscreen-btn { background: transparent; border: none; color: #ffd700; cursor: pointer; padding: 5px; display: flex; align-items: center; justify-content: center; transition: all 0.3s; margin-left: 5px; }
+        .fullscreen-btn:hover { color: #fff; transform: scale(1.1); filter: drop-shadow(0 0 5px #ffd700); }
+        .fullscreen-btn svg { fill: currentColor; width: 22px; height: 22px; }
+
+        /* ===== 主容器 ===== */
+        .container {
+            position: absolute; top: 90px; left: 20px; right: 20px; bottom: 20px;
+            display: grid; grid-template-columns: 1fr 1.6fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; z-index: 10;
+        }
+
+        /* ===== 图表盒子 ===== */
+        .chart-box {
+            position: relative;
+            background: linear-gradient(135deg, rgba(60, 40, 0, 0.6) 0%, rgba(10, 8, 2, 0.8) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            box-shadow: inset 0 0 40px rgba(255, 170, 0, 0.15), 0 0 15px rgba(255, 215, 0, 0.05);
+            backdrop-filter: blur(8px);
+            padding: 15px; display: flex; flex-direction: column;
+            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+        .chart-box::before { content: ''; position: absolute; top: 0; left: 20px; width: 40px; height: 2px; background: #ffd700; box-shadow: 0 0 10px #ffd700; }
+        .chart-box::after { content: ''; position: absolute; bottom: 0; right: 20px; width: 40px; height: 2px; background: #ffd700; box-shadow: 0 0 10px #ffd700; }
+
+        .chart-title {
+            color: #fff; font-size: 18px; font-weight: bold; padding-left: 12px; margin-bottom: 10px;
+            background: linear-gradient(90deg, rgba(255, 215, 0, 0.3) 0%, transparent 100%);
+            line-height: 32px; border-left: 4px solid #ffd700; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+        }
+        .chart { flex: 1; width: 100%; min-height: 0; }
+
+        /* 内部小Tab切换 (多维度标签) */
+        .chart-tabs { display: flex; gap: 5px; margin-right: 10px; }
+        .tab-btn {
+            background: transparent; border: 1px solid #ffaa00; color: #ffd700; padding: 2px 12px; font-size: 12px; cursor: pointer;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); transition: all 0.2s;
+        }
+        .tab-btn:hover { background: rgba(255, 215, 0, 0.2); }
+        .tab-btn.active { background: #ffd700; color: #030a16; font-weight: bold; box-shadow: 0 0 10px #ffd700; }
+
+        /* 网格定位 */
+        .box-rank { grid-column: 1 / 2; grid-row: 1 / 2; }
+        .box-agent { grid-column: 1 / 2; grid-row: 2 / 3; }
+        .box-center { grid-column: 2 / 3; grid-row: 1 / 3; display: flex; flex-direction: column; background: transparent; border: none; box-shadow: none;}
+        .box-ind { grid-column: 3 / 4; grid-row: 1 / 2; }
+        .box-region { grid-column: 3 / 4; grid-row: 2 / 3; }
+
+        /* ===== 中间 KPI 与 环形图 ===== */
+        .center-kpi-row { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 10px; margin-bottom: 20px; flex-shrink: 0; }
+        .kpi-item {
+            background: linear-gradient(180deg, rgba(255,215,0,0.15) 0%, rgba(150,100,0,0.5) 100%);
+            border: 1px solid rgba(255, 215, 0, 0.4); border-top: 3px solid #ffd700; border-bottom: 1px solid rgba(255, 215, 0, 0.1); border-radius: 4px;
+            padding: 10px 15px; text-align: center; flex: 1; min-width: 100px; box-shadow: 0 5px 15px rgba(255, 215, 0, 0.2); position: relative; overflow: hidden; transform: skewX(-5deg);
+            cursor: pointer; transition: all 0.3s;
+        }
+        .kpi-item:hover { transform: translateY(-5px) skewX(-5deg); box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4); }
+        .kpi-item.active { background: linear-gradient(180deg, rgba(255,215,0,0.4) 0%, rgba(150,100,0,0.8) 100%); border-color: #ffd700; }
+        .kpi-item::after {
+            content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: skewX(-20deg); animation: sweep 3s infinite;
+        }
+        @keyframes sweep { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+
+        .kpi-item .label { color: #ffe87a; font-size: 12px; margin-bottom: 5px; font-weight:bold; letter-spacing:1px; transform: skewX(5deg); }
+        .kpi-item .value { color: #fff; font-size: 28px; font-weight: bold; font-family: 'Impact'; text-shadow: 0 0 10px #ffd700, 2px 2px 0px #ff0055; transform: skewX(5deg); }
+        .kpi-item .unit { font-size: 14px; color: #ffe87a; font-weight: normal; margin-left:5px;}
+        .kpi-item .trend { font-size: 12px; margin-top: 5px; transform: skewX(5deg); }
+        .trend.up { color: #ff4757; text-shadow: 0 0 5px #ff4757; }
+        .trend.down { color: #2ed573; text-shadow: 0 0 5px #2ed573; }
+        
+        /* 联动点击波纹特效 */
+        .ripple { position: absolute; border-radius: 50%; background: rgba(255, 215, 0, 0.6); transform: scale(0); animation: ripple-anim 0.6s linear; pointer-events: none; }
+        @keyframes ripple-anim { to { transform: scale(4); opacity: 0; } }
+
+        .center-ring-container { flex: 1.4; position: relative; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; min-height: 0; }
+        .cyber-ring-bg { position: absolute; width: 80%; height: 80%; border-radius: 50%; border: 2px dashed rgba(255, 215, 0, 0.3); pointer-events: none; }
+        .cyber-ring-bg2 { position: absolute; width: 90%; height: 90%; border-radius: 50%; border: 1px solid rgba(255, 170, 0, 0.2); border-top: 3px solid rgba(255, 215, 0, 0.5); border-bottom: 3px solid rgba(255, 71, 87, 0.5); pointer-events: none; }
+
+        /* 时间与目标进度面板 */
+        .time-countdown {
+            position: absolute; top: 5px; left: 5px; z-index: 30; background: linear-gradient(-135deg, rgba(60, 40, 0, 0.8), rgba(10, 8, 2, 0.9));
+            border: 1px solid rgba(255, 215, 0, 0.4); padding: 10px 15px; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px));
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+        }
+        .time-countdown .tc-title { color: #ffd700; font-size: 12px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 0 5px rgba(255, 215, 0, 0.5); display: flex; justify-content: space-between; }
+        .time-countdown .tc-diff { color: #fff; font-size: 13px; margin-bottom: 8px; }
+        .time-countdown .tc-num { color: #ffd700; font-size: 22px; font-family: 'Impact'; text-shadow: 0 0 10px #ffd700; letter-spacing: 1px; }
+        
+        .target-panel {
+            position: absolute; top: 5px; right: 5px; z-index: 30; background: linear-gradient(135deg, rgba(60, 40, 0, 0.8), rgba(10, 8, 2, 0.9));
+            border: 1px solid rgba(255, 71, 87, 0.4); padding: 10px 15px; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            box-shadow: 0 0 20px rgba(255, 71, 87, 0.15);
+        }
+        .target-panel .t-title { color: #ffaa00; font-size: 12px; font-weight: bold; margin-bottom: 5px; text-shadow: 0 0 5px rgba(255, 170, 0, 0.5); display: flex; justify-content: space-between; }
+        .target-panel .t-diff { color: #fff; font-size: 13px; margin-bottom: 8px; }
+        .target-panel .t-num { color: #ff4757; font-size: 22px; font-family: 'Impact'; text-shadow: 0 0 10px #ff4757; letter-spacing: 1px; }
+        
+        .progress-wrap { width: 140px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; position: relative; }
+        .progress-inner-gold { height: 100%; background: linear-gradient(-90deg, #ffd700, #ffaa00); width: 85%; box-shadow: 0 0 10px #ffd700; }
+        .progress-inner-red { height: 100%; background: linear-gradient(90deg, #ffaa00, #ff4757); width: 92%; box-shadow: 0 0 10px #ff4757; }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="sys-info">
+            <div class="sys-time" id="sysTime">00:00:00</div>
+            <div class="sys-date">
+                <div class="status-dot"></div>
+                <span id="sysDate">YYYY/MM/DD MARKET ONLINE</span>
+            </div>
+        </div>
+        <div class="title-wrapper">
+            <div class="title">全球黄金市场情报中枢</div>
+        </div>
+        <div class="filter-bar">
+            <div class="filter-group">
+                <span class="filter-label">交易所:</span>
+                <select class="cyber-select" onchange="mockGlobalLoading()">
+                    <option value="all">全球综合</option>
+                    <option value="comex">纽约 COMEX</option>
+                    <option value="lbma">伦敦 LBMA</option>
+                    <option value="sge">上海 SGE</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">品种:</span>
+                <select class="cyber-select" onchange="mockGlobalLoading()">
+                    <option value="spot">现货黄金(XAU)</option>
+                    <option value="futures">黄金期货(GC)</option>
+                    <option value="etf">黄金ETF(GLD)</option>
+                </select>
+            </div>
+            <div class="time-filter">
+                <button class="time-btn active">日线</button>
+                <button class="time-btn">周线</button>
+                <button class="time-btn">月线</button>
+            </div>
+            <button class="fullscreen-btn" title="全屏展示" onclick="toggleFullscreen()">
+                <svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        
+        <!-- 左侧上 -->
+        <div class="chart-box box-rank">
+            <div class="chart-title">
+                <span>1. 全球市场报价对比</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cL1, 'price')">按价格</button>
+                    <button class="tab-btn" onclick="switchDim(this, cL1, 'premium')">按溢价</button>
+                </div>
+            </div>
+            <div id="chart-left-1" class="chart"></div>
+        </div>
+
+        <!-- 左侧下 -->
+        <div class="chart-box box-agent">
+            <div class="chart-title">
+                <span>2. 多空持仓比例</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cL2, 'commercial')">商业机构</button>
+                    <button class="tab-btn" onclick="switchDim(this, cL2, 'retail')">散户投机</button>
+                </div>
+            </div>
+            <div id="chart-left-2" class="chart"></div>
+        </div>
+
+        <!-- 中间 -->
+        <div class="box-center">
+            <div class="center-kpi-row">
+                <div class="kpi-item active" onclick="handleKpiClick(this, 'price', event)">
+                    <div class="label">当前金价(XAU/USD)</div>
+                    <div class="value">2,385<span class="unit">.40</span></div>
+                    <div class="trend up">24H变动 ▲ +1.25%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'volume', event)">
+                    <div class="label">24H 交易量</div>
+                    <div class="value">45.2<span class="unit">万手</span></div>
+                    <div class="trend up">环比 ▲ +5.8%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'volatility', event)">
+                    <div class="label">市场波动率(VIX)</div>
+                    <div class="value">14.8<span class="unit">%</span></div>
+                    <div class="trend down">环比 ▼ -0.5%</div>
+                </div>
+                <div class="kpi-item" onclick="handleKpiClick(this, 'open_interest', event)">
+                    <div class="label">未平仓合约总额</div>
+                    <div class="value">52<span class="unit">万张</span></div>
+                    <div class="trend up">环比 ▲ +2.1%</div>
+                </div>
+            </div>
+            
+            <div class="center-ring-container">
+                <div class="time-countdown">
+                    <div class="tc-title"><span>▶ ETF增持趋势</span> <span>85%</span></div>
+                    <div class="tc-diff">本月净流入 <span class="tc-num">35</span> 吨</div>
+                    <div class="progress-wrap"><div class="progress-inner-gold"></div></div>
+                </div>
+                <div class="target-panel">
+                    <div class="t-title"><span>★ 历史新高逼近</span> <span>92%</span></div>
+                    <div class="t-diff">距离前高仅差 <span class="t-num">45</span> 美元</div>
+                    <div class="progress-wrap"><div class="progress-inner-red"></div></div>
+                </div>
+                <div class="cyber-ring-bg"></div>
+                <div class="cyber-ring-bg2"></div>
+                <div id="chart-center-pie" style="width:100%; height:100%; position:absolute; top:0; left:0; z-index:10;"></div>
+            </div>
+            
+            <div class="chart-box" style="flex:0.8; min-height:0; padding:10px 15px;">
+                <div class="chart-title" style="margin-bottom:0; font-size:15px; border-left:3px solid #ffaa00; background:linear-gradient(90deg, rgba(255, 170, 0, 0.2) 0%, transparent 100%);">
+                    5. 历史价格与持仓走势 (XAU/USD)
+                </div>
+                <div id="chart-center-line" class="chart"></div>
+            </div>
+        </div>
+
+        <!-- 右侧上 -->
+        <div class="chart-box box-ind">
+            <div class="chart-title">
+                <span>3. 黄金资产相关性</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active" onclick="switchDim(this, cR1, 'assets')">资产对比</button>
+                    <button class="tab-btn" onclick="switchDim(this, cR1, 'macro')">宏观因子</button>
+                </div>
+            </div>
+            <div id="chart-right-1" class="chart"></div>
+        </div>
+
+        <!-- 右侧下 -->
+        <div class="chart-box box-region">
+            <div class="chart-title">
+                <span>4. 区域交易热度</span>
+                <div class="chart-tabs">
+                    <button class="tab-btn active">交易量/溢价</button>
+                </div>
+            </div>
+            <div style="display:flex; flex:1; min-height:0; gap:10px; margin-top: 10px;">
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <div style="color:#ffd700; font-size:12px; text-align:center; margin-bottom:5px;">▲ 交易热度 TOP</div>
+                    <div id="chart-right-top" style="flex:1;"></div>
+                </div>
+                <div style="flex:1; display:flex; flex-direction:column;">
+                    <div style="color:#ffaa00; font-size:12px; text-align:center; margin-bottom:5px;">▼ 市场溢价对比</div>
+                    <div id="chart-right-bot" style="flex:1;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全屏控制
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // 全局加载模拟 (响应丰富查询条件)
+        function mockGlobalLoading() {
+            allCharts.forEach(chart => {
+                chart.showLoading({ text: 'FETCHING MARKET DATA...', color: '#ffd700', textColor: '#ffd700', maskColor: 'rgba(10, 8, 2, 0.8)' });
+            });
+            setTimeout(() => {
+                allCharts.forEach(chart => chart.hideLoading());
+            }, 800);
+        }
+
+        // 卡片多维度Tab切换模拟
+        function switchDim(btn, chartInstance, dimType) {
+            const tabs = btn.parentElement.querySelectorAll('.tab-btn');
+            tabs.forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+
+            chartInstance.showLoading({ text: 'SWITCHING VIEW...', color: '#ffd700', textColor: '#ffd700', maskColor: 'rgba(10, 8, 2, 0.8)' });
+            setTimeout(() => {
+                chartInstance.hideLoading();
+                const currentOption = chartInstance.getOption();
+                
+                if (currentOption.series && currentOption.series.length > 0) {
+                    currentOption.series.forEach(serie => {
+                        if (serie.data) {
+                             if(serie.type === 'radar') {
+                                 serie.data.forEach(item => {
+                                     item.value = item.value.map(v => Math.max(0, Math.min(100, v + (Math.random() * 40 - 20))));
+                                 });
+                             } else if (serie.type === 'pie') {
+                                 serie.data = serie.data.map(v => ({...v, value: Math.max(10, v.value + (Math.random() * 50 - 25))}));
+                             } else {
+                                 serie.data = serie.data.map(v => typeof v === 'number' ? Math.max(10, v + (Math.random() * 20 - 10)) : v);
+                             }
+                        }
+                    });
+                    chartInstance.setOption(currentOption);
+                }
+            }, 500);
+        }
+
+        // 中心 KPI 点击联动
+        function handleKpiClick(element, type, event) {
+            document.querySelectorAll('.kpi-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            const circle = document.createElement('span');
+            const rect = element.getBoundingClientRect();
+            circle.style.width = circle.style.height = Math.max(rect.width, rect.height) + 'px';
+            circle.style.left = (event.clientX - rect.left - rect.width/2) + 'px';
+            circle.style.top = (event.clientY - rect.top - rect.height/2) + 'px';
+            circle.classList.add('ripple');
+            element.appendChild(circle);
+            setTimeout(() => circle.remove(), 600);
+
+            cCLine.showLoading({ text: 'ANALYZING MARKET TREND...', color: '#ffd700', textColor: '#ffd700', maskColor: 'rgba(10, 8, 2, 0.8)' });
+            
+            setTimeout(() => {
+                cCLine.hideLoading();
+                const baseData = type === 'price' ? [2300, 2310, 2305, 2320, 2340, 2355, 2350, 2370, 2380, 2375, 2385, 2390] :
+                                 type === 'volume' ? [30, 32, 28, 35, 40, 38, 42, 45, 48, 44, 46, 50] :
+                                 type === 'volatility' ? [12, 13, 12.5, 14, 15, 14.5, 16, 17, 16.5, 15, 14.8, 14] :
+                                 [45, 46, 45.5, 47, 48, 49, 48.5, 50, 51, 50.5, 52, 53];
+                
+                let yName = '数值';
+                if(type === 'price') yName = '价格(USD)';
+                else if(type === 'volume' || type === 'open_interest') yName = '万手/万张';
+                else if(type === 'volatility') yName = '波动率(%)';
+
+                cCLine.setOption({
+                    yAxis: [{ name: yName }, { name: '均线/参考' }],
+                    series: [
+                        { name: '当前指标', data: baseData },
+                        { name: '趋势参考', data: baseData.map(v => v * 0.98 + (Math.random()*v*0.05)) }
+                    ]
+                });
+            }, 600);
+        }
+
+        // 时钟更新
+        function updateClock() {
+            const now = new Date();
+            var days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            document.getElementById('sysDate').innerText = now.getFullYear() + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + String(now.getDate()).padStart(2,'0') + ' ' + days[now.getDay()] + ' MARKET ONLINE';
+            document.getElementById('sysTime').innerText = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // 时间过滤按钮切换
+        document.querySelectorAll('.time-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                mockGlobalLoading();
+            });
+        });
+
+        // ECharts 初始化配置 (金色主题)
+        const opt = { backgroundColor: 'transparent', tooltip: { backgroundColor: 'rgba(0,0,0,0.8)', borderColor: '#ffd700', textStyle: { color: '#fff' } } };
+        
+        // 1. 左侧市场报价 (柱状图)
+        const cL1 = echarts.init(document.getElementById('chart-left-1'));
+        cL1.setOption({ ...opt, grid: { top: 5, bottom: 5, left: 10, right: 60, containLabel: true }, xAxis: { type: 'value', min: 2300, show: false }, yAxis: { type: 'category', data: ['COMEX 黄金', 'LBMA 现货', 'SGE 黄金(折算)', 'TOCOM 黄金', 'DGCX 黄金'], axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#ffe87a', fontSize: 12 } }, series: [{ type: 'bar', barWidth: 16, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'#503c00'},{offset:1,color:'#ffd700'}]), borderRadius: [0,8,8,0] }, label: { show: true, position: 'right', formatter: '${c}', color: '#ffd700', fontWeight: 'bold' }, data: [2385.4, 2382.1, 2398.5, 2380.0, 2384.2] }] });
+
+        // 2. 左侧多空持仓 (玫瑰图/饼图)
+        const cL2 = echarts.init(document.getElementById('chart-left-2'));
+        cL2.setOption({ ...opt, tooltip: { trigger: 'item', formatter: '{b} : {c} ({d}%)' }, legend: { top: 'bottom', textStyle: { color: '#ffe87a' } }, series: [{ name: '持仓分布', type: 'pie', radius: [20, 70], center: ['50%', '45%'], roseType: 'area', itemStyle: { borderRadius: 5, borderColor: '#030a16', borderWidth: 2 }, label: { show: false }, data: [{ value: 65, name: '多头(Long)', itemStyle: { color: '#ffd700' } }, { value: 35, name: '空头(Short)', itemStyle: { color: '#ff4757' } }, { value: 15, name: '套利(Spread)', itemStyle: { color: '#00f6ff' } }, { value: 10, name: '未报告', itemStyle: { color: '#a6c0fe' } }] }] });
+
+        // 3. 右侧画像 (雷达图 - 资产相关性)
+        const cR1 = echarts.init(document.getElementById('chart-right-1'));
+        cR1.setOption({ ...opt, radar: { indicator: [{name: '美元指数', max: 1}, {name: '美债收益率', max: 1}, {name: '原油', max: 1}, {name: '标普500', max: 1}, {name: '比特币', max: 1}, {name: '白银', max: 1}], splitNumber: 4, axisName: { color: '#ffe87a' }, splitLine: { lineStyle: { color: ['rgba(255,215,0,0.1)', 'rgba(255,215,0,0.2)', 'rgba(255,215,0,0.4)', 'rgba(255,215,0,0.6)'] } }, splitArea: { show: false }, axisLine: { lineStyle: { color: 'rgba(255,215,0,0.5)' } } }, series: [{ type: 'radar', data: [{ value: [0.8, 0.75, 0.4, 0.3, 0.5, 0.9], name: '相关性系数绝对值', areaStyle: { color: 'rgba(255,215,0,0.3)' }, lineStyle: { color: '#ffd700' }, itemStyle: { color: '#ffd700' } }] }] });
+
+        // 4. 右侧区域 (双横向柱状图)
+        const cRTop = echarts.init(document.getElementById('chart-right-top'));
+        cRTop.setOption({ ...opt, grid: { top: 5, bottom: 5, left: 10, right: 40, containLabel: true }, xAxis: { type: 'value', show: false }, yAxis: { type: 'category', data: ['北美', '欧洲', '大中华区', '中东', '印度'].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#ffe87a', fontSize: 11 } }, series: [{ type: 'bar', barWidth: 8, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'transparent'},{offset:1,color:'#ffd700'}]) }, label: { show: true, position: 'right', formatter: '{c}吨', color: '#ffd700', fontSize: 10 }, data: [1250, 850, 1020, 340, 780].reverse() }] });
+
+        const cRBot = echarts.init(document.getElementById('chart-right-bot'));
+        cRBot.setOption({ ...opt, grid: { top: 5, bottom: 5, left: 10, right: 40, containLabel: true }, xAxis: { type: 'value', show: false }, yAxis: { type: 'category', data: ['SGE 溢价', '印度 溢价', '迪拜 溢价', '香港 溢价', '新加坡'].reverse(), axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: '#ffe87a', fontSize: 11 } }, series: [{ type: 'bar', barWidth: 8, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'transparent'},{offset:1,color:'#ffaa00'}]) }, label: { show: true, position: 'right', formatter: '${c}/oz', color: '#ffaa00', fontSize: 10 }, data: [45, 12, 5, 2, 1].reverse() }] });
+
+        // 5. 中间趋势 (双轴折线图)
+        const cCLine = echarts.init(document.getElementById('chart-center-line'));
+        cCLine.setOption({ ...opt, tooltip: { trigger: 'axis', axisPointer: { type: 'cross', lineStyle: { color: '#ffd700' } } }, grid: { top: 30, bottom: 20, left: 20, right: 20, containLabel: true }, xAxis: { type: 'category', data: ['12:00', '14:00', '16:00', '18:00', '20:00', '22:00', '00:00', '02:00', '04:00', '06:00', '08:00', '10:00'], boundaryGap: false, axisLine: { lineStyle: { color: 'rgba(255,215,0,0.3)' } }, axisLabel: { color: '#ffe87a' } }, yAxis: [{ type: 'value', name: '价格(USD)', min: 'dataMin', nameTextStyle: { color: '#ffe87a' }, splitLine: { lineStyle: { color: 'rgba(255,215,0,0.1)', type: 'dashed' } }, axisLabel: { color: '#ffe87a' } }, { type: 'value', name: '交易量(手)', splitLine: { show: false }, axisLabel: { color: '#00f6ff' } }], series: [{ name: '实时金价', type: 'line', smooth: true, symbol: 'circle', symbolSize: 6, lineStyle: { width: 3, color: '#ffd700', shadowColor: '#ffd700', shadowBlur: 10 }, itemStyle: { color: '#ffd700', borderColor: '#fff', borderWidth: 2 }, areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(255,215,0,0.5)'},{offset:1,color:'rgba(255,215,0,0)'}]) }, data: [2370, 2375, 2368, 2380, 2385, 2382, 2390, 2388, 2384, 2380, 2382, 2385.4] }, { name: '成交量', type: 'bar', yAxisIndex: 1, itemStyle: { color: 'rgba(0, 246, 255, 0.3)' }, data: [1200, 1500, 800, 2200, 3000, 2800, 4500, 3200, 1800, 1500, 1100, 1400] }] });
+
+        // 6. 中间环形图 (看涨情绪指标)
+        const cCPie = echarts.init(document.getElementById('chart-center-pie'));
+        cCPie.setOption({ ...opt, title: { text: '68', subtext: '市场贪婪指数', left: 'center', top: 'center', textStyle: { color: '#ffd700', fontSize: 36, fontFamily: 'Impact', textShadowColor: '#ffd700', textShadowBlur: 10 }, subtextStyle: { color: '#ffe87a', fontSize: 14 } }, series: [{ type: 'gauge', startAngle: 180, endAngle: 0, min: 0, max: 100, radius: '85%', center: ['50%', '65%'], progress: { show: true, width: 18, itemStyle: { color: new echarts.graphic.LinearGradient(0,0,1,0,[{offset:0,color:'#ff4757'},{offset:0.5,color:'#ffaa00'},{offset:1,color:'#ffd700'}]) } }, pointer: { show: false }, axisLine: { lineStyle: { width: 18, color: [[1, 'rgba(255,255,255,0.05)']] } }, axisTick: { show: false }, splitLine: { show: false }, axisLabel: { show: false }, detail: { show: false }, data: [{ value: 68 }] }] });
+
+        // 跨图表联动点击交互
+        let activeFilter = -1;
+        const allCharts = [cL1, cL2, cR1, cRTop, cRBot, cCLine, cCPie];
+
+        // 绑定左侧报价图表的点击事件，控制其他图表高亮/联动
+        cL1.on('click', function(params) {
+            activeFilter = (activeFilter === params.dataIndex) ? -1 : params.dataIndex;
+            
+            allCharts.forEach(chart => {
+                if (chart === cL1) return;
+                if (activeFilter === -1) {
+                    chart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+                } else {
+                    chart.dispatchAction({ type: 'downplay', seriesIndex: 0 });
+                    chart.dispatchAction({ type: 'highlight', seriesIndex: 0, dataIndex: activeFilter });
+                }
+            });
+            if(activeFilter !== -1) {
+                mockGlobalLoading();
+            }
+        });
+
+        // 窗口缩放适配
+        window.addEventListener('resize', function() {
+            allCharts.forEach(chart => chart.resize());
+        });
+    </script>
+</body>
+</html>

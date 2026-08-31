@@ -67,12 +67,13 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import SessionList from '@/components/agent/SessionList.vue';
 import ChatPanel from '@/components/agent/ChatPanel.vue';
 import InfoSidebar from '@/components/agent/InfoSidebar.vue';
 
 const router = useRouter();
+const route = useRoute();
 const chatPanelRef = ref(null);
 
 // --- State ---
@@ -605,18 +606,46 @@ watch(messages, () => {
   });
 }, { deep: true });
 
+// --- 教练陪练:从工作台 ?coach=1 进入时,自动起一局陪练 ---
+const COACH_OPENING = '/fde-coach\n\n(系统:进入 FDE 教练陪练模式。请先用教练口吻做简短开场,说明玩法——你扮演甲方客户,我用 SPIN + 七维挖需求;我随时说"复盘"你就按六维打分表点评。然后让我选行业和客户类型。)';
+
+const startCoachSession = async () => {
+  // 新建一个陪练会话
+  startNewChat();
+  const chatSlug = `coach-${Date.now()}`;
+  currentSlug.value = chatSlug;
+  currentProjectName.value = 'FDE 教练陪练';
+  try {
+    await window.api.hermes.createProject({ name: 'FDE 教练陪练', requirement: 'FDE 教练陪练', slug: chatSlug });
+    loadProjects();
+  } catch (e) {
+    console.error('Create coach session failed:', e);
+    return;
+  }
+  // 发送开场 prompt(触发 skill + 人设)
+  handleSend(COACH_OPENING);
+};
+
 // --- Lifecycle ---
 onMounted(async () => {
   await loadProjects();
   loadSkills();
 
-  // Auto-select the most recent project/chat, or start empty
-  if (projects.value.length > 0) {
-    await selectProject(projects.value[0].slug);
-  }
-
   if (window.api?.hermes?.onSessionUpdate) {
     unsubscribe = window.api.hermes.onSessionUpdate(handleSessionUpdate);
+  }
+
+  // 优先:工作台跳来的教练陪练
+  if (route.query.coach) {
+    // 清掉 query,避免刷新重复触发
+    router.replace({ path: '/chat' });
+    await startCoachSession();
+    return;
+  }
+
+  // 否则:自动选中最近的项目/对话
+  if (projects.value.length > 0) {
+    await selectProject(projects.value[0].slug);
   }
 });
 

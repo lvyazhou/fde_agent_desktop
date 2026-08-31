@@ -17,6 +17,7 @@ let prototypeServerPort = null;
 let prototypeServingDir = null;
 let cachedModels = [];       // Cached model list from initialize/session
 let cachedCapabilities = {}; // Cached ACP capabilities
+let hermesReady = false;     // ACP 是否已连接且 initialize 成功(供环境自检读取)
 
 // ---------------------------------------------------------------------------
 // Data directories
@@ -24,6 +25,7 @@ let cachedCapabilities = {}; // Cached ACP capabilities
 
 const PRODUCT_LOBSTER_HOME = path.join(os.homedir(), '.product-lobster');
 const PROJECTS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'projects');
+const HANDBOOK_DIR = path.join(PRODUCT_LOBSTER_HOME, 'fde-handbook');
 
 function ensureDirs() {
   for (const dir of [PRODUCT_LOBSTER_HOME, PROJECTS_DIR]) {
@@ -66,6 +68,15 @@ function ensureDirs() {
       copyDirSync(srcSkill, dstSkill);
     }
     console.log(`[main] Synced ${skillEntries.filter(e => e.isDirectory()).length} skills to ${targetSkillsDir}`);
+  }
+
+  // 同步内置 FDE 作战手册知识库到 HERMES_HOME/fde-handbook(每次启动同步,确保更新)
+  const bundledHandbookDir = app.isPackaged
+    ? path.join(process.resourcesPath, 'fde-handbook')
+    : path.join(app.getAppPath(), 'fde-handbook');
+  if (fs.existsSync(bundledHandbookDir)) {
+    copyDirSync(bundledHandbookDir, HANDBOOK_DIR);
+    console.log(`[main] Synced fde-handbook to ${HANDBOOK_DIR}`);
   }
 }
 
@@ -218,12 +229,14 @@ function startHermes() {
 
   hermesProcess.on('error', (err) => {
     console.error('[main] Failed to start hermes-acp:', err.message);
+    hermesReady = false;
   });
 
   hermesProcess.on('exit', (code, signal) => {
     console.log(`[main] hermes-acp exited (code=${code}, signal=${signal})`);
     hermesProcess = null;
     acp = null;
+    hermesReady = false;
   });
 
   acp = new AcpClient(hermesProcess);
@@ -281,10 +294,12 @@ async function initializeHermes() {
     console.log('[main] hermes-acp initialized:', JSON.stringify(result).slice(0, 300));
     cachedCapabilities = result || {};
     if (result && result.models) cachedModels = result.models;
+    hermesReady = true;
     updateSplash(80, '设计引擎已就绪');
     return result;
   } catch (err) {
     console.error('[main] hermes-acp initialize failed:', err.message);
+    hermesReady = false;
     updateSplash(80, '引擎初始化超时，尝试继续...');
     throw err;
   }
@@ -328,10 +343,28 @@ function resolveProjectPath(slug, ...rest) {
   return normalized;
 }
 
+// FDE 五阶段默认落点(新项目落阶段②,过渡友好;与前端 fde-stages.js DEFAULT_STAGE 一致)
+const FDE_DEFAULT_STAGE = 2;
+
+// 向后兼容:给旧项目 meta 补齐 FDE 五阶段字段。旧项目只有 phase,
+// 没有 stage/stageStatus——读时补默认,不改写磁盘(下次 writeProjectMeta 时落盘)。
+function ensureFdeFields(meta) {
+  if (!meta) return meta;
+  if (typeof meta.stage !== 'number') meta.stage = FDE_DEFAULT_STAGE;
+  if (!meta.stageStatus || typeof meta.stageStatus !== 'object') {
+    // 默认:当前 stage 之前的阶段为 done,当前为 active,之后为 todo
+    meta.stageStatus = {};
+    for (let i = 1; i <= 5; i++) {
+      meta.stageStatus[i] = i < meta.stage ? 'done' : i === meta.stage ? 'active' : 'todo';
+    }
+  }
+  return meta;
+}
+
 function readProjectMeta(slug) {
   const metaPath = resolveProjectPath(slug, 'meta.json');
   if (!fs.existsSync(metaPath)) return null;
-  return JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
+  return ensureFdeFields(JSON.parse(fs.readFileSync(metaPath, 'utf-8')));
 }
 
 function writeProjectMeta(slug, meta) {
@@ -570,6 +603,76 @@ ipcMain.handle('shell:open-external', async (_event, url) => {
 });
 
 // ---------------------------------------------------------------------------
+// IPC handlers — FDE 作战手册知识库(工作台)
+// ---------------------------------------------------------------------------
+
+// 安全解析 handbook 内的文件路径,防止越界
+function resolveHandbookPath(stageDir, file) {
+  const base = path.join(HANDBOOK_DIR, stageDir);
+  const resolved = path.join(base, file);
+  if (!resolved.startsWith(base)) throw new Error('Invalid handbook path');
+  return resolved;
+}
+
+ipcMain.handle('handbook:get-manifest', async () => {
+  try {
+    const manifestPath = path.join(HANDBOOK_DIR, 'manifest.json');
+    if (!fs.existsSync(manifestPath)) return { success: false, error: 'manifest not found' };
+    return { success: true, data: JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('handbook:read-md', async (_event, { stage, file }) => {
+  try {
+    const filePath = resolveHandbookPath(stage, file);
+    if (!fs.existsSync(filePath)) return { success: false, error: 'file not found' };
+    return { success: true, content: fs.readFileSync(filePath, 'utf-8') };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('handbook:read-html', async (_event, { stage, file }) => {
+  try {
+    const filePath = resolveHandbookPath(stage, file);
+    if (!fs.existsSync(filePath)) return { success: false, error: 'file not found' };
+    return { success: true, content: fs.readFileSync(filePath, 'utf-8') };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('handbook:open', async (_event, { stage, file }) => {
+  try {
+    const filePath = resolveHandbookPath(stage, file);
+    if (!fs.existsSync(filePath)) return { success: false, error: 'file not found' };
+    const error = await shell.openPath(filePath);
+    if (error) return { success: false, error };
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('handbook:save-as', async (_event, { stage, file }) => {
+  try {
+    const filePath = resolveHandbookPath(stage, file);
+    if (!fs.existsSync(filePath)) return { success: false, error: 'file not found' };
+    const { canceled, filePath: dest } = await dialog.showSaveDialog(mainWindow, {
+      title: '另存为',
+      defaultPath: file,
+    });
+    if (canceled || !dest) return { success: false, canceled: true };
+    fs.copyFileSync(filePath, dest);
+    return { success: true, path: dest };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// ---------------------------------------------------------------------------
 // IPC handlers — Hermes project management
 // ---------------------------------------------------------------------------
 
@@ -626,6 +729,9 @@ ipcMain.handle('hermes:create-project', async (_event, { name, requirement, slug
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       phase: 'brainstorming',
+      // FDE 五阶段:新项目默认落阶段②(现有能力所在,过渡友好)
+      stage: FDE_DEFAULT_STAGE,
+      stageStatus: { 1: 'done', 2: 'active', 3: 'todo', 4: 'todo', 5: 'todo' },
       outputs: { hasSpec: false, hasPrototype: false, prototypeFileCount: 0 },
       messageCount: 0,
     };
@@ -909,40 +1015,50 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
   }
 });
 
-ipcMain.handle('hermes:generate-suggestions', async (_event, { userMessage, aiResponse }) => {
-  // 独立调用 LLM API 生成建议追问，不经过 hermes session，避免干扰主对话流
-  const https = require('https');
+// ---------------------------------------------------------------------------
+// 环境自检 + LLM 连通性(首次启动向导用)
+// ---------------------------------------------------------------------------
 
-  // 读取 .env 获取 API 配置
+// 读取 .env 里的 LLM 配置
+function parseEnvConfig() {
   let apiKey = '';
   let baseUrl = 'https://api.360.cn/v1';
+  let model = '';
+  let provider = '';
   try {
     if (fs.existsSync(ENV_FILE_PATH)) {
-      const envContent = fs.readFileSync(ENV_FILE_PATH, 'utf-8');
-      const keyMatch = envContent.match(/OPENAI_API_KEY=(.+)/);
-      const urlMatch = envContent.match(/OPENAI_BASE_URL=(.+)/);
-      if (keyMatch) apiKey = keyMatch[1].trim();
-      if (urlMatch) baseUrl = urlMatch[1].trim();
+      const c = fs.readFileSync(ENV_FILE_PATH, 'utf-8');
+      const anthropic = c.match(/^ANTHROPIC_API_KEY=(.+)$/m);
+      const openai = c.match(/^OPENAI_API_KEY=(.+)$/m);
+      const url = c.match(/^OPENAI_BASE_URL=(.+)$/m);
+      const mdl = c.match(/^(?:HERMES_MODEL|MODEL|OPENAI_MODEL)=(.+)$/m);
+      if (anthropic && anthropic[1].trim()) { apiKey = anthropic[1].trim(); provider = 'anthropic'; }
+      else if (openai && openai[1].trim() && openai[1].trim() !== 'your-api-key-here') { apiKey = openai[1].trim(); provider = 'openai'; }
+      if (url) baseUrl = url[1].trim();
+      if (mdl) model = mdl[1].trim();
     }
   } catch (e) { /* ignore */ }
+  return { apiKey, baseUrl, model, provider };
+}
 
-  if (!apiKey) return { suggestions: [] };
-
-  const payload = JSON.stringify({
-    model: 'qwen-plus',
-    messages: [
-      { role: 'system', content: '你是一个对话助手。根据用户的问题和AI的回答，生成3个用户可能想追问的问题。每行一个问题，不要编号，不要前缀，直接输出问题文本。问题要具体、有深度、与上下文相关。' },
-      { role: 'user', content: `用户问了: "${(userMessage || '').slice(0, 150)}"\nAI回答了: "${(aiResponse || '').slice(0, 500)}"\n\n请生成3个追问建议：` },
-    ],
-    max_tokens: 200,
-    temperature: 0.8,
-  });
-
+// 发一次 chat/completions,返回结构化结果(供建议生成 + 连通性测试复用)
+function postChatCompletion({ apiKey, baseUrl, model, messages, maxTokens = 64, timeoutMs = 10000 }) {
+  const https = require('https');
+  const http = require('http');
   return new Promise((resolve) => {
-    const url = new URL(baseUrl + '/chat/completions');
-    const options = {
+    let url;
+    try { url = new URL((baseUrl || '').replace(/\/$/, '') + '/chat/completions'); }
+    catch { return resolve({ ok: false, status: 0, error: 'baseUrl 格式不正确' }); }
+    const lib = url.protocol === 'http:' ? http : https;
+    const payload = JSON.stringify({
+      model: model || 'qwen-plus',
+      messages: messages || [{ role: 'user', content: 'ping' }],
+      max_tokens: maxTokens,
+    });
+    const started = Date.now();
+    const req = lib.request({
       hostname: url.hostname,
-      port: url.port || 443,
+      port: url.port || (url.protocol === 'http:' ? 80 : 443),
       path: url.pathname,
       method: 'POST',
       headers: {
@@ -950,28 +1066,83 @@ ipcMain.handle('hermes:generate-suggestions', async (_event, { userMessage, aiRe
         'Authorization': `Bearer ${apiKey}`,
         'Content-Length': Buffer.byteLength(payload),
       },
-    };
-
-    const req = https.request(options, (res) => {
+    }, (res) => {
       let body = '';
-      res.on('data', chunk => body += chunk);
+      res.on('data', (c) => body += c);
       res.on('end', () => {
-        try {
-          const result = JSON.parse(body);
-          const text = result.choices?.[0]?.message?.content || '';
-          const lines = text.split('\n').map(l => l.trim()).filter(l => l && l.length > 5 && l.length < 100);
-          resolve({ suggestions: lines.slice(0, 3) });
-        } catch (e) {
-          resolve({ suggestions: [] });
-        }
+        const latencyMs = Date.now() - started;
+        const status = res.statusCode || 0;
+        let text = '';
+        try { text = JSON.parse(body).choices?.[0]?.message?.content || ''; } catch { /* non-json */ }
+        resolve({ ok: status >= 200 && status < 300, status, latencyMs, text, body: body.slice(0, 300) });
       });
     });
-
-    req.on('error', () => resolve({ suggestions: [] }));
-    req.setTimeout(10000, () => { req.destroy(); resolve({ suggestions: [] }); });
+    req.on('error', (err) => resolve({ ok: false, status: 0, error: err.message }));
+    req.setTimeout(timeoutMs, () => { req.destroy(); resolve({ ok: false, status: 0, error: '请求超时' }); });
     req.write(payload);
     req.end();
   });
+}
+
+// 环境自检:引擎 / ACP 连接 / API Key
+ipcMain.handle('env:check', async () => {
+  // 引擎可执行
+  const enginePath = resolveHermesAcpCommand();
+  const engineExists = enginePath === 'hermes-acp' ? false : fs.existsSync(enginePath);
+  const engine = {
+    ok: engineExists,
+    path: enginePath,
+    exists: engineExists,
+    error: engineExists ? '' : (app.isPackaged ? '未找到内置引擎 hermes-acp' : '开发模式未找到 .venv/dist 下的 hermes-acp'),
+  };
+  // ACP 连接
+  const acpState = { ok: hermesReady && !!acp, error: (hermesReady && acp) ? '' : '设计引擎未就绪(未连接或初始化失败)' };
+  // API Key
+  const { apiKey, provider, baseUrl } = parseEnvConfig();
+  const apiKeyState = { configured: !!apiKey, provider: provider || '', baseUrl };
+
+  const allOk = engine.ok && acpState.ok && apiKeyState.configured;
+  return { success: true, allOk, engine, acp: acpState, apiKey: apiKeyState, packaged: app.isPackaged };
+});
+
+// 真实连通性测试:用给定(或已存)的 key/baseUrl 发一次最小请求
+ipcMain.handle('env:test-connection', async (_event, params) => {
+  const cfg = parseEnvConfig();
+  const apiKey = (params && params.apiKey) || cfg.apiKey;
+  const baseUrl = (params && params.baseUrl) || cfg.baseUrl;
+  const model = (params && params.model) || cfg.model;
+  if (!apiKey) return { ok: false, error: '未填写 API Key' };
+  const r = await postChatCompletion({
+    apiKey, baseUrl, model,
+    messages: [{ role: 'user', content: 'ping' }],
+    maxTokens: 1, timeoutMs: 8000,
+  });
+  if (r.ok) return { ok: true, latencyMs: r.latencyMs };
+  // 归类错误,给用户可读诊断
+  let reason = r.error || `请求失败(HTTP ${r.status})`;
+  if (r.status === 401 || r.status === 403) reason = 'API Key 无效或无权限(HTTP ' + r.status + ')';
+  else if (r.status === 404) reason = '接口地址不对(HTTP 404,检查 Base URL)';
+  else if (r.status === 429) reason = '请求过于频繁或额度不足(HTTP 429)';
+  else if (r.status >= 500) reason = '服务端错误(HTTP ' + r.status + ')';
+  return { ok: false, status: r.status, error: reason, detail: r.body || '' };
+});
+
+ipcMain.handle('hermes:generate-suggestions', async (_event, { userMessage, aiResponse }) => {
+  // 独立调用 LLM API 生成建议追问，不经过 hermes session，避免干扰主对话流
+  const { apiKey, baseUrl, model } = parseEnvConfig();
+  if (!apiKey) return { suggestions: [] };
+
+  const r = await postChatCompletion({
+    apiKey, baseUrl, model,
+    messages: [
+      { role: 'system', content: '你是一个对话助手。根据用户的问题和AI的回答，生成3个用户可能想追问的问题。每行一个问题，不要编号，不要前缀，直接输出问题文本。问题要具体、有深度、与上下文相关。' },
+      { role: 'user', content: `用户问了: "${(userMessage || '').slice(0, 150)}"\nAI回答了: "${(aiResponse || '').slice(0, 500)}"\n\n请生成3个追问建议：` },
+    ],
+    maxTokens: 200, timeoutMs: 10000,
+  });
+  if (!r.ok || !r.text) return { suggestions: [] };
+  const lines = r.text.split('\n').map(l => l.trim()).filter(l => l && l.length > 5 && l.length < 100);
+  return { suggestions: lines.slice(0, 3) };
 });
 
 ipcMain.handle('hermes:cancel', async (_event, slug) => {

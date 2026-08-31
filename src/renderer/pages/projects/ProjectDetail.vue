@@ -27,8 +27,12 @@
           </button>
         </div>
       </div>
-      <!-- Tabs -->
-      <div class="flex items-center gap-1 -mb-px">
+      <!-- FDE 五阶段时间线 -->
+      <div class="-mx-6 mb-0">
+        <StageTimeline :current="currentStage" :stage-status="stageStatus" @select="selectStage" />
+      </div>
+      <!-- Tabs(仅阶段②工作区显示) -->
+      <div v-if="isWorkspaceStage" class="flex items-center gap-1 -mb-px mt-3">
         <button
           v-for="tab in tabs"
           :key="tab.key"
@@ -45,7 +49,15 @@
     </div>
 
     <!-- Tab content body -->
-    <div class="flex-1 flex min-h-0 overflow-hidden">
+    <!-- 非阶段②:显示 FDE 阶段面板(要素卡 + 交付物占位) -->
+    <StagePanel
+      v-if="!isWorkspaceStage"
+      :stage="activeStageObj"
+      :has-workspace="false"
+    />
+
+    <!-- 阶段②工作区:现有 tab 内容(需求对话/功能清单/原型/迭代/导出) -->
+    <div v-show="isWorkspaceStage" class="flex-1 flex min-h-0 overflow-hidden">
 
       <!-- Requirement Chat Tab — three-column layout -->
       <div v-if="activeTab === 'requirement'" class="flex h-full w-full">
@@ -112,7 +124,7 @@
                 <div class="w-16 h-16 rounded-[20px] bg-gradient-to-br from-white to-blue-50 shadow-card border border-white flex items-center justify-center mb-5">
                   <i class="fa-solid fa-comments text-2xl text-blue-400"></i>
                 </div>
-                <p class="text-sm font-medium text-slate-500">开始对话，描述你的产品需求</p>
+                <p class="text-sm font-medium text-slate-500">阶段② 需求沟通 —— 聊透需求,出对接确认表与原型</p>
                 <p class="text-xs text-slate-400 mt-1">Ctrl + Enter 发送消息</p>
               </div>
 
@@ -818,6 +830,9 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import { marked } from 'marked';
+import StageTimeline from '@/components/workbench/StageTimeline.vue';
+import StagePanel from '@/components/workbench/StagePanel.vue';
+import { FDE_STAGES, getStage, DEFAULT_STAGE } from '@/data/fde-stages';
 
 const props = defineProps({
   slug: { type: String, required: true },
@@ -829,6 +844,29 @@ const route = useRoute();
 const projectName = ref('');
 const projectMeta = ref(null);
 const activeTab = ref('requirement');
+
+// --- FDE 五阶段工作台状态 ---
+const WORKSPACE_STAGE = 2; // 阶段②承载现有工作区(需求对话/功能清单/原型/迭代/导出)
+const currentStage = ref(DEFAULT_STAGE);
+const stageStatus = ref({ 1: 'done', 2: 'active', 3: 'todo', 4: 'todo', 5: 'todo' });
+const activeStageObj = computed(() => getStage(currentStage.value));
+const isWorkspaceStage = computed(() => currentStage.value === WORKSPACE_STAGE);
+
+async function selectStage(id) {
+  if (id === currentStage.value) return;
+  currentStage.value = id;
+  // 更新阶段状态:比 id 小的算 done、id 为 active、比 id 大的保持 todo
+  const next = {};
+  for (let i = 1; i <= 5; i++) {
+    next[i] = i < id ? 'done' : i === id ? 'active' : (stageStatus.value[i] === 'done' ? 'done' : 'todo');
+  }
+  stageStatus.value = next;
+  // 写回 meta(持久化当前阶段)
+  try {
+    await window.api.hermes.updateProjectMeta(props.slug, { stage: id, stageStatus: next });
+  } catch (e) { /* 非致命 */ }
+}
+
 
 // --- Panel toggle state ---
 const showSessionPanel = ref(true);
@@ -1042,6 +1080,10 @@ const loadProject = async () => {
     if (data) {
       projectMeta.value = data.meta || data;
       projectName.value = data.meta?.name || data.name || props.slug;
+      // 读取 FDE 阶段状态(主进程已对旧项目补默认)
+      const m = projectMeta.value || {};
+      if (typeof m.stage === 'number') currentStage.value = m.stage;
+      if (m.stageStatus && typeof m.stageStatus === 'object') stageStatus.value = m.stageStatus;
       if (data.messages && data.messages.length > 0) {
         const reqMsgs = data.messages.filter(m => m.tab !== 'iterate');
         const itMsgs = data.messages.filter(m => m.tab === 'iterate');

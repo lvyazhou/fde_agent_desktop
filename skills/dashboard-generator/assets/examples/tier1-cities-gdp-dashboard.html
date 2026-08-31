@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北上广深宏观经济运行分析驾驶舱</title>
+    <!-- ECharts -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        :root {
+            --primary-cyan: #00f6ff;
+            --primary-cyan-glow: rgba(0, 246, 255, 0.5);
+            --bg-deep-blue: #030a16;
+            --card-bg: rgba(6, 30, 93, 0.4);
+            --text-primary: #ffffff;
+            --text-secondary: #a6c0fe;
+            --success-green: #52c41a;
+            --danger-red: #ff4d4f;
+            --warning-orange: #faad14;
+            --purple-accent: #722ed1;
+            
+            --border-tech: 1px solid rgba(0, 246, 255, 0.3);
+            --font-family: 'DingTalk JinBuTi', 'Microsoft YaHei', sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-deep-blue);
+            color: var(--text-primary);
+            font-family: var(--font-family);
+            overflow: hidden;
+            background-image: 
+                linear-gradient(rgba(0, 246, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 246, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Scanline effect */
+        body::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            padding: 15px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Header */
+        .header {
+            height: 70px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="70"><path d="M0,70 L100,70 L120,40 Lcalc(100% - 120px),40 Lcalc(100% - 100px),70 L100%,70 L100%,0 L0,0 Z" fill="rgba(6,30,93,0.6)" stroke="%2300f6ff" stroke-width="1"/></svg>') no-repeat center;
+            background-size: 100% 100%;
+            padding: 0 30px;
+            margin-bottom: 15px;
+        }
+
+        .header-left, .header-right {
+            width: 25%;
+            display: flex;
+            align-items: center;
+        }
+
+        .header-right {
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        .header-title {
+            width: 50%;
+            text-align: center;
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-cyan);
+            text-shadow: 0 0 10px var(--primary-cyan-glow);
+            letter-spacing: 2px;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding: 10px 20px;
+            background: var(--card-bg);
+            border: var(--border-tech);
+            border-radius: 4px;
+        }
+
+        .filter-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-label { color: var(--text-secondary); font-size: 14px; }
+
+        .tech-select {
+            background: rgba(0, 246, 255, 0.1);
+            border: 1px solid rgba(0, 246, 255, 0.5);
+            color: var(--primary-cyan);
+            padding: 6px 12px;
+            border-radius: 2px;
+            outline: none;
+            font-family: inherit;
+        }
+        
+        .tech-select option { background: var(--bg-deep-blue); color: var(--text-primary); }
+
+        .tech-btn {
+            background: rgba(0, 246, 255, 0.2);
+            border: 1px solid var(--primary-cyan);
+            color: var(--primary-cyan);
+            padding: 6px 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tech-btn:hover {
+            background: var(--primary-cyan);
+            color: #000;
+            box-shadow: 0 0 10px var(--primary-cyan-glow);
+        }
+
+        /* Main Layout */
+        .main-content {
+            display: flex;
+            flex: 1;
+            gap: 15px;
+            height: calc(100% - 145px);
+        }
+
+        .side-panel {
+            width: 25%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .center-panel {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Tech Cards */
+        .tech-card {
+            background: var(--card-bg);
+            border: var(--border-tech);
+            position: relative;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            box-shadow: inset 0 0 20px rgba(0, 246, 255, 0.05);
+        }
+
+        .tech-card::before, .tech-card::after,
+        .tech-card-corner-bottom::before, .tech-card-corner-bottom::after {
+            content: '';
+            position: absolute;
+            width: 10px; height: 10px;
+            border-color: var(--primary-cyan);
+            border-style: solid;
+        }
+        
+        .tech-card::before { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .tech-card::after { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+        .tech-card-corner-bottom::before { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+        .tech-card-corner-bottom::after { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 246, 255, 0.2);
+            padding-bottom: 8px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            color: var(--text-primary);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title::before {
+            content: ''; display: inline-block;
+            width: 4px; height: 16px;
+            background: var(--primary-cyan);
+            box-shadow: 0 0 5px var(--primary-cyan);
+        }
+
+        .chart-tabs { display: flex; gap: 10px; }
+
+        .chart-tab {
+            font-size: 12px; color: var(--text-secondary); cursor: pointer;
+            padding: 2px 8px; border: 1px solid transparent; border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .chart-tab.active {
+            color: var(--primary-cyan); border-color: var(--primary-cyan);
+            background: rgba(0, 246, 255, 0.1);
+        }
+
+        .chart-container { flex: 1; width: 100%; position: relative; }
+
+        /* KPIs Row */
+        .kpi-row { display: flex; gap: 15px; height: 100px; flex-shrink: 0; }
+
+        .kpi-card {
+            flex: 1;
+            background: linear-gradient(135deg, rgba(6,30,93,0.8) 0%, rgba(3,10,22,0.9) 100%);
+            border: 1px solid rgba(0, 246, 255, 0.3);
+            border-radius: 4px; padding: 15px;
+            display: flex; flex-direction: column; justify-content: center;
+            cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden;
+        }
+
+        .kpi-card:hover, .kpi-card.active {
+            border-color: var(--primary-cyan);
+            box-shadow: 0 0 15px rgba(0, 246, 255, 0.3) inset;
+            transform: translateY(-2px);
+        }
+
+        .kpi-card.active::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px;
+            background: var(--primary-cyan); box-shadow: 0 0 10px var(--primary-cyan);
+        }
+
+        .kpi-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 5px; }
+        .kpi-value {
+            font-size: 28px; font-weight: bold; color: var(--primary-cyan);
+            font-family: 'Arial', sans-serif; display: flex; align-items: baseline; gap: 5px;
+        }
+        .kpi-unit { font-size: 12px; color: var(--text-secondary); font-weight: normal; }
+        .kpi-trend { font-size: 12px; margin-left: auto; display: flex; align-items: center; gap: 4px; }
+        .trend-up { color: var(--success-green); }
+        .trend-down { color: var(--danger-red); }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(3, 10, 22, 0.8);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 20; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .loading-overlay.active { opacity: 1; pointer-events: auto; }
+        .loader {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(0, 246, 255, 0.3); border-radius: 50%;
+            border-top-color: var(--primary-cyan);
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .core-viz {
+            flex: 1.5; position: relative;
+            background: radial-gradient(circle at center, rgba(0, 246, 255, 0.1) 0%, transparent 60%);
+        }
+        .core-title {
+            position: absolute; top: 20px; left: 20px; font-size: 18px; font-weight: bold;
+            color: #fff; text-shadow: 0 0 5px var(--primary-cyan); z-index: 2;
+        }
+        .ranking-list {
+            position: absolute; bottom: 20px; right: 20px; width: 220px;
+            background: rgba(6, 30, 93, 0.6); border: 1px solid rgba(0, 246, 255, 0.3);
+            padding: 10px; z-index: 2;
+        }
+        .rank-item { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; }
+        .rank-item:last-child { margin-bottom: 0; }
+        .rank-name { color: var(--text-secondary); }
+        .rank-val { color: var(--primary-cyan); font-family: 'Arial'; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <div class="header-left">
+                <div class="date-time" id="current-time" style="color: var(--text-secondary); font-size: 14px;"></div>
+            </div>
+            <div class="header-title">北上广深宏观经济运行分析大屏</div>
+            <div class="header-right">
+                <button class="tech-btn" id="btn-refresh">
+                    <svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor"><path d="M909.1 209.3l-56.4 44.1C775.8 155.1 656.2 92 521.9 92 290 92 102.3 279.5 102.3 511.5 102.3 743.5 290 931 521.9 931c181.3 0 340.4-115.1 403-282.8.5-1.4.3-3-.6-4.2l-47.5-66.7c-.8-1.1-2.2-1.6-3.6-1.3l-1.9.4c-50.5 130.8-177.3 223.4-325.2 223.4-192.3 0-348.8-156.5-348.8-348.8 0-192.3 156.5-348.8 348.8-348.8 107.5 0 203.9 49.3 267.1 127.1l-68.5 53.5c-1.8 1.4-2.1 4-.6 5.8l173.1 202.4c1.2 1.4 3.3 1.6 4.8.4l201.3-157.3c1.7-1.3 2-3.8.5-5.6z"></path></svg>
+                    刷新
+                </button>
+                <button class="tech-btn" id="btn-fullscreen">
+                    <svg viewBox="64 64 896 896" width="1em" height="1em" fill="currentColor"><path d="M290 236.4l43.9-43.9a8.01 8.01 0 00-4.7-13.6L114 150.3a8 8 0 00-8.9 8.9l28.6 215.3c.8 5.7 7.9 7.7 11.9 3.6l43.6-43.6 154.6 154.6c3.1 3.1 8.2 3.1 11.3 0l43.6-43.6c3.1-3.1 3.1-8.2 0-11.3L290 236.4zm352.7 187.3c3.1 3.1 8.2 3.1 11.3 0l154.6-154.6 43.6 43.6a8.01 8.01 0 0011.9-3.6l28.6-215.3a8 8 0 00-8.9-8.9L668.6 179c-5.7-.8-7.7 6.3-3.6 10.4l43.9 43.9-154.9 154.9c-3.1 3.1-3.1 8.2 0 11.3l43.6 43.6zM886 711.1l-43.6-43.6c-3.1-3.1-8.2-3.1-11.3 0L676.5 822l-43.9-43.9a8.01 8.01 0 00-13.6 4.7l-28.6 215.3a8 8 0 008.9 8.9l215.3-28.6c5.7-.8 7.7-7.9 3.6-11.9l-43.6-43.6L931 765.3c3.1-3.1 3.1-8.2 0-11.3l-45-42.9zM410.8 676.5c-3.1-3.1-8.2-3.1-11.3 0L244.9 831.1l-43.6-43.6a8.01 8.01 0 00-13.6 4.7L159.1 1008a8 8 0 008.9 8.9l215.3-28.6c5.7-.8 7.7-7.9 3.6-11.9l-43.9-43.9 154.9-154.9c3.1-3.1 3.1-8.2 0-11.3l-43.6-43.6z"></path></svg>
+                    全屏
+                </button>
+            </div>
+        </header>
+
+        <div class="filter-bar">
+            <div class="filter-item">
+                <span class="filter-label">数据周期:</span>
+                <select class="tech-select" id="filter-period">
+                    <option value="2023">2023年度</option>
+                    <option value="2022">2022年度</option>
+                    <option value="2023Q3">2023 Q1-Q3</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <span class="filter-label">重点关注:</span>
+                <select class="tech-select" id="filter-city">
+                    <option value="all">四城总计</option>
+                    <option value="sh">上海市</option>
+                    <option value="bj">北京市</option>
+                    <option value="sz">深圳市</option>
+                    <option value="gz">广州市</option>
+                </select>
+            </div>
+            <div class="filter-item">
+                <span class="filter-label">对比维度:</span>
+                <select class="tech-select" id="filter-compare">
+                    <option value="yoy">同比增速</option>
+                    <option value="scale">总量规模</option>
+                </select>
+            </div>
+            <button class="tech-btn" id="btn-query" style="margin-left: 20px;">更新数据</button>
+        </div>
+
+        <div class="main-content">
+            <!-- Left Panel -->
+            <div class="side-panel">
+                <div class="tech-card">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="card-header">
+                        <div class="card-title">四城GDP总量与增速</div>
+                        <div class="chart-tabs" data-target="gdpCompare">
+                            <div class="chart-tab active" data-type="amount">总量规模</div>
+                            <div class="chart-tab" data-type="growth">增速对比</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-gdp-compare"></div>
+                    <div class="loading-overlay" id="loading-gdpCompare"><div class="loader"></div></div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="card-header">
+                        <div class="card-title">三次产业结构占比</div>
+                        <div class="chart-tabs" data-target="industryStructure">
+                            <div class="chart-tab active" data-type="sh">上海</div>
+                            <div class="chart-tab" data-type="bj">北京</div>
+                            <div class="chart-tab" data-type="sz">深圳</div>
+                            <div class="chart-tab" data-type="gz">广州</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-industry-structure"></div>
+                    <div class="loading-overlay" id="loading-industryStructure"><div class="loader"></div></div>
+                </div>
+            </div>
+
+            <!-- Center Panel -->
+            <div class="center-panel">
+                <div class="kpi-row">
+                    <div class="kpi-card active" data-kpi="total">
+                        <div class="kpi-title">四城GDP总和</div>
+                        <div class="kpi-value"><span class="roll-num" data-val="15.6">0</span><span class="kpi-unit">万亿元</span></div>
+                        <div class="kpi-trend trend-up">综合同比 ↑ 5.1%</div>
+                    </div>
+                    <div class="kpi-card" data-kpi="tertiary">
+                        <div class="kpi-title">第三产业增加值总和</div>
+                        <div class="kpi-value"><span class="roll-num" data-val="11.2">0</span><span class="kpi-unit">万亿元</span></div>
+                        <div class="kpi-trend trend-up">占比 71.8%</div>
+                    </div>
+                    <div class="kpi-card" data-kpi="retail">
+                        <div class="kpi-title">社会消费品零售总额</div>
+                        <div class="kpi-value"><span class="roll-num" data-val="5.4">0</span><span class="kpi-unit">万亿元</span></div>
+                        <div class="kpi-trend trend-up">同比 ↑ 6.5%</div>
+                    </div>
+                    <div class="kpi-card" data-kpi="export">
+                        <div class="kpi-title">进出口总额</div>
+                        <div class="kpi-value"><span class="roll-num" data-val="14.8">0</span><span class="kpi-unit">万亿元</span></div>
+                        <div class="kpi-trend trend-down">同比 ↓ 0.8%</div>
+                    </div>
+                </div>
+
+                <div class="tech-card core-viz">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="core-title">一线城市经济辐射网络</div>
+                    <div class="chart-container" id="chart-core-map"></div>
+                    <div class="loading-overlay" id="loading-coreMap"><div class="loader"></div></div>
+                    
+                    <div class="ranking-list">
+                        <div style="color:#fff; margin-bottom: 10px; font-weight:bold; border-bottom:1px solid rgba(0,246,255,0.3); padding-bottom:5px;">2023年GDP规模排行 (万亿)</div>
+                        <div class="rank-item"><span class="rank-name">1. 上海市</span><span class="rank-val">4.72</span></div>
+                        <div class="rank-item"><span class="rank-name">2. 北京市</span><span class="rank-val">4.38</span></div>
+                        <div class="rank-item"><span class="rank-name">3. 深圳市</span><span class="rank-val">3.46</span></div>
+                        <div class="rank-item"><span class="rank-name">4. 广州市</span><span class="rank-val">3.04</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel -->
+            <div class="side-panel">
+                <div class="tech-card">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="card-header">
+                        <div class="card-title">人均GDP对比</div>
+                        <div class="chart-tabs" data-target="perCapita">
+                            <div class="chart-tab active" data-type="amount">人均规模(万元)</div>
+                            <div class="chart-tab" data-type="income">人均可支配收入</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-per-capita"></div>
+                    <div class="loading-overlay" id="loading-perCapita"><div class="loader"></div></div>
+                </div>
+                <div class="tech-card">
+                    <div class="tech-card-corner-bottom"></div>
+                    <div class="card-header">
+                        <div class="card-title">重点经济驱动力</div>
+                        <div class="chart-tabs" data-target="drivers">
+                            <div class="chart-tab active" data-type="tech">高新技术</div>
+                            <div class="chart-tab" data-type="finance">金融服务</div>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="chart-drivers"></div>
+                    <div class="loading-overlay" id="loading-drivers"><div class="loader"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const $$ = selector => document.querySelectorAll(selector);
+        
+        const colors = {
+            primary: '#00f6ff', purple: '#722ed1', green: '#52c41a', orange: '#faad14', red: '#ff4d4f',
+            text: '#fff', textSec: '#a6c0fe', bgGrid: 'rgba(0, 246, 255, 0.2)'
+        };
+
+        const commonOptions = {
+            backgroundColor: 'transparent',
+            tooltip: { backgroundColor: 'rgba(3, 10, 22, 0.9)', borderColor: colors.primary, textStyle: { color: colors.text } },
+            textStyle: { fontFamily: 'DingTalk JinBuTi, Microsoft YaHei, sans-serif' }
+        };
+
+        let charts = {};
+
+        function initCharts() {
+            charts.gdpCompare = echarts.init($('chart-gdp-compare'));
+            charts.industryStructure = echarts.init($('chart-industry-structure'));
+            charts.perCapita = echarts.init($('chart-per-capita'));
+            charts.drivers = echarts.init($('chart-drivers'));
+            charts.coreMap = echarts.init($('chart-core-map'));
+
+            window.addEventListener('resize', () => {
+                Object.values(charts).forEach(chart => chart.resize());
+            });
+        }
+        
+        function getGdpCompareOption(type = 'amount') {
+            const cities = ['上海', '北京', '深圳', '广州'];
+            return {
+                ...commonOptions,
+                tooltip: { trigger: 'axis', axisPointer: { type: 'cross' } },
+                grid: { top: 30, left: '3%', right: '3%', bottom: '5%', containLabel: true },
+                xAxis: { type: 'category', data: cities, axisLabel: { color: colors.textSec } },
+                yAxis: [
+                    { type: 'value', name: '万亿元', nameTextStyle: { color: colors.textSec }, axisLabel: { color: colors.textSec }, splitLine: { lineStyle: { color: colors.bgGrid, type: 'dashed' } } },
+                    { type: 'value', name: '增速(%)', nameTextStyle: { color: colors.textSec }, splitLine: { show: false }, axisLabel: { color: colors.textSec } }
+                ],
+                series: [
+                    {
+                        name: '总量', type: 'bar', barWidth: '40%',
+                        itemStyle: {
+                            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: colors.primary }, { offset: 1, color: 'rgba(0, 246, 255, 0.1)' }]),
+                            borderRadius: [4, 4, 0, 0]
+                        },
+                        data: type === 'amount' ? [4.72, 4.38, 3.46, 3.04] : [4.46, 4.16, 3.24, 2.88]
+                    },
+                    {
+                        name: '增速', type: 'line', yAxisIndex: 1, itemStyle: { color: colors.orange }, smooth: true,
+                        data: type === 'amount' ? [5.0, 5.2, 6.0, 4.6] : [3.0, 3.5, 4.5, 3.2]
+                    }
+                ]
+            };
+        }
+
+        function getIndustryStructureOption(city = 'sh') {
+            const dataMap = {
+                'sh': [{value: 0.2, name:'第一产业'}, {value: 23.5, name:'第二产业'}, {value: 76.3, name:'第三产业'}],
+                'bj': [{value: 0.2, name:'第一产业'}, {value: 15.0, name:'第二产业'}, {value: 84.8, name:'第三产业'}],
+                'sz': [{value: 0.1, name:'第一产业'}, {value: 39.8, name:'第二产业'}, {value: 60.1, name:'第三产业'}],
+                'gz': [{value: 1.1, name:'第一产业'}, {value: 26.5, name:'第二产业'}, {value: 72.4, name:'第三产业'}]
+            };
+            return {
+                ...commonOptions,
+                tooltip: { trigger: 'item', formatter: '{b}: {c}%' },
+                legend: { bottom: '0', textStyle: { color: colors.textSec } },
+                color: [colors.orange, colors.primary, colors.purple],
+                series: [{
+                    name: '产业结构', type: 'pie', radius: ['40%', '70%'], center: ['50%', '45%'],
+                    itemStyle: { borderRadius: 5, borderColor: 'rgba(3, 10, 22, 1)', borderWidth: 2 },
+                    label: { show: false },
+                    emphasis: { label: { show: true, fontSize: 16, fontWeight: 'bold', color: colors.text } },
+                    data: dataMap[city]
+                }]
+            };
+        }
+
+        function getPerCapitaOption(type = 'amount') {
+            const dataVal = type === 'amount' ? [19.0, 20.0, 19.5, 16.2] : [8.5, 8.2, 7.6, 7.7]; 
+            return {
+                ...commonOptions,
+                tooltip: { trigger: 'axis' },
+                grid: { top: 20, left: '3%', right: '10%', bottom: '5%', containLabel: true },
+                xAxis: { type: 'value', axisLabel: { color: colors.textSec }, splitLine: { lineStyle: { color: colors.bgGrid, type: 'dashed' } } },
+                yAxis: { type: 'category', data: ['上海', '北京', '深圳', '广州'], axisLabel: { color: colors.textSec } },
+                series: [{
+                    name: type === 'amount' ? '人均GDP(万元)' : '人均收入(万元)',
+                    type: 'bar', barWidth: '40%',
+                    itemStyle: {
+                        color: new echarts.graphic.LinearGradient(1, 0, 0, 0, [{ offset: 0, color: colors.purple }, { offset: 1, color: 'rgba(114, 46, 209, 0.1)' }]),
+                        borderRadius: [0, 4, 4, 0]
+                    },
+                    label: { show: true, position: 'right', color: colors.purple },
+                    data: dataVal
+                }]
+            };
+        }
+
+        function getDriversOption(type = 'tech') {
+            return {
+                ...commonOptions,
+                tooltip: { trigger: 'axis' },
+                radar: {
+                    indicator: [
+                        { name: '研发投入', max: 100 }, { name: '企业数量', max: 100 },
+                        { name: '营收增速', max: 100 }, { name: '人才储备', max: 100 },
+                        { name: '政策支持', max: 100 }
+                    ],
+                    splitArea: { show: false },
+                    splitLine: { lineStyle: { color: 'rgba(0, 246, 255, 0.2)' } },
+                    axisName: { color: colors.textSec }
+                },
+                series: [{
+                    type: 'radar',
+                    data: [
+                        { value: type === 'tech' ? [90, 85, 80, 95, 85] : [85, 70, 90, 85, 80], name: '深圳', itemStyle: { color: colors.primary }, areaStyle: { opacity: 0.2 } },
+                        { value: type === 'tech' ? [85, 90, 75, 90, 90] : [95, 95, 85, 90, 95], name: '北京', itemStyle: { color: colors.orange }, areaStyle: { opacity: 0.2 } }
+                    ]
+                }]
+            };
+        }
+
+        function getCoreMapOption() {
+            // Stylized network
+            const points = [
+                { name: '北京', value: [116.4, 39.9, 438] },
+                { name: '上海', value: [121.4, 31.2, 472] },
+                { name: '广州', value: [113.2, 23.1, 304] },
+                { name: '深圳', value: [114.0, 22.5, 346] }
+            ];
+
+            const links = [
+                { source: '北京', target: '上海' }, { source: '北京', target: '广州' }, { source: '北京', target: '深圳' },
+                { source: '上海', target: '广州' }, { source: '上海', target: '深圳' }, { source: '广州', target: '深圳' }
+            ];
+
+            return {
+                ...commonOptions,
+                tooltip: { formatter: p => p.seriesType === 'effectScatter' ? `${p.name}<br/>GDP: ${p.value[2]}00 亿` : '' },
+                grid: { show: false },
+                xAxis: { type: 'value', show: false, min: 110, max: 125 },
+                yAxis: { type: 'value', show: false, min: 20, max: 45 },
+                series: [
+                    {
+                        type: 'effectScatter', coordinateSystem: 'cartesian2d', zlevel: 2,
+                        rippleEffect: { brushType: 'stroke', scale: 4 },
+                        label: { show: true, position: 'right', formatter: '{b}', color: colors.text, textBorderColor: '#000', textBorderWidth: 2, fontSize: 14 },
+                        symbolSize: val => val[2] / 15,
+                        itemStyle: { color: colors.primary, shadowBlur: 10, shadowColor: colors.primary },
+                        data: points
+                    },
+                    {
+                        type: 'lines', coordinateSystem: 'cartesian2d', zlevel: 1,
+                        effect: { show: true, period: 4, trailLength: 0.5, color: '#fff', symbolSize: 4 },
+                        lineStyle: { color: colors.primary, width: 1, opacity: 0.3, curveness: 0.2 },
+                        data: links.map(link => {
+                            const source = points.find(p => p.name === link.source).value;
+                            const target = points.find(p => p.name === link.target).value;
+                            return { coords: [source, target] };
+                        })
+                    }
+                ]
+            };
+        }
+
+        function showLoading(chartId) { $(`loading-${chartId}`).classList.add('active'); }
+        function hideLoading(chartId) { $(`loading-${chartId}`).classList.remove('active'); }
+
+        function reloadChart(chartId, optionFunc, typeParam, delay = 800) {
+            showLoading(chartId);
+            setTimeout(() => {
+                charts[chartId].setOption(optionFunc(typeParam), true);
+                hideLoading(chartId);
+            }, delay);
+        }
+
+        function reloadAllCharts() {
+            reloadChart('gdpCompare', getGdpCompareOption, $$('.chart-tabs[data-target="gdpCompare"] .active')[0].dataset.type);
+            reloadChart('industryStructure', getIndustryStructureOption, $$('.chart-tabs[data-target="industryStructure"] .active')[0].dataset.type);
+            reloadChart('perCapita', getPerCapitaOption, $$('.chart-tabs[data-target="perCapita"] .active')[0].dataset.type);
+            reloadChart('drivers', getDriversOption, $$('.chart-tabs[data-target="drivers"] .active')[0].dataset.type);
+            
+            showLoading('coreMap');
+            setTimeout(() => {
+                charts.coreMap.setOption(getCoreMapOption(), true);
+                hideLoading('coreMap');
+            }, 1000);
+            
+            animateNumbers();
+        }
+
+        $$('.chart-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const parent = this.parentElement;
+                const targetChart = parent.dataset.target;
+                
+                parent.querySelectorAll('.chart-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                const type = this.dataset.type;
+                if (targetChart === 'gdpCompare') reloadChart(targetChart, getGdpCompareOption, type, 500);
+                if (targetChart === 'industryStructure') reloadChart(targetChart, getIndustryStructureOption, type, 500);
+                if (targetChart === 'perCapita') reloadChart(targetChart, getPerCapitaOption, type, 500);
+                if (targetChart === 'drivers') reloadChart(targetChart, getDriversOption, type, 500);
+            });
+        });
+
+        $('btn-query').addEventListener('click', () => reloadAllCharts());
+        $('btn-refresh').addEventListener('click', () => reloadAllCharts());
+
+        $$('.kpi-card').forEach(card => {
+            card.addEventListener('click', function() {
+                $$('.kpi-card').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                reloadAllCharts();
+            });
+        });
+
+        $('btn-fullscreen').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => console.log(err));
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        });
+
+        function animateNumbers() {
+            $$('.roll-num').forEach(el => {
+                const target = parseFloat(el.dataset.val);
+                let current = 0;
+                const increment = target / 30;
+                
+                const updateNum = () => {
+                    current += increment;
+                    if (current < target) {
+                        el.innerText = current.toFixed(1);
+                        requestAnimationFrame(updateNum);
+                    } else {
+                        el.innerText = target.toFixed(1);
+                    }
+                };
+                updateNum();
+            });
+        }
+
+        setInterval(() => {
+            const now = new Date();
+            $('current-time').innerText = now.toLocaleString('zh-CN', { 
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+        }, 1000);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            charts.gdpCompare.setOption(getGdpCompareOption());
+            charts.industryStructure.setOption(getIndustryStructureOption());
+            charts.perCapita.setOption(getPerCapitaOption());
+            charts.drivers.setOption(getDriversOption());
+            charts.coreMap.setOption(getCoreMapOption());
+            
+            animateNumbers();
+            $('current-time').innerText = new Date().toLocaleString('zh-CN');
+        });
+    </script>
+</body>
+</html>

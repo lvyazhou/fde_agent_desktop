@@ -184,11 +184,19 @@ defineEmits(['close', 'clear-logs', 'ask-question', 'upload-knowledge', 'change-
 const skillMeta = {
   'brainstorming': { label: '头脑风暴', icon: 'fa-solid fa-lightbulb' },
   'product-feature-spec': { label: '功能清单', icon: 'fa-solid fa-list-check' },
+  'product-prd-allinone': { label: 'PRD 生成', icon: 'fa-solid fa-file-lines' },
   'prototype-generator': { label: '原型生成', icon: 'fa-solid fa-palette' },
   'prototype-iterate': { label: '原型迭代', icon: 'fa-solid fa-rotate' },
   'collaborative-planning-board': { label: '协作规划', icon: 'fa-solid fa-chalkboard' },
   'first-principles-critic': { label: '第一性原理', icon: 'fa-solid fa-microscope' },
   'image-generator': { label: '图片生成', icon: 'fa-solid fa-image' },
+  '360-ppt-generator': { label: 'PPT 生成', icon: 'fa-solid fa-file-powerpoint' },
+  'business-architecture-image': { label: '商务架构图', icon: 'fa-solid fa-sitemap' },
+  'dashboard-generator': { label: '大屏生成', icon: 'fa-solid fa-chart-line' },
+  'fde-coach': { label: 'FDE 教练', icon: 'fa-solid fa-user-graduate' },
+  'fireworks-tech-graph': { label: '技术图表', icon: 'fa-solid fa-diagram-project' },
+  'md-export': { label: '文档导出', icon: 'fa-solid fa-file-export' },
+  'product-doc-to-word': { label: '文档转 Word', icon: 'fa-solid fa-file-word' },
 };
 
 const displaySkills = computed(() => {
