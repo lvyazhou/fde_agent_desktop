@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 悬浮容器：制造圆角和阴影效果 */
+    .splash-container {
+      width: 760px;
+      height: 520px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, #eef2f9 0%, #f7f9fc 100%);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      -webkit-app-region: drag;
+    }
+
+    /* 动画定义 */
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(30px, 20px) scale(1.05); }
+    }
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-20px, -30px) scale(1.05); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 8px rgba(29, 78, 216, 0.4); }
+      50% { box-shadow: 0 0 16px rgba(29, 78, 216, 0.8); }
+    }
+
+    /* 光晕背景 - 深蓝色调 */
+    .blob-1 {
+      position: absolute;
+      top: -150px;
+      left: -150px;
+      width: 500px;
+      height: 500px;
+      background: rgba(29, 78, 216, 0.12);
+      border-radius: 50%;
+      filter: blur(70px);
+      z-index: 0;
+      animation: float1 8s ease-in-out infinite;
+    }
+    .blob-2 {
+      position: absolute;
+      bottom: -150px;
+      right: -150px;
+      width: 500px;
+      height: 500px;
+      background: rgba(67, 56, 202, 0.10);
+      border-radius: 50%;
+      filter: blur(70px);
+      z-index: 0;
+      animation: float2 10s ease-in-out infinite;
+    }
+
+    /* 主卡片 */
+    .card {
+      position: relative;
+      z-index: 1;
+      width: 700px;
+      height: 440px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 24px;
+      box-shadow: 0 20px 40px -10px rgba(15, 23, 42, 0.08), 0 10px 15px -3px rgba(15, 23, 42, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-sizing: border-box;
+      padding-top: 35px;
+      animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      -webkit-app-region: no-drag;
+    }
+
+    /* Logo */
+    .logo-container {
+      width: 88px;
+      height: 88px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-radius: 20px;
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.05), inset 0 2px 4px rgba(255, 255, 255, 1);
+    }
+    .logo-container img {
+      width: 64px;
+      height: 64px;
+      -webkit-user-drag: none;
+    }
+
+    /* 标题 - 深蓝色 */
+    .title {
+      font-size: 38px;
+      font-weight: 900;
+      color: #1e3a5f;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 40px;
+    }
+
+    /* 进度条区域 */
+    .progress-container {
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    .status-text {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      height: 18px;
+    }
+    .progress-track {
+      width: 100%;
+      height: 6px;
+      background-color: #e2e8f0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #1d4ed8 0%, #3b82f6 100%);
+      border-radius: 3px;
+      transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: pulseGlow 2s infinite;
+    }
+
+    /* 底部 Metrics */
+    .metrics {
+      display: flex;
+      gap: 20px;
+    }
+    .metric-card {
+      width: 180px;
+      height: 64px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding-left: 16px;
+      box-sizing: border-box;
+      box-shadow: 0 2px 4px rgba(15, 23, 42, 0.02);
+      transition: transform 0.2s ease;
+    }
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 6px rgba(15, 23, 42, 0.04);
+    }
+    .metric-label {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .metric-value {
+      font-size: 14px;
+      font-weight: bold;
+      color: #1e293b;
+    }
+  </style>
+</head>
+<body>
+  <div class="splash-container">
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+
+    <div class="card">
+    <div class="logo-container">
+      <img src="../image/logo.png" alt="Logo" onerror="this.style.display='none'">
+    </div>
+
+    <div class="title">产设大师</div>
+    <div class="subtitle">智能体协作网格 — AI 驱动的产品设计、功能清单与原型生成</div>
+
+    <div class="progress-container">
+      <div class="status-text" id="status">正在初始化核心引擎，请稍候...</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="bar"></div>
+      </div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric-card">
+        <div class="metric-label">核心能力</div>
+        <div class="metric-value">需求 → 原型 闭环</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">数据策略</div>
+        <div class="metric-value">本地优先 / 隐私安全</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">AI 引擎</div>
+        <div class="metric-value">Hermes Agent</div>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <script>
+    function updateProgress(percent, text) {
+      const bar = document.getElementById('bar');
+      const status = document.getElementById('status');
+      if (bar) bar.style.width = percent + '%';
+      if (status && text) status.innerText = text;
+    }
+  </script>
+</body>
+</html>

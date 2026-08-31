@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>甘特图 - 项目需求管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; }
+    .top-nav { background:#fff; height:48px; border-bottom:1px solid #e8ecf0; display:flex; align-items:center; flex-shrink:0; position:sticky; top:0; z-index:30; }
+    .top-nav-item { color:#666; font-size:14px; padding:0 20px; height:48px; display:flex; align-items:center; gap:6px; white-space:nowrap; text-decoration:none; }
+    .top-nav-item:hover { color:#2563eb; }
+    .top-nav-item.active { color:#2563eb; font-weight:500; border-bottom:2px solid #2563eb; }
+    .side-rail { width:72px; background:#fff; border-right:1px solid #e8ecf0; display:flex; flex-direction:column; padding:8px 0; gap:4px; position:sticky; top:48px; height:calc(100vh - 48px); }
+    .rail-item { width:56px; height:56px; margin:0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:6px; color:#666; cursor:pointer; transition:all .15s; }
+    .rail-item:hover { background:#eff6ff; color:#2563eb; }
+    .rail-item.active { background:#eff6ff; color:#2563eb; }
+    .rail-item i { font-size:18px; }
+    .rail-item span { font-size:10px; margin-top:2px; }
+    .rail-item a { color:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; width:56px; height:56px; text-decoration:none; }
+    .gantt-row:hover { background: #f5f7fa; }
+    .today-line { position:absolute; top:0; bottom:0; width:2px; background:#dc2626; z-index:10; pointer-events:none; }
+    .today-line::before { content:'今日'; position:absolute; top:-22px; left:50%; transform:translateX(-50%); font-size:10px; color:#dc2626; white-space:nowrap; }
+  </style>
+</head>
+<body x-data="gantt()" x-init="init()">
+  <nav class="top-nav">
+    <div class="flex items-center gap-3 px-4 border-r border-[#e8ecf0] h-full">
+      <div class="w-8 h-8 bg-[#2563eb] rounded-lg flex items-center justify-center"><i class="fa fa-project-diagram text-white text-sm"></i></div>
+      <span class="font-semibold text-[#1e3a8a] text-sm">项目需求管理系统</span>
+    </div>
+    <a href="index.html" class="top-nav-item"><i class="fa fa-home"></i><span>工作台</span></a>
+    <a href="project-list.html" class="top-nav-item"><i class="fa fa-folder-open"></i><span>项目管理</span></a>
+    <a href="gantt.html" class="top-nav-item active"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a>
+    <a href="requirement.html" class="top-nav-item"><i class="fa fa-list-check"></i><span>需求管理</span></a>
+    <a href="task.html" class="top-nav-item"><i class="fa fa-tasks"></i><span>任务管理</span></a>
+    <a href="ai-assistant.html" class="top-nav-item"><i class="fa fa-robot"></i><span>AI助手</span></a>
+    <a href="reports.html" class="top-nav-item"><i class="fa fa-chart-bar"></i><span>报表</span></a>
+    <div class="ml-auto flex items-center gap-3 px-4">
+      <button class="relative text-[#999] hover:text-[#2563eb]"><i class="fa fa-bell text-lg"></i><span class="absolute -top-1 -right-1 w-4 h-4 bg-[#dc2626] rounded-full text-white text-[10px] flex items-center justify-center">3</span></button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-[#2563eb] rounded-full flex items-center justify-center text-white text-sm font-medium">PM</div>
+        <span class="text-sm text-[#475569]">张明华</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex">
+    <div class="side-rail">
+      <div class="rail-item"><a href="index.html"><i class="fa fa-home"></i><span>工作台</span></a></div>
+      <div class="rail-item"><a href="project-list.html"><i class="fa fa-folder-open"></i><span>项目</span></a></div>
+      <div class="rail-item active"><i class="fa fa-chart-gantt"></i><span>甘特图</span></div>
+      <div class="rail-item"><a href="requirement.html"><i class="fa fa-list-check"></i><span>需求</span></a></div>
+      <div class="rail-item"><a href="task.html"><i class="fa fa-tasks"></i><span>任务</span></a></div>
+      <div class="rail-item"><a href="ai-assistant.html"><i class="fa fa-robot"></i><span>AI助手</span></a></div>
+      <div class="rail-item"><a href="reports.html"><i class="fa fa-chart-bar"></i><span>报表</span></a></div>
+      <div class="rail-item"><a href="settings.html"><i class="fa fa-cog"></i><span>设置</span></a></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 overflow-auto p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h1 class="text-xl font-bold text-[#1e3a8a]">甘特图</h1>
+          <p class="text-sm text-[#999] mt-0.5">项目进度时间线视图 · 可拖拽调整计划</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <select x-model="selectedProject" @change="renderGantt()" class="text-sm border border-[#e8ecf0] rounded-lg px-3 py-2 focus:outline-none focus:border-[#2563eb]">
+            <option value="">全部项目</option>
+            <template x-for="p in projects" :key="p.id"><option :value="p.id" x-text="p.name"></option></template>
+          </select>
+          <button @click="zoomLevel = zoomLevel === 'week' ? 'month' : 'quarter'" class="px-3 py-2 border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:bg-[#f5f7fa] transition">
+            <i class="fa fa-search-plus mr-1"></i><span x-text="zoomLevel==='week'?'按周':zoomLevel==='month'?'按月':'按季度'"></span>
+          </button>
+          <button @click="exportPlan()" class="px-3 py-2 border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:bg-[#f5f7fa] transition">
+            <i class="fa fa-download mr-1"></i>导出计划
+          </button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="bg-white rounded-lg border border-[#e8ecf0] px-4 py-3 mb-4 flex items-center gap-6 flex-wrap">
+        <div class="flex items-center gap-2 text-[12px] text-[#475569]">
+          <div class="w-3 h-3 rounded-sm bg-[#2563eb]"></div><span>进行中</span>
+        </div>
+        <div class="flex items-center gap-2 text-[12px] text-[#475569]">
+          <div class="w-3 h-3 rounded-sm bg-[#059669]"></div><span>已完成</span>
+        </div>
+        <div class="flex items-center gap-2 text-[12px] text-[#475569]">
+          <div class="w-3 h-3 rounded-sm bg-[#d97706]"></div><span>延误</span>
+        </div>
+        <div class="flex items-center gap-2 text-[12px] text-[#475569]">
+          <div class="w-3 h-3 rounded-sm bg-[#94a3b8]"></div><span>未开始</span>
+        </div>
+        <div class="flex items-center gap-2 text-[12px] text-[#475569]">
+          <div class="w-3 h-3 rounded-sm bg-[#2563eb] opacity-30"></div><span>里程碑</span>
+        </div>
+        <div class="flex items-center gap-2 text-[12px] text-red-500 ml-auto">
+          <div class="w-0.5 h-3 bg-red-500"></div><span>今日线</span>
+        </div>
+      </div>
+
+      <!-- Gantt Chart Area -->
+      <div class="bg-white rounded-lg border border-[#e8ecf0] overflow-hidden">
+        <!-- Gantt Header (dates) -->
+        <div class="flex border-b border-[#e8ecf0]">
+          <div class="w-56 flex-shrink-0 px-4 py-2.5 bg-[#f5f7fa] border-r border-[#e8ecf0]">
+            <span class="text-[11px] font-medium text-[#999] uppercase tracking-wide">任务名称</span>
+          </div>
+          <div class="flex-1 overflow-x-auto" id="ganttHeader"></div>
+        </div>
+
+        <!-- Gantt Body -->
+        <div class="relative" id="ganttBody">
+          <div class="flex" style="min-height:400px">
+            <!-- Task name column -->
+            <div class="w-56 flex-shrink-0 border-r border-[#e8ecf0]" id="taskNameCol"></div>
+            <!-- Chart area -->
+            <div class="flex-1 relative overflow-x-auto" id="ganttChartArea">
+              <div id="ganttChart" style="width:100%;min-height:400px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Detail Panel -->
+      <div x-show="selectedTask" x-transition class="mt-4 bg-white rounded-lg border border-[#e8ecf0] p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-[#1e3a8a]">任务详情</h3>
+          <button @click="selectedTask=null" class="text-gray-400 hover:text-gray-600"><i class="fa fa-times"></i></button>
+        </div>
+        <template x-if="selectedTask">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div><div class="text-[11px] text-[#999] mb-1">任务名称</div><div class="text-sm font-medium text-[#333]" x-text="selectedTask.title"></div></div>
+            <div><div class="text-[11px] text-[#999] mb-1">负责人</div><div class="text-sm text-[#333]" x-text="selectedTask.assignee"></div></div>
+            <div><div class="text-[11px] text-[#999] mb-1">计划时间</div><div class="text-sm text-[#333]" x-text="selectedTask.start+' 至 '+selectedTask.end"></div></div>
+            <div><div class="text-[11px] text-[#999] mb-1">工时</div><div class="text-sm text-[#333]" x-text="selectedTask.estimate+'人天'"></div></div>
+            <div><div class="text-[11px] text-[#999] mb-1">优先级</div><div class="text-sm" :class="selectedTask.priority==='P0'?'text-red-500 font-bold':selectedTask.priority==='P1'?'text-amber-500 font-bold':'text-[#475569]'" x-text="selectedTask.priority"></div></div>
+            <div><div class="text-[11px] text-[#999] mb-1">关联需求</div><div class="text-sm text-[#333]" x-text="selectedTask.requirement"></div></div>
+            <div><div class="text-[11px] text-[#999] mb-1">状态</div>
+              <span class="inline-flex text-[11px] px-2 py-0.5 rounded-full" :class="selectedTask.status==='completed'?'bg-green-50 text-green-600':selectedTask.status==='in_progress'?'bg-blue-50 text-blue-600':'bg-gray-50 text-gray-400'" x-text="selectedTask.status==='completed'?'已完成':selectedTask.status==='in_progress'?'进行中':'待领取'"></span>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="fixed top-14 right-4 z-50 space-y-2">
+    <template x-for="t in toasts" :key="t.id">
+      <div x-show="!t.removing" x-transition class="bg-[#1e3a8a] text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[200px]">
+        <i class="fa fa-check-circle text-green-400"></i><span x-text="t.msg"></span>
+      </div>
+    </template>
+  </div>
+
+  <script src="js/charts.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <script>
+    function gantt() {
+      return {
+        projects: [], tasks: [], selectedProject: '', selectedTask: null, zoomLevel: 'month',
+        toasts: [], _tid: 0, chart: null,
+        async init() {
+          try {
+            const [p, t] = await Promise.all([
+              fetch('data/projects.json').then(r=>r.json()),
+              fetch('data/tasks.json').then(r=>r.json())
+            ]);
+            this.projects = p; this.tasks = t;
+            this.$nextTick(() => this.renderGantt());
+          } catch(e) { console.error(e); }
+        },
+        renderGantt() {
+          const filtered = this.selectedProject ? this.tasks.filter(t=>t.project===this.selectedProject) : this.tasks;
+          const C = window.TC_COLORS;
+          const today = new Date('2025-06-25');
+          // Date range
+          const dates = [];
+          const startDate = new Date('2025-05-01');
+          const endDate = new Date('2025-08-31');
+          let cur = new Date(startDate);
+          while(cur <= endDate) { dates.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
+
+          // Header
+          const months = [];
+          let mcur = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+          while(mcur <= endDate) {
+            months.push({ label: (mcur.getMonth()+1)+'月', days: new Date(mcur.getFullYear(), mcur.getMonth()+1, 0).getDate() - mcur.getDate() + 1 });
+            mcur = new Date(mcur.getFullYear(), mcur.getMonth()+1, 1);
+          }
+          const dayWidth = this.zoomLevel==='week' ? 40 : this.zoomLevel==='month' ? 14 : 5;
+          const totalWidth = dates.length * dayWidth;
+
+          // Build header HTML
+          let headerHtml = '<div class="flex" style="width:'+totalWidth+'px">';
+          months.forEach(m => {
+            headerHtml += '<div style="width:'+(m.days*dayWidth)+'px;min-width:'+(m.days*dayWidth)+'px" class="text-center text-[11px] text-[#999] py-2 border-r border-[#f0f2f5]">' + m.label + '</div>';
+          });
+          headerHtml += '</div>';
+          document.getElementById('ganttHeader').innerHTML = headerHtml;
+
+          // Task name column
+          let nameHtml = '';
+          filtered.forEach((task, i) => {
+            nameHtml += '<div class="gantt-row flex items-center px-4 border-b border-[#f0f2f5] cursor-pointer" style="height:40px;width:'+totalWidth+'px" @click="selectedTask=filtered['+i+']">';
+            nameHtml += '<div class="flex items-center gap-2"><span class="text-[11px] px-1.5 py-0.5 rounded" :class="task.priority==='P0'?'bg-red-50 text-red-500':task.priority==='P1'?'bg-amber-50 text-amber-500':'bg-gray-50 text-gray-400'">'+task.priority+'</span><span class="text-sm text-[#333] truncate">'+task.title+'</span></div></div>';
+            nameHtml += '</div>';
+          });
+          document.getElementById('taskNameCol').innerHTML = '<div style="width:224px">' + nameHtml + '</div>';
+
+          // ECharts Gantt
+          if (this.chart) this.chart.dispose();
+          this.chart = echarts.init(document.getElementById('ganttChart'));
+          const taskNames = filtered.map(t=>t.title);
+          const seriesData = filtered.map(t => {
+            const s = new Date(t.start);
+            const e = new Date(t.end);
+            const left = Math.max(0, Math.floor((s - startDate) / 86400000)) * dayWidth;
+            const width = Math.max(1, Math.floor((e - s) / 86400000) + 1) * dayWidth;
+            let color = C.textMute;
+            if(t.status==='completed') color = C.green;
+            else if(t.status==='in_progress') color = C.primary;
+            else if(t.start && new Date(t.start) < today && t.status==='pending') color = C.amber;
+            return { value: [taskNames.indexOf(t.title), left, left+width], itemStyle: { color, borderRadius: 3 } };
+          });
+
+          const todayOffset = Math.floor((today - startDate) / 86400000) * dayWidth + dayWidth/2;
+
+          const option = {
+            tooltip: {
+              trigger:'item', formatter: (p) => {
+                const t = filtered[p.dataIndex];
+                return '<div style="font-size:12px"><b>'+t.title+'</b><br/>计划: '+t.start+' ~ '+t.end+'<br/>负责人: '+t.assignee+'<br/>状态: '+(t.status==='completed'?'已完成':t.status==='in_progress'?'进行中':'待领取')+'</div>';
+              }
+            },
+            grid: { left:0, right:0, top:0, bottom:0, containLabel:false },
+            xAxis: { type:'value', min:0, max:totalWidth, show:false },
+            yAxis: { type:'category', data:taskNames, show:false },
+            series: [
+              {
+                type:'bar', stack:'gantt', barWidth:20, silent:true,
+                data: filtered.map((_,i) => ({ value:[i, 0, totalWidth], itemStyle:{ color:'#f5f7fa', borderRadius:0 } }))
+              },
+              {
+                type:'bar', stack:'gantt', barWidth:20, barGap:'-100%',
+                data: seriesData,
+                emphasis: { itemStyle: { shadowBlur: 8, shadowColor:'rgba(0,0,0,0.1)' } }
+              },
+              {
+                type:'custom',
+                renderItem: (params, api) => {
+                  const milestoneX = todayOffset;
+                  const y = api.coord([0, params.dataIndex])[1];
+                  return { type:'group', children:[
+                    { type:'line', shape:{ x1:milestoneX, y1:y-100, x2:milestoneX, y2:y+10 }, style:{ stroke:'#dc2626', lineWidth:2, lineDash:[3,2] } },
+                    { type:'polygon', shape:{ points:[[milestoneX-6,y-6],[milestoneX+6,y-6],[milestoneX,y+4]] }, style:{ fill:'#dc2626' } }
+                  ]};
+                },
+                data: filtered.map((_,i)=>i), z:100
+              }
+            ]
+          };
+          this.chart.setOption(option);
+          this.chart.on('click', (params) => {
+            if(params.seriesIndex === 1) this.selectedTask = filtered[params.dataIndex];
+          });
+        },
+        exportPlan() {
+          this.showToast('计划导出功能开发中');
+        },
+        showToast(msg) {
+          const id=++this._tid; this.toasts.push({id,msg,removing:false});
+          setTimeout(()=>{const t=this.toasts.find(t=>t.id===id);if(t)t.removing=true;setTimeout(()=>this.toasts=this.toasts.filter(t=>t.id!==id),350);},2500);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

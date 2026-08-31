@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登录 - 项目需求管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .login-bg { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #1e40af 100%); }
+    .card-shadow { box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+  </style>
+</head>
+<body class="login-bg min-h-screen flex items-center justify-center">
+  <div class="absolute inset-0 overflow-hidden">
+    <div class="absolute top-20 left-20 w-72 h-72 bg-white/5 rounded-full blur-3xl"></div>
+    <div class="absolute bottom-20 right-20 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+  </div>
+  <div x-data="{ loading: false, error: '', username: '', password: '' }" class="relative w-full max-w-md">
+    <!-- Logo Area -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-white/20 rounded-2xl mb-4">
+        <i class="fa fa-project-diagram text-white text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-white">项目需求管理系统</h1>
+      <p class="text-blue-200 text-sm mt-1">Project Requirement Management</p>
+    </div>
+    <!-- Login Card -->
+    <div class="bg-white rounded-2xl card-shadow p-8">
+      <h2 class="text-lg font-semibold text-[#333] mb-1">欢迎回来</h2>
+      <p class="text-[#999] text-sm mb-6">请登录您的账号</p>
+      <form @submit.prevent="
+        if(!username || !password) { error='请输入用户名和密码'; return; }
+        error=''; loading=true;
+        setTimeout(() => { loading=false; window.location.href='index.html'; }, 1200);
+      ">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-[#475569] mb-1.5">用户名</label>
+            <div class="relative">
+              <i class="fa fa-user absolute left-3 top-1/2 -translate-y-1/2 text-[#999]"></i>
+              <input x-model="username" type="text" placeholder="请输入用户名" 
+                     class="w-full pl-10 pr-4 py-2.5 border border-[#e8ecf0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] transition">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#475569] mb-1.5">密码</label>
+            <div class="relative">
+              <i class="fa fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-[#999]"></i>
+              <input x-model="password" type="password" placeholder="请输入密码" 
+                     class="w-full pl-10 pr-4 py-2.5 border border-[#e8ecf0] rounded-lg text-sm focus:outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] transition">
+            </div>
+          </div>
+          <div x-show="error" x-transition class="text-red-500 text-sm" x-text="error"></div>
+          <div class="flex items-center justify-between text-sm">
+            <label class="flex items-center gap-2 text-[#475569] cursor-pointer">
+              <input type="checkbox" class="rounded border-[#e8ecf0] text-[#2563eb]"> 记住我
+            </label>
+            <a href="#" class="text-[#2563eb] hover:underline">忘记密码？</a>
+          </div>
+          <button type="submit" :disabled="loading"
+                  class="w-full py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] disabled:bg-[#93c5fd] text-white rounded-lg font-medium text-sm transition flex items-center justify-center gap-2">
+            <i x-show="loading" class="fa fa-spinner fa-spin"></i>
+            <span x-text="loading ? '登录中...' : '登录'"></span>
+          </button>
+        </div>
+      </form>
+      <div class="mt-6 pt-5 border-t border-[#e8ecf0] text-center text-xs text-[#999]">
+        演示账号：admin / admin123
+      </div>
+    </div>
+  </div>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+</body>
+</html>

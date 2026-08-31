@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>项目管理 - 项目需求管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; }
+    .top-nav { background:#fff; height:48px; border-bottom:1px solid #e8ecf0; display:flex; align-items:center; flex-shrink:0; position:sticky; top:0; z-index:30; }
+    .top-nav-item { color:#666; font-size:14px; padding:0 20px; height:48px; display:flex; align-items:center; gap:6px; white-space:nowrap; text-decoration:none; }
+    .top-nav-item:hover { color:#2563eb; }
+    .top-nav-item.active { color:#2563eb; font-weight:500; border-bottom:2px solid #2563eb; }
+    .side-rail { width:72px; background:#fff; border-right:1px solid #e8ecf0; display:flex; flex-direction:column; padding:8px 0; gap:4px; position:sticky; top:48px; height:calc(100vh - 48px); }
+    .rail-item { width:56px; height:56px; margin:0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:6px; color:#666; cursor:pointer; transition:all .15s; }
+    .rail-item:hover { background:#eff6ff; color:#2563eb; }
+    .rail-item.active { background:#eff6ff; color:#2563eb; }
+    .rail-item i { font-size:18px; }
+    .rail-item span { font-size:10px; margin-top:2px; }
+    .rail-item a { color:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; width:56px; height:56px; text-decoration:none; }
+  </style>
+</head>
+<body x-data="proj()" x-init="init()">
+  <nav class="top-nav">
+    <div class="flex items-center gap-3 px-4 border-r border-[#e8ecf0] h-full">
+      <div class="w-8 h-8 bg-[#2563eb] rounded-lg flex items-center justify-center"><i class="fa fa-project-diagram text-white text-sm"></i></div>
+      <span class="font-semibold text-[#1e3a8a] text-sm">项目需求管理系统</span>
+    </div>
+    <a href="index.html" class="top-nav-item"><i class="fa fa-home"></i><span>工作台</span></a>
+    <a href="project-list.html" class="top-nav-item active"><i class="fa fa-folder-open"></i><span>项目管理</span></a>
+    <a href="gantt.html" class="top-nav-item"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a>
+    <a href="requirement.html" class="top-nav-item"><i class="fa fa-list-check"></i><span>需求管理</span></a>
+    <a href="task.html" class="top-nav-item"><i class="fa fa-tasks"></i><span>任务管理</span></a>
+    <a href="ai-assistant.html" class="top-nav-item"><i class="fa fa-robot"></i><span>AI助手</span></a>
+    <a href="reports.html" class="top-nav-item"><i class="fa fa-chart-bar"></i><span>报表</span></a>
+    <div class="ml-auto flex items-center gap-3 px-4">
+      <button class="relative text-[#999] hover:text-[#2563eb]"><i class="fa fa-bell text-lg"></i><span class="absolute -top-1 -right-1 w-4 h-4 bg-[#dc2626] rounded-full text-white text-[10px] flex items-center justify-center">3</span></button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-[#2563eb] rounded-full flex items-center justify-center text-white text-sm font-medium">PM</div>
+        <span class="text-sm text-[#475569]">张明华</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex">
+    <div class="side-rail">
+      <div class="rail-item"><a href="index.html"><i class="fa fa-home"></i><span>工作台</span></a></div>
+      <div class="rail-item active"><a href="project-list.html"><i class="fa fa-folder-open"></i><span>项目</span></a></div>
+      <div class="rail-item"><a href="gantt.html"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a></div>
+      <div class="rail-item"><a href="requirement.html"><i class="fa fa-list-check"></i><span>需求</span></a></div>
+      <div class="rail-item"><a href="task.html"><i class="fa fa-tasks"></i><span>任务</span></a></div>
+      <div class="rail-item"><a href="ai-assistant.html"><i class="fa fa-robot"></i><span>AI助手</span></a></div>
+      <div class="rail-item"><a href="reports.html"><i class="fa fa-chart-bar"></i><span>报表</span></a></div>
+      <div class="rail-item"><a href="settings.html"><i class="fa fa-cog"></i><span>设置</span></a></div>
+    </div>
+
+    <!-- Main -->
+    <div class="flex-1 overflow-auto p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h1 class="text-xl font-bold text-[#1e3a8a]">项目管理</h1>
+          <p class="text-sm text-[#999] mt-0.5">共 <span x-text="filtered.length"></span> 个项目</p>
+        </div>
+        <button @click="showCreate=true" class="px-4 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-sm flex items-center gap-2 transition">
+          <i class="fa fa-plus"></i>新建项目
+        </button>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="bg-white rounded-lg border border-[#e8ecf0] px-4 py-3 mb-4 flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-2 text-sm text-[#475569]">
+          <i class="fa fa-filter text-[#999]"></i>筛选：
+        </div>
+        <select x-model="filter.status" class="text-sm border border-[#e8ecf0] rounded px-3 py-1.5 focus:outline-none focus:border-[#2563eb]">
+          <option value="">全部状态</option>
+          <option value="in_progress">进行中</option>
+          <option value="delayed">已延误</option>
+          <option value="completed">已完成</option>
+          <option value="preparing">筹备中</option>
+        </select>
+        <select x-model="filter.type" class="text-sm border border-[#e8ecf0] rounded px-3 py-1.5 focus:outline-none focus:border-[#2563eb]">
+          <option value="">全部类型</option>
+          <option value="waterfall">瀑布</option>
+          <option value="agile">敏捷</option>
+          <option value="iterative">迭代</option>
+        </select>
+        <input x-model="filter.keyword" type="text" placeholder="搜索项目名称..." class="flex-1 text-sm border border-[#e8ecf0] rounded px-3 py-1.5 focus:outline-none focus:border-[#2563eb]">
+        <button @click="filter={status:'',type:'',keyword:''}" class="text-[#999] hover:text-[#2563eb] text-sm">重置</button>
+      </div>
+
+      <!-- KPI summary -->
+      <div class="grid grid-cols-4 gap-4 mb-4">
+        <div class="bg-white rounded-lg border border-[#e8ecf0] p-4 text-center">
+          <div class="text-2xl font-bold text-[#1e3a8a]" x-text="all.length">0</div>
+          <div class="text-[11px] text-[#999] mt-1">项目总数</div>
+        </div>
+        <div class="bg-white rounded-lg border border-[#e8ecf0] p-4 text-center">
+          <div class="text-2xl font-bold text-blue-600" x-text="all.filter(p=>p.status==='in_progress').length">0</div>
+          <div class="text-[11px] text-[#999] mt-1">进行中</div>
+        </div>
+        <div class="bg-white rounded-lg border border-[#e8ecf0] p-4 text-center">
+          <div class="text-2xl font-bold text-red-500" x-text="all.filter(p=>p.status==='delayed').length">0</div>
+          <div class="text-[11px] text-[#999] mt-1">已延误</div>
+        </div>
+        <div class="bg-white rounded-lg border border-[#e8ecf0] p-4 text-center">
+          <div class="text-2xl font-bold text-green-600" x-text="all.filter(p=>p.status==='completed').length">0</div>
+          <div class="text-[11px] text-[#999] mt-1">已完成</div>
+        </div>
+      </div>
+
+      <!-- Project Cards -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <template x-for="p in filtered" :key="p.id">
+          <div class="bg-white rounded-lg border border-[#e8ecf0] hover:shadow-md transition cursor-pointer" @click="selectProject(p)">
+            <div class="px-4 py-3 border-b border-[#e8ecf0] flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold text-[#1e3a8a]" x-text="p.name"></div>
+                <div class="text-[11px] text-[#999] mt-0.5" x-text="p.id + ' · ' + (p.type==='waterfall'?'瀑布':p.type==='agile'?'敏捷':'迭代')"></div>
+              </div>
+              <span class="text-[11px] px-2 py-0.5 rounded-full"
+                    :class="p.status==='in_progress'?'bg-blue-50 text-blue-600':p.status==='delayed'?'bg-red-50 text-red-500':p.status==='completed'?'bg-green-50 text-green-600':'bg-gray-50 text-gray-500'"
+                    x-text="p.status==='in_progress'?'进行中':p.status==='delayed'?'已延误':p.status==='completed'?'已完成':'筹备中'"></span>
+            </div>
+            <div class="p-4">
+              <!-- Progress -->
+              <div class="mb-3">
+                <div class="flex justify-between text-[11px] text-[#475569] mb-1">
+                  <span>项目进度</span><span x-text="p.progress+'%'"></span>
+                </div>
+                <div class="w-full h-1.5 bg-[#e8ecf0] rounded-full overflow-hidden">
+                  <div class="h-full rounded-full transition-all" :class="p.progress>=80?'bg-[#059669]':p.progress>=50?'bg-[#2563eb]':'bg-[#d97706]'" :style="'width:'+p.progress+'%'"></div>
+                </div>
+              </div>
+              <!-- Meta -->
+              <div class="grid grid-cols-2 gap-2 text-[12px]">
+                <div class="flex items-center gap-1.5 text-[#475569]"><i class="fa fa-user text-[#999] text-[10px]"></i><span x-text="'PM: '+p.pm"></span></div>
+                <div class="flex items-center gap-1.5 text-[#475569]"><i class="fa fa-calendar text-[#999] text-[10px]"></i><span x-text="p.start+'~'+p.end"></span></div>
+                <div class="flex items-center gap-1.5 text-[#475569]"><i class="fa fa-exclamation-triangle text-[#999] text-[10px]"></i><span :class="p.delayed_tasks>0?'text-red-500':'text-green-600'" x-text="p.delayed_tasks>0?'延误任务: '+p.delayed_tasks:'无延误'"></span></div>
+                <div class="flex items-center gap-1.5">
+                  <span :class="p.risk==='high'?'text-red-500':p.risk==='medium'?'text-amber-500':'text-green-600'" class="text-[12px]">
+                    <i :class="p.risk==='high'?'fa fa-circle-exclamation':p.risk==='medium'?'fa fa-triangle-exclamation':'fa fa-check-circle'"></i>
+                    <span x-text="p.risk==='high'?'高风险':p.risk==='medium'?'中风险':'低风险'"></span>
+                  </span>
+                </div>
+              </div>
+              <!-- Milestones -->
+              <div class="mt-3 pt-3 border-t border-[#e8ecf0] flex flex-wrap gap-1">
+                <template x-for="m in (p.milestones||[])" :key="m.name">
+                  <span class="text-[10px] px-1.5 py-0.5 rounded"
+                        :class="m.status==='completed'?'bg-green-50 text-green-600':m.status==='in_progress'?'bg-blue-50 text-blue-600':'bg-gray-50 text-gray-400'">
+                    <i class="fa fa-flag text-[8px] mr-0.5"></i><span x-text="m.name"></span>
+                  </span>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div x-show="filtered.length===0" class="text-center py-12 text-[#999]">
+        <i class="fa fa-folder-open text-4xl mb-3"></i>
+        <p class="text-sm">没有找到匹配的项目</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Project Drawer -->
+  <div x-show="showCreate" x-transition.opacity class="fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/40" @click="showCreate=false"></div>
+    <aside class="absolute right-0 top-0 bottom-0 w-[480px] bg-white shadow-xl overflow-y-auto"
+           x-transition:enter="transition transform" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
+      <header class="h-12 px-5 flex items-center border-b border-[#e8ecf0] sticky top-0 bg-white z-10">
+        <span class="text-sm font-semibold text-[#1e3a8a]">新建项目</span>
+        <button @click="showCreate=false" class="ml-auto text-gray-400 hover:text-gray-600"><i class="fa fa-times"></i></button>
+      </header>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[#475569] mb-1.5">项目名称 <span class="text-red-500">*</span></label>
+          <input x-model="newProject.name" type="text" placeholder="请输入项目名称" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb]">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#475569] mb-1.5">项目类型</label>
+          <select x-model="newProject.type" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb]">
+            <option value="waterfall">瀑布开发</option>
+            <option value="agile">敏捷迭代</option>
+            <option value="iterative">分阶段迭代</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#475569] mb-1.5">开始日期</label>
+            <input x-model="newProject.start" type="date" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb]">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#475569] mb-1.5">结束日期</label>
+            <input x-model="newProject.end" type="date" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb]">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#475569] mb-1.5">项目经理</label>
+          <select x-model="newProject.pm" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb]">
+            <option value="张明华">张明华</option>
+            <option value="李晓峰">李晓峰</option>
+            <option value="王芳">王芳</option>
+            <option value="赵海涛">赵海涛</option>
+            <option value="刘佳">刘佳</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#475569] mb-1.5">项目描述</label>
+          <textarea x-model="newProject.description" rows="3" placeholder="请输入项目描述" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb] resize-none"></textarea>
+        </div>
+        <div class="pt-4 border-t border-[#e8ecf0] flex gap-3">
+          <button @click="createProject()" class="flex-1 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-sm font-medium transition">
+            确认创建
+          </button>
+          <button @click="showCreate=false" class="px-6 py-2.5 border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:bg-[#f5f7fa] transition">取消</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Project Detail Drawer -->
+  <div x-show="selected" x-transition.opacity class="fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/40" @click="selected=null"></div>
+    <aside class="absolute right-0 top-0 bottom-0 w-[520px] bg-white shadow-xl overflow-y-auto"
+           x-transition:enter="transition transform" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
+      <header class="h-12 px-5 flex items-center border-b border-[#e8ecf0] sticky top-0 bg-white z-10">
+        <span class="text-sm font-semibold text-[#1e3a8a]" x-text="selected ? selected.name : ''"></span>
+        <button @click="selected=null" class="ml-auto text-gray-400 hover:text-gray-600"><i class="fa fa-times"></i></button>
+      </header>
+      <div class="p-5" x-show="selected">
+        <!-- KPI row -->
+        <div class="grid grid-cols-3 gap-3 mb-5">
+          <div class="bg-[#eff6ff] rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-[#2563eb]" x-text="selected.progress+'%'"></div>
+            <div class="text-[11px] text-[#1e40af] mt-0.5">完成进度</div>
+          </div>
+          <div class="bg-red-50 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-red-500" x-text="selected.delayed_tasks"></div>
+            <div class="text-[11px] text-red-400 mt-0.5">延误任务</div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-3 text-center">
+            <div class="text-xl font-bold text-[#475569]" x-text="(selected.milestones||[]).length"></div>
+            <div class="text-[11px] text-[#999] mt-0.5">里程碑</div>
+          </div>
+        </div>
+        <!-- Milestone list -->
+        <div class="mb-5">
+          <div class="text-sm font-semibold text-[#1e3a8a] mb-3">里程碑</div>
+          <template x-for="m in (selected.milestones||[])" :key="m.name">
+            <div class="flex items-center gap-3 py-2 border-b border-[#f0f2f5] last:border-0">
+              <i :class="m.status==='completed'?'fa-check-circle text-green-500':m.status==='in_progress'?'fa-spinner text-blue-500':'fa-clock text-gray-300'" class="text-sm"></i>
+              <div class="flex-1">
+                <div class="text-sm text-[#333]" x-text="m.name"></div>
+                <div class="text-[11px] text-[#999]" x-text="m.date"></div>
+              </div>
+              <span class="text-[11px] px-2 py-0.5 rounded-full"
+                    :class="m.status==='completed'?'bg-green-50 text-green-600':m.status==='in_progress'?'bg-blue-50 text-blue-600':'bg-gray-50 text-gray-400'"
+                    x-text="m.status==='completed'?'已完成':m.status==='in_progress'?'进行中':'待开始'"></span>
+            </div>
+          </template>
+        </div>
+        <!-- Actions -->
+        <div class="flex gap-3">
+          <a :href="'gantt.html?project='+selected.id" class="flex-1 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-sm font-medium text-center transition">
+            查看甘特图
+          </a>
+          <button class="px-4 py-2.5 border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:bg-[#f5f7fa] transition">
+            <i class="fa fa-edit mr-1"></i>编辑
+          </button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Toast -->
+  <div class="fixed top-14 right-4 z-50 space-y-2">
+    <template x-for="t in toasts" :key="t.id">
+      <div x-show="!t.removing" x-transition class="bg-[#1e3a8a] text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[200px]">
+        <i class="fa fa-check-circle text-green-400"></i><span x-text="t.msg"></span>
+      </div>
+    </template>
+  </div>
+
+  <script src="js/charts.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <script>
+    function proj() {
+      return {
+        all: [], toasts: [], _tid: 0, showCreate: false, selected: null,
+        filter: { status: '', type: '', keyword: '' },
+        newProject: { name:'', type:'waterfall', start:'', end:'', pm:'张明华', description:'' },
+        get filtered() {
+          return this.all.filter(p => {
+            if(this.filter.status && p.status !== this.filter.status) return false;
+            if(this.filter.type && p.type !== this.filter.type) return false;
+            if(this.filter.keyword && !p.name.includes(this.filter.keyword)) return false;
+            return true;
+          });
+        },
+        async init() {
+          try { this.all = await fetch('data/projects.json').then(r=>r.json()); } catch(e) {}
+        },
+        selectProject(p) { this.selected = p; },
+        createProject() {
+          if(!this.newProject.name) { this.showToast('请输入项目名称','error'); return; }
+          const id = 'P' + String(Date.now()).slice(-6);
+          this.all.push({ id, ...this.newProject, status:'preparing', progress:0, delayed_tasks:0, risk:'low', milestones:[] });
+          this.showCreate = false;
+          this.newProject = { name:'', type:'waterfall', start:'', end:'', pm:'张明华', description:'' };
+          this.showToast('项目创建成功');
+        },
+        showToast(msg, type='success') {
+          const id=++this._tid; this.toasts.push({id,msg,removing:false});
+          setTimeout(()=>{const t=this.toasts.find(t=>t.id===id);if(t)t.removing=true;setTimeout(()=>this.toasts=this.toasts.filter(t=>t.id!==id),350);},2500);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

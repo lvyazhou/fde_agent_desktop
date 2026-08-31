@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智弈五子棋 - 首页</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#2563eb','primary-dark':'#1d4ed8','primary-light':'#eff6ff','deep-blue':'#1e3a8a','mid-blue':'#1e40af'}}}}</script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+body{background:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif}
+.top-nav{background:#fff;height:48px;border-bottom:1px solid #e8ecf0;display:flex;align-items:center;flex-shrink:0;position:sticky;top:0;z-index:30}
+.top-nav-item{color:#666;font-size:14px;padding:0 20px;height:48px;display:flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none}
+.top-nav-item:hover{color:#2563eb}
+.top-nav-item.active{color:#2563eb;font-weight:500;border-bottom:2px solid #2563eb}
+.side-rail{width:72px;background:#fff;border-right:1px solid #e8ecf0;display:flex;flex-direction:column;padding:8px 0;gap:4px;flex-shrink:0}
+.rail-item{width:56px;height:56px;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;color:#666;cursor:pointer;text-decoration:none;font-size:11px;gap:3px}
+.rail-item i{font-size:18px}
+.rail-item:hover{background:#f5f7fa;color:#2563eb}
+.rail-item.active{background:#eff6ff;color:#2563eb}
+.main-content{flex:1;overflow-y:auto;padding:20px;min-width:0}
+.kpi-card{cursor:pointer;transition:box-shadow .2s}
+.kpi-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.chart-box{background:#fff;border-radius:8px;border:1px solid #e8ecf0;padding:16px}
+</style>
+</head>
+<body class="h-screen flex flex-col m-0" x-data="dashboard">
+<nav class="top-nav px-4">
+<div class="flex items-center gap-2 mr-6">
+<div class="w-7 h-7 bg-primary rounded flex items-center justify-center"><i class="fa fa-chess-board text-white text-xs"></i></div>
+<span class="font-semibold text-[15px] text-[#333]">智弈五子棋</span>
+</div>
+<a href="index.html" class="top-nav-item active"><i class="fa fa-home"></i>首页</a>
+<a href="play.html" class="top-nav-item"><i class="fa fa-gamepad"></i>对局</a>
+<a href="stats.html" class="top-nav-item"><i class="fa fa-chart-bar"></i>统计</a>
+<div class="ml-auto flex items-center gap-4 text-[12px] text-[#999]">
+<span>总局数: <b class="text-[#333]" x-text="FC.total_games">-</b></span>
+<span>胜率: <b class="text-[#059669]" x-text="FC.win_rate">-</b></span>
+<div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center"><i class="fa fa-user text-primary text-xs"></i></div>
+</div>
+</nav>
+<div class="flex flex-1 overflow-hidden">
+<aside class="side-rail">
+<a href="index.html" class="rail-item active"><i class="fa fa-home"></i>首页</a>
+<a href="play.html" class="rail-item"><i class="fa fa-gamepad"></i>对局</a>
+<a href="stats.html" class="rail-item"><i class="fa fa-chart-bar"></i>统计</a>
+<div class="rail-item opacity-40"><i class="fa fa-brain"></i>AI分析</div>
+</aside>
+<main class="main-content">
+<section class="bg-gradient-to-r from-[#eff6ff] to-white border border-[#bfdbfe] rounded-lg px-4 py-2.5 flex items-center justify-between mb-4">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-md bg-primary text-white flex items-center justify-center"><i class="fa fa-tachometer-alt text-[14px]"></i></div>
+<div><div class="text-sm font-semibold text-[#1e3a8a]">数据驾驶舱</div><div class="text-[11.5px] text-[#1e40af]">最近7天对局统计 · 综合战力分析</div></div>
+</div>
+<div class="text-[12px] text-[#1e40af]">对局 <span class="text-[15px] font-semibold" x-text="FC.total_games">-</span> 场</div>
+</section>
+<div class="grid grid-cols-6 gap-3 mb-4">
+<template x-for="kpi in kpis" :key="kpi.key">
+<div class="bg-white rounded-lg border border-[#e8ecf0] p-4 kpi-card" @click="showToast(kpi.label+' 详情')">
+<div class="flex items-center justify-between"><span class="text-[#999] text-[13px]" x-text="kpi.label"></span><i :class="'fa fa-'+kpi.icon+' text-primary'"></i></div>
+<div class="flex items-baseline gap-2 mt-1"><span class="text-xl font-semibold text-[#333]" x-text="kpi.value"></span><span class="text-[11px]" :class="kpi.delta>=0?'text-emerald-600':'text-red-500'" x-text="(kpi.delta>=0?'↑':'↓')+Math.abs(kpi.delta)+'%'"></span></div>
+</div>
+</template>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4">
+<div class="chart-box"><div class="text-sm font-medium text-[#333] mb-1">📈 胜率趋势</div><div id="chartWinTrend" style="height:260px"></div></div>
+<div class="chart-box"><div class="text-sm font-medium text-[#333] mb-1">🎯 难度胜率对比</div><div id="chartDiff" style="height:260px"></div></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="chart-box"><div class="text-sm font-medium text-[#333] mb-1">📅 每周对局数</div><div id="chartWeekly" style="height:260px"></div></div>
+<div class="chart-box"><div class="text-sm font-medium text-[#333] mb-1">📐 棋盘尺寸分布</div><div id="chartBoard" style="height:260px"></div></div>
+</div>
+</main>
+</div>
+<template x-for="t in toasts" :key="t.id">
+<div class="px-4 py-2.5 rounded-lg shadow-lg bg-white border text-sm fixed top-16 right-5 z-50" :class="t.type==='success'?'border-emerald-300 text-emerald-700':t.type==='error'?'border-red-300 text-red-700':'border-blue-200 text-blue-700'" x-show="!t.removing" x-transition.opacity.duration.300ms x-text="t.message"></div>
+</template>
+<script>
+document.addEventListener('alpine:init',()=>{
+Alpine.data('dashboard',()=>({
+toasts:[],_tid:0,stats:{},
+get FC(){
+const s=this.stats;
+return {total_games:TC_FMT.thousands(s.total_games||0),wins:TC_FMT.thousands(s.wins||0),losses:TC_FMT.thousands(s.losses||0),win_rate:TC_FMT.pct(s.win_rate||0,1),streak:TC_FMT.thousands(s.current_streak||0)+'局',avg_moves:TC_FMT.thousands(s.avg_moves||0)+'手'};},
+get kpis(){return[{key:'total',label:'总局数',value:this.FC.total_games,delta:12,icon:'chess-board'},{key:'wins',label:'胜场',value:this.FC.wins,delta:8,icon:'trophy'},{key:'losses',label:'败场',value:this.FC.losses,delta:-3,icon:'frown'},{key:'rate',label:'胜率',value:this.FC.win_rate,delta:5,icon:'bullseye'},{key:'streak',label:'连胜纪录',value:this.FC.streak,delta:15,icon:'fire'},{key:'moves',label:'平均步数',value:this.FC.avg_moves,delta:-2,icon:'shoe-prints'}];},
+async init(){
+try{const r=await fetch('data/stats.json');this.stats=await r.json();this.$nextTick(()=>{this.renderWinTrend();this.renderDiff();this.renderWeekly();this.renderBoard()})}catch(e){console.error(e)}},
+showToast(msg,type='info'){const id=++this._tid;this.toasts.push({id,message:msg,type,removing:false});setTimeout(()=>{const t=this.toasts.find(x=>x.id===id);if(t)t.removing=true;setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300)},2500)},
+_chart(id){const dom=document.getElementById(id);if(!dom)return null;dom.innerHTML='';return echarts.init(dom)},
+renderWinTrend(){const c=this._chart('chartWinTrend');if(!c)return;const d=this.stats.win_rate_trend||[];c.setOption({tooltip:TC_ECHARTS.tooltip({formatter:p=>p[0].axisValue+'<br/>胜率: <b>'+(p[0].value*100).toFixed(1)+'%</b>'}),grid:TC_ECHARTS.grid({top:16}),xAxis:{type:'category',data:d.map(x=>x.period),...TC_ECHARTS.axis()},yAxis:{type:'value',min:0.3,max:0.8,axisLabel:{color:'#666',fontSize:11,formatter:v=>(v*100).toFixed(0)+'%'},splitLine:{lineStyle:{color:'#f0f2f5',type:'dashed'}}},series:[{type:'line',data:d.map(x=>x.rate),smooth:true,symbol:'circle',symbolSize:6,lineStyle:{color:'#2563eb',width:2},itemStyle:{color:'#2563eb'},areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(37,99,235,0.15)'},{offset:1,color:'rgba(37,99,235,0.02)'}]}}}]});c.resize()},
+renderDiff(){const c=this._chart('chartDiff');if(!c)return;const d=this.stats.difficulty_trend||[];c.setOption({tooltip:TC_ECHARTS.tooltip(),grid:TC_ECHARTS.grid({top:16}),legend:TC_ECHARTS.legend(),xAxis:{type:'category',data:d.map(x=>x.period),...TC_ECHARTS.axis()},yAxis:{type:'value',min:0,max:1,axisLabel:{color:'#666',fontSize:11,formatter:v=>(v*100).toFixed(0)+'%'},splitLine:{lineStyle:{color:'#f0f2f5',type:'dashed'}}},series:[{name:'初级',type:'line',data:d.map(x=>x.easy),smooth:true,symbol:'circle',symbolSize:4,lineStyle:{color:'#059669',width:2},itemStyle:{color:'#059669'}},{name:'中级',type:'line',data:d.map(x=>x.medium),smooth:true,symbol:'circle',symbolSize:4,lineStyle:{color:'#2563eb',width:2},itemStyle:{color:'#2563eb'}},{name:'高级',type:'line',data:d.map(x=>x.hard),smooth:true,symbol:'circle',symbolSize:4,lineStyle:{color:'#d97706',width:2},itemStyle:{color:'#d97706'}}]});c.resize()},
+renderWeekly(){const c=this._chart('chartWeekly');if(!c)return;const d=this.stats.weekly||[];c.setOption({tooltip:TC_ECHARTS.tooltip({formatter:p=>p[0].name+'<br/>对局: <b>'+p[0].value+'</b> 场<br/>胜场: <b>'+d[p[0].dataIndex].wins+'</b>'}),grid:TC_ECHARTS.grid({top:16}),xAxis:{type:'category',data:d.map(x=>x.date),...TC_ECHARTS.axis()},yAxis:{type:'value',...TC_ECHARTS.axis()},series:[{type:'bar',data:d.map(x=>x.games),barWidth:24,itemStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'#60a5fa'},{offset:1,color:'#2563eb'}]}},borderRadius:[4,4,0,0]}]});c.resize()},
+renderBoard(){const c=this._chart('chartBoard');if(!c)return;const bs=this.stats.by_board_size||{};const data=[{name:'9×9 快棋',value:bs['9']?.games||0},{name:'13×13 标准',value:bs['13']?.games||0},{name:'15×15 经典',value:bs['15']?.games||0}];c.setOption({tooltip:{trigger:'item',backgroundColor:'#fff',borderColor:'#e8ecf0',textStyle:{color:'#333',fontSize:12},formatter:'{b}: {c} 场 ({d}%)'},series:[{type:'pie',radius:['55%','78%'],center:['50%','52%'],avoidLabelOverlap:false,label:{show:true,formatter:'{b}\n{d}%',fontSize:11,color:'#666'},emphasis:{label:{fontSize:14,fontWeight:'bold'}},data,itemStyle:{color:p=>['#2563eb','#60a5fa','#93c5fd'][p.dataIndex]}}]});c.resize()}
+}));
+});
+</script>
+</body>
+</html>

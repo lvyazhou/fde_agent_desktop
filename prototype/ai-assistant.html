@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI助手 - 项目需求管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; }
+    .top-nav { background:#fff; height:48px; border-bottom:1px solid #e8ecf0; display:flex; align-items:center; flex-shrink:0; position:sticky; top:0; z-index:30; }
+    .top-nav-item { color:#666; font-size:14px; padding:0 20px; height:48px; display:flex; align-items:center; gap:6px; white-space:nowrap; text-decoration:none; }
+    .top-nav-item:hover { color:#2563eb; }
+    .top-nav-item.active { color:#2563eb; font-weight:500; border-bottom:2px solid #2563eb; }
+    .side-rail { width:72px; background:#fff; border-right:1px solid #e8ecf0; display:flex; flex-direction:column; padding:8px 0; gap:4px; position:sticky; top:48px; height:calc(100vh - 48px); }
+    .rail-item { width:56px; height:56px; margin:0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:6px; color:#666; cursor:pointer; transition:all .15s; }
+    .rail-item:hover { background:#eff6ff; color:#2563eb; }
+    .rail-item.active { background:#eff6ff; color:#2563eb; }
+    .rail-item i { font-size:18px; }
+    .rail-item span { font-size:10px; margin-top:2px; }
+    .rail-item a { color:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; width:56px; height:56px; text-decoration:none; }
+    .chat-scroll { scrollbar-width: thin; scrollbar-color: #e8ecf0 transparent; }
+    .chat-scroll::-webkit-scrollbar { width:4px; }
+    .chat-scroll::-webkit-scrollbar-thumb { background:#e8ecf0; border-radius:2px; }
+    .typing-dot { animation: bounce 1.4s infinite ease-in-out; }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+  </style>
+</head>
+<body x-data="aiChat()" x-init="init()">
+  <nav class="top-nav">
+    <div class="flex items-center gap-3 px-4 border-r border-[#e8ecf0] h-full">
+      <div class="w-8 h-8 bg-[#2563eb] rounded-lg flex items-center justify-center"><i class="fa fa-project-diagram text-white text-sm"></i></div>
+      <span class="font-semibold text-[#1e3a8a] text-sm">项目需求管理系统</span>
+    </div>
+    <a href="index.html" class="top-nav-item"><i class="fa fa-home"></i><span>工作台</span></a>
+    <a href="project-list.html" class="top-nav-item"><i class="fa fa-folder-open"></i><span>项目管理</span></a>
+    <a href="gantt.html" class="top-nav-item"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a>
+    <a href="requirement.html" class="top-nav-item"><i class="fa fa-list-check"></i><span>需求管理</span></a>
+    <a href="task.html" class="top-nav-item"><i class="fa fa-tasks"></i><span>任务管理</span></a>
+    <a href="ai-assistant.html" class="top-nav-item active"><i class="fa fa-robot"></i><span>AI助手</span></a>
+    <a href="reports.html" class="top-nav-item"><i class="fa fa-chart-bar"></i><span>报表</span></a>
+    <div class="ml-auto flex items-center gap-3 px-4">
+      <button class="relative text-[#999] hover:text-[#2563eb]"><i class="fa fa-bell text-lg"></i></button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-[#2563eb] rounded-full flex items-center justify-center text-white text-sm font-medium">PM</div>
+        <span class="text-sm text-[#475569]">张明华</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex" style="height:calc(100vh - 48px)">
+    <div class="side-rail">
+      <div class="rail-item"><a href="index.html"><i class="fa fa-home"></i><span>工作台</span></a></div>
+      <div class="rail-item"><a href="project-list.html"><i class="fa fa-folder-open"></i><span>项目</span></a></div>
+      <div class="rail-item"><a href="gantt.html"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a></div>
+      <div class="rail-item"><a href="requirement.html"><i class="fa fa-list-check"></i><span>需求</span></a></div>
+      <div class="rail-item"><a href="task.html"><i class="fa fa-tasks"></i><span>任务</span></a></div>
+      <div class="rail-item active"><i class="fa fa-robot"></i><span>AI助手</span></div>
+      <div class="rail-item"><a href="reports.html"><i class="fa fa-chart-bar"></i><span>报表</span></a></div>
+      <div class="rail-item"><a href="settings.html"><i class="fa fa-cog"></i><span>设置</span></a></div>
+    </div>
+
+    <!-- Main Layout: Sidebar + Chat -->
+    <div class="flex-1 flex overflow-hidden">
+      <!-- Feature Sidebar -->
+      <div class="w-64 bg-white border-r border-[#e8ecf0] flex flex-col">
+        <div class="p-4 border-b border-[#e8ecf0]">
+          <button @click="newChat()" class="w-full py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-sm font-medium transition flex items-center justify-center gap-2">
+            <i class="fa fa-plus"></i>新建对话
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto py-2">
+          <div class="px-3 py-1.5 text-[11px] text-[#999] uppercase tracking-wide font-medium">AI 能力</div>
+          <template x-for="cap in capabilities" :key="cap.id">
+            <button @click="selectCap(cap)" class="w-full text-left px-3 py-2.5 flex items-center gap-2.5 hover:bg-[#f5f7fa] transition" :class="activeCap&&activeCap.id===cap.id?'bg-[#eff6ff]':''">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" :class="cap.color">
+                <i :class="cap.icon" class="text-white text-sm"></i>
+              </div>
+              <div>
+                <div class="text-sm font-medium text-[#333]" x-text="cap.name"></div>
+                <div class="text-[11px] text-[#999]" x-text="cap.desc"></div>
+              </div>
+            </button>
+          </template>
+          <div class="px-3 py-1.5 text-[11px] text-[#999] uppercase tracking-wide font-medium mt-3">历史会话</div>
+          <template x-for="s in sessions" :key="s.id">
+            <button @click="loadSession(s)" class="w-full text-left px-3 py-2 hover:bg-[#f5f7fa] transition">
+              <div class="text-sm text-[#475569] truncate" x-text="s.title"></div>
+              <div class="text-[11px] text-[#999]" x-text="s.created"></div>
+            </button>
+          </template>
+        </div>
+      </div>
+
+      <!-- Chat Area -->
+      <div class="flex-1 flex flex-col">
+        <!-- Chat Header -->
+        <div class="h-12 px-5 flex items-center border-b border-[#e8ecf0] bg-white">
+          <div x-show="activeCap" class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center" :class="activeCap.color">
+              <i :class="activeCap.icon" class="text-white text-xs"></i>
+            </div>
+            <span class="text-sm font-medium text-[#1e3a8a]" x-text="activeCap ? activeCap.name : 'AI 助手'"></span>
+          </div>
+          <span x-show="!activeCap" class="text-sm font-medium text-[#1e3a8a]">AI 助手</span>
+          <div class="ml-auto flex items-center gap-2">
+            <button @click="exportChat()" class="text-[#999] hover:text-[#2563eb] text-sm" title="导出对话"><i class="fa fa-download"></i></button>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="flex-1 overflow-y-auto chat-scroll p-5 space-y-4 bg-[#f5f7fa]" id="chatArea">
+          <!-- Empty State -->
+          <div x-show="messages.length===0" class="flex flex-col items-center justify-center h-full text-center">
+            <div class="w-16 h-16 bg-[#eff6ff] rounded-2xl flex items-center justify-center mb-4">
+              <i class="fa fa-robot text-[#2563eb] text-2xl"></i>
+            </div>
+            <div class="text-lg font-semibold text-[#1e3a8a] mb-1">AI 智能助手</div>
+            <div class="text-sm text-[#999] mb-5 max-w-md">选择左侧 AI 能力开始智能辅助，或直接输入问题</div>
+            <!-- Quick actions -->
+            <div class="flex flex-wrap gap-2 justify-center max-w-lg">
+              <button @click="quickAction('decompose')" class="px-4 py-2 bg-white border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:border-[#2563eb] hover:text-[#2563eb] transition">
+                <i class="fa fa-magic mr-1 text-[#2563eb]"></i>智能拆解任务
+              </button>
+              <button @click="quickAction('report')" class="px-4 py-2 bg-white border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:border-[#2563eb] hover:text-[#2563eb] transition">
+                <i class="fa fa-file-alt mr-1 text-[#2563eb]"></i>生成周报
+              </button>
+              <button @click="quickAction('risk')" class="px-4 py-2 bg-white border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:border-[#2563eb] hover:text-[#2563eb] transition">
+                <i class="fa fa-shield-alt mr-1 text-[#2563eb]"></i>风险预警
+              </button>
+            </div>
+          </div>
+
+          <!-- Messages -->
+          <template x-for="(m, i) in messages" :key="i">
+            <div class="flex gap-3" :class="m.role==='user'?'flex-row-reverse':'flex-row'">
+              <div class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-white text-sm font-medium" :class="m.role==='user'?'bg-[#2563eb]':'bg-[#1e3a8a]'">
+                <i :class="m.role==='user'?'fa fa-user':'fa fa-robot'"></i>
+              </div>
+              <div class="max-w-[70%]">
+                <div class="px-4 py-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap" :class="m.role==='user'?'bg-[#2563eb] text-white rounded-tr-sm':'bg-white text-[#333] border border-[#e8ecf0] rounded-tl-sm'" x-text="m.content"></div>
+                <div class="text-[11px] text-[#999] mt-1" x-text="m.time"></div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Typing indicator -->
+          <div x-show="typing" class="flex gap-3">
+            <div class="w-8 h-8 rounded-full bg-[#1e3a8a] flex items-center justify-center flex-shrink-0">
+              <i class="fa fa-robot text-white text-sm"></i>
+            </div>
+            <div class="bg-white border border-[#e8ecf0] rounded-2xl rounded-tl-sm px-4 py-3">
+              <div class="flex gap-1">
+                <div class="w-2 h-2 bg-[#999] rounded-full typing-dot"></div>
+                <div class="w-2 h-2 bg-[#999] rounded-full typing-dot"></div>
+                <div class="w-2 h-2 bg-[#999] rounded-full typing-dot"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-white border-t border-[#e8ecf0]">
+          <div class="flex gap-3 items-end">
+            <select x-model="selectedRequirement" class="text-sm border border-[#e8ecf0] rounded-lg px-3 py-2 focus:outline-none focus:border-[#2563eb]">
+              <option value="">选择关联需求（可选）</option>
+              <template x-for="r in requirements" :key="r.id">
+                <option :value="r.id" x-text="r.id+' - '+r.title.slice(0,20)"></option>
+              </template>
+            </select>
+          </div>
+          <div class="flex gap-3 items-end mt-3">
+            <textarea x-model="input" @keydown.enter.exact.prevent="send()" rows="2" placeholder="输入消息，或选择快捷操作..." class="flex-1 border border-[#e8ecf0] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#2563eb] resize-none" @input="autoResize($event)"></textarea>
+            <button @click="send()" :disabled="!input||sending" class="px-5 py-3 bg-[#2563eb] hover:bg-[#1d4ed8] disabled:bg-[#93c5fd] text-white rounded-xl text-sm font-medium transition flex items-center gap-2">
+              <i x-show="sending" class="fa fa-spinner fa-spin"></i>
+              <i x-show="!sending" class="fa fa-paper-plane"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Context Panel (Right) -->
+      <div class="w-64 bg-white border-l border-[#e8ecf0] overflow-y-auto">
+        <div class="p-4 border-b border-[#e8ecf0]">
+          <div class="text-sm font-semibold text-[#1e3a8a]">关联信息</div>
+        </div>
+        <div class="p-4 space-y-4">
+          <div x-show="contextInfo">
+            <div class="text-[11px] text-[#999] uppercase tracking-wide font-medium mb-2">关联需求</div>
+            <div class="bg-[#f5f7fa] rounded-lg p-3">
+              <div class="text-sm font-medium text-[#333]" x-text="contextInfo.title"></div>
+              <div class="text-[11px] text-[#999] mt-1" x-text="contextInfo.id"></div>
+              <div class="flex gap-2 mt-2">
+                <span class="text-[10px] px-1.5 py-0.5 bg-red-50 text-red-500 rounded" x-text="contextInfo.priority"></span>
+                <span class="text-[10px] px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded" x-text="contextInfo.status"></span>
+              </div>
+            </div>
+          </div>
+          <!-- Stats -->
+          <div>
+            <div class="text-[11px] text-[#999] uppercase tracking-wide font-medium mb-2">AI 使用统计</div>
+            <div class="space-y-2">
+              <div class="flex justify-between text-sm"><span class="text-[#475569]">任务拆解</span><span class="font-medium text-[#1e3a8a]">124 次</span></div>
+              <div class="flex justify-between text-sm"><span class="text-[#475569]">汇报生成</span><span class="font-medium text-[#1e3a8a]">38 次</span></div>
+              <div class="flex justify-between text-sm"><span class="text-[#475569]">风险预警</span><span class="font-medium text-[#1e3a8a]">23 次</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="fixed top-14 right-4 z-50 space-y-2">
+    <template x-for="t in toasts" :key="t.id">
+      <div x-show="!t.removing" x-transition class="bg-[#1e3a8a] text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[200px]">
+        <i class="fa fa-check-circle text-green-400"></i><span x-text="t.msg"></span>
+      </div>
+    </template>
+  </div>
+
+  <script src="js/charts.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <script>
+    function aiChat() {
+      return {
+        messages: [], input: '', sending: false, typing: false, toasts: [], _tid: 0,
+        selectedRequirement: '', contextInfo: null, activeCap: null,
+        requirements: [],
+        capabilities: [
+          { id:'decompose', name:'智能拆解任务', desc:'自动将需求拆解为任务', icon:'fa fa-magic', color:'bg-[#2563eb]' },
+          { id:'report', name:'生成项目周报', desc:'一键生成进度汇报', icon:'fa fa-file-alt', color:'bg-[#059669]' },
+          { id:'risk', name:'风险预警分析', desc:'识别项目潜在风险', icon:'fa fa-shield-alt', color:'bg-[#d97706]' },
+          { id:'review', name:'需求评审辅助', desc:'检查需求描述完整性', icon:'fa fa-search', color:'bg-[#7c3aed]' },
+        ],
+        sessions: [
+          { id:'s1', title:'供应商审核流程 - 任务拆解', created:'2025-06-20 09:30' },
+          { id:'s2', title:'供应链项目 - 周报生成', created:'2025-06-19 14:20' },
+          { id:'s3', title:'CRM标签体系 - 风险评估', created:'2025-06-18 16:45' },
+        ],
+        async init() {
+          try { this.requirements = await fetch('data/requirements.json').then(r=>r.json()); } catch(e) {}
+        },
+        autoResize(e) { e.target.style.height = 'auto'; e.target.style.height = (e.target.scrollHeight) + 'px'; },
+        selectCap(cap) {
+          this.activeCap = cap;
+          const prompts = {
+            decompose: '请帮我分析需求「供应商注册审核流程优化」（R001），并将其拆解为具体的开发任务子项。',
+            report: '请为「供应链系统升级」项目（P001）生成本周（2025年第25周）项目进展周报。',
+            risk: '请分析「财务共享平台」（P003）项目当前的延期风险，并给出处理建议。',
+            review: '请帮我评审需求「采购订单自动分单规则」（R002），检查描述是否完整、验收标准是否可量化。'
+          };
+          if(prompts[cap.id]) this.input = prompts[cap.id];
+        },
+        quickAction(type) {
+          const actions = { decompose:()=>this.selectCap(this.capabilities.find(c=>c.id==='decompose')), report:()=>this.selectCap(this.capabilities.find(c=>c.id==='report')), risk:()=>this.selectCap(this.capabilities.find(c=>c.id==='risk')) };
+          if(actions[type]) actions[type]();
+          document.querySelector('textarea')?.focus();
+        },
+        loadSession(s) {
+          this.messages = [];
+          if(s.id==='s1') {
+            this.messages = [
+              { role:'user', content:'帮我拆解需求：供应商注册审核流程优化', time:'09:30' },
+              { role:'assistant', content:'好的，正在分析需求「供应商注册审核流程优化」（R001）...
+
+根据需求描述，我建议拆解为以下 5 个开发任务：
+
+1. 【数据库设计】供应商资质字段设计（1人天）
+   定义营业执照、法人身份证、银行账户等字段
+
+2. 【后端接口】供应商注册 API 开发（2人天）
+   实现资质图片上传、自动审核流触发
+
+3. 【前端页面】供应商注册表单（1.5人天）
+   包含文件上传、进度展示
+
+4. 【通知模块】审核结果邮件/短信通知（0.5人天）
+
+5. 【测试】集成测试与回归测试（1人天）
+
+预计总工时：6 人天
+是否需要我将此拆解结果导入任务列表？', time:'09:31' }
+            ];
+          }
+          this.showToast('已加载历史会话');
+        },
+        async send() {
+          if(!this.input.trim() || this.sending) return;
+          const content = this.input.trim();
+          const ctxReq = this.selectedRequirement ? this.requirements.find(r=>r.id===this.selectedRequirement) : null;
+          if(ctxReq) this.contextInfo = ctxReq;
+          this.messages.push({ role:'user', content, time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) });
+          this.input = ''; this.sending = true; this.typing = true;
+          this.scrollBottom();
+          await new Promise(r=>setTimeout(r,1500));
+          this.typing = false;
+          const responses = {
+            decompose: '根据您的需求，我已完成任务拆解分析：
+
+1. 需求理解与评审（0.5人天）
+2. 数据库表结构设计（1人天）
+3. API 接口开发（2人天）
+4. 前端页面实现（1.5人天）
+5. 自动化测试编写（1人天）
+6. 集成联调（1人天）
+
+💡 建议优先级：P0，预计总工时 7 人天。是否一键导入任务列表？',
+            report: '📊 供应链系统升级项目 - 2025年第25周周报
+
+✅ 本周完成：
+• 完成供应商审核模块详细设计
+• 供应商注册 API 开发完成 80%
+• 数据库表结构设计评审通过
+
+⚠️ 风险提示：
+• 采购订单分单规则需求变更，待确认
+
+📅 下周计划：
+• 完成供应商注册 API 联调
+• 启动采购订单分单功能开发
+
+里程碑状态：需求冻结（✅）- 开发完成（进行中 62%）',
+            risk: '🔴 风险评估报告：财务共享平台（P003）
+
+当前风险等级：高
+
+主要风险点：
+1. 已延误任务：8 个（占任务总数 35%）
+2. 里程碑「开发完成」计划 6/1，实际已延期至待定
+3. 核心开发人员张工任务过载（当前并行任务 5 个）
+
+处理建议：
+• 建议紧急召集需求评审会议，确认范围边界
+• 考虑将部分低优先级任务移至下期
+• 增加一名开发资源支援 OCR 模块',
+          };
+          const capResp = responses[this.activeCap?.id];
+          const genericResp = capResp || '收到您的请求。我正在分析处理中...
+
+基于当前项目数据分析，您提及的需求已记录。请问还需要其他什么帮助？';
+          this.messages.push({ role:'assistant', content:genericResp, time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}) });
+          this.sending = false;
+          this.scrollBottom();
+        },
+        scrollBottom() { this.$nextTick(() => { const el=document.getElementById('chatArea'); if(el) el.scrollTop = el.scrollHeight; }); },
+        newChat() { this.messages=[]; this.activeCap=null; this.contextInfo=null; this.input=''; },
+        exportChat() { this.showToast('对话导出功能开发中'); },
+        showToast(msg) {
+          const id=++this._tid; this.toasts.push({id,msg,removing:false});
+          setTimeout(()=>{const t=this.toasts.find(t=>t.id===id);if(t)t.removing=true;setTimeout(()=>this.toasts=this.toasts.filter(t=>t.id!==id),350);},2500);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

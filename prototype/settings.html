@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统设置 - 项目需求管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; }
+    .top-nav { background:#fff; height:48px; border-bottom:1px solid #e8ecf0; display:flex; align-items:center; flex-shrink:0; position:sticky; top:0; z-index:30; }
+    .top-nav-item { color:#666; font-size:14px; padding:0 20px; height:48px; display:flex; align-items:center; gap:6px; white-space:nowrap; text-decoration:none; }
+    .top-nav-item:hover { color:#2563eb; }
+    .top-nav-item.active { color:#2563eb; font-weight:500; border-bottom:2px solid #2563eb; }
+    .side-rail { width:72px; background:#fff; border-right:1px solid #e8ecf0; display:flex; flex-direction:column; padding:8px 0; gap:4px; position:sticky; top:48px; height:calc(100vh - 48px); }
+    .rail-item { width:56px; height:56px; margin:0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:6px; color:#666; cursor:pointer; transition:all .15s; }
+    .rail-item:hover { background:#eff6ff; color:#2563eb; }
+    .rail-item.active { background:#eff6ff; color:#2563eb; }
+    .rail-item i { font-size:18px; }
+    .rail-item span { font-size:10px; margin-top:2px; }
+    .rail-item a { color:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; width:56px; height:56px; text-decoration:none; }
+  </style>
+</head>
+<body x-data="settings()" x-init="init()">
+  <nav class="top-nav">
+    <div class="flex items-center gap-3 px-4 border-r border-[#e8ecf0] h-full">
+      <div class="w-8 h-8 bg-[#2563eb] rounded-lg flex items-center justify-center"><i class="fa fa-project-diagram text-white text-sm"></i></div>
+      <span class="font-semibold text-[#1e3a8a] text-sm">项目需求管理系统</span>
+    </div>
+    <a href="index.html" class="top-nav-item"><i class="fa fa-home"></i><span>工作台</span></a>
+    <a href="project-list.html" class="top-nav-item"><i class="fa fa-folder-open"></i><span>项目管理</span></a>
+    <a href="gantt.html" class="top-nav-item"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a>
+    <a href="requirement.html" class="top-nav-item"><i class="fa fa-list-check"></i><span>需求管理</span></a>
+    <a href="task.html" class="top-nav-item"><i class="fa fa-tasks"></i><span>任务管理</span></a>
+    <a href="ai-assistant.html" class="top-nav-item"><i class="fa fa-robot"></i><span>AI助手</span></a>
+    <a href="reports.html" class="top-nav-item"><i class="fa fa-chart-bar"></i><span>报表</span></a>
+    <div class="ml-auto flex items-center gap-3 px-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-[#2563eb] rounded-full flex items-center justify-center text-white text-sm font-medium">PM</div>
+        <span class="text-sm text-[#475569]">张明华</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex">
+    <div class="side-rail">
+      <div class="rail-item"><a href="index.html"><i class="fa fa-home"></i><span>工作台</span></a></div>
+      <div class="rail-item"><a href="project-list.html"><i class="fa fa-folder-open"></i><span>项目</span></a></div>
+      <div class="rail-item"><a href="gantt.html"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a></div>
+      <div class="rail-item"><a href="requirement.html"><i class="fa fa-list-check"></i><span>需求</span></a></div>
+      <div class="rail-item"><a href="task.html"><i class="fa fa-tasks"></i><span>任务</span></a></div>
+      <div class="rail-item"><a href="ai-assistant.html"><i class="fa fa-robot"></i><span>AI助手</span></a></div>
+      <div class="rail-item"><a href="reports.html"><i class="fa fa-chart-bar"></i><span>报表</span></a></div>
+      <div class="rail-item active"><i class="fa fa-cog"></i><span>设置</span></div>
+    </div>
+
+    <!-- Main -->
+    <div class="flex-1 overflow-auto p-6">
+      <div class="mb-5">
+        <h1 class="text-xl font-bold text-[#1e3a8a]">系统设置</h1>
+        <p class="text-sm text-[#999] mt-0.5">配置系统参数、管理用户权限、设置通知规则</p>
+      </div>
+
+      <!-- Settings Sections -->
+      <div class="max-w-4xl space-y-5">
+        <!-- User Management -->
+        <div class="bg-white rounded-lg border border-[#e8ecf0]">
+          <div class="px-5 py-4 border-b border-[#e8ecf0] flex items-center justify-between">
+            <div>
+              <div class="text-sm font-semibold text-[#1e3a8a]">用户管理</div>
+              <div class="text-[11px] text-[#999] mt-0.5">管理团队成员和权限</div>
+            </div>
+            <button @click="showAddUser=true" class="px-3 py-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded text-sm transition"><i class="fa fa-user-plus mr-1"></i>添加用户</button>
+          </div>
+          <table class="w-full">
+            <thead>
+              <tr class="bg-[#f5f7fa]">
+                <th class="text-left px-5 py-2.5 text-[11px] font-medium text-[#999] uppercase">姓名</th>
+                <th class="text-left px-5 py-2.5 text-[11px] font-medium text-[#999] uppercase">账号</th>
+                <th class="text-left px-5 py-2.5 text-[11px] font-medium text-[#999] uppercase">角色</th>
+                <th class="text-left px-5 py-2.5 text-[11px] font-medium text-[#999] uppercase">状态</th>
+                <th class="text-left px-5 py-2.5 text-[11px] font-medium text-[#999] uppercase">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <template x-for="u in users" :key="u.id">
+                <tr class="border-t border-[#e8ecf0]">
+                  <td class="px-5 py-3 flex items-center gap-2">
+                    <div class="w-7 h-7 bg-[#2563eb] rounded-full flex items-center justify-center text-white text-xs font-medium" x-text="u.name[0]"></div>
+                    <span class="text-sm font-medium text-[#333]" x-text="u.name"></span>
+                  </td>
+                  <td class="px-5 py-3 text-sm text-[#475569]" x-text="u.account"></td>
+                  <td class="px-5 py-3">
+                    <select class="text-sm border border-[#e8ecf0] rounded px-2 py-1 focus:outline-none focus:border-[#2563eb]">
+                      <template x-for="role in roles" :key="role"><option :value="role" :selected="u.role===role" x-text="role"></option></template>
+                    </select>
+                  </td>
+                  <td class="px-5 py-3">
+                    <span class="text-[11px] px-2 py-0.5 rounded-full" :class="u.status==='active'?'bg-green-50 text-green-600':'bg-gray-50 text-gray-400'" x-text="u.status==='active'?'启用':'禁用'"></span>
+                  </td>
+                  <td class="px-5 py-3">
+                    <button class="text-[#999] hover:text-[#2563eb] text-sm mr-3"><i class="fa fa-edit"></i></button>
+                    <button class="text-[#999] hover:text-red-500 text-sm"><i class="fa fa-trash"></i></button>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Requirement Status Config -->
+        <div class="bg-white rounded-lg border border-[#e8ecf0]">
+          <div class="px-5 py-4 border-b border-[#e8ecf0]">
+            <div class="text-sm font-semibold text-[#1e3a8a]">需求状态配置</div>
+            <div class="text-[11px] text-[#999] mt-0.5">自定义需求状态流转</div>
+          </div>
+          <div class="p-5">
+            <div class="flex items-center gap-2 flex-wrap">
+              <template x-for="(s, idx) in reqStatuses" :key="s">
+                <div class="flex items-center gap-1 bg-[#f5f7fa] rounded-full px-3 py-1.5 text-sm">
+                  <span class="text-[#475569]" x-text="s"></span>
+                  <button @click="removeReqStatus(idx)" class="text-[#999] hover:text-red-500 ml-1"><i class="fa fa-times text-[10px]"></i></button>
+                </div>
+                <i x-show="idx < reqStatuses.length-1" class="fa fa-arrow-right text-[#e8ecf0]"></i>
+              </template>
+              <button @click="addReqStatus()" class="text-[#2563eb] text-sm hover:underline"><i class="fa fa-plus mr-1"></i>添加状态</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority Config -->
+        <div class="bg-white rounded-lg border border-[#e8ecf0]">
+          <div class="px-5 py-4 border-b border-[#e8ecf0]">
+            <div class="text-sm font-semibold text-[#1e3a8a]">优先级配置</div>
+            <div class="text-[11px] text-[#999] mt-0.5">设置需求和任务的优先级</div>
+          </div>
+          <div class="p-5 flex gap-6 flex-wrap">
+            <template x-for="p in priorities" :key="p.name">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-sm" :class="p.color"></div>
+                <span class="text-sm text-[#333]" x-text="p.name"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Alert Rules -->
+        <div class="bg-white rounded-lg border border-[#e8ecf0]">
+          <div class="px-5 py-4 border-b border-[#e8ecf0]">
+            <div class="text-sm font-semibold text-[#1e3a8a]">预警规则配置</div>
+            <div class="text-[11px] text-[#999] mt-0.5">设置里程碑延期预警提前天数</div>
+          </div>
+          <div class="p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm text-[#333]">里程碑延期预警</div>
+                <div class="text-[11px] text-[#999]">计划完成日期前 N 天触发预警</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="number" x-model="alertDays" min="1" max="30" class="w-20 border border-[#e8ecf0] rounded px-3 py-1.5 text-sm text-center focus:outline-none focus:border-[#2563eb]">
+                <span class="text-sm text-[#475569]">天前预警</span>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm text-[#333]">资源冲突预警</div>
+                <div class="text-[11px] text-[#999]">同一人同一天任务数超过阈值时预警</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <input type="number" x-model="taskConflictLimit" min="2" max="10" class="w-20 border border-[#e8ecf0] rounded px-3 py-1.5 text-sm text-center focus:outline-none focus:border-[#2563eb]">
+                <span class="text-sm text-[#475569]">个任务/天</span>
+              </div>
+            </div>
+            <button @click="saveAlertRules()" class="px-4 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded text-sm transition"><i class="fa fa-save mr-1"></i>保存规则</button>
+          </div>
+        </div>
+
+        <!-- Notification Config -->
+        <div class="bg-white rounded-lg border border-[#e8ecf0]">
+          <div class="px-5 py-4 border-b border-[#e8ecf0]">
+            <div class="text-sm font-semibold text-[#1e3a8a]">通知渠道配置</div>
+            <div class="text-[11px] text-[#999] mt-0.5">配置预警通知推送方式</div>
+          </div>
+          <div class="p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i class="fa fa-envelope text-[#2563eb]"></i>
+                <div>
+                  <div class="text-sm text-[#333]">邮件通知</div>
+                  <div class="text-[11px] text-[#999]">zhangminghua@company.com</div>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2563eb]"></div>
+              </label>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i class="fa fa-bell text-[#2563eb]"></i>
+                <div>
+                  <div class="text-sm text-[#333]">系统消息通知</div>
+                  <div class="text-[11px] text-[#999]">站内消息推送</div>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" checked class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2563eb]"></div>
+              </label>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i class="fa fa-robot text-[#2563eb]"></i>
+                <div>
+                  <div class="text-sm text-[#333]">钉钉通知</div>
+                  <div class="text-[11px] text-[#999]">Webhook 集成</div>
+                </div>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer">
+                <div class="w-11 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2563eb]"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Backup -->
+        <div class="bg-white rounded-lg border border-[#e8ecf0]">
+          <div class="px-5 py-4 border-b border-[#e8ecf0]">
+            <div class="text-sm font-semibold text-[#1e3a8a]">数据备份</div>
+            <div class="text-[11px] text-[#999] mt-0.5">系统数据库备份管理</div>
+          </div>
+          <div class="p-5 flex items-center justify-between">
+            <div>
+              <div class="text-sm text-[#333]">最近备份时间</div>
+              <div class="text-[11px] text-[#999] mt-0.5">2025-06-24 03:00:00（自动）</div>
+            </div>
+            <button @click="backupNow()" class="px-4 py-2 border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:bg-[#f5f7fa] transition"><i class="fa fa-database mr-1"></i>立即备份</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="fixed top-14 right-4 z-50 space-y-2">
+    <template x-for="t in toasts" :key="t.id">
+      <div x-show="!t.removing" x-transition class="bg-[#1e3a8a] text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[200px]">
+        <i class="fa fa-check-circle text-green-400"></i><span x-text="t.msg"></span>
+      </div>
+    </template>
+  </div>
+
+  <script src="js/charts.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <script>
+    function settings() {
+      return {
+        users: [
+          {id:'U001', name:'张明华', account:'zhangmh', role:'项目经理', status:'active'},
+          {id:'U002', name:'李晓峰', account:'lixf', role:'项目经理', status:'active'},
+          {id:'U003', name:'王芳', account:'wangf', role:'项目经理', status:'active'},
+          {id:'U004', name:'赵海涛', account:'zhaoth', role:'研发负责人', status:'active'},
+          {id:'U005', name:'刘佳', account:'liuj', role:'研发成员', status:'active'},
+        ],
+        roles:['超级管理员','项目经理','研发负责人','研发成员','查看者'],
+        reqStatuses:['待评审','评审中','已采纳','开发中','已完成','已关闭'],
+        priorities:[
+          {name:'P0 - 紧急', color:'bg-red-500'},
+          {name:'P1 - 高', color:'bg-amber-500'},
+          {name:'P2 - 中', color:'bg-blue-500'},
+          {name:'P3 - 低', color:'bg-gray-400'},
+        ],
+        alertDays: 3, taskConflictLimit: 3,
+        showAddUser: false, toasts: [], _tid: 0,
+        removeReqStatus(idx) { this.reqStatuses.splice(idx,1); },
+        addReqStatus() { const s=prompt('请输入新状态名称：'); if(s) this.reqStatuses.push(s); },
+        saveAlertRules() { this.showToast('预警规则保存成功'); },
+        backupNow() { this.showToast('数据备份已启动，请稍候...'); },
+        showToast(msg) {
+          const id=++this._tid; this.toasts.push({id,msg,removing:false});
+          setTimeout(()=>{const t=this.toasts.find(t=>t.id===id);if(t)t.removing=true;setTimeout(()=>this.toasts=this.toasts.filter(t=>t.id!==id);},350);},2500);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

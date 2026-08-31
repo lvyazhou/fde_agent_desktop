@@ -1,0 +1,16 @@
+# Hermes ACP 默认配置
+# 该文件会在首次启动时自动复制到 ~/.product-lobster/config.yaml
+# 修改后需要重启应用生效
+
+model:
+  provider: custom
+  default: minimax/MiniMax-M2.7-highspeed
+  base_url: https://api.360.cn/v1
+
+custom_providers:
+  - name: "360ai"
+    base_url: https://api.360.cn/v1
+    api_key: your-api-key-here
+
+providers: {}
+fallback_providers: []

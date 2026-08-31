@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沧澜 AgentOS - 智能体驱动布局</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #2563eb; --primary-light: #3b82f6; --primary-bg: #eff6ff; --primary-ring: #dbeafe;
+  --gray-50: #f8fafc; --gray-100: #f1f5f9; --gray-200: #e2e8f0; --gray-300: #cbd5e1;
+  --gray-400: #94a3b8; --gray-500: #64748b; --gray-600: #475569; --gray-700: #334155; --gray-800: #1e293b; --gray-900: #0f172a;
+  --green: #16a34a; --green-light: #dcfce7;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: #f0f2f5; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+/* ===== Top Nav ===== */
+.top-nav { height: 48px; background: #fff; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); z-index: 20; flex-shrink: 0; }
+.brand { font-size: 14px; font-weight: 700; color: var(--gray-800); display: flex; align-items: center; gap: 8px; }
+.brand-icon { width: 28px; height: 28px; background: linear-gradient(135deg, #1d4ed8, #3b82f6); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; box-shadow: 0 2px 4px rgba(37,99,235,0.3); }
+.nav-links { display: flex; gap: 2px; margin-left: 32px; }
+.nav-link { padding: 6px 14px; border-radius: 7px; font-size: 12.5px; color: var(--gray-500); text-decoration: none; display: flex; align-items: center; gap: 6px; font-weight: 500; transition: all 0.15s; }
+.nav-link.active { background: var(--primary-bg); color: var(--primary); }
+.top-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.version { font-size: 10px; color: var(--gray-400); font-family: monospace; }
+.window-controls { display: flex; gap: 7px; }
+.win-btn { width: 11px; height: 11px; border-radius: 50%; border: none; cursor: pointer; }
+.win-btn.minimize { background: #fbbf24; } .win-btn.maximize { background: #34d399; } .win-btn.close { background: #f87171; }
+
+/* ===== Compact Project Header ===== */
+.project-bar { height: 44px; background: #fff; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0; }
+.back-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--gray-200); background: #fff; display: flex; align-items: center; justify-content: center; color: var(--gray-500); cursor: pointer; font-size: 12px; }
+.project-name { font-size: 14px; font-weight: 600; color: var(--gray-800); }
+.step-dots { display: flex; align-items: center; gap: 3px; margin-left: 16px; }
+.step-dot { display: flex; align-items: center; gap: 5px; padding: 3px 10px 3px 3px; border-radius: 14px; cursor: pointer; transition: all 0.2s; }
+.step-dot .circle { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; flex-shrink: 0; }
+.step-dot .text { font-size: 11px; font-weight: 500; white-space: nowrap; }
+.step-dot.completed .circle { background: var(--primary-bg); color: var(--primary); border: 1.5px solid #93c5fd; }
+.step-dot.completed .text { color: var(--primary); }
+.step-dot.completed { background: transparent; }
+.step-dot.active .circle { background: var(--primary); color: #fff; border: 1.5px solid var(--primary); box-shadow: 0 0 0 2px var(--primary-ring); }
+.step-dot.active .text { color: var(--primary); font-weight: 600; }
+.step-dot.active { background: var(--primary-bg); }
+.step-dot.pending .circle { background: var(--gray-100); color: var(--gray-400); border: 1.5px solid var(--gray-200); }
+.step-dot.pending .text { color: var(--gray-400); }
+.step-line { width: 8px; height: 1.5px; border-radius: 1px; }
+.step-line.done { background: #93c5fd; } .step-line.todo { background: var(--gray-200); }
+.project-bar .spacer { flex: 1; }
+.status-pill { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--gray-500); background: var(--gray-50); border: 1px solid var(--gray-200); padding: 4px 12px; border-radius: 20px; }
+.status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.bar-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--gray-200); background: #fff; display: flex; align-items: center; justify-content: center; color: var(--gray-400); cursor: pointer; font-size: 12px; transition: all 0.15s; }
+.bar-btn:hover { background: var(--gray-50); color: var(--gray-700); }
+
+/* ===== Main Chat Area ===== */
+.main-area { flex: 1; display: flex; overflow: hidden; }
+
+/* Left: Chat column */
+.chat-column { width: 55%; display: flex; flex-direction: column; border-right: 1px solid var(--gray-200); background: linear-gradient(180deg, #f5f7fa, #edf0f4); }
+.chat-scroll { flex: 1; overflow-y: auto; padding: 20px 0; }
+.chat-center { max-width: 100%; padding: 0 24px; display: flex; flex-direction: column; gap: 14px; }
+
+/* Right: Preview column */
+.preview-column { width: 45%; display: flex; flex-direction: column; background: #fff; }
+.right-panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.preview-header { height: 44px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 16px; gap: 10px; background: var(--gray-50); flex-shrink: 0; }
+.preview-header .label { font-size: 12px; color: var(--gray-600); display: flex; align-items: center; gap: 7px; font-weight: 500; }
+.preview-header .page-tabs { display: flex; gap: 2px; margin-left: 12px; }
+.page-tab { padding: 4px 10px; border-radius: 6px; font-size: 11px; color: var(--gray-500); cursor: pointer; transition: all 0.15s; border: 1px solid transparent; }
+.page-tab:hover { background: var(--gray-100); }
+.page-tab.active { background: var(--primary-bg); color: var(--primary); border-color: #bfdbfe; font-weight: 500; }
+.preview-header .actions { margin-left: auto; display: flex; gap: 6px; }
+.preview-body { flex: 1; background: var(--gray-50); padding: 12px; overflow: hidden; }
+.preview-frame { width: 100%; height: 100%; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-md); border: 1px solid var(--gray-200); background: #fff; }
+.preview-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--gray-400); gap: 12px; }
+.preview-empty i { font-size: 36px; opacity: 0.3; }
+.preview-empty p { font-size: 13px; }
+
+/* Messages */
+.msg { display: flex; gap: 12px; }
+.msg.user { justify-content: flex-end; }
+.msg-avatar { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 13px; }
+.msg.assistant .msg-avatar { background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #fff; box-shadow: 0 2px 4px rgba(37,99,235,0.2); }
+.msg.user .msg-avatar { background: var(--gray-700); color: #fff; }
+.msg-body { max-width: 680px; }
+.msg-time { font-size: 10px; color: var(--gray-400); margin-bottom: 3px; }
+.msg.user .msg-time { text-align: right; }
+.msg-bubble { padding: 14px 18px; border-radius: 16px; font-size: 14px; line-height: 1.7; }
+.msg.user .msg-bubble { background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(37,99,235,0.15); }
+.msg.assistant .msg-bubble { background: #fff; color: var(--gray-700); border: 1px solid var(--gray-200); border-bottom-left-radius: 4px; box-shadow: var(--shadow); }
+
+/* Rich cards in assistant messages */
+.rich-card { margin-top: 12px; border: 1px solid var(--gray-200); border-radius: 12px; overflow: hidden; background: #fff; box-shadow: var(--shadow-sm); }
+.rich-card-header { padding: 10px 16px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--gray-800); border-bottom: 1px solid var(--gray-100); background: var(--gray-50); }
+.rich-card-header i { color: var(--primary); }
+.rich-card-body { padding: 14px 16px; font-size: 13px; color: var(--gray-600); line-height: 1.7; }
+.rich-card-footer { padding: 10px 16px; border-top: 1px solid var(--gray-100); display: flex; gap: 8px; flex-wrap: wrap; }
+.card-btn { padding: 6px 14px; border-radius: 7px; border: 1px solid var(--gray-200); background: #fff; font-size: 11.5px; color: var(--gray-600); cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 500; transition: all 0.15s; }
+.card-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.card-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+/* Spec module list */
+.spec-module { padding: 8px 12px; display: flex; align-items: center; gap: 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+.spec-module:hover { background: var(--gray-50); }
+.spec-module-num { width: 24px; height: 24px; border-radius: 6px; background: var(--primary-bg); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.spec-module-name { flex: 1; font-size: 13px; font-weight: 500; color: var(--gray-800); }
+.spec-module-detail { display: none; padding: 8px 12px 12px 46px; font-size: 12px; color: var(--gray-500); line-height: 1.8; }
+.spec-module-detail.open { display: block; }
+.priority { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+.priority.p0 { background: #fef2f2; color: #dc2626; } .priority.p1 { background: #fefce8; color: #ca8a04; } .priority.p2 { background: var(--primary-bg); color: var(--primary); }
+.expand-icon { color: var(--gray-400); font-size: 10px; transition: transform 0.2s; }
+
+/* Prototype preview card */
+.proto-card-preview { height: 280px; border-radius: 8px; overflow: hidden; border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm); background: #fff; }
+.proto-card-pages { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.proto-page-chip { padding: 4px 10px; border-radius: 6px; background: var(--gray-50); border: 1px solid var(--gray-200); font-size: 11px; color: var(--gray-600); cursor: pointer; transition: all 0.15s; }
+.proto-page-chip:hover, .proto-page-chip.active { background: var(--primary-bg); color: var(--primary); border-color: #93c5fd; }
+
+/* Thinking steps */
+.thinking-steps { margin-top: 10px; padding: 10px 12px; background: var(--gray-50); border-radius: 8px; border: 1px solid var(--gray-100); border-left: 3px solid var(--primary-ring); }
+.thinking-step { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--gray-600); padding: 3px 0; }
+.step-icon { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; flex-shrink: 0; }
+.step-icon.brain { background: #f3e8ff; color: #7c3aed; } .step-icon.tool { background: #fef3c7; color: #d97706; }
+.step-icon.done { background: var(--green-light); color: var(--green); } .step-icon.finish { background: var(--primary-bg); color: var(--primary); }
+
+/* Export quick actions */
+.export-actions { display: flex; gap: 10px; margin-top: 8px; }
+.export-action { flex: 1; padding: 16px; border-radius: 10px; border: 1px solid var(--gray-200); background: #fff; text-align: center; cursor: pointer; transition: all 0.2s; }
+.export-action:hover { border-color: var(--primary-light); box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.export-action-icon { font-size: 24px; margin-bottom: 8px; }
+.export-action-title { font-size: 12px; font-weight: 600; color: var(--gray-800); }
+.export-action-desc { font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+
+/* Fake dashboard */
+.fake-app { display: flex; height: 100%; font-size: 12px; }
+.fake-sidebar { width: 160px; background: linear-gradient(180deg, #0f172a, #1e293b); padding: 10px 0; }
+.fake-sidebar-item { padding: 7px 14px; color: var(--gray-400); display: flex; align-items: center; gap: 8px; font-size: 11px; border-left: 3px solid transparent; }
+.fake-sidebar-item.active { background: rgba(59,130,246,0.1); color: #fff; border-left-color: var(--primary-light); }
+.fake-sidebar-logo { padding: 4px 14px 12px; color: #fff; font-weight: 600; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 8px; }
+.fake-main { flex: 1; padding: 14px; background: var(--gray-50); }
+.fake-header { font-size: 13px; font-weight: 600; color: var(--gray-800); margin-bottom: 10px; }
+.fake-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fake-card { background: #fff; border-radius: 8px; padding: 10px; border: 1px solid var(--gray-200); }
+.fake-card-title { font-size: 10px; color: var(--gray-500); margin-bottom: 4px; }
+.fake-card-value { font-size: 15px; font-weight: 700; color: var(--gray-800); }
+.fake-card-change { font-size: 9px; color: var(--green); margin-top: 2px; }
+
+/* Input area */
+.input-area { padding: 14px 20px 18px; background: linear-gradient(180deg, transparent, #edf0f4 30%); flex-shrink: 0; }
+.input-wrapper { display: flex; align-items: center; gap: 10px; background: #fff; border: 1.5px solid var(--gray-200); border-radius: 14px; padding: 11px 14px; box-shadow: var(--shadow-md); transition: all 0.2s; }
+.input-wrapper:focus-within { border-color: var(--primary-light); box-shadow: 0 0 0 3px var(--primary-ring), var(--shadow-md); }
+.input-wrapper input { flex: 1; border: none; background: transparent; font-size: 13.5px; outline: none; color: var(--gray-700); }
+.input-wrapper input::placeholder { color: var(--gray-400); }
+.input-hint { font-size: 10px; color: var(--gray-400); white-space: nowrap; }
+.send-btn { width: 34px; height: 34px; border-radius: 9px; border: none; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 2px 6px rgba(37,99,235,0.3); transition: all 0.15s; }
+.send-btn:hover { transform: scale(1.05); }
+
+/* Floating panel */
+.float-panel { position: fixed; right: -340px; top: 92px; width: 320px; bottom: 20px; background: #fff; border: 1px solid var(--gray-200); border-radius: 12px; box-shadow: var(--shadow-lg); z-index: 30; transition: right 0.3s ease; display: flex; flex-direction: column; overflow: hidden; }
+.float-panel.open { right: 20px; }
+.float-panel-header { padding: 14px 16px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; }
+.float-panel-header span { font-size: 13px; font-weight: 600; color: var(--gray-800); }
+.float-panel-close { background: none; border: none; color: var(--gray-400); cursor: pointer; font-size: 14px; }
+.float-panel-body { flex: 1; overflow-y: auto; padding: 14px 16px; font-size: 12px; color: var(--gray-600); }
+.info-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; }
+.info-row i { width: 16px; text-align: center; color: var(--primary); font-size: 11px; }
+.skill-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.skill-tag { padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: 500; background: var(--primary-bg); color: var(--primary); }
+.section-label { font-size: 11px; font-weight: 600; color: var(--gray-500); margin-top: 16px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* Overlay */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.1); z-index: 29; display: none; }
+.overlay.open { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<div class="top-nav">
+  <div class="brand"><div class="brand-icon"><i class="fa-solid fa-atom"></i></div> 沧澜 AgentOS</div>
+  <div class="nav-links">
+    <a class="nav-link active" href="#"><i class="fa-solid fa-comments"></i> 智能对话</a>
+    <a class="nav-link" href="#"><i class="fa-solid fa-folder-open"></i> 项目列表</a>
+    <a class="nav-link" href="#"><i class="fa-solid fa-gear"></i> 设置</a>
+  </div>
+  <div class="top-right">
+    <span class="version">v1.0.0</span>
+    <div class="window-controls"><button class="win-btn minimize"></button><button class="win-btn maximize"></button><button class="win-btn close"></button></div>
+  </div>
+</div>
+
+<!-- Compact Project Bar -->
+<div class="project-bar">
+  <button class="back-btn"><i class="fa-solid fa-arrow-left"></i></button>
+  <span class="project-name">我的电商系统</span>
+
+  <div class="step-dots">
+    <div class="step-dot completed" data-step="0"><span class="circle"><i class="fa-solid fa-check" style="font-size:8px"></i></span><span class="text">需求</span></div>
+    <div class="step-line done"></div>
+    <div class="step-dot completed" data-step="1"><span class="circle"><i class="fa-solid fa-check" style="font-size:8px"></i></span><span class="text">清单</span></div>
+    <div class="step-line done"></div>
+    <div class="step-dot completed" data-step="2"><span class="circle"><i class="fa-solid fa-check" style="font-size:8px"></i></span><span class="text">原型</span></div>
+    <div class="step-line done"></div>
+    <div class="step-dot active" data-step="3"><span class="circle">4</span><span class="text">迭代</span></div>
+    <div class="step-line todo"></div>
+    <div class="step-dot pending" data-step="4"><span class="circle">5</span><span class="text">导出</span></div>
+  </div>
+
+  <div class="spacer"></div>
+  <div class="status-pill"><span class="dot"></span> 沧澜 AI · MiniMax-M2.7 · 上下文 35%</div>
+  <button class="bar-btn" id="info-toggle" title="智能体详情"><i class="fa-solid fa-robot"></i></button>
+</div>
+
+<!-- Main Area: Left Chat + Right Preview -->
+<div class="main-area">
+  <!-- Left: Chat Column -->
+  <div class="chat-column">
+    <div class="chat-scroll" id="chat-scroll">
+      <div class="chat-center" id="chat-center">
+
+      <!-- 1. 需求对话 -->
+      <div class="msg user"><div class="msg-body"><div class="msg-time">21:00</div><div class="msg-bubble">我想做一个电商管理系统，主要面向中小卖家，管理订单、商品和用户，需要多仓库支持</div></div><div class="msg-avatar"><i class="fa-solid fa-user"></i></div></div>
+
+      <div class="msg assistant"><div class="msg-avatar"><i class="fa-solid fa-robot"></i></div><div class="msg-body"><div class="msg-time">21:00</div><div class="msg-bubble">
+        好的！我来帮你规划这个电商管理系统。基于你的需求，我梳理了 5 个核心模块：
+        <br><br>
+        📦 <strong>商品管理</strong> — SKU、分类、图片、价格<br>
+        🛒 <strong>订单管理</strong> — 下单→支付→发货→签收完整链路<br>
+        🏭 <strong>多仓库存</strong> — 仓库管理、库存同步、调拨<br>
+        👥 <strong>用户管理</strong> — 注册、会员等级、画像<br>
+        📊 <strong>数据看板</strong> — 销售趋势、热销排行
+        <br><br>
+        我先为你生成详细的功能清单，稍等...
+        <div class="thinking-steps">
+          <div class="thinking-step"><span class="step-icon brain"><i class="fa-solid fa-brain"></i></span> 分析需求，规划模块结构</div>
+          <div class="thinking-step"><span class="step-icon tool"><i class="fa-solid fa-wrench"></i></span> 写入 spec.md（2,340 字）</div>
+          <div class="thinking-step"><span class="step-icon done"><i class="fa-solid fa-check"></i></span> spec.md 生成完成</div>
+          <div class="thinking-step"><span class="step-icon finish"><i class="fa-solid fa-flag-checkered"></i></span> 全部完成</div>
+        </div>
+      </div></div></div>
+
+      <!-- 2. 功能清单 — 嵌入对话流 -->
+      <div class="msg assistant"><div class="msg-avatar"><i class="fa-solid fa-robot"></i></div><div class="msg-body"><div class="msg-time">21:01</div><div class="msg-bubble">
+        功能清单已生成 ✓ 你可以点击每个模块查看详情，或直接告诉我调整：
+        <div class="rich-card">
+          <div class="rich-card-header"><i class="fa-solid fa-list-check"></i> 电商管理系统 — 功能清单</div>
+          <div class="rich-card-body" style="padding:8px 0">
+            <div class="spec-module" onclick="toggleDetail(this)">
+              <span class="spec-module-num">1</span>
+              <span class="spec-module-name">商品管理</span>
+              <span class="priority p0">P0</span>
+              <i class="fa-solid fa-chevron-right expand-icon"></i>
+            </div>
+            <div class="spec-module-detail">• SKU 管理：多规格（颜色/尺码）、库存、价格<br>• 商品图片：主图 + 详情图，拖拽排序<br>• 三级分类树管理<br>• 商品状态：草稿 → 上架 → 下架</div>
+
+            <div class="spec-module" onclick="toggleDetail(this)">
+              <span class="spec-module-num">2</span>
+              <span class="spec-module-name">订单管理</span>
+              <span class="priority p0">P0</span>
+              <i class="fa-solid fa-chevron-right expand-icon"></i>
+            </div>
+            <div class="spec-module-detail">• 订单生命周期：待支付→已支付→待发货→已发货→已签收<br>• 退款/退货逆向流程<br>• 批量发货（Excel 导入运单号）<br>• 批量打印面单</div>
+
+            <div class="spec-module" onclick="toggleDetail(this)">
+              <span class="spec-module-num">3</span>
+              <span class="spec-module-name">多仓库存</span>
+              <span class="priority p1">P1</span>
+              <i class="fa-solid fa-chevron-right expand-icon"></i>
+            </div>
+            <div class="spec-module-detail">• 各仓库独立库存，安全库存预警<br>• 仓间调拨：申请 → 审批 → 出库 → 入库</div>
+
+            <div class="spec-module" onclick="toggleDetail(this)">
+              <span class="spec-module-num">4</span>
+              <span class="spec-module-name">用户管理</span>
+              <span class="priority p1">P1</span>
+              <i class="fa-solid fa-chevron-right expand-icon"></i>
+            </div>
+            <div class="spec-module-detail">• 会员等级：普通→银牌→金牌→钻石<br>• 用户画像：消费偏好、活跃度标签</div>
+
+            <div class="spec-module" onclick="toggleDetail(this)">
+              <span class="spec-module-num">5</span>
+              <span class="spec-module-name">数据看板</span>
+              <span class="priority p2">P2</span>
+              <i class="fa-solid fa-chevron-right expand-icon"></i>
+            </div>
+            <div class="spec-module-detail">• 核心指标卡片：GMV、订单量、客单价、转化率<br>• 日/周/月销售趋势图<br>• 热销 Top 10、滞销预警</div>
+          </div>
+          <div class="rich-card-footer">
+            <button class="card-btn"><i class="fa-solid fa-file-arrow-down"></i> 导出 .md</button>
+            <button class="card-btn"><i class="fa-solid fa-file-word"></i> 导出 .docx</button>
+            <button class="card-btn primary"><i class="fa-solid fa-wand-magic-sparkles"></i> 生成原型</button>
+          </div>
+        </div>
+      </div></div></div>
+
+      <!-- 3. 用户触发原型生成 -->
+      <div class="msg user"><div class="msg-body"><div class="msg-time">21:03</div><div class="msg-bubble">开始生成原型吧</div></div><div class="msg-avatar"><i class="fa-solid fa-user"></i></div></div>
+
+      <div class="msg assistant"><div class="msg-avatar"><i class="fa-solid fa-robot"></i></div><div class="msg-body"><div class="msg-time">21:03</div><div class="msg-bubble">
+        原型生成完成 ✓ 共 7 个页面，点击页面名称切换预览：
+        <div class="rich-card">
+          <div class="rich-card-header"><i class="fa-solid fa-browser"></i> 原型预览 <span style="margin-left:auto;font-size:11px;font-weight:400;color:var(--gray-400)">7 个页面 · 3 个数据文件</span></div>
+          <div class="rich-card-body" style="padding:12px 16px">
+            <div class="proto-card-preview">
+              <div class="fake-app">
+                <div class="fake-sidebar">
+                  <div class="fake-sidebar-logo">📦 电商管理</div>
+                  <div class="fake-sidebar-item active"><i class="fa-solid fa-chart-line"></i> 数据概览</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-cart-shopping"></i> 订单管理</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-box"></i> 商品管理</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-warehouse"></i> 仓库管理</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-users"></i> 用户管理</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-gear"></i> 设置</div>
+                </div>
+                <div class="fake-main">
+                  <div class="fake-header">数据概览</div>
+                  <div class="fake-cards">
+                    <div class="fake-card"><div class="fake-card-title">今日销售额</div><div class="fake-card-value">¥128,430</div><div class="fake-card-change">↑ 12.5%</div></div>
+                    <div class="fake-card"><div class="fake-card-title">今日订单数</div><div class="fake-card-value">1,024</div><div class="fake-card-change">↑ 8.3%</div></div>
+                    <div class="fake-card"><div class="fake-card-title">转化率</div><div class="fake-card-value">3.8%</div><div class="fake-card-change">↑ 0.5%</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="proto-card-pages">
+              <span class="proto-page-chip active">index.html</span>
+              <span class="proto-page-chip">play.html</span>
+              <span class="proto-page-chip">stats.html</span>
+              <span class="proto-page-chip">task.html</span>
+              <span class="proto-page-chip">reports.html</span>
+              <span class="proto-page-chip">ai-assistant.html</span>
+              <span class="proto-page-chip">gantt.html</span>
+              <span class="proto-page-chip">settings.html</span>
+            </div>
+          </div>
+          <div class="rich-card-footer">
+            <button class="card-btn"><i class="fa-solid fa-up-right-from-square"></i> 在浏览器打开</button>
+            <button class="card-btn"><i class="fa-solid fa-expand"></i> 全屏预览</button>
+            <button class="card-btn"><i class="fa-solid fa-download"></i> 导出 ZIP</button>
+          </div>
+        </div>
+      </div></div></div>
+
+      <!-- 4. 迭代修改 -->
+      <div class="msg user"><div class="msg-body"><div class="msg-time">21:10</div><div class="msg-bubble">把导航栏改成左侧深色边栏样式，每个菜单项带图标</div></div><div class="msg-avatar"><i class="fa-solid fa-user"></i></div></div>
+
+      <div class="msg assistant"><div class="msg-avatar"><i class="fa-solid fa-robot"></i></div><div class="msg-body"><div class="msg-time">21:10</div><div class="msg-bubble">
+        已修改 ✓ 导航改为左侧深色边栏，每个菜单配上了图标。预览已更新：
+        <div class="thinking-steps">
+          <div class="thinking-step"><span class="step-icon tool"><i class="fa-solid fa-wrench"></i></span> 修改 index.html — 重写导航区</div>
+          <div class="thinking-step"><span class="step-icon tool"><i class="fa-solid fa-wrench"></i></span> 更新 styles.css — 侧栏样式</div>
+          <div class="thinking-step"><span class="step-icon done"><i class="fa-solid fa-check"></i></span> 2 个文件已修改</div>
+        </div>
+        <div class="rich-card" style="margin-top:10px">
+          <div class="rich-card-header"><i class="fa-solid fa-eye"></i> 更新后的预览</div>
+          <div class="rich-card-body" style="padding:12px 16px">
+            <div class="proto-card-preview">
+              <div class="fake-app">
+                <div class="fake-sidebar">
+                  <div class="fake-sidebar-logo">📦 电商管理</div>
+                  <div class="fake-sidebar-item active"><i class="fa-solid fa-chart-line"></i> 数据概览</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-cart-shopping"></i> 订单管理</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-box"></i> 商品管理</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-warehouse"></i> 仓库管理</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-users"></i> 用户管理</div>
+                  <div class="fake-sidebar-item"><i class="fa-solid fa-gear"></i> 设置</div>
+                </div>
+                <div class="fake-main">
+                  <div class="fake-header">数据概览</div>
+                  <div class="fake-cards">
+                    <div class="fake-card"><div class="fake-card-title">今日销售额</div><div class="fake-card-value">¥128,430</div><div class="fake-card-change">↑ 12.5%</div></div>
+                    <div class="fake-card"><div class="fake-card-title">今日订单数</div><div class="fake-card-value">1,024</div><div class="fake-card-change">↑ 8.3%</div></div>
+                    <div class="fake-card"><div class="fake-card-title">转化率</div><div class="fake-card-value">3.8%</div><div class="fake-card-change">↑ 0.5%</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div></div></div>
+
+      <!-- 5. 导出 -->
+      <div class="msg user"><div class="msg-body"><div class="msg-time">21:15</div><div class="msg-bubble">项目做好了，帮我导出</div></div><div class="msg-avatar"><i class="fa-solid fa-user"></i></div></div>
+
+      <div class="msg assistant"><div class="msg-avatar"><i class="fa-solid fa-robot"></i></div><div class="msg-body"><div class="msg-time">21:15</div><div class="msg-bubble">
+        好的！你想导出哪些内容？
+        <div class="export-actions">
+          <div class="export-action" onclick="this.innerHTML='<div style=\'color:var(--green);font-size:20px;margin-bottom:6px\'><i class=\'fa-solid fa-circle-check\'></i></div><div class=\'export-action-title\'>已下载</div>'">
+            <div class="export-action-icon" style="color:#7c3aed"><i class="fa-solid fa-file-zipper"></i></div>
+            <div class="export-action-title">完整项目 ZIP</div>
+            <div class="export-action-desc">功能清单 + 原型文件</div>
+          </div>
+          <div class="export-action" onclick="this.innerHTML='<div style=\'color:var(--green);font-size:20px;margin-bottom:6px\'><i class=\'fa-solid fa-circle-check\'></i></div><div class=\'export-action-title\'>已下载</div>'">
+            <div class="export-action-icon" style="color:var(--primary)"><i class="fa-solid fa-file-word"></i></div>
+            <div class="export-action-title">功能清单 Word</div>
+            <div class="export-action-desc">导出 .docx 文档</div>
+          </div>
+          <div class="export-action" onclick="this.innerHTML='<div style=\'color:var(--green);font-size:20px;margin-bottom:6px\'><i class=\'fa-solid fa-circle-check\'></i></div><div class=\'export-action-title\'>已打开</div>'">
+            <div class="export-action-icon" style="color:var(--green)"><i class="fa-solid fa-globe"></i></div>
+            <div class="export-action-title">浏览器打开</div>
+            <div class="export-action-desc">打开原型预览</div>
+          </div>
+        </div>
+      </div></div></div>
+
+    </div>
+  </div>
+
+  <!-- Input (inside chat column) -->
+  <div class="input-area">
+    <div class="input-wrapper">
+      <input type="text" placeholder="描述你的需求，AI 帮你搞定一切..." id="msg-input">
+      <span class="input-hint">Enter 发送</span>
+      <button class="send-btn" id="send-btn"><i class="fa-solid fa-arrow-up"></i></button>
+    </div>
+  </div>
+  </div><!-- end chat-column -->
+
+  <!-- Right: Preview Column (switches by step) -->
+  <div class="preview-column">
+
+    <!-- Step 0: 需求摘要 -->
+    <div class="right-panel" id="right-0">
+      <div class="preview-header"><div class="label"><i class="fa-solid fa-clipboard-list" style="color:var(--primary)"></i> 需求摘要</div></div>
+      <div class="preview-body" style="padding:24px;overflow-y:auto">
+        <div style="max-width:380px;margin:0 auto">
+          <div style="background:#fff;border:1px solid var(--gray-200);border-radius:10px;padding:16px;margin-bottom:12px"><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">项目名称</div><div style="font-size:14px;font-weight:600;color:var(--gray-800)">电商管理系统</div></div>
+          <div style="background:#fff;border:1px solid var(--gray-200);border-radius:10px;padding:16px;margin-bottom:12px"><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">目标用户</div><div style="font-size:13px;color:var(--gray-700)">中小卖家（自建站 B2C）</div></div>
+          <div style="background:#fff;border:1px solid var(--gray-200);border-radius:10px;padding:16px;margin-bottom:12px"><div style="font-size:11px;color:var(--gray-400);margin-bottom:8px">核心模块</div><div style="display:flex;flex-wrap:wrap;gap:6px"><span style="padding:4px 10px;border-radius:6px;background:var(--primary-bg);color:var(--primary);font-size:11px;font-weight:500">📦 商品管理</span><span style="padding:4px 10px;border-radius:6px;background:var(--primary-bg);color:var(--primary);font-size:11px;font-weight:500">🛒 订单管理</span><span style="padding:4px 10px;border-radius:6px;background:var(--primary-bg);color:var(--primary);font-size:11px;font-weight:500">🏭 多仓库存</span><span style="padding:4px 10px;border-radius:6px;background:var(--primary-bg);color:var(--primary);font-size:11px;font-weight:500">👥 用户管理</span><span style="padding:4px 10px;border-radius:6px;background:var(--gray-100);color:var(--gray-500);font-size:11px;font-weight:500">📊 数据看板</span></div></div>
+          <div style="background:#fff;border:1px solid var(--gray-200);border-radius:10px;padding:16px"><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">特殊需求</div><div style="font-size:13px;color:var(--gray-700)">多仓库支持、安全库存预警、批量发货</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 1: 功能清单 -->
+    <div class="right-panel" id="right-1" style="display:none">
+      <div class="preview-header"><div class="label"><i class="fa-solid fa-list-check" style="color:var(--primary)"></i> 功能清单</div><div class="actions"><button class="action-btn" title="导出"><i class="fa-solid fa-file-arrow-down"></i></button></div></div>
+      <div class="preview-body" style="padding:20px;overflow-y:auto;background:#fff">
+        <div style="max-width:440px;margin:0 auto">
+          <h2 style="font-size:15px;font-weight:700;color:var(--gray-800);margin-bottom:4px">电商管理系统</h2>
+          <p style="font-size:11px;color:var(--gray-400);margin-bottom:16px">5 个模块 · 23 个功能点</p>
+          <div style="border:1px solid var(--gray-200);border-radius:10px;overflow:hidden">
+            <div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--gray-100)"><span style="width:22px;height:22px;border-radius:6px;background:#fef2f2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">1</span><span style="flex:1;font-size:13px;font-weight:500;color:var(--gray-800)">商品管理</span><span class="priority p0">P0</span></div>
+            <div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--gray-100)"><span style="width:22px;height:22px;border-radius:6px;background:#fef2f2;color:#dc2626;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">2</span><span style="flex:1;font-size:13px;font-weight:500;color:var(--gray-800)">订单管理</span><span class="priority p0">P0</span></div>
+            <div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--gray-100)"><span style="width:22px;height:22px;border-radius:6px;background:#fefce8;color:#ca8a04;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">3</span><span style="flex:1;font-size:13px;font-weight:500;color:var(--gray-800)">多仓库存</span><span class="priority p1">P1</span></div>
+            <div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--gray-100)"><span style="width:22px;height:22px;border-radius:6px;background:#fefce8;color:#ca8a04;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">4</span><span style="flex:1;font-size:13px;font-weight:500;color:var(--gray-800)">用户管理</span><span class="priority p1">P1</span></div>
+            <div style="padding:12px 16px;display:flex;align-items:center;gap:10px"><span style="width:22px;height:22px;border-radius:6px;background:var(--primary-bg);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700">5</span><span style="flex:1;font-size:13px;font-weight:500;color:var(--gray-800)">数据看板</span><span class="priority p2">P2</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2 & 3: 原型预览 -->
+    <div class="right-panel" id="right-2" style="display:none">
+      <div class="preview-header">
+        <div class="label"><span class="live-dot"></span> 实时预览</div>
+        <div class="page-tabs"><span class="page-tab active" data-page="index.html">首页</span><span class="page-tab" data-page="play.html">对局</span><span class="page-tab" data-page="stats.html">统计</span><span class="page-tab" data-page="task.html">任务</span><span class="page-tab" data-page="reports.html">报表</span><span class="page-tab" data-page="ai-assistant.html">AI助手</span></div>
+        <div class="actions"><button class="action-btn" title="刷新" onclick="document.getElementById('proto-iframe').src=document.getElementById('proto-iframe').src"><i class="fa-solid fa-rotate"></i></button><button class="action-btn" title="新窗口打开" onclick="window.open(document.getElementById('proto-iframe').src)"><i class="fa-solid fa-up-right-from-square"></i></button></div>
+      </div>
+      <div class="preview-body" style="padding:0">
+        <iframe id="proto-iframe" src="../prototype/index.html" style="width:100%;height:100%;border:none;border-radius:0"></iframe>
+      </div>
+    </div>
+
+    <!-- Step 4: 导出 -->
+    <div class="right-panel" id="right-4" style="display:none">
+      <div class="preview-header"><div class="label"><i class="fa-solid fa-download" style="color:var(--primary)"></i> 导出中心</div></div>
+      <div class="preview-body" style="padding:28px;overflow-y:auto;display:flex;align-items:center;justify-content:center">
+        <div style="max-width:340px;width:100%;display:flex;flex-direction:column;gap:12px">
+          <div class="export-action" style="display:flex;align-items:center;gap:14px;text-align:left;padding:16px"><div style="width:42px;height:42px;border-radius:10px;background:#ede9fe;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-zipper" style="font-size:17px;color:#7c3aed"></i></div><div style="flex:1"><div class="export-action-title">完整项目 ZIP</div><div class="export-action-desc">清单 + 原型 + 数据</div></div><i class="fa-solid fa-download" style="color:var(--gray-400)"></i></div>
+          <div class="export-action" style="display:flex;align-items:center;gap:14px;text-align:left;padding:16px"><div style="width:42px;height:42px;border-radius:10px;background:var(--primary-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-file-word" style="font-size:17px;color:var(--primary)"></i></div><div style="flex:1"><div class="export-action-title">功能清单 Word</div><div class="export-action-desc">导出 .docx 文档</div></div><i class="fa-solid fa-download" style="color:var(--gray-400)"></i></div>
+          <div class="export-action" style="display:flex;align-items:center;gap:14px;text-align:left;padding:16px"><div style="width:42px;height:42px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="fa-solid fa-globe" style="font-size:17px;color:var(--green)"></i></div><div style="flex:1"><div class="export-action-title">浏览器打开原型</div><div class="export-action-desc">系统浏览器预览</div></div><i class="fa-solid fa-up-right-from-square" style="color:var(--gray-400)"></i></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end preview-column -->
+</div><!-- end main-area -->
+
+<!-- Floating Info Panel -->
+<div class="overlay" id="overlay"></div>
+<div class="float-panel" id="float-panel">
+  <div class="float-panel-header">
+    <span><i class="fa-solid fa-robot" style="color:var(--primary);margin-right:6px"></i> 智能体详情</span>
+    <button class="float-panel-close" id="panel-close"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div class="float-panel-body">
+    <div class="info-row"><i class="fa-solid fa-circle" style="color:var(--green);font-size:6px"></i> <strong>沧澜 AI</strong> — 在线</div>
+    <div class="info-row"><i class="fa-solid fa-microchip"></i> MiniMax-M2.7-highspeed</div>
+    <div class="info-row"><i class="fa-solid fa-layer-group"></i> 当前阶段：迭代优化</div>
+    <div class="info-row"><i class="fa-solid fa-database"></i> 上下文：35% (57k / 160k tokens)</div>
+
+    <div class="section-label">已安装技能</div>
+    <div class="skill-tags">
+      <span class="skill-tag"><i class="fa-solid fa-lightbulb" style="margin-right:3px;font-size:8px"></i> 头脑风暴</span>
+      <span class="skill-tag"><i class="fa-solid fa-list-check" style="margin-right:3px;font-size:8px"></i> 功能清单</span>
+      <span class="skill-tag"><i class="fa-solid fa-browser" style="margin-right:3px;font-size:8px"></i> 原型生成</span>
+      <span class="skill-tag"><i class="fa-solid fa-arrows-rotate" style="margin-right:3px;font-size:8px"></i> 原型迭代</span>
+      <span class="skill-tag"><i class="fa-solid fa-image" style="margin-right:3px;font-size:8px"></i> 图片生成</span>
+      <span class="skill-tag"><i class="fa-solid fa-users" style="margin-right:3px;font-size:8px"></i> 协作规划</span>
+      <span class="skill-tag"><i class="fa-solid fa-scale-balanced" style="margin-right:3px;font-size:8px"></i> 第一性原理</span>
+    </div>
+
+    <div class="section-label">项目产出</div>
+    <div class="info-row"><i class="fa-solid fa-file-lines"></i> spec.md <span style="color:var(--gray-400);margin-left:auto;font-size:10px">2,340 字</span></div>
+    <div class="info-row"><i class="fa-solid fa-folder"></i> prototype/ <span style="color:var(--gray-400);margin-left:auto;font-size:10px">7 页面</span></div>
+  </div>
+</div>
+
+<script>
+// Toggle info panel
+const infoToggle = document.getElementById('info-toggle');
+const floatPanel = document.getElementById('float-panel');
+const overlay = document.getElementById('overlay');
+const panelClose = document.getElementById('panel-close');
+
+function openPanel() { floatPanel.classList.add('open'); overlay.classList.add('open'); }
+function closePanel() { floatPanel.classList.remove('open'); overlay.classList.remove('open'); }
+infoToggle.addEventListener('click', openPanel);
+panelClose.addEventListener('click', closePanel);
+overlay.addEventListener('click', closePanel);
+
+// Step dot click → switch right panel
+const stepDots = document.querySelectorAll('.step-dot');
+const rightPanels = document.querySelectorAll('.right-panel');
+const stepLines = document.querySelectorAll('.step-line');
+
+function switchStep(index) {
+  stepDots.forEach((dot, i) => {
+    dot.className = 'step-dot';
+    if (i < index) dot.classList.add('completed');
+    else if (i === index) dot.classList.add('active');
+    else dot.classList.add('pending');
+    // Update circle content
+    const circle = dot.querySelector('.circle');
+    if (i < index) circle.innerHTML = '<i class="fa-solid fa-check" style="font-size:8px"></i>';
+    else circle.textContent = String(i + 1);
+  });
+  stepLines.forEach((line, i) => {
+    line.className = 'step-line';
+    if (i < index) line.classList.add('done');
+    else line.classList.add('todo');
+  });
+  // Switch right panel: step 2 & 3 share the same prototype panel
+  const panelIndex = index === 3 ? 2 : index;
+  rightPanels.forEach(p => p.style.display = 'none');
+  const target = document.getElementById('right-' + panelIndex);
+  if (target) target.style.display = '';
+}
+
+stepDots.forEach(dot => {
+  dot.addEventListener('click', () => switchStep(parseInt(dot.dataset.step)));
+});
+
+// Spec module expand/collapse
+function toggleDetail(el) {
+  const detail = el.nextElementSibling;
+  const icon = el.querySelector('.expand-icon');
+  detail.classList.toggle('open');
+  icon.style.transform = detail.classList.contains('open') ? 'rotate(90deg)' : '';
+}
+
+// Page chip click
+document.querySelectorAll('.proto-page-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.parentElement.querySelectorAll('.proto-page-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+});
+
+// Page tab click (right panel) → switch iframe src
+document.querySelectorAll('.page-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.page-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const page = tab.dataset.page;
+    if (page) {
+      document.getElementById('proto-iframe').src = '../prototype/' + page;
+    }
+  });
+});
+
+// Send message mock
+const input = document.getElementById('msg-input');
+const sendBtn = document.getElementById('send-btn');
+const chatCenter = document.getElementById('chat-center');
+const chatScroll = document.getElementById('chat-scroll');
+
+function sendMsg() {
+  const text = input.value.trim();
+  if (!text) return;
+  const now = new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+  chatCenter.insertAdjacentHTML('beforeend', `
+    <div class="msg user"><div class="msg-body"><div class="msg-time">${now}</div><div class="msg-bubble">${text}</div></div><div class="msg-avatar"><i class="fa-solid fa-user"></i></div></div>
+  `);
+  input.value = '';
+  setTimeout(() => {
+    chatCenter.insertAdjacentHTML('beforeend', `
+      <div class="msg assistant"><div class="msg-avatar"><i class="fa-solid fa-robot"></i></div><div class="msg-body"><div class="msg-time">${now}</div><div class="msg-bubble">收到，正在处理你的请求...
+        <div class="thinking-steps">
+          <div class="thinking-step"><span class="step-icon brain"><i class="fa-solid fa-brain"></i></span> 分析需求</div>
+          <div class="thinking-step"><span class="step-icon tool"><i class="fa-solid fa-wrench"></i></span> 执行修改</div>
+          <div class="thinking-step"><span class="step-icon done"><i class="fa-solid fa-check"></i></span> 完成</div>
+        </div>
+      </div></div></div>
+    `);
+    chatScroll.scrollTop = chatScroll.scrollHeight;
+  }, 600);
+  chatScroll.scrollTop = chatScroll.scrollHeight;
+}
+sendBtn.addEventListener('click', sendMsg);
+input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
+
+// Scroll to bottom on load
+chatScroll.scrollTop = chatScroll.scrollHeight;
+</script>
+</body>
+</html>

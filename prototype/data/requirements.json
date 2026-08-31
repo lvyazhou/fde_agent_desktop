@@ -1,0 +1,132 @@
+[
+  {
+    "id": "R001",
+    "title": "供应商注册审核流程优化",
+    "project": "P001",
+    "priority": "P0",
+    "status": "developing",
+    "assignee": "张工",
+    "estimate": 5,
+    "tags": [
+      "流程优化",
+      "供应商"
+    ]
+  },
+  {
+    "id": "R002",
+    "title": "采购订单自动分单规则",
+    "project": "P001",
+    "priority": "P0",
+    "status": "completed",
+    "assignee": "李工",
+    "estimate": 8,
+    "tags": [
+      "自动化",
+      "采购"
+    ]
+  },
+  {
+    "id": "R003",
+    "title": "库存预警阈值配置",
+    "project": "P001",
+    "priority": "P1",
+    "status": "pending",
+    "assignee": "王工",
+    "estimate": 3,
+    "tags": [
+      "库存",
+      "配置"
+    ]
+  },
+  {
+    "id": "R004",
+    "title": "客户标签体系重构",
+    "project": "P002",
+    "priority": "P1",
+    "status": "developing",
+    "assignee": "赵工",
+    "estimate": 6,
+    "tags": [
+      "CRM",
+      "标签"
+    ]
+  },
+  {
+    "id": "R005",
+    "title": "销售漏斗可视化改进",
+    "project": "P002",
+    "priority": "P2",
+    "status": "completed",
+    "assignee": "刘工",
+    "estimate": 4,
+    "tags": [
+      "可视化",
+      "销售"
+    ]
+  },
+  {
+    "id": "R006",
+    "title": "报销单据OCR识别",
+    "project": "P003",
+    "priority": "P0",
+    "status": "developing",
+    "assignee": "张工",
+    "estimate": 10,
+    "tags": [
+      "OCR",
+      "报销"
+    ]
+  },
+  {
+    "id": "R007",
+    "title": "多级审批流配置",
+    "project": "P003",
+    "priority": "P1",
+    "status": "pending",
+    "assignee": "李工",
+    "estimate": 7,
+    "tags": [
+      "审批",
+      "配置"
+    ]
+  },
+  {
+    "id": "R008",
+    "title": "App首页改版",
+    "project": "P004",
+    "priority": "P1",
+    "status": "completed",
+    "assignee": "王工",
+    "estimate": 5,
+    "tags": [
+      "UI",
+      "App"
+    ]
+  },
+  {
+    "id": "R009",
+    "title": "消息推送优化",
+    "project": "P004",
+    "priority": "P2",
+    "status": "developing",
+    "assignee": "赵工",
+    "estimate": 2,
+    "tags": [
+      "推送",
+      "优化"
+    ]
+  },
+  {
+    "id": "R010",
+    "title": "数据质量监控大屏",
+    "project": "P005",
+    "priority": "P2",
+    "status": "pending",
+    "assignee": "刘工",
+    "estimate": 8,
+    "tags": [
+      "数据中台",
+      "监控"
+    ]
+  }
+]

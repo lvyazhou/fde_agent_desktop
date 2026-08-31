@@ -1,0 +1,144 @@
+{
+  "projects": {
+    "total": 24,
+    "in_progress": 15,
+    "completed": 7,
+    "delayed": 3,
+    "on_track": 12
+  },
+  "requirements": {
+    "total": 186,
+    "developing": 42,
+    "completed": 98,
+    "pending": 31,
+    "this_week_new": 12
+  },
+  "tasks": {
+    "total": 523,
+    "completed": 387,
+    "in_progress": 89,
+    "overdue": 18,
+    "this_week_done": 45
+  },
+  "milestones": {
+    "total": 68,
+    "on_time": 52,
+    "delayed": 10,
+    "upcoming_7d": 8
+  },
+  "ai_usage": {
+    "tasks_decomposed": 124,
+    "reports_generated": 38,
+    "risk_alerts": 23
+  },
+  "team_load": [
+    {
+      "name": "张工",
+      "tasks": 5,
+      "load": 83
+    },
+    {
+      "name": "李工",
+      "tasks": 3,
+      "load": 50
+    },
+    {
+      "name": "王工",
+      "tasks": 4,
+      "load": 67
+    },
+    {
+      "name": "赵工",
+      "tasks": 6,
+      "load": 100
+    },
+    {
+      "name": "刘工",
+      "tasks": 2,
+      "load": 33
+    }
+  ],
+  "weekly_burndown": [
+    {
+      "day": "周一",
+      "remain": 120
+    },
+    {
+      "day": "周二",
+      "remain": 115
+    },
+    {
+      "day": "周三",
+      "remain": 108
+    },
+    {
+      "day": "周四",
+      "remain": 102
+    },
+    {
+      "day": "周五",
+      "remain": 95
+    },
+    {
+      "day": "周六",
+      "remain": 88
+    },
+    {
+      "day": "周日",
+      "remain": 82
+    }
+  ],
+  "requirement_trend": [
+    {
+      "month": "1月",
+      "new": 18,
+      "completed": 15
+    },
+    {
+      "month": "2月",
+      "new": 22,
+      "completed": 20
+    },
+    {
+      "month": "3月",
+      "new": 15,
+      "completed": 18
+    },
+    {
+      "month": "4月",
+      "new": 28,
+      "completed": 24
+    },
+    {
+      "month": "5月",
+      "new": 31,
+      "completed": 29
+    }
+  ],
+  "milestone_achievement": [
+    {
+      "name": "需求冻结",
+      "plan": "2025-03-01",
+      "actual": "2025-03-01",
+      "status": "on_time"
+    },
+    {
+      "name": "开发完成",
+      "plan": "2025-06-01",
+      "actual": "2025-06-03",
+      "status": "delayed"
+    },
+    {
+      "name": "UAT",
+      "plan": "2025-09-01",
+      "actual": null,
+      "status": "upcoming"
+    },
+    {
+      "name": "上线",
+      "plan": "2025-12-01",
+      "actual": null,
+      "status": "upcoming"
+    }
+  ]
+}

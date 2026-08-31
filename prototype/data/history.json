@@ -1,0 +1,167 @@
+[
+  {
+    "id": 1,
+    "date": "2026-05-29 14:32",
+    "result": "win",
+    "difficulty": "medium",
+    "board_size": 15,
+    "moves": 42,
+    "duration": 285,
+    "first_move": "H8",
+    "ai_level": "中级"
+  },
+  {
+    "id": 2,
+    "date": "2026-05-29 13:15",
+    "result": "loss",
+    "difficulty": "hard",
+    "board_size": 15,
+    "moves": 56,
+    "duration": 412,
+    "first_move": "G7",
+    "ai_level": "高级"
+  },
+  {
+    "id": 3,
+    "date": "2026-05-29 11:40",
+    "result": "win",
+    "difficulty": "easy",
+    "board_size": 9,
+    "moves": 18,
+    "duration": 95,
+    "first_move": "E5",
+    "ai_level": "初级"
+  },
+  {
+    "id": 4,
+    "date": "2026-05-29 10:22",
+    "result": "win",
+    "difficulty": "medium",
+    "board_size": 13,
+    "moves": 38,
+    "duration": 248,
+    "first_move": "F6",
+    "ai_level": "中级"
+  },
+  {
+    "id": 5,
+    "date": "2026-05-28 21:05",
+    "result": "loss",
+    "difficulty": "medium",
+    "board_size": 15,
+    "moves": 52,
+    "duration": 356,
+    "first_move": "H7",
+    "ai_level": "中级"
+  },
+  {
+    "id": 6,
+    "date": "2026-05-28 19:48",
+    "result": "win",
+    "difficulty": "easy",
+    "board_size": 9,
+    "moves": 15,
+    "duration": 78,
+    "first_move": "E5",
+    "ai_level": "初级"
+  },
+  {
+    "id": 7,
+    "date": "2026-05-28 18:30",
+    "result": "draw",
+    "difficulty": "hard",
+    "board_size": 15,
+    "moves": 81,
+    "duration": 520,
+    "first_move": "G8",
+    "ai_level": "高级"
+  },
+  {
+    "id": 8,
+    "date": "2026-05-28 16:12",
+    "result": "win",
+    "difficulty": "medium",
+    "board_size": 13,
+    "moves": 44,
+    "duration": 290,
+    "first_move": "F7",
+    "ai_level": "中级"
+  },
+  {
+    "id": 9,
+    "date": "2026-05-28 14:55",
+    "result": "loss",
+    "difficulty": "easy",
+    "board_size": 9,
+    "moves": 22,
+    "duration": 110,
+    "first_move": "D5",
+    "ai_level": "初级"
+  },
+  {
+    "id": 10,
+    "date": "2026-05-28 12:20",
+    "result": "win",
+    "difficulty": "hard",
+    "board_size": 15,
+    "moves": 62,
+    "duration": 445,
+    "first_move": "H8",
+    "ai_level": "高级"
+  },
+  {
+    "id": 11,
+    "date": "2026-05-27 20:15",
+    "result": "win",
+    "difficulty": "medium",
+    "board_size": 15,
+    "moves": 40,
+    "duration": 275,
+    "first_move": "G6",
+    "ai_level": "中级"
+  },
+  {
+    "id": 12,
+    "date": "2026-05-27 18:40",
+    "result": "loss",
+    "difficulty": "hard",
+    "board_size": 13,
+    "moves": 58,
+    "duration": 398,
+    "first_move": "F8",
+    "ai_level": "高级"
+  },
+  {
+    "id": 13,
+    "date": "2026-05-27 16:05",
+    "result": "win",
+    "difficulty": "easy",
+    "board_size": 9,
+    "moves": 16,
+    "duration": 82,
+    "first_move": "E5",
+    "ai_level": "初级"
+  },
+  {
+    "id": 14,
+    "date": "2026-05-27 14:30",
+    "result": "win",
+    "difficulty": "medium",
+    "board_size": 15,
+    "moves": 36,
+    "duration": 240,
+    "first_move": "H7",
+    "ai_level": "中级"
+  },
+  {
+    "id": 15,
+    "date": "2026-05-27 11:50",
+    "result": "loss",
+    "difficulty": "medium",
+    "board_size": 13,
+    "moves": 48,
+    "duration": 330,
+    "first_move": "G5",
+    "ai_level": "中级"
+  }
+]

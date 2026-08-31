@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沧澜 AgentOS - 完整流程原型</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #2563eb; --primary-light: #3b82f6; --primary-bg: #eff6ff; --primary-ring: #dbeafe;
+  --gray-50: #f8fafc; --gray-100: #f1f5f9; --gray-200: #e2e8f0; --gray-300: #cbd5e1;
+  --gray-400: #94a3b8; --gray-500: #64748b; --gray-600: #475569; --gray-700: #334155; --gray-800: #1e293b; --gray-900: #0f172a;
+  --green: #16a34a; --green-light: #dcfce7;
+  --radius: 10px;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05); --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', -apple-system, sans-serif; background: var(--gray-100); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+/* ===== Top Nav ===== */
+.top-nav { height: 52px; background: linear-gradient(180deg, #fff, #fafbfc); border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); position: relative; z-index: 10; }
+.brand { font-size: 15px; font-weight: 700; color: var(--gray-800); display: flex; align-items: center; gap: 10px; }
+.brand-icon { width: 30px; height: 30px; background: linear-gradient(135deg, #1d4ed8, #3b82f6); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 14px; box-shadow: 0 2px 4px rgba(37,99,235,0.3); }
+.brand-sub { font-size: 11px; color: var(--gray-400); font-weight: 400; margin-left: 2px; letter-spacing: 0.5px; }
+.nav-links { display: flex; gap: 2px; margin-left: 48px; }
+.nav-link { padding: 7px 16px; border-radius: 8px; font-size: 13px; color: var(--gray-500); text-decoration: none; display: flex; align-items: center; gap: 7px; font-weight: 500; transition: all 0.15s; }
+.nav-link.active { background: var(--primary-bg); color: var(--primary); }
+.version { margin-left: auto; font-size: 11px; color: var(--gray-400); margin-right: 16px; font-family: monospace; }
+.window-controls { display: flex; gap: 8px; }
+.win-btn { width: 12px; height: 12px; border-radius: 50%; border: none; cursor: pointer; }
+.win-btn.minimize { background: #fbbf24; } .win-btn.maximize { background: #34d399; } .win-btn.close { background: #f87171; }
+
+/* ===== Project Header ===== */
+.project-header { background: #fff; border-bottom: 1px solid var(--gray-200); padding: 14px 28px 0; }
+.project-title-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.back-btn { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--gray-200); background: #fff; display: flex; align-items: center; justify-content: center; color: var(--gray-500); cursor: pointer; font-size: 13px; }
+.project-name { font-size: 16px; font-weight: 600; color: var(--gray-800); }
+.project-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--primary-bg); color: var(--primary); font-weight: 500; }
+
+/* ===== Step Progress ===== */
+.step-progress { display: flex; align-items: center; justify-content: center; padding: 4px 60px 18px; }
+.step-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.step-circle { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+.step-circle.completed { background: var(--primary-bg); color: var(--primary); border: 2px solid #93c5fd; }
+.step-circle.active { background: var(--primary); color: #fff; border: 2.5px solid var(--primary); box-shadow: 0 0 0 4px var(--primary-ring), 0 2px 8px rgba(37,99,235,0.25); }
+.step-circle.pending { background: var(--gray-50); color: var(--gray-400); border: 2px solid var(--gray-200); }
+.step-label { font-size: 11px; margin-top: 7px; color: var(--gray-500); white-space: nowrap; font-weight: 500; }
+.step-label.active { color: var(--primary); font-weight: 600; }
+.step-label.completed { color: var(--primary); }
+.step-connector { width: 56px; height: 2.5px; margin: 0 6px; margin-bottom: 22px; border-radius: 2px; }
+.step-connector.done { background: #93c5fd; }
+.step-connector.active { background: linear-gradient(90deg, #93c5fd, var(--primary-ring)); }
+.step-connector.todo { background: var(--gray-200); }
+
+/* ===== Tab Panel (shared) ===== */
+.tab-panel { display: none; flex: 1; min-height: 0; overflow: hidden; }
+.tab-panel.active { display: flex; }
+
+/* ===== Chat styles ===== */
+.chat-full { flex: 1; display: flex; flex-direction: column; background: linear-gradient(180deg, var(--gray-50), #fff); }
+.chat-header { height: 44px; padding: 0 20px; display: flex; align-items: center; border-bottom: 1px solid var(--gray-100); background: #fff; font-size: 13px; font-weight: 600; color: var(--gray-700); gap: 8px; }
+.chat-header i { color: var(--primary); }
+.chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.message { max-width: 88%; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.message.user { align-self: flex-end; } .message.assistant { align-self: flex-start; }
+.msg-time { font-size: 10px; color: var(--gray-400); margin-bottom: 3px; padding: 0 4px; }
+.message.user .msg-time { text-align: right; }
+.message-bubble { padding: 11px 15px; border-radius: 14px; font-size: 13.5px; line-height: 1.65; }
+.message.user .message-bubble { background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 2px 8px rgba(37,99,235,0.2); }
+.message.assistant .message-bubble { background: #fff; color: var(--gray-700); border: 1px solid var(--gray-200); border-bottom-left-radius: 4px; box-shadow: var(--shadow-sm); }
+.thinking-steps { margin-top: 8px; padding: 10px 12px; background: var(--gray-50); border-radius: 8px; border: 1px solid var(--gray-100); border-left: 3px solid var(--primary-ring); }
+.thinking-step { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--gray-600); padding: 4px 0; }
+.step-icon { width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; flex-shrink: 0; }
+.step-icon.brain { background: #f3e8ff; color: #7c3aed; } .step-icon.tool { background: #fef3c7; color: #d97706; }
+.step-icon.done { background: var(--green-light); color: var(--green); } .step-icon.finish { background: var(--primary-bg); color: var(--primary); }
+.chat-input-area { padding: 14px 16px; background: #fff; border-top: 1px solid var(--gray-200); }
+.chat-input-wrapper { display: flex; align-items: center; gap: 10px; background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: 12px; padding: 10px 14px; transition: all 0.2s; }
+.chat-input-wrapper:focus-within { border-color: var(--primary-light); box-shadow: 0 0 0 3px var(--primary-ring); background: #fff; }
+.chat-input { flex: 1; border: none; background: transparent; font-size: 13.5px; outline: none; color: var(--gray-700); }
+.chat-input::placeholder { color: var(--gray-400); }
+.input-hint { font-size: 10px; color: var(--gray-400); white-space: nowrap; }
+.send-btn { width: 34px; height: 34px; border-radius: 9px; border: none; background: linear-gradient(135deg, #1d4ed8, #3b82f6); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 2px 4px rgba(37,99,235,0.3); }
+
+/* ===== Spec tab ===== */
+.spec-layout { flex: 1; display: flex; flex-direction: column; background: #fff; }
+.spec-toolbar { height: 48px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 20px; gap: 8px; background: var(--gray-50); }
+.spec-btn { padding: 6px 14px; border-radius: 7px; border: 1px solid var(--gray-200); background: #fff; font-size: 12px; color: var(--gray-600); cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 500; transition: all 0.15s; }
+.spec-btn:hover { background: var(--gray-50); border-color: var(--gray-300); }
+.spec-btn.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.spec-btn.primary:hover { background: #1d4ed8; }
+.spec-content { flex: 1; overflow-y: auto; padding: 32px 48px; max-width: 900px; margin: 0 auto; width: 100%; }
+.spec-content h1 { font-size: 22px; font-weight: 700; color: var(--gray-800); margin-bottom: 6px; }
+.spec-content h2 { font-size: 16px; font-weight: 600; color: var(--gray-800); margin-top: 24px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--gray-100); }
+.spec-content h3 { font-size: 14px; font-weight: 600; color: var(--gray-700); margin-top: 16px; margin-bottom: 6px; }
+.spec-content p { font-size: 13.5px; color: var(--gray-600); line-height: 1.7; margin-bottom: 8px; }
+.spec-content ul { padding-left: 20px; margin-bottom: 8px; }
+.spec-content li { font-size: 13px; color: var(--gray-600); line-height: 1.8; }
+.spec-content .priority { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; margin-left: 6px; }
+.priority.p0 { background: #fef2f2; color: #dc2626; } .priority.p1 { background: #fefce8; color: #ca8a04; } .priority.p2 { background: var(--primary-bg); color: var(--primary); }
+
+/* ===== Prototype tab ===== */
+.proto-layout { flex: 1; display: flex; }
+.file-tree { width: 200px; border-right: 1px solid var(--gray-200); background: var(--gray-50); padding: 12px 0; overflow-y: auto; }
+.file-tree-title { font-size: 11px; font-weight: 600; color: var(--gray-500); padding: 0 14px 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+.file-item { padding: 6px 14px; font-size: 12px; color: var(--gray-600); cursor: pointer; display: flex; align-items: center; gap: 7px; transition: all 0.1s; }
+.file-item:hover { background: var(--gray-100); }
+.file-item.active { background: var(--primary-bg); color: var(--primary); font-weight: 500; border-right: 2px solid var(--primary); }
+.file-item i { font-size: 10px; width: 14px; text-align: center; color: var(--gray-400); }
+.file-item.active i { color: var(--primary); }
+.proto-preview { flex: 1; display: flex; flex-direction: column; }
+.proto-toolbar { height: 44px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 16px; gap: 10px; background: linear-gradient(180deg, #fafbfc, #fff); }
+.proto-toolbar .path { font-size: 12px; color: var(--gray-500); font-family: monospace; }
+.proto-toolbar .actions { margin-left: auto; display: flex; gap: 6px; }
+.action-btn { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--gray-200); background: #fff; color: var(--gray-500); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; transition: all 0.15s; }
+.action-btn:hover { background: var(--gray-50); color: var(--gray-700); }
+.preview-iframe { flex: 1; background: var(--gray-50); padding: 12px; overflow: hidden; }
+.preview-frame { width: 100%; height: 100%; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-md); border: 1px solid var(--gray-200); background: #fff; }
+
+/* ===== Iterate tab ===== */
+.iterate-layout { flex: 1; display: flex; }
+.chat-panel { width: 50%; display: flex; flex-direction: column; border-right: 1px solid var(--gray-200); background: linear-gradient(180deg, var(--gray-50), #fff); }
+.preview-panel { width: 50%; display: flex; flex-direction: column; background: #fff; }
+.preview-toolbar { height: 44px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; padding: 0 16px; gap: 10px; background: linear-gradient(180deg, #fafbfc, #fff); }
+.preview-toolbar .label { font-size: 12px; color: var(--gray-600); display: flex; align-items: center; gap: 7px; font-weight: 500; }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px rgba(22,163,74,0.4); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+.device-btns { display: flex; gap: 2px; margin-left: 16px; }
+.device-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--gray-200); background: #fff; font-size: 11px; color: var(--gray-500); cursor: pointer; }
+.device-btn.active { background: var(--gray-800); color: #fff; border-color: var(--gray-800); }
+
+/* ===== Export tab ===== */
+.export-layout { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px; background: var(--gray-50); }
+.export-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 900px; width: 100%; }
+.export-card { background: #fff; border-radius: 12px; padding: 28px 24px; border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm); text-align: center; transition: all 0.2s; cursor: pointer; }
+.export-card:hover { box-shadow: var(--shadow-md); border-color: var(--primary-light); transform: translateY(-2px); }
+.export-card-icon { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 22px; }
+.export-card-icon.zip { background: #ede9fe; color: #7c3aed; }
+.export-card-icon.doc { background: var(--primary-bg); color: var(--primary); }
+.export-card-icon.web { background: #ecfdf5; color: var(--green); }
+.export-card-title { font-size: 14px; font-weight: 600; color: var(--gray-800); margin-bottom: 6px; }
+.export-card-desc { font-size: 12px; color: var(--gray-500); line-height: 1.6; margin-bottom: 14px; }
+.export-card-btn { padding: 8px 20px; border-radius: 8px; border: 1px solid var(--gray-200); background: #fff; font-size: 12px; color: var(--gray-600); cursor: pointer; font-weight: 500; transition: all 0.15s; }
+.export-card-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+.export-card-btns { display: flex; gap: 6px; justify-content: center; }
+
+/* ===== Fake dashboard ===== */
+.fake-app { display: flex; height: 100%; font-size: 13px; }
+.fake-sidebar { width: 180px; background: linear-gradient(180deg, #0f172a, #1e293b); padding: 14px 0; }
+.fake-sidebar-item { padding: 9px 18px; color: var(--gray-400); display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 12px; border-left: 3px solid transparent; margin: 1px 0; }
+.fake-sidebar-item.active { background: rgba(59,130,246,0.1); color: #fff; border-left-color: var(--primary-light); }
+.fake-sidebar-logo { padding: 6px 18px 16px; color: #fff; font-weight: 600; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.fake-main { flex: 1; padding: 18px; background: var(--gray-50); overflow-y: auto; }
+.fake-header { font-size: 15px; font-weight: 600; color: var(--gray-800); margin-bottom: 14px; }
+.fake-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.fake-card { background: #fff; border-radius: var(--radius); padding: 14px; border: 1px solid var(--gray-200); box-shadow: var(--shadow-sm); }
+.fake-card-title { font-size: 11px; color: var(--gray-500); margin-bottom: 6px; font-weight: 500; }
+.fake-card-value { font-size: 18px; font-weight: 700; color: var(--gray-800); }
+.fake-card-change { font-size: 10px; color: var(--green); margin-top: 4px; font-weight: 500; }
+.fake-table { margin-top: 14px; background: #fff; border-radius: var(--radius); border: 1px solid var(--gray-200); overflow: hidden; }
+.fake-table-header { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 9px 14px; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); font-size: 11px; color: var(--gray-500); font-weight: 500; }
+.fake-table-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; padding: 9px 14px; border-bottom: 1px solid var(--gray-100); font-size: 11.5px; color: var(--gray-700); align-items: center; }
+.fake-badge { padding: 2px 8px; border-radius: 10px; font-size: 10px; background: var(--green-light); color: var(--green); font-weight: 500; }
+
+.thinking-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 11px; color: var(--gray-400); cursor: pointer; padding: 4px 10px; border-radius: 6px; background: var(--gray-50); border: 1px solid var(--gray-100); }
+</style>
+</head>
+<body>
+
+<!-- ===== Top Nav ===== -->
+<div class="top-nav">
+  <div class="brand"><div class="brand-icon"><i class="fa-solid fa-atom"></i></div> 沧澜 AgentOS <span class="brand-sub">智能体协作网格</span></div>
+  <div class="nav-links">
+    <a class="nav-link" href="#"><i class="fa-solid fa-comments"></i> 智能对话</a>
+    <a class="nav-link active" href="#"><i class="fa-solid fa-folder-open"></i> 项目列表</a>
+    <a class="nav-link" href="#"><i class="fa-solid fa-gear"></i> 设置</a>
+  </div>
+  <span class="version">v1.0.0</span>
+  <div class="window-controls"><button class="win-btn minimize"></button><button class="win-btn maximize"></button><button class="win-btn close"></button></div>
+</div>
+
+<!-- ===== Project Header ===== -->
+<div class="project-header">
+  <div class="project-title-row">
+    <button class="back-btn"><i class="fa-solid fa-arrow-left"></i></button>
+    <span class="project-name">我的电商系统</span>
+    <span class="project-badge" id="phase-badge"><i class="fa-solid fa-bolt" style="font-size:10px"></i> <span id="phase-text">需求探索</span></span>
+  </div>
+  <div class="step-progress" id="step-progress">
+    <div class="step-item" data-step="0"><div class="step-circle active">1</div><span class="step-label active">需求对话</span></div>
+    <div class="step-connector todo"></div>
+    <div class="step-item" data-step="1"><div class="step-circle pending">2</div><span class="step-label">功能清单</span></div>
+    <div class="step-connector todo"></div>
+    <div class="step-item" data-step="2"><div class="step-circle pending">3</div><span class="step-label">原型预览</span></div>
+    <div class="step-connector todo"></div>
+    <div class="step-item" data-step="3"><div class="step-circle pending">4</div><span class="step-label">迭代优化</span></div>
+    <div class="step-connector todo"></div>
+    <div class="step-item" data-step="4"><div class="step-circle pending">5</div><span class="step-label">导出</span></div>
+  </div>
+</div>
+
+<!-- ===================== TAB 1: 需求对话 ===================== -->
+<div class="tab-panel active" id="tab-0">
+  <div class="chat-full">
+    <div class="chat-header"><i class="fa-solid fa-comments"></i> 需求对话</div>
+    <div class="chat-messages">
+      <div class="message user"><div class="msg-time">21:00</div><div class="message-bubble">我想做一个电商管理系统，主要面向中小卖家，管理订单、商品和用户</div></div>
+      <div class="message assistant"><div class="msg-time">21:00</div><div class="message-bubble">
+        好的！为了帮你设计一个完善的电商管理系统，我需要了解几个关键问题：
+        <br><br>
+        <strong>1. 核心业务场景</strong><br>
+        • 你的卖家主要在哪些平台销售？（自建站、淘宝、拼多多、跨境？）<br>
+        • 是 B2C 还是 B2B？<br><br>
+        <strong>2. 关键功能优先级</strong><br>
+        • 订单管理：从下单到发货的完整流程？<br>
+        • 库存管理：需要多仓库支持吗？<br>
+        • 数据分析：需要什么维度的报表？
+      </div></div>
+      <div class="message user"><div class="msg-time">21:02</div><div class="message-bubble">主要是自建站 B2C，先做订单管理和商品管理，数据分析后面加。需要多仓库支持。</div></div>
+      <div class="message assistant"><div class="msg-time">21:02</div><div class="message-bubble">
+        明白了，我帮你梳理一下核心模块：
+        <br><br>
+        📦 <strong>商品管理</strong> — SKU、分类、图片、价格策略<br>
+        🛒 <strong>订单管理</strong> — 下单→支付→发货→签收→售后完整链路<br>
+        🏭 <strong>多仓库存</strong> — 仓库管理、库存同步、调拨<br>
+        👥 <strong>用户管理</strong> — 注册、画像、会员等级<br>
+        📊 <strong>数据看板</strong> — 销售额、转化率、热销排行（Phase 2）
+        <br><br>
+        我可以先帮你生成一份详细的<strong>功能清单文档</strong>，然后再生成可点击的<strong>原型页面</strong>。要开始吗？
+      </div></div>
+      <div class="message user"><div class="msg-time">21:05</div><div class="message-bubble">好的，先生成功能清单</div></div>
+      <div class="message assistant"><div class="msg-time">21:05</div><div class="message-bubble">
+        好，开始为你生成功能清单...
+        <div class="thinking-steps">
+          <div class="thinking-step"><span class="step-icon brain"><i class="fa-solid fa-brain"></i></span> 分析需求要点，规划模块结构</div>
+          <div class="thinking-step"><span class="step-icon tool"><i class="fa-solid fa-wrench"></i></span> 写入 spec.md</div>
+          <div class="thinking-step"><span class="step-icon done"><i class="fa-solid fa-check"></i></span> spec.md 生成完成（2,340 字）</div>
+          <div class="thinking-step"><span class="step-icon finish"><i class="fa-solid fa-flag-checkered"></i></span> 全部完成</div>
+        </div>
+      </div></div>
+    </div>
+    <div class="chat-input-area"><div class="chat-input-wrapper"><input class="chat-input" placeholder="描述你的产品需求..."><span class="input-hint">Enter 发送</span><button class="send-btn"><i class="fa-solid fa-arrow-up"></i></button></div></div>
+  </div>
+</div>
+
+<!-- ===================== TAB 2: 功能清单 ===================== -->
+<div class="tab-panel" id="tab-1">
+  <div class="spec-layout">
+    <div class="spec-toolbar">
+      <button class="spec-btn active"><i class="fa-solid fa-eye"></i> 预览</button>
+      <button class="spec-btn"><i class="fa-solid fa-pen"></i> 编辑</button>
+      <div style="flex:1"></div>
+      <button class="spec-btn primary"><i class="fa-solid fa-wand-magic-sparkles"></i> 生成原型</button>
+      <button class="spec-btn"><i class="fa-solid fa-file-arrow-down"></i> 导出 .md</button>
+      <button class="spec-btn"><i class="fa-solid fa-file-word"></i> 导出 .docx</button>
+    </div>
+    <div class="spec-content">
+      <h1>电商管理系统 — 功能清单</h1>
+      <p style="color:var(--gray-400); font-size:12px;">生成时间: 2026-06-02 21:05 | AI 模型: MiniMax-M2.7</p>
+
+      <h2>1. 商品管理模块 <span class="priority p0">P0 核心</span></h2>
+      <h3>1.1 商品 CRUD</h3>
+      <ul>
+        <li>商品基本信息：名称、描述、分类、品牌</li>
+        <li>SKU 管理：多规格（颜色/尺码）、库存、价格</li>
+        <li>商品图片：主图 + 详情图，支持拖拽排序</li>
+        <li>商品状态：草稿 → 待审核 → 上架 → 下架</li>
+      </ul>
+      <h3>1.2 分类管理</h3>
+      <ul><li>三级分类树：一级→二级→三级</li><li>分类排序、图标配置</li></ul>
+
+      <h2>2. 订单管理模块 <span class="priority p0">P0 核心</span></h2>
+      <h3>2.1 订单生命周期</h3>
+      <ul>
+        <li>待支付 → 已支付 → 待发货 → 已发货 → 已签收 → 已完成</li>
+        <li>支持取消、退款、退货退款三种逆向流程</li>
+        <li>订单详情：商品信息、收货地址、物流追踪、操作日志</li>
+      </ul>
+      <h3>2.2 批量操作</h3>
+      <ul><li>批量发货（Excel 导入运单号）</li><li>批量打印面单</li></ul>
+
+      <h2>3. 多仓库存模块 <span class="priority p1">P1 重要</span></h2>
+      <ul>
+        <li>仓库管理：仓库信息、地址、负责人</li>
+        <li>库存同步：各仓库独立库存，支持安全库存预警</li>
+        <li>调拨单：仓间调拨申请 → 审批 → 出库 → 入库</li>
+      </ul>
+
+      <h2>4. 用户管理模块 <span class="priority p1">P1 重要</span></h2>
+      <ul>
+        <li>用户列表：注册信息、订单统计、消费金额</li>
+        <li>会员等级：普通→银牌→金牌→钻石，不同折扣</li>
+        <li>用户画像：消费偏好、活跃度标签</li>
+      </ul>
+
+      <h2>5. 数据看板模块 <span class="priority p2">P2 后续</span></h2>
+      <ul>
+        <li>核心指标卡片：GMV、订单量、客单价、转化率</li>
+        <li>趋势图：日/周/月销售趋势</li>
+        <li>商品排行：热销 Top 10、滞销预警</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB 3: 原型预览 ===================== -->
+<div class="tab-panel" id="tab-2">
+  <div class="proto-layout">
+    <div class="file-tree">
+      <div class="file-tree-title">原型文件</div>
+      <div class="file-item active"><i class="fa-solid fa-file-code"></i> index.html</div>
+      <div class="file-item"><i class="fa-solid fa-file-code"></i> orders.html</div>
+      <div class="file-item"><i class="fa-solid fa-file-code"></i> products.html</div>
+      <div class="file-item"><i class="fa-solid fa-file-code"></i> warehouse.html</div>
+      <div class="file-item"><i class="fa-solid fa-file-code"></i> users.html</div>
+      <div class="file-item"><i class="fa-solid fa-file-code"></i> login.html</div>
+      <div class="file-item"><i class="fa-solid fa-file-code"></i> settings.html</div>
+      <div class="file-item"><i class="fa-regular fa-file"></i> styles.css</div>
+      <div class="file-item"><i class="fa-regular fa-file"></i> app.js</div>
+      <div class="file-tree-title" style="margin-top:12px">js/</div>
+      <div class="file-item"><i class="fa-brands fa-js" style="color:#f7df1e"></i> charts.js</div>
+      <div class="file-item"><i class="fa-brands fa-js" style="color:#f7df1e"></i> router.js</div>
+      <div class="file-item"><i class="fa-brands fa-js" style="color:#f7df1e"></i> utils.js</div>
+      <div class="file-tree-title" style="margin-top:12px">data/</div>
+      <div class="file-item"><i class="fa-solid fa-database" style="color:#6366f1"></i> products.json</div>
+      <div class="file-item"><i class="fa-solid fa-database" style="color:#6366f1"></i> orders.json</div>
+      <div class="file-item"><i class="fa-solid fa-database" style="color:#6366f1"></i> users.json</div>
+      <div class="file-item"><i class="fa-solid fa-database" style="color:#6366f1"></i> dashboard.json</div>
+      <div class="file-tree-title" style="margin-top:12px">assets/</div>
+      <div class="file-item"><i class="fa-solid fa-image" style="color:#ec4899"></i> logo.png</div>
+      <div class="file-item"><i class="fa-solid fa-image" style="color:#ec4899"></i> banner.jpg</div>
+    </div>
+    <div class="proto-preview">
+      <div class="proto-toolbar">
+        <span class="path">prototype / index.html</span>
+        <div class="actions">
+          <button class="action-btn" title="在浏览器打开"><i class="fa-solid fa-up-right-from-square"></i></button>
+          <button class="action-btn" title="重新生成"><i class="fa-solid fa-rotate"></i></button>
+        </div>
+      </div>
+      <div class="preview-iframe"><div class="preview-frame">
+        <div class="fake-app">
+          <div class="fake-sidebar">
+            <div class="fake-sidebar-logo">📦 电商管理</div>
+            <div class="fake-sidebar-item active"><i class="fa-solid fa-chart-line"></i> 数据概览</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-cart-shopping"></i> 订单管理</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-box"></i> 商品管理</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-warehouse"></i> 仓库管理</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-users"></i> 用户管理</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-gear"></i> 系统设置</div>
+          </div>
+          <div class="fake-main">
+            <div class="fake-header">数据概览</div>
+            <div class="fake-cards">
+              <div class="fake-card"><div class="fake-card-title">今日销售额</div><div class="fake-card-value">¥128,430</div><div class="fake-card-change">↑ 12.5%</div></div>
+              <div class="fake-card"><div class="fake-card-title">今日订单数</div><div class="fake-card-value">1,024</div><div class="fake-card-change">↑ 8.3%</div></div>
+              <div class="fake-card"><div class="fake-card-title">转化率</div><div class="fake-card-value">3.8%</div><div class="fake-card-change">↑ 0.5%</div></div>
+            </div>
+            <div class="fake-table">
+              <div class="fake-table-header"><span>商品名称</span><span>销量</span><span>金额</span><span>状态</span></div>
+              <div class="fake-table-row"><span>无线蓝牙耳机 Pro</span><span>256</span><span>¥38,400</span><span><span class="fake-badge">热销</span></span></div>
+              <div class="fake-table-row"><span>智能手表 Ultra</span><span>189</span><span>¥56,700</span><span><span class="fake-badge">热销</span></span></div>
+              <div class="fake-table-row"><span>便携充电宝 20000mAh</span><span>342</span><span>¥17,100</span><span><span class="fake-badge">热销</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB 4: 迭代优化 ===================== -->
+<div class="tab-panel" id="tab-3">
+  <div class="iterate-layout">
+    <div class="chat-panel">
+      <div class="chat-header"><i class="fa-solid fa-arrows-rotate"></i> 迭代修改</div>
+      <div class="chat-messages">
+        <div class="message user"><div class="msg-time">22:30</div><div class="message-bubble">把导航栏改成左侧边栏样式，深色背景，带图标</div></div>
+        <div class="message assistant"><div class="msg-time">22:30</div><div class="message-bubble">好的，我来把顶部导航改为左侧深色边栏设计。
+          <div class="thinking-steps">
+            <div class="thinking-step"><span class="step-icon brain"><i class="fa-solid fa-brain"></i></span> 分析当前导航结构</div>
+            <div class="thinking-step"><span class="step-icon tool"><i class="fa-solid fa-wrench"></i></span> 修改 index.html</div>
+            <div class="thinking-step"><span class="step-icon done"><i class="fa-solid fa-check"></i></span> index.html 完成</div>
+            <div class="thinking-step"><span class="step-icon tool"><i class="fa-solid fa-wrench"></i></span> 更新 styles.css</div>
+            <div class="thinking-step"><span class="step-icon done"><i class="fa-solid fa-check"></i></span> styles.css 完成</div>
+            <div class="thinking-step"><span class="step-icon finish"><i class="fa-solid fa-flag-checkered"></i></span> 全部完成（2 个文件）</div>
+          </div>
+        </div></div>
+        <div class="message user"><div class="msg-time">22:32</div><div class="message-bubble">加一个数据统计卡片区</div></div>
+        <div class="message assistant"><div class="msg-time">22:32</div><div class="message-bubble">已添加数据统计卡片区，右侧预览已更新 →
+          <div class="thinking-toggle"><i class="fa-solid fa-chevron-down" style="font-size:8px"></i> 查看 3 个操作步骤</div>
+        </div></div>
+      </div>
+      <div class="chat-input-area"><div class="chat-input-wrapper"><input class="chat-input" placeholder="描述你想修改的内容..."><span class="input-hint">Enter 发送</span><button class="send-btn"><i class="fa-solid fa-arrow-up"></i></button></div></div>
+    </div>
+    <div class="preview-panel">
+      <div class="preview-toolbar">
+        <div class="label"><span class="live-dot"></span> 实时预览</div>
+        <div class="device-btns"><button class="device-btn active">Desktop</button><button class="device-btn">Tablet</button><button class="device-btn">Mobile</button></div>
+        <div class="actions" style="margin-left:auto"><button class="action-btn"><i class="fa-solid fa-rotate"></i></button><button class="action-btn"><i class="fa-solid fa-up-right-from-square"></i></button></div>
+      </div>
+      <div class="preview-iframe"><div class="preview-frame">
+        <div class="fake-app">
+          <div class="fake-sidebar">
+            <div class="fake-sidebar-logo">📦 电商管理</div>
+            <div class="fake-sidebar-item active"><i class="fa-solid fa-chart-line"></i> 数据概览</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-cart-shopping"></i> 订单管理</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-box"></i> 商品管理</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-users"></i> 用户管理</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-bullhorn"></i> 营销活动</div>
+            <div class="fake-sidebar-item"><i class="fa-solid fa-gear"></i> 系统设置</div>
+          </div>
+          <div class="fake-main">
+            <div class="fake-header">数据概览</div>
+            <div class="fake-cards">
+              <div class="fake-card"><div class="fake-card-title">今日销售额</div><div class="fake-card-value">¥128,430</div><div class="fake-card-change">↑ 12.5%</div></div>
+              <div class="fake-card"><div class="fake-card-title">今日订单数</div><div class="fake-card-value">1,024</div><div class="fake-card-change">↑ 8.3%</div></div>
+              <div class="fake-card"><div class="fake-card-title">转化率</div><div class="fake-card-value">3.8%</div><div class="fake-card-change">↑ 0.5%</div></div>
+            </div>
+            <div class="fake-table">
+              <div class="fake-table-header"><span>商品名称</span><span>销量</span><span>金额</span><span>状态</span></div>
+              <div class="fake-table-row"><span>无线蓝牙耳机 Pro</span><span>256</span><span>¥38,400</span><span><span class="fake-badge">热销</span></span></div>
+              <div class="fake-table-row"><span>智能手表 Ultra</span><span>189</span><span>¥56,700</span><span><span class="fake-badge">热销</span></span></div>
+              <div class="fake-table-row"><span>便携充电宝 20000mAh</span><span>342</span><span>¥17,100</span><span><span class="fake-badge">热销</span></span></div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TAB 5: 导出 ===================== -->
+<div class="tab-panel" id="tab-4">
+  <div class="export-layout">
+    <div class="export-grid">
+      <div class="export-card">
+        <div class="export-card-icon zip"><i class="fa-solid fa-file-zipper"></i></div>
+        <div class="export-card-title">导出完整项目</div>
+        <div class="export-card-desc">打包功能清单 + 全部原型文件为 ZIP 压缩包</div>
+        <button class="export-card-btn"><i class="fa-solid fa-download"></i> 下载 .zip</button>
+      </div>
+      <div class="export-card">
+        <div class="export-card-icon doc"><i class="fa-solid fa-file-lines"></i></div>
+        <div class="export-card-title">导出功能清单</div>
+        <div class="export-card-desc">导出产品功能规格文档，支持 Markdown 和 Word 格式</div>
+        <div class="export-card-btns">
+          <button class="export-card-btn"><i class="fa-solid fa-file-arrow-down"></i> .md</button>
+          <button class="export-card-btn"><i class="fa-solid fa-file-word"></i> .docx</button>
+        </div>
+      </div>
+      <div class="export-card">
+        <div class="export-card-icon web"><i class="fa-solid fa-globe"></i></div>
+        <div class="export-card-title">在浏览器打开原型</div>
+        <div class="export-card-desc">在系统默认浏览器中打开生成的 HTML 原型页面</div>
+        <button class="export-card-btn"><i class="fa-solid fa-up-right-from-square"></i> 打开</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const phaseNames = ['需求探索', '功能清单', '原型设计', '迭代优化', '导出就绪'];
+const steps = document.querySelectorAll('.step-item');
+const connectors = document.querySelectorAll('.step-connector');
+const panels = document.querySelectorAll('.tab-panel');
+const phaseText = document.getElementById('phase-text');
+
+function switchTab(index) {
+  // Update steps
+  steps.forEach((s, i) => {
+    const circle = s.querySelector('.step-circle');
+    const label = s.querySelector('.step-label');
+    circle.className = 'step-circle';
+    label.className = 'step-label';
+    if (i < index) {
+      circle.classList.add('completed');
+      circle.innerHTML = '<i class="fa-solid fa-check" style="font-size:11px"></i>';
+      label.classList.add('completed');
+    } else if (i === index) {
+      circle.classList.add('active');
+      circle.innerHTML = String(i + 1);
+      label.classList.add('active');
+    } else {
+      circle.classList.add('pending');
+      circle.innerHTML = String(i + 1);
+    }
+  });
+  // Update connectors
+  connectors.forEach((c, i) => {
+    c.className = 'step-connector';
+    if (i < index - 1) c.classList.add('done');
+    else if (i === index - 1) c.classList.add('active');
+    else c.classList.add('todo');
+  });
+  // Switch panels
+  panels.forEach((p, i) => { p.classList.toggle('active', i === index); });
+  // Update phase badge
+  phaseText.textContent = phaseNames[index];
+}
+
+steps.forEach((step) => {
+  step.addEventListener('click', () => switchTab(parseInt(step.dataset.step)));
+});
+
+// Nav links
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', (e) => { e.preventDefault(); document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active')); link.classList.add('active'); });
+});
+
+// File tree click
+document.querySelectorAll('.file-item').forEach(item => {
+  item.addEventListener('click', () => { document.querySelectorAll('.file-item').forEach(f => f.classList.remove('active')); item.classList.add('active'); });
+});
+
+// Device buttons
+document.querySelectorAll('.device-btn').forEach(btn => {
+  btn.addEventListener('click', () => { document.querySelectorAll('.device-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); });
+});
+
+// Export card hover feedback
+document.querySelectorAll('.export-card-btn').forEach(btn => {
+  btn.addEventListener('click', () => { btn.textContent = '✓ 已完成'; btn.style.background = 'var(--green)'; btn.style.color = '#fff'; btn.style.borderColor = 'var(--green)'; setTimeout(() => { btn.textContent = btn.dataset.orig || btn.textContent; }, 1500); });
+});
+</script>
+</body>
+</html>

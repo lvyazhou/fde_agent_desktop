@@ -1,0 +1,131 @@
+[
+  {
+    "id": "P001",
+    "name": "供应链系统升级",
+    "type": "waterfall",
+    "status": "in_progress",
+    "progress": 62,
+    "start": "2025-06-01",
+    "end": "2025-12-31",
+    "pm": "张明华",
+    "delayed_tasks": 3,
+    "risk": "high",
+    "milestones": [
+      {
+        "name": "需求冻结",
+        "date": "2025-07-01",
+        "status": "completed"
+      },
+      {
+        "name": "开发完成",
+        "date": "2025-09-01",
+        "status": "in_progress"
+      },
+      {
+        "name": "UAT",
+        "date": "2025-11-01",
+        "status": "pending"
+      },
+      {
+        "name": "上线",
+        "date": "2025-12-01",
+        "status": "pending"
+      }
+    ]
+  },
+  {
+    "id": "P002",
+    "name": "CRM 客户管理重构",
+    "type": "agile",
+    "status": "in_progress",
+    "progress": 35,
+    "start": "2025-04-01",
+    "end": "2025-10-31",
+    "pm": "李晓峰",
+    "delayed_tasks": 1,
+    "risk": "medium",
+    "milestones": [
+      {
+        "name": "Sprint 1",
+        "date": "2025-05-01",
+        "status": "completed"
+      },
+      {
+        "name": "Sprint 2",
+        "date": "2025-06-01",
+        "status": "completed"
+      },
+      {
+        "name": "Sprint 3",
+        "date": "2025-07-01",
+        "status": "in_progress"
+      }
+    ]
+  },
+  {
+    "id": "P003",
+    "name": "财务共享平台",
+    "type": "waterfall",
+    "status": "delayed",
+    "progress": 28,
+    "start": "2025-03-01",
+    "end": "2025-08-31",
+    "pm": "王芳",
+    "delayed_tasks": 8,
+    "risk": "high",
+    "milestones": [
+      {
+        "name": "需求冻结",
+        "date": "2025-04-01",
+        "status": "completed"
+      },
+      {
+        "name": "开发完成",
+        "date": "2025-06-01",
+        "status": "in_progress"
+      }
+    ]
+  },
+  {
+    "id": "P004",
+    "name": "移动端 App 2.0",
+    "type": "iterative",
+    "status": "in_progress",
+    "progress": 78,
+    "start": "2025-01-01",
+    "end": "2025-07-31",
+    "pm": "赵海涛",
+    "delayed_tasks": 0,
+    "risk": "low",
+    "milestones": [
+      {
+        "name": "M1",
+        "date": "2025-03-01",
+        "status": "completed"
+      },
+      {
+        "name": "M2",
+        "date": "2025-05-01",
+        "status": "completed"
+      },
+      {
+        "name": "M3",
+        "date": "2025-07-01",
+        "status": "in_progress"
+      }
+    ]
+  },
+  {
+    "id": "P005",
+    "name": "数据中台建设",
+    "type": "agile",
+    "status": "preparing",
+    "progress": 5,
+    "start": "2025-08-01",
+    "end": "2026-03-31",
+    "pm": "刘佳",
+    "delayed_tasks": 0,
+    "risk": "low",
+    "milestones": []
+  }
+]

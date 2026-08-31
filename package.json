@@ -1,0 +1,99 @@
+{
+  "name": "prodesigner",
+  "version": "1.0.0",
+  "description": "产设大师 ProDesigner — AI 产品设计专家：一句话需求生成功能清单与可点击原型",
+  "main": "src/main/index.js",
+  "scripts": {
+    "dev:renderer": "vite --config vite.config.js",
+    "dev:electron": "wait-on tcp:43917 && node scripts/start-electron.js",
+    "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:electron\"",
+    "start": "node scripts/start-electron.js",
+    "build:renderer": "vite build --config vite.config.js",
+    "build:win": "npm run build:renderer && electron-builder --win portable",
+    "build:mac": "npm run build:renderer && electron-builder --mac dmg",
+    "build:hermes": "pushd ..\\hermes-agent && .venv\\Scripts\\pyinstaller.exe hermes-acp.spec --noconfirm && popd",
+    "build:full": "npm run build:hermes && npm run build:win",
+    "build": "npm run build:win"
+  },
+  "keywords": [
+    "ai",
+    "product-design",
+    "prototype",
+    "electron"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.2",
+    "@vitejs/plugin-vue": "^6.0.5",
+    "autoprefixer": "^10.4.27",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron": "^41.1.1",
+    "electron-builder": "^25.1.8",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.2",
+    "vite": "^8.0.3",
+    "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.prodesigner.app",
+    "productName": "ProDesigner",
+    "directories": {
+      "buildResources": "src/image"
+    },
+    "files": [
+      "src/**/*",
+      "dist/renderer/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "skills",
+        "to": "skills"
+      },
+      {
+        "from": "config-templates",
+        "to": "config-templates"
+      },
+      {
+        "from": "../hermes-agent/dist/hermes-acp",
+        "to": "hermes-acp"
+      }
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "src/image/icon.png"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": "arm64"
+        }
+      ],
+      "icon": "src/image/icon.icns",
+      "identity": null
+    },
+    "portable": {
+      "splashImage": "src/image/splash.bmp"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^7.2.0",
+    "docx": "^9.7.1",
+    "jszip": "^3.10.1",
+    "marked": "^17.0.5",
+    "vue": "^3.5.31",
+    "vue-router": "^5.0.4"
+  }
+}

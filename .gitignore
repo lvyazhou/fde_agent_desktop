@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.dmg
+*.exe
+*.blockmap
+
+# Local env / secrets (real keys live in ~/.product-lobster/, never in repo)
+# NOTE: config-templates/.env is a committed placeholder template, kept on purpose.
+/.env
+/.env.local
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Python (in case of colocated backend artifacts)
+__pycache__/
+*.pyc
+.venv/

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>报表中心 - 项目需求管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; }
+    .top-nav { background:#fff; height:48px; border-bottom:1px solid #e8ecf0; display:flex; align-items:center; flex-shrink:0; position:sticky; top:0; z-index:30; }
+    .top-nav-item { color:#666; font-size:14px; padding:0 20px; height:48px; display:flex; align-items:center; gap:6px; white-space:nowrap; text-decoration:none; }
+    .top-nav-item:hover { color:#2563eb; }
+    .top-nav-item.active { color:#2563eb; font-weight:500; border-bottom:2px solid #2563eb; }
+    .side-rail { width:72px; background:#fff; border-right:1px solid #e8ecf0; display:flex; flex-direction:column; padding:8px 0; gap:4px; position:sticky; top:48px; height:calc(100vh - 48px); }
+    .rail-item { width:56px; height:56px; margin:0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:6px; color:#666; cursor:pointer; transition:all .15s; }
+    .rail-item:hover { background:#eff6ff; color:#2563eb; }
+    .rail-item.active { background:#eff6ff; color:#2563eb; }
+    .rail-item i { font-size:18px; }
+    .rail-item span { font-size:10px; margin-top:2px; }
+    .rail-item a { color:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; width:56px; height:56px; text-decoration:none; }
+  </style>
+</head>
+<body x-data="reports()" x-init="init()">
+  <nav class="top-nav">
+    <div class="flex items-center gap-3 px-4 border-r border-[#e8ecf0] h-full">
+      <div class="w-8 h-8 bg-[#2563eb] rounded-lg flex items-center justify-center"><i class="fa fa-project-diagram text-white text-sm"></i></div>
+      <span class="font-semibold text-[#1e3a8a] text-sm">项目需求管理系统</span>
+    </div>
+    <a href="index.html" class="top-nav-item"><i class="fa fa-home"></i><span>工作台</span></a>
+    <a href="project-list.html" class="top-nav-item"><i class="fa fa-folder-open"></i><span>项目管理</span></a>
+    <a href="gantt.html" class="top-nav-item"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a>
+    <a href="requirement.html" class="top-nav-item"><i class="fa fa-list-check"></i><span>需求管理</span></a>
+    <a href="task.html" class="top-nav-item"><i class="fa fa-tasks"></i><span>任务管理</span></a>
+    <a href="ai-assistant.html" class="top-nav-item"><i class="fa fa-robot"></i><span>AI助手</span></a>
+    <a href="reports.html" class="top-nav-item active"><i class="fa fa-chart-bar"></i><span>报表</span></a>
+    <div class="ml-auto flex items-center gap-3 px-4">
+      <button class="relative text-[#999] hover:text-[#2563eb]"><i class="fa fa-bell text-lg"></i></button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-[#2563eb] rounded-full flex items-center justify-center text-white text-sm font-medium">PM</div>
+        <span class="text-sm text-[#475569]">张明华</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex">
+    <div class="side-rail">
+      <div class="rail-item"><a href="index.html"><i class="fa fa-home"></i><span>工作台</span></a></div>
+      <div class="rail-item"><a href="project-list.html"><i class="fa fa-folder-open"></i><span>项目</span></a></div>
+      <div class="rail-item"><a href="gantt.html"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a></div>
+      <div class="rail-item"><a href="requirement.html"><i class="fa fa-list-check"></i><span>需求</span></a></div>
+      <div class="rail-item"><a href="task.html"><i class="fa fa-tasks"></i><span>任务</span></a></div>
+      <div class="rail-item"><a href="ai-assistant.html"><i class="fa fa-robot"></i><span>AI助手</span></a></div>
+      <div class="rail-item active"><i class="fa fa-chart-bar"></i><span>报表</span></div>
+      <div class="rail-item"><a href="settings.html"><i class="fa fa-cog"></i><span>设置</span></a></div>
+    </div>
+
+    <!-- Main -->
+    <div class="flex-1 overflow-auto p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h1 class="text-xl font-bold text-[#1e3a8a]">报表中心</h1>
+          <p class="text-sm text-[#999] mt-0.5">项目数据统计与汇报导出</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <select x-model="selectedProject" @change="renderCharts()" class="text-sm border border-[#e8ecf0] rounded-lg px-3 py-2 focus:outline-none focus:border-[#2563eb]">
+            <option value="">全部项目</option>
+            <template x-for="p in projects" :key="p.id"><option :value="p.id" x-text="p.name"></option></template>
+          </select>
+          <button @click="generateReport()" class="px-4 py-2 bg-[#059669] hover:bg-[#047857] text-white rounded-lg text-sm flex items-center gap-2 transition">
+            <i class="fa fa-file-alt"></i>生成 AI 汇报
+          </button>
+          <button @click="exportData()" class="px-4 py-2 border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:bg-[#f5f7fa] transition">
+            <i class="fa fa-download mr-1"></i>导出数据
+          </button>
+        </div>
+      </div>
+
+      <!-- Report Type Tabs -->
+      <div class="bg-white rounded-lg border border-[#e8ecf0] mb-4">
+        <div class="flex border-b border-[#e8ecf0]">
+          <button @click="tab='overview'" class="px-5 py-3 text-sm border-b-2 transition" :class="tab==='overview'?'border-[#2563eb] text-[#2563eb] font-medium':'border-transparent text-[#666]'">项目总览</button>
+          <button @click="tab='requirement'" class="px-5 py-3 text-sm border-b-2 transition" :class="tab==='requirement'?'border-[#2563eb] text-[#2563eb] font-medium':'border-transparent text-[#666]'">需求分析</button>
+          <button @click="tab='task'" class="px-5 py-3 text-sm border-b-2 transition" :class="tab==='task'?'border-[#2563eb] text-[#2563eb] font-medium':'border-transparent text-[#666]'">任务分析</button>
+          <button @click="tab='milestone'" class="px-5 py-3 text-sm border-b-2 transition" :class="tab==='milestone'?'border-[#2563eb] text-[#2563eb] font-medium':'border-transparent text-[#666]'">里程碑追踪</button>
+        </div>
+
+        <!-- Overview Tab -->
+        <div x-show="tab==='overview'" class="p-6">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <template x-for="kpi in kpis" :key="kpi.label">
+              <div class="bg-[#f5f7fa] rounded-lg p-4">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-[#999] text-[13px]" x-text="kpi.label"></span>
+                  <i :class="kpi.icon+' text-[#2563eb]'" class="text-sm"></i>
+                </div>
+                <div class="text-2xl font-bold text-[#1e3a8a]" x-text="kpi.value"></div>
+                <div class="text-[11px] text-[#475569] mt-0.5" x-text="kpi.sub"></div>
+              </div>
+            </template>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4">
+              <div class="text-sm font-semibold text-[#1e3a8a] mb-3">项目状态分布</div>
+              <div id="projectPieChart" style="height:220px"></div>
+            </div>
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4">
+              <div class="text-sm font-semibold text-[#1e3a8a] mb-3">团队任务负载</div>
+              <div id="teamLoadChart" style="height:220px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Requirement Tab -->
+        <div x-show="tab==='requirement'" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4">
+              <div class="text-sm font-semibold text-[#1e3a8a] mb-3">需求趋势（近5个月）</div>
+              <div id="reqTrendChart" style="height:220px"></div>
+            </div>
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4">
+              <div class="text-sm font-semibold text-[#1e3a8a] mb-3">需求优先级分布</div>
+              <div id="reqPriorityChart" style="height:220px"></div>
+            </div>
+          </div>
+          <!-- Requirement table -->
+          <div class="bg-white border border-[#e8ecf0] rounded-lg overflow-hidden">
+            <div class="px-4 py-3 border-b border-[#e8ecf0] flex items-center justify-between">
+              <span class="text-sm font-semibold text-[#1e3a8a]">需求清单</span>
+              <button class="text-[#2563eb] text-xs hover:underline"><i class="fa fa-download mr-1"></i>导出</button>
+            </div>
+            <table class="w-full">
+              <thead>
+                <tr class="bg-[#f5f7fa]">
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">需求</th>
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">优先级</th>
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">状态</th>
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">负责人</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-for="r in requirements" :key="r.id">
+                  <tr class="border-t border-[#e8ecf0]">
+                    <td class="px-4 py-3"><div class="text-sm text-[#333]" x-text="r.title"></div><div class="text-[11px] text-[#999]" x-text="r.id"></div></td>
+                    <td class="px-4 py-3"><span class="text-[11px] px-1.5 py-0.5 rounded" :class="r.priority==='P0'?'bg-red-50 text-red-500':r.priority==='P1'?'bg-amber-50 text-amber-500':'bg-gray-50 text-gray-400'" x-text="r.priority"></span></td>
+                    <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded-full" :class="r.status==='completed'?'bg-green-50 text-green-600':r.status==='developing'?'bg-blue-50 text-blue-600':'bg-gray-50 text-gray-400'" x-text="r.status==='completed'?'已完成':r.status==='developing'?'开发中':'待处理'"></span></td>
+                    <td class="px-4 py-3 text-sm text-[#475569]" x-text="r.assignee"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Task Tab -->
+        <div x-show="tab==='task'" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-[#1e3a8a]">523</div>
+              <div class="text-[11px] text-[#999] mt-1">任务总数</div>
+            </div>
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-green-600">387</div>
+              <div class="text-[11px] text-[#999] mt-1">已完成（74%）</div>
+            </div>
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-red-500">18</div>
+              <div class="text-[11px] text-[#999] mt-1">已延误</div>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4">
+              <div class="text-sm font-semibold text-[#1e3a8a] mb-3">任务状态分布</div>
+              <div id="taskStatusChart" style="height:200px"></div>
+            </div>
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4">
+              <div class="text-sm font-semibold text-[#1e3a8a] mb-3">需求-任务完成率趋势</div>
+              <div id="taskTrendChart" style="height:200px"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Milestone Tab -->
+        <div x-show="tab==='milestone'" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-[#059669]">52</div>
+              <div class="text-[11px] text-[#999] mt-1">按时完成</div>
+            </div>
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-red-500">10</div>
+              <div class="text-[11px] text-[#999] mt-1">延误</div>
+            </div>
+            <div class="bg-white border border-[#e8ecf0] rounded-lg p-4 text-center">
+              <div class="text-2xl font-bold text-amber-500">8</div>
+              <div class="text-[11px] text-[#999] mt-1">7天内到期</div>
+            </div>
+          </div>
+          <div class="bg-white border border-[#e8ecf0] rounded-lg overflow-hidden">
+            <div class="px-4 py-3 border-b border-[#e8ecf0]"><span class="text-sm font-semibold text-[#1e3a8a]">里程碑详情</span></div>
+            <table class="w-full">
+              <thead>
+                <tr class="bg-[#f5f7fa]">
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">里程碑</th>
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">项目</th>
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">计划日期</th>
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">实际日期</th>
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">状态</th>
+                  <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999]">偏差</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="border-t border-[#e8ecf0]">
+                  <td class="px-4 py-3 text-sm font-medium text-[#333]">需求冻结</td>
+                  <td class="px-4 py-3 text-sm text-[#475569]">供应链系统升级</td>
+                  <td class="px-4 py-3 text-sm text-[#475569]">2025-03-01</td>
+                  <td class="px-4 py-3 text-sm text-[#475569]">2025-03-01</td>
+                  <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded-full bg-green-50 text-green-600">按时完成</span></td>
+                  <td class="px-4 py-3 text-sm text-green-600">0天</td>
+                </tr>
+                <tr class="border-t border-[#e8ecf0]">
+                  <td class="px-4 py-3 text-sm font-medium text-[#333]">开发完成</td>
+                  <td class="px-4 py-3 text-sm text-[#475569]">供应链系统升级</td>
+                  <td class="px-4 py-3 text-sm text-[#475569]">2025-06-01</td>
+                  <td class="px-4 py-3 text-sm text-red-500">2025-06-03</td>
+                  <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded-full bg-red-50 text-red-500">延误</span></td>
+                  <td class="px-4 py-3 text-sm text-red-500">+2天</td>
+                </tr>
+                <tr class="border-t border-[#e8ecf0]">
+                  <td class="px-4 py-3 text-sm font-medium text-[#333]">UAT</td>
+                  <td class="px-4 py-3 text-sm text-[#475569]">供应链系统升级</td>
+                  <td class="px-4 py-3 text-sm text-[#475569]">2025-09-01</td>
+                  <td class="px-4 py-3 text-sm text-[#999]">-</td>
+                  <td class="px-4 py-3"><span class="text-[11px] px-2 py-0.5 rounded-full bg-gray-50 text-gray-400">待开始</span></td>
+                  <td class="px-4 py-3 text-sm text-gray-400">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="fixed top-14 right-4 z-50 space-y-2">
+    <template x-for="t in toasts" :key="t.id">
+      <div x-show="!t.removing" x-transition class="bg-[#1e3a8a] text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[200px]">
+        <i class="fa fa-check-circle text-green-400"></i><span x-text="t.msg"></span>
+      </div>
+    </template>
+  </div>
+
+  <script src="js/charts.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <script>
+    function reports() {
+      return {
+        stats: null, projects: [], requirements: [], tasks: [], tab: 'overview',
+        selectedProject: '', toasts: [], _tid: 0,
+        kpis: [
+          { label:'项目总数', value:'24', icon:'fa-folder-open', sub:'本月 +2' },
+          { label:'进行中项目', value:'15', icon:'fa-play-circle', sub:'延误 3 个' },
+          { label:'需求总数', value:'186', icon:'fa-list-check', sub:'本周 +12' },
+          { label:'任务完成率', value:'74%', icon:'fa-check-double', sub:'上周 71%' },
+        ],
+        async init() {
+          try {
+            const [s, p, r, t] = await Promise.all([
+              fetch('data/stats.json').then(r=>r.json()),
+              fetch('data/projects.json').then(r=>r.json()),
+              fetch('data/requirements.json').then(r=>r.json()),
+              fetch('data/tasks.json').then(r=>r.json())
+            ]);
+            this.stats = s; this.projects = p; this.requirements = r; this.tasks = t;
+            this.$nextTick(() => this.renderCharts());
+          } catch(e) {}
+        },
+        renderCharts() {
+          if(!this.stats) return;
+          const C = window.TC_COLORS, TC = window.TC_ECHARTS;
+          // Project pie
+          const pc = echarts.init(document.getElementById('projectPieChart'));
+          pc.setOption({
+            tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},
+            series:[{type:'pie', radius:['45%','70%'], center:['50%','55%'],
+              data:[{name:'进行中',value:15,itemStyle:{color:C.primary}},{name:'已完成',value:7,itemStyle:{color:C.green}},{name:'延误',value:3,itemStyle:{color:C.red}},{name:'筹备中',value:2,itemStyle:{color:'#e8ecf0'}}],
+              label:{show:true,formatter:'{b}\n{d}%',fontSize:11,color:'#666'}
+            }]
+          });
+          // Team load
+          const lc = echarts.init(document.getElementById('teamLoadChart'));
+          lc.setOption({
+            ...TC.grid({left:40,right:16}), ...TC.axis({type:'category', data:this.stats.team_load.map(t=>t.name)}),
+            yAxis: {...TC.axis({type:'value', max:100})},
+            series:[{name:'负载率', data:this.stats.team_load.map(t=>t.load), type:'bar', barWidth:24, itemStyle:{color:C.primary}, label:{show:true,formatter:'{c}%',fontSize:10,color:'#666',position:'top'}}]
+          });
+          // Req trend
+          const rc = echarts.init(document.getElementById('reqTrendChart'));
+          rc.setOption({
+            ...TC.grid({left:40,right:16}), ...TC.legend(), ...TC.axis({type:'category',data:this.stats.requirement_trend.map(d=>d.month)}),
+            yAxis: {...TC.axis({type:'value'})},
+            series:[
+              {name:'新增',data:this.stats.requirement_trend.map(d=>d.new),type:'bar',barWidth:12,itemStyle:{color:C.primary}},
+              {name:'完成',data:this.stats.requirement_trend.map(d=>d.completed),type:'bar',barWidth:12,itemStyle:{color:C.green}}
+            ]
+          });
+          // Req priority
+          const rpc = echarts.init(document.getElementById('reqPriorityChart'));
+          rpc.setOption({
+            tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},
+            series:[{type:'pie', radius:['45%','70%'], center:['50%','55%'],
+              data:[{name:'P0',value:3,itemStyle:{color:C.red}},{name:'P1',value:4,itemStyle:{color:C.amber}},{name:'P2',value:3,itemStyle:{color:'#94a3b8'}}],
+              label:{show:true,formatter:'{b}\n{d}%',fontSize:11,color:'#666'}
+            }]
+          });
+          // Task status
+          const ts = echarts.init(document.getElementById('taskStatusChart'));
+          ts.setOption({
+            tooltip:{trigger:'item',formatter:'{b}: {c} ({d}%)'},
+            series:[{type:'pie', radius:['45%','70%'], center:['50%','55%'],
+              data:[{name:'已完成',value:387,itemStyle:{color:C.green}},{name:'进行中',value:89,itemStyle:{color:C.primary}},{name:'已延误',value:18,itemStyle:{color:C.red}},{name:'待开始',value:29,itemStyle:{color:'#e8ecf0'}}],
+              label:{show:true,formatter:'{b}\n{d}%',fontSize:11,color:'#666'}
+            }]
+          });
+          // Task trend
+          const tt = echarts.init(document.getElementById('taskTrendChart'));
+          tt.setOption({
+            ...TC.grid({left:40,right:16}), ...TC.legend(), ...TC.axis({type:'category',data:['1月','2月','3月','4月','5月']}),
+            yAxis: {...TC.axis({type:'value'})},
+            series:[
+              {name:'完成任务',data:[80,95,88,102,115],type:'line',smooth:true,lineStyle:{color:C.green,width:2},itemStyle:{color:C.green},areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(5,150,105,0.2)'},{offset:1,color:'rgba(5,150,105,0.02)'}]}}},
+              {name:'新任务',data:[75,90,92,98,112],type:'line',smooth:true,lineStyle:{color:C.primary,width:2},itemStyle:{color:C.primary}}
+            ]
+          });
+        },
+        generateReport() { window.location.href='ai-assistant.html'; },
+        exportData() { this.showToast('数据导出功能开发中'); },
+        showToast(msg) {
+          const id=++this._tid; this.toasts.push({id,msg,removing:false});
+          setTimeout(()=>{const t=this.toasts.find(t=>t.id===id);if(t)t.removing=true;setTimeout(()=>this.toasts=this.toasts.filter(t=>t.id!==id),350);},2500);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智弈五子棋 - 对局</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#2563eb','primary-dark':'#1d4ed8','primary-light':'#eff6ff','deep-blue':'#1e3a8a','mid-blue':'#1e40af'}}}}</script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+body{background:#f5f7fa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;margin:0}
+.top-nav{background:#fff;height:48px;border-bottom:1px solid #e8ecf0;display:flex;align-items:center;flex-shrink:0;position:sticky;top:0;z-index:30}
+.top-nav-item{color:#666;font-size:14px;padding:0 20px;height:48px;display:flex;align-items:center;gap:6px;white-space:nowrap;text-decoration:none}
+.top-nav-item:hover{color:#2563eb}
+.top-nav-item.active{color:#2563eb;font-weight:500;border-bottom:2px solid #2563eb}
+.side-rail{width:72px;background:#fff;border-right:1px solid #e8ecf0;display:flex;flex-direction:column;padding:8px 0;gap:4px;flex-shrink:0}
+.rail-item{width:56px;height:56px;margin:0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:6px;color:#666;cursor:pointer;text-decoration:none;font-size:11px;gap:3px}
+.rail-item i{font-size:18px}
+.rail-item:hover{background:#f5f7fa;color:#2563eb}
+.rail-item.active{background:#eff6ff;color:#2563eb}
+.main-content{flex:1;overflow-y:auto;padding:20px;min-width:0;display:flex;gap:20px;align-items:flex-start}
+.board-area{flex-shrink:0}
+.side-panel{width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:12px}
+.panel-card{background:#fff;border-radius:8px;border:1px solid #e8ecf0;padding:14px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:4px;border-radius:6px;font-size:13px;cursor:pointer;transition:all .15s;border:none;outline:none}
+.btn-primary{background:#2563eb;color:#fff;padding:6px 14px}
+.btn-primary:hover{background:#1d4ed8}
+.btn-outline{background:#fff;border:1px solid #e8ecf0;color:#666;padding:6px 14px}
+.btn-outline:hover{background:#f5f7fa;color:#2563eb}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-danger{background:#fff;border:1px solid #fecaca;color:#dc2626;padding:4px 10px;font-size:12px}
+.btn-danger:hover{background:#fef2f2}
+.diff-btn{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid #e8ecf0;background:#fff;color:#666;transition:all .15s}
+.diff-btn:hover{border-color:#2563eb;color:#2563eb}
+.diff-btn.active{background:#2563eb;color:#fff;border-color:#2563eb}
+.history-list{max-height:200px;overflow-y:auto;font-size:12px;color:#666}
+.history-item{padding:3px 0;border-bottom:1px solid #f0f2f5;display:flex;gap:6px;align-items:center}
+.history-item:hover{background:#f8fafc;cursor:pointer}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50}
+.modal-card{background:#fff;border-radius:12px;padding:28px 32px;text-align:center;min-width:300px;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+</style>
+</head>
+<body class="h-screen flex flex-col">
+  <nav class="top-nav px-4">
+    <div class="flex items-center gap-2 mr-6">
+      <div class="w-7 h-7 bg-primary rounded flex items-center justify-center"><i class="fa fa-chess-board text-white text-xs"></i></div>
+      <span class="font-semibold text-[15px] text-[#333]">智弈五子棋</span>
+    </div>
+    <a href="index.html" class="top-nav-item"><i class="fa fa-home"></i>首页</a>
+    <a href="play.html" class="top-nav-item active"><i class="fa fa-gamepad"></i>对局</a>
+    <a href="stats.html" class="top-nav-item"><i class="fa fa-chart-bar"></i>统计</a>
+    <div class="ml-auto flex items-center gap-4 text-[12px] text-[#999]">
+      <span>步数: <b class="text-[#333]" id="topMoves">0</b></span>
+      <span>难度: <b class="text-[#333]" id="topDiff">初级</b></span>
+      <div class="w-8 h-8 rounded-full bg-primary-light flex items-center justify-center"><i class="fa fa-user text-primary text-xs"></i></div>
+    </div>
+  </nav>
+  <div class="flex flex-1 overflow-hidden">
+    <aside class="side-rail">
+      <a href="index.html" class="rail-item"><i class="fa fa-home"></i>首页</a>
+      <a href="play.html" class="rail-item active"><i class="fa fa-gamepad"></i>对局</a>
+      <a href="stats.html" class="rail-item"><i class="fa fa-chart-bar"></i>统计</a>
+      <div class="rail-item opacity-40"><i class="fa fa-brain"></i>AI分析</div>
+    </aside>
+    <main class="main-content">
+      <div class="board-area" id="boardContainer">
+        <canvas id="board" style="border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.08);cursor:pointer"></canvas>
+      </div>
+      <div class="side-panel">
+        <!-- 状态 -->
+        <div class="panel-card">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-sm font-medium text-[#333]" id="statusText">你的回合</span>
+            <span class="text-[11px] text-[#999]" id="moveCount">第 0 手</span>
+          </div>
+          <div class="flex items-center gap-2 text-[12px] text-[#666]">
+            <span class="w-3 h-3 rounded-full bg-[#333] inline-block"></span> 你
+            <span class="w-3 h-3 rounded-full bg-[#e8ecf0] border border-[#ccc] inline-block"></span> AI
+          </div>
+          <div id="timerDisplay" class="hidden mt-2 text-[11px] text-[#999]">
+            ⏱ 剩余: <span id="timerValue" class="font-mono text-[#dc2626]">30s</span>
+          </div>
+        </div>
+        <!-- 胜率预估 -->
+        <div class="panel-card">
+          <div class="text-[12px] text-[#666] mb-1">🏆 本局胜率预估</div>
+          <div class="text-2xl font-bold text-[#333]" id="winRateEstimate">50%</div>
+          <div class="w-full bg-[#f0f2f5] rounded-full h-1.5 mt-2">
+            <div class="bg-primary h-1.5 rounded-full transition-all duration-500" id="winRateBar" style="width:50%"></div>
+          </div>
+        </div>
+        <!-- AI难度 -->
+        <div class="panel-card">
+          <div class="text-[12px] text-[#666] mb-2">🤖 AI 难度</div>
+          <div class="flex gap-2">
+            <button class="diff-btn active" data-diff="easy" onclick="setDifficulty('easy')">初级</button>
+            <button class="diff-btn" data-diff="medium" onclick="setDifficulty('medium')">中级</button>
+            <button class="diff-btn" data-diff="hard" onclick="setDifficulty('hard')">高级</button>
+          </div>
+        </div>
+        <!-- 操作 -->
+        <div class="panel-card">
+          <div class="flex gap-2 flex-wrap">
+            <button class="btn btn-outline btn-sm" onclick="undo()" id="btnUndo" disabled>↩ 悔棋</button>
+            <button class="btn btn-primary btn-sm" onclick="hint()" id="btnHint">💡 提示</button>
+            <button class="btn btn-danger btn-sm" onclick="confirmRestart()">🔄 重开</button>
+          </div>
+        </div>
+        <!-- 棋谱 -->
+        <div class="panel-card">
+          <div class="text-[12px] text-[#666] mb-2">📜 棋谱记录</div>
+          <div class="history-list" id="historyList">
+            <div class="text-[12px] text-[#ccc]">等待落子...</div>
+          </div>
+        </div>
+        <!-- 设置 -->
+        <div class="panel-card">
+          <div class="text-[12px] text-[#666] mb-2">⚙️ 设置</div>
+          <div class="space-y-2 text-[12px]">
+            <div class="flex items-center justify-between">
+              <span class="text-[#999]">棋盘尺寸</span>
+              <select id="boardSizeSelect" onchange="changeBoardSize()" class="border border-[#e8ecf0] rounded px-2 py-1 text-xs outline-none">
+                <option value="9">9×9 快棋</option>
+                <option value="13">13×13 标准</option>
+                <option value="15" selected>15×15 经典</option>
+              </select>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#999]">计时器</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="timerToggle" onchange="toggleTimer()" class="sr-only peer">
+                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#999]">暗色模式</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="darkToggle" onchange="toggleDark()" class="sr-only peer">
+                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#999]">音效</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="soundToggle" checked onchange="toggleSound()" class="sr-only peer">
+                <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:bg-primary after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <!-- 结果弹窗 -->
+  <div id="resultModal" class="modal-overlay" style="display:none">
+    <div class="modal-card">
+      <div id="resultEmoji" class="text-5xl mb-3">🎉</div>
+      <div id="resultText" class="text-xl font-bold text-[#333] mb-2">你赢了！</div>
+      <div id="resultSub" class="text-[13px] text-[#666] mb-5">共 42 手，用时 4分52秒</div>
+      <button class="btn btn-primary" onclick="restart()">🔄 再来一局</button>
+      <button class="btn btn-outline btn-sm ml-2" onclick="document.getElementById('resultModal').style.display='none'">关闭</button>
+    </div>
+  </div>
+  <!-- 重开确认 -->
+  <div id="confirmModal" class="modal-overlay" style="display:none">
+    <div class="modal-card">
+      <div class="text-lg font-medium text-[#333] mb-2">确认重开？</div>
+      <div class="text-[13px] text-[#666] mb-5">当前对局进度将丢失</div>
+      <button class="btn btn-danger btn-sm" onclick="restart();document.getElementById('confirmModal').style.display='none'">确认重开</button>
+      <button class="btn btn-outline btn-sm ml-2" onclick="document.getElementById('confirmModal').style.display='none'">取消</button>
+    </div>
+  </div>
+
+<script>
+// ========== 音效引擎 ==========
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+function getAudio(){if(!audioCtx)audioCtx=new AudioCtx();return audioCtx}
+function playPlace(){if(!document.getElementById('soundToggle').checked)return;const a=getAudio();const o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.type='sine';o.frequency.setValueAtTime(800,a.currentTime);o.frequency.exponentialRampToValueAtTime(400,a.currentTime+.08);g.gain.setValueAtTime(.15,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+.12);o.start(a.currentTime);o.stop(a.currentTime+.12)}
+function playWin(){if(!document.getElementById('soundToggle').checked)return;const a=getAudio();[523,659,784,1047].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.12,a.currentTime+i*.12);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+i*.12+.3);o.start(a.currentTime+i*.12);o.stop(a.currentTime+i*.12+.3)})}
+function playLose(){if(!document.getElementById('soundToggle').checked)return;const a=getAudio();[400,350,300].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.connect(g);g.connect(a.destination);o.type='triangle';o.frequency.value=f;g.gain.setValueAtTime(.1,a.currentTime+i*.15);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+i*.15+.3);o.start(a.currentTime+i*.15);o.stop(a.currentTime+i*.15+.3)})}
+
+// ========== 游戏状态 ==========
+let boardSize=15, board=[], currentPlayer=1, moveHistory=[], gameStatus='playing', difficulty='easy', soundEnabled=true, darkMode=false, timerEnabled=false, timerDuration=30, playerTime=30, aiTime=30, timerInterval=null, loseStreak=0, cellSize=36, padding=24, hoverPos=null, hintPos=null, winLine=[], particles=[];
+
+function initBoard(){
+  board=Array.from({length:boardSize},()=>Array(boardSize).fill(0));
+  currentPlayer=1;moveHistory=[];gameStatus='playing';hoverPos=null;hintPos=null;winLine=[];particles=[];
+  playerTime=aiTime=timerDuration;
+  if(timerInterval)clearInterval(timerInterval);timerInterval=null;
+  updateUI();drawBoard();
+}
+
+// ========== Canvas渲染 ==========
+function drawBoard(){
+  const canvas=document.getElementById('board');
+  const size=cellSize*(boardSize-1)+padding*2;
+  canvas.width=size;canvas.height=size;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle=darkMode?'#2d3748':'#deb887';ctx.fillRect(0,0,size,size);
+  ctx.strokeStyle=darkMode?'#4a5568':'#8b7355';ctx.lineWidth=1;
+  for(let i=0;i<boardSize;i++){
+    ctx.beginPath();ctx.moveTo(padding,padding+i*cellSize);ctx.lineTo(padding+(boardSize-1)*cellSize,padding+i*cellSize);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(padding+i*cellSize,padding);ctx.lineTo(padding+i*cellSize,padding+(boardSize-1)*cellSize);ctx.stroke();
+  }
+  // 星位
+  if(boardSize===15){[[3,3],[3,7],[3,11],[7,3],[7,7],[7,11],[11,3],[11,7],[11,11]].forEach(([r,c])=>{ctx.fillStyle=darkMode?'#718096':'#5c4033';ctx.beginPath();ctx.arc(padding+c*cellSize,padding+r*cellSize,3,0,Math.PI*2);ctx.fill()})}
+  if(boardSize===13){[[3,3],[3,9],[6,6],[9,3],[9,9]].forEach(([r,c])=>{ctx.fillStyle=darkMode?'#718096':'#5c4033';ctx.beginPath();ctx.arc(padding+c*cellSize,padding+r*cellSize,3,0,Math.PI*2);ctx.fill()})}
+  // 棋子
+  for(let r=0;r<boardSize;r++)for(let c=0;c<boardSize;c++){if(board[r][c])drawPiece(ctx,r,c,board[r][c])}
+  // 最后一手标记
+  if(moveHistory.length>0){const last=moveHistory[moveHistory.length-1];ctx.fillStyle='#dc2626';ctx.beginPath();ctx.arc(padding+last.col*cellSize,padding+last.row*cellSize,4,0,Math.PI*2);ctx.fill()}
+  // 胜利连线高亮
+  if(winLine.length>0){
+    const t=Date.now()%1000/1000;const alpha=.5+.4*Math.sin(t*Math.PI*4);
+    ctx.strokeStyle=`rgba(255,215,0,${alpha})`;ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(padding+winLine[0].col*cellSize,padding+winLine[0].row*cellSize);ctx.lineTo(padding+winLine[4].col*cellSize,padding+winLine[4].row*cellSize);ctx.stroke();
+    if(gameStatus!=='playing')requestAnimationFrame(drawBoard);
+  }
+  // 粒子
+  particles.forEach(p=>{ctx.fillStyle=`rgba(37,99,235,${p.alpha})`;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()});
+  // 提示/悬停
+  if(hintPos&&gameStatus==='playing'){drawGhost(ctx,hintPos.row,hintPos.col,'rgba(37,99,235,0.35)','?')}
+  else if(hoverPos&&gameStatus==='playing'&&!board[hoverPos.row][hoverPos.col]){drawGhost(ctx,hoverPos.row,hoverPos.col,'rgba(0,0,0,0.15)')}
+}
+function drawPiece(ctx,r,c,p){
+  const x=padding+c*cellSize,y=padding+r*cellSize;
+  const grad=ctx.createRadialGradient(x-2,y-2,1,x,y,cellSize*.45);
+  if(p===1){grad.addColorStop(0,'#555');grad.addColorStop(1,'#111')}else{grad.addColorStop(0,'#fff');grad.addColorStop(1,'#ccc')}
+  ctx.fillStyle=grad;ctx.beginPath();ctx.arc(x,y,cellSize*.42,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle=p===1?'#000':'#aaa';ctx.lineWidth=.5;ctx.stroke();
+}
+function drawGhost(ctx,r,c,color,text){
+  const x=padding+c*cellSize,y=padding+r*cellSize;
+  ctx.fillStyle=color;ctx.beginPath();ctx.arc(x,y,cellSize*.4,0,Math.PI*2);ctx.fill();
+  if(text){ctx.fillStyle='#fff';ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,x,y)}
+}
+
+// ========== 落子 ==========
+function placePiece(row,col){
+  if(gameStatus!=='playing'||board[row][col]!==0||currentPlayer!==1)return;
+  board[row][col]=1;moveHistory.push({player:1,row,col,ts:Date.now()});
+  playPlace();hintPos=null;hoverPos=null;
+  if(checkWin(row,col,1)){gameStatus='blackWin';handleWin();return}
+  if(isBoardFull()){gameStatus='draw';handleDraw();return}
+  currentPlayer=2;updateUI();drawBoard();updateWinRate();
+  if(timerEnabled){playerTime=timerDuration;startTimer('ai')}
+  setTimeout(aiMove, difficulty==='hard'?400:150);
+}
+
+// ========== AI引擎 ==========
+function aiMove(){
+  if(gameStatus!=='playing')return;
+  const pos=findBestMove();
+  if(!pos)return;
+  board[pos.row][pos.col]=2;moveHistory.push({player:2,row:pos.row,col:pos.col,ts:Date.now()});
+  playPlace();
+  if(checkWin(pos.row,pos.col,2)){gameStatus='whiteWin';handleLose();return}
+  if(isBoardFull()){gameStatus='draw';handleDraw();return}
+  currentPlayer=1;updateUI();drawBoard();updateWinRate();
+  if(timerEnabled){aiTime=timerDuration;startTimer('player')}
+}
+function findBestMove(){
+  if(difficulty==='easy')return findEasyMove();
+  if(difficulty==='medium')return findMediumMove();
+  return findHardMove();
+}
+function findEasyMove(){
+  const candidates=getCandidates();
+  if(candidates.length===0)return null;
+  // 连败保护
+  if(loseStreak>=3&&Math.random()<.3){
+    const best=scoreMoves(candidates,1.0,0.2);
+    if(best.length>1)return best[Math.floor(Math.random()*Math.min(3,best.length))];
+  }
+  const sc=scoreMoves(candidates,1.0,0.5);
+  if(Math.random()<.4&&sc.length>1)return sc[Math.floor(Math.random()*Math.min(5,sc.length))];
+  return sc[0];
+}
+function findMediumMove(){
+  const candidates=getCandidates();
+  if(candidates.length===0)return null;
+  const sc=scoreMoves(candidates,1.0,0.8);
+  return sc[0];
+}
+function findHardMove(){
+  const candidates=getCandidates();
+  if(candidates.length===0)return null;
+  const depth=boardSize<=9?4:3;
+  let best=null,bestScore=-Infinity;
+  for(const pos of candidates.slice(0,15)){
+    board[pos.row][pos.col]=2;
+    const score=minimax(depth-1,-Infinity,Infinity,false);
+    board[pos.row][pos.col]=0;
+    if(score>bestScore){bestScore=score;best=pos}
+  }
+  return best||candidates[0];
+}
+function minimax(depth,alpha,beta,isMax){
+  if(depth===0)return evaluateBoard();
+  const candidates=getCandidates().slice(0,12);
+  if(candidates.length===0)return evaluateBoard();
+  if(isMax){
+    let maxScore=-Infinity;
+    for(const pos of candidates){
+      board[pos.row][pos.col]=2;
+      maxScore=Math.max(maxScore,minimax(depth-1,alpha,beta,false));
+      board[pos.row][pos.col]=0;
+      alpha=Math.max(alpha,maxScore);
+      if(beta<=alpha)break;
+    }
+    return maxScore;
+  }else{
+    let minScore=Infinity;
+    for(const pos of candidates){
+      board[pos.row][pos.col]=1;
+      minScore=Math.min(minScore,minimax(depth-1,alpha,beta,true));
+      board[pos.row][pos.col]=0;
+      beta=Math.min(beta,minScore);
+      if(beta<=alpha)break;
+    }
+    return minScore;
+  }
+}
+function evaluateBoard(){
+  let score=0;
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(let r=0;r<boardSize;r++)for(let c=0;c<boardSize;c++){
+    if(!board[r][c])continue;
+    for(const[dr,dc]of dirs){
+      const line=countLine(r,c,dr,dc);
+      if(line.p===1)score-=lineScore(line.len,line.open);
+      else score+=lineScore(line.len,line.open);
+    }
+  }
+  return score;
+}
+function lineScore(len,open){
+  if(len>=5)return 100000;
+  if(len===4){if(open===2)return 50000;if(open===1)return 5000}
+  if(len===3){if(open===2)return 5000;if(open===1)return 500}
+  if(len===2){if(open===2)return 500;if(open===1)return 50}
+  if(len===1&&open===2)return 10;
+  return 0;
+}
+function countLine(r,c,dr,dc){
+  const p=board[r][c];let len=1,open=0;
+  let nr=r+dr,nc=c+dc;
+  while(nr>=0&&nr<boardSize&&nc>=0&&nc<boardSize&&board[nr][nc]===p){len++;nr+=dr;nc+=dc}
+  if(nr>=0&&nr<boardSize&&nc>=0&&nc<boardSize&&board[nr][nc]===0)open++;
+  nr=r-dr;nc=c-dc;
+  while(nr>=0&&nr<boardSize&&nc>=0&&nc<boardSize&&board[nr][nc]===p){len++;nr-=dr;nc-=dc}
+  if(nr>=0&&nr<boardSize&&nc>=0&&nc<boardSize&&board[nr][nc]===0)open++;
+  return{p,len,open};
+}
+function scoreMoves(candidates,offWeight,defWeight){
+  return candidates.map(pos=>{
+    board[pos.row][pos.col]=2;const off=evaluateBoard();board[pos.row][pos.col]=0;
+    board[pos.row][pos.col]=1;const def=evaluateBoard();board[pos.row][pos.col]=0;
+    return{...pos,score:off*offWeight+def*defWeight};
+  }).sort((a,b)=>b.score-a.score);
+}
+function getCandidates(){
+  const set=new Set();
+  const hasPieces=board.some(r=>r.some(c=>c!==0));
+  if(!hasPieces)return[{row:Math.floor(boardSize/2),col:Math.floor(boardSize/2)}];
+  for(let r=0;r<boardSize;r++)for(let c=0;c<boardSize;c++){
+    if(board[r][c]){for(let dr=-2;dr<=2;dr++)for(let dc=-2;dc<=2;dc++){const nr=r+dr,nc=c+dc;if(nr>=0&&nr<boardSize&&nc>=0&&nc<boardSize&&board[nr][nc]===0)set.add(nr*boardSize+nc)}}
+  }
+  return Array.from(set).map(v=>({row:Math.floor(v/boardSize),col:v%boardSize}));
+}
+
+// ========== 胜负检测 ==========
+function checkWin(r,c,p){
+  const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+  for(const[dr,dc]of dirs){
+    let line=[{row:r,col:c}];
+    for(let i=1;i<5;i++){const nr=r+dr*i,nc=c+dc*i;if(nr>=0&&nr<boardSize&&nc>=0&&nc<boardSize&&board[nr][nc]===p)line.push({row:nr,col:nc});else break}
+    for(let i=1;i<5;i++){const nr=r-dr*i,nc=c-dc*i;if(nr>=0&&nr<boardSize&&nc>=0&&nc<boardSize&&board[nr][nc]===p)line.unshift({row:nr,col:nc});else break}
+    if(line.length>=5){winLine=line.slice(0,5);return true}
+  }
+  return false;
+}
+function isBoardFull(){return board.every(r=>r.every(c=>c!==0))}
+
+// ========== 辅助功能 ==========
+function undo(){
+  if(gameStatus!=='playing'||moveHistory.length<2)return;
+  const a=moveHistory.pop();board[a.row][a.col]=0;
+  const b=moveHistory.pop();board[b.row][b.col]=0;
+  currentPlayer=1;winLine=[];updateUI();drawBoard();updateWinRate();
+}
+function hint(){
+  if(gameStatus!=='playing'||currentPlayer!==1)return;
+  const pos=findBestMove();
+  if(pos)hintPos=pos;drawBoard();
+  setTimeout(()=>{hintPos=null;drawBoard()},2000);
+}
+function confirmRestart(){
+  if(gameStatus==='playing'&&moveHistory.length>0){document.getElementById('confirmModal').style.display='flex';return}
+  restart();
+}
+function restart(){
+  document.getElementById('resultModal').style.display='none';
+  document.getElementById('confirmModal').style.display='none';
+  initBoard();
+}
+function setDifficulty(d){
+  difficulty=d;
+  document.querySelectorAll('.diff-btn').forEach(b=>b.classList.toggle('active',b.dataset.diff===d));
+  document.getElementById('topDiff').textContent={easy:'初级',medium:'中级',hard:'高级'}[d];
+}
+function changeBoardSize(){
+  boardSize=parseInt(document.getElementById('boardSizeSelect').value);
+  cellSize=boardSize===9?44:boardSize===13?38:36;
+  initBoard();
+}
+function toggleTimer(){
+  timerEnabled=document.getElementById('timerToggle').checked;
+  document.getElementById('timerDisplay').classList.toggle('hidden',!timerEnabled);
+  if(!timerEnabled&&timerInterval){clearInterval(timerInterval);timerInterval=null}
+  if(timerEnabled){playerTime=aiTime=timerDuration;startTimer('player')}
+}
+function toggleDark(){
+  darkMode=document.getElementById('darkToggle').checked;
+  if(darkMode){document.body.style.background='#1a202c'}else{document.body.style.background='#f5f7fa'}
+  drawBoard();
+}
+function toggleSound(){soundEnabled=document.getElementById('soundToggle').checked}
+function startTimer(who){
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    if(gameStatus!=='playing'){clearInterval(timerInterval);return}
+    if(who==='player'){playerTime--;document.getElementById('timerValue').textContent=playerTime+'s';if(playerTime<=0){gameStatus='whiteWin';handleLose()}}
+    else{aiTime--;if(aiTime<=0){gameStatus='blackWin';handleWin()}}
+    document.getElementById('timerValue').style.color=playerTime<=10?'#dc2626':'#999';
+  },1000);
+}
+
+// ========== 胜负处理 ==========
+function handleWin(){
+  loseStreak=0;playWin();spawnParticles();
+  document.getElementById('resultEmoji').textContent='🎉';
+  document.getElementById('resultText').textContent='你赢了！';
+  document.getElementById('resultSub').textContent='共 '+moveHistory.length+' 手';
+  document.getElementById('resultModal').style.display='flex';
+  updateUI();drawBoard();
+  if(timerInterval)clearInterval(timerInterval);
+}
+function handleLose(){
+  loseStreak++;playLose();
+  document.getElementById('resultEmoji').textContent='😞';
+  document.getElementById('resultText').textContent='AI 赢了';
+  document.getElementById('resultSub').textContent='共 '+moveHistory.length+' 手'+(loseStreak>=3?' · 连败'+loseStreak+'局，加油！':'');
+  document.getElementById('resultModal').style.display='flex';
+  updateUI();drawBoard();
+  if(timerInterval)clearInterval(timerInterval);
+}
+function handleDraw(){
+  document.getElementById('resultEmoji').textContent='🤝';
+  document.getElementById('resultText').textContent='平局！';
+  document.getElementById('resultSub').textContent='共 '+moveHistory.length+' 手';
+  document.getElementById('resultModal').style.display='flex';
+  updateUI();drawBoard();
+  if(timerInterval)clearInterval(timerInterval);
+}
+function spawnParticles(){
+  const canvas=document.getElementById('board');
+  for(let i=0;i<30;i++){particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,r:2+Math.random()*4,alpha:1,vx:(Math.random()-.5)*3,vy:(Math.random()-.5)*3-2})}
+  let frame=0;function anim(){frame++;particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.alpha-=.02});particles=particles.filter(p=>p.alpha>0);drawBoard();if(particles.length>0&&frame<80)requestAnimationFrame(anim)}
+  anim();
+}
+
+// ========== UI更新 ==========
+function updateUI(){
+  const statusEl=document.getElementById('statusText');
+  const moveEl=document.getElementById('moveCount');
+  const btnUndo=document.getElementById('btnUndo');
+  if(gameStatus==='playing'){
+    statusEl.textContent=currentPlayer===1?'你的回合':'AI 思考中...';
+    statusEl.style.color='#333';
+  }else if(gameStatus==='blackWin'){
+    statusEl.textContent='黑棋胜！';statusEl.style.color='#059669';
+  }else if(gameStatus==='whiteWin'){
+    statusEl.textContent='白棋胜！';statusEl.style.color='#dc2626';
+  }else{
+    statusEl.textContent='平局';statusEl.style.color='#d97706';
+  }
+  moveEl.textContent='第 '+moveHistory.length+' 手';
+  document.getElementById('topMoves').textContent=moveHistory.length;
+  btnUndo.disabled=gameStatus!=='playing'||moveHistory.length<2;
+  updateHistory();
+}
+function updateHistory(){
+  const list=document.getElementById('historyList');
+  if(moveHistory.length===0){list.innerHTML='<div class="text-[12px] text-[#ccc]">等待落子...</div>';return}
+  let html='';
+  for(let i=0;i<moveHistory.length;i+=2){
+    const m1=moveHistory[i];
+    const m2=moveHistory[i+1];
+    const num=Math.floor(i/2)+1;
+    const c1=String.fromCharCode(65+m1.col);
+    const c2=m2?String.fromCharCode(65+m2.col):'';
+    html+=`<div class="history-item"><span class="text-[#999]">#${num}</span> <span style="color:#333">⚫ ${c1}${boardSize-m1.row}</span>`+(m2?` <span class="text-[#999]">→</span> <span style="color:#999">⚪ ${c2}${boardSize-m2.row}</span>`:'')+'</div>';
+  }
+  list.innerHTML=html;
+  list.scrollTop=list.scrollHeight;
+}
+function updateWinRate(){
+  const blackPieces=moveHistory.filter(m=>m.player===1).length;
+  const whitePieces=moveHistory.filter(m=>m.player===2).length;
+  const total=blackPieces+whitePieces;
+  if(total===0){document.getElementById('winRateEstimate').textContent='50%';document.getElementById('winRateBar').style.width='50%';return}
+  // 简单估算：基于棋子数和中心控制
+  let rate=50;
+  if(blackPieces>whitePieces)rate=50+(blackPieces-whitePieces)*3;
+  else if(whitePieces>blackPieces)rate=50-(whitePieces-blackPieces)*3;
+  rate=Math.max(5,Math.min(95,rate));
+  document.getElementById('winRateEstimate').textContent=rate.toFixed(0)+'%';
+  document.getElementById('winRateBar').style.width=rate+'%';
+  if(rate<30)document.getElementById('winRateBar').style.background='#dc2626';
+  else if(rate<50)document.getElementById('winRateBar').style.background='#d97706';
+  else document.getElementById('winRateBar').style.background='#2563eb';
+}
+
+// ========== 事件绑定 ==========
+function init(){
+  const canvas=document.getElementById('board');
+  canvas.addEventListener('click',e=>{
+    if(gameStatus!=='playing'||currentPlayer!==1)return;
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width;
+    const scaleY=canvas.height/rect.height;
+    const mx=(e.clientX-rect.left)*scaleX;
+    const my=(e.clientY-rect.top)*scaleY;
+    const col=Math.round((mx-padding)/cellSize);
+    const row=Math.round((my-padding)/cellSize);
+    if(col>=0&&col<boardSize&&row>=0&&row<boardSize)placePiece(row,col);
+  });
+  canvas.addEventListener('mousemove',e=>{
+    const rect=canvas.getBoundingClientRect();
+    const scaleX=canvas.width/rect.width;
+    const scaleY=canvas.height/rect.height;
+    const mx=(e.clientX-rect.left)*scaleX;
+    const my=(e.clientY-rect.top)*scaleY;
+    const col=Math.round((mx-padding)/cellSize);
+    const row=Math.round((my-padding)/cellSize);
+    if(col>=0&&col<boardSize&&row>=0&&row<boardSize&&!board[row][col]){
+      if(!hoverPos||hoverPos.row!==row||hoverPos.col!==col){hoverPos={row,col};drawBoard()}
+    }else if(hoverPos){hoverPos=null;drawBoard()}
+  });
+  canvas.addEventListener('mouseleave',()=>{hoverPos=null;drawBoard()});
+  document.addEventListener('keydown',e=>{
+    if(e.ctrlKey&&e.key==='z'){e.preventDefault();undo()}
+    if(e.key==='h'&&!e.ctrlKey)hint();
+    if(e.key==='r'&&!e.ctrlKey)confirmRestart();
+  });
+  initBoard();
+}
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>

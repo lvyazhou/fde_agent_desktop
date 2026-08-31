@@ -1,0 +1,1 @@
+GOMOKU_TEST_OK

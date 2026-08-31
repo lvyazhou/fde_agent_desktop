@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>需求管理 - 项目需求管理系统</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; }
+    .top-nav { background:#fff; height:48px; border-bottom:1px solid #e8ecf0; display:flex; align-items:center; flex-shrink:0; position:sticky; top:0; z-index:30; }
+    .top-nav-item { color:#666; font-size:14px; padding:0 20px; height:48px; display:flex; align-items:center; gap:6px; white-space:nowrap; text-decoration:none; }
+    .top-nav-item:hover { color:#2563eb; }
+    .top-nav-item.active { color:#2563eb; font-weight:500; border-bottom:2px solid #2563eb; }
+    .side-rail { width:72px; background:#fff; border-right:1px solid #e8ecf0; display:flex; flex-direction:column; padding:8px 0; gap:4px; position:sticky; top:48px; height:calc(100vh - 48px); }
+    .rail-item { width:56px; height:56px; margin:0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:6px; color:#666; cursor:pointer; transition:all .15s; }
+    .rail-item:hover { background:#eff6ff; color:#2563eb; }
+    .rail-item.active { background:#eff6ff; color:#2563eb; }
+    .rail-item i { font-size:18px; }
+    .rail-item span { font-size:10px; margin-top:2px; }
+    .rail-item a { color:inherit; display:flex; flex-direction:column; align-items:center; justify-content:center; width:56px; height:56px; text-decoration:none; }
+    .kanban-col { min-width:280px; }
+    .req-card { cursor:grab; }
+    .req-card:active { cursor:grabbing; }
+    .kanban-col.drag-over { background:#eff6ff; border:2px dashed #2563eb; }
+  </style>
+</head>
+<body x-data="req()" x-init="init()">
+  <nav class="top-nav">
+    <div class="flex items-center gap-3 px-4 border-r border-[#e8ecf0] h-full">
+      <div class="w-8 h-8 bg-[#2563eb] rounded-lg flex items-center justify-center"><i class="fa fa-project-diagram text-white text-sm"></i></div>
+      <span class="font-semibold text-[#1e3a8a] text-sm">项目需求管理系统</span>
+    </div>
+    <a href="index.html" class="top-nav-item"><i class="fa fa-home"></i><span>工作台</span></a>
+    <a href="project-list.html" class="top-nav-item"><i class="fa fa-folder-open"></i><span>项目管理</span></a>
+    <a href="gantt.html" class="top-nav-item"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a>
+    <a href="requirement.html" class="top-nav-item active"><i class="fa fa-list-check"></i><span>需求管理</span></a>
+    <a href="task.html" class="top-nav-item"><i class="fa fa-tasks"></i><span>任务管理</span></a>
+    <a href="ai-assistant.html" class="top-nav-item"><i class="fa fa-robot"></i><span>AI助手</span></a>
+    <a href="reports.html" class="top-nav-item"><i class="fa fa-chart-bar"></i><span>报表</span></a>
+    <div class="ml-auto flex items-center gap-3 px-4">
+      <button class="relative text-[#999] hover:text-[#2563eb]"><i class="fa fa-bell text-lg"></i><span class="absolute -top-1 -right-1 w-4 h-4 bg-[#dc2626] rounded-full text-white text-[10px] flex items-center justify-center">3</span></button>
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-[#2563eb] rounded-full flex items-center justify-center text-white text-sm font-medium">PM</div>
+        <span class="text-sm text-[#475569]">张明华</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="flex">
+    <div class="side-rail">
+      <div class="rail-item"><a href="index.html"><i class="fa fa-home"></i><span>工作台</span></a></div>
+      <div class="rail-item"><a href="project-list.html"><i class="fa fa-folder-open"></i><span>项目</span></a></div>
+      <div class="rail-item"><a href="gantt.html"><i class="fa fa-chart-gantt"></i><span>甘特图</span></a></div>
+      <div class="rail-item active"><i class="fa fa-list-check"></i><span>需求</span></div>
+      <div class="rail-item"><a href="task.html"><i class="fa fa-tasks"></i><span>任务</span></a></div>
+      <div class="rail-item"><a href="ai-assistant.html"><i class="fa fa-robot"></i><span>AI助手</span></a></div>
+      <div class="rail-item"><a href="reports.html"><i class="fa fa-chart-bar"></i><span>报表</span></a></div>
+      <div class="rail-item"><a href="settings.html"><i class="fa fa-cog"></i><span>设置</span></a></div>
+    </div>
+
+    <!-- Main -->
+    <div class="flex-1 overflow-auto p-6">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h1 class="text-xl font-bold text-[#1e3a8a]">需求管理</h1>
+          <p class="text-sm text-[#999] mt-0.5">共 <span x-text="requirements.length"></span> 条需求</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <!-- View Toggle -->
+          <div class="flex border border-[#e8ecf0] rounded-lg overflow-hidden">
+            <button @click="view='kanban'" :class="view==='kanban'?'bg-[#2563eb] text-white':'text-[#666] bg-white'" class="px-3 py-1.5 text-sm transition"><i class="fa fa-columns"></i></button>
+            <button @click="view='list'" :class="view==='list'?'bg-[#2563eb] text-white':'text-[#666] bg-white'" class="px-3 py-1.5 text-sm transition"><i class="fa fa-list"></i></button>
+          </div>
+          <button @click="showCreate=true" class="px-4 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-sm flex items-center gap-2 transition">
+            <i class="fa fa-plus"></i>新建需求
+          </button>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="bg-white rounded-lg border border-[#e8ecf0] px-4 py-3 mb-4 flex items-center gap-4 flex-wrap">
+        <div class="flex items-center gap-2 text-sm text-[#475569]"><i class="fa fa-filter text-[#999]"></i>筛选：</div>
+        <select x-model="filter.project" class="text-sm border border-[#e8ecf0] rounded px-3 py-1.5 focus:outline-none focus:border-[#2563eb]">
+          <option value="">全部项目</option>
+          <template x-for="p in projects" :key="p.id"><option :value="p.id" x-text="p.name"></option></template>
+        </select>
+        <select x-model="filter.priority" class="text-sm border border-[#e8ecf0] rounded px-3 py-1.5 focus:outline-none focus:border-[#2563eb]">
+          <option value="">全部优先级</option>
+          <option value="P0">P0</option><option value="P1">P1</option><option value="P2">P2</option>
+        </select>
+        <select x-model="filter.assignee" class="text-sm border border-[#e8ecf0] rounded px-3 py-1.5 focus:outline-none focus:border-[#2563eb]">
+          <option value="">全部负责人</option>
+          <option value="张工">张工</option><option value="李工">李工</option><option value="王工">王工</option><option value="赵工">赵工</option><option value="刘工">刘工</option>
+        </select>
+        <input x-model="filter.keyword" type="text" placeholder="搜索需求标题..." class="flex-1 text-sm border border-[#e8ecf0] rounded px-3 py-1.5 focus:outline-none focus:border-[#2563eb]">
+        <button @click="filter={project:'',priority:'',assignee:'',keyword:''}" class="text-[#999] hover:text-[#2563eb] text-sm">重置</button>
+      </div>
+
+      <!-- KANBAN VIEW -->
+      <div x-show="view==='kanban'" class="flex gap-4 overflow-x-auto pb-4">
+        <template x-for="col in kanbanCols" :key="col.status">
+          <div class="kanban-col flex-shrink-0 w-72">
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full" :class="col.color"></div>
+                <span class="text-sm font-semibold text-[#1e3a8a]" x-text="col.label"></span>
+                <span class="text-[11px] bg-[#f0f2f5] text-[#999] px-1.5 rounded" x-text="filteredByStatus(col.status).length"></span>
+              </div>
+              <button @click="addToCol(col.status)" class="text-[#999] hover:text-[#2563eb]"><i class="fa fa-plus text-sm"></i></button>
+            </div>
+            <div class="space-y-2 min-h-[200px]"
+                 :class="dragOverCol===col.status?'bg-[#eff6ff] border-2 border-dashed border-[#2563eb] rounded-lg':''"
+                 @dragover.prevent="dragOverCol=col.status"
+                 @dragleave="dragOverCol=null"
+                 @drop.prevent="dropCard(col.status)">
+              <template x-for="r in filteredByStatus(col.status)" :key="r.id">
+                <div class="req-card bg-white rounded-lg border border-[#e8ecf0] p-3 hover:shadow-md transition"
+                     draggable="true"
+                     @dragstart="dragCard(r)"
+                     @dragend="dragOverCol=null">
+                  <div class="flex items-start justify-between mb-2">
+                    <span class="text-[11px] px-1.5 py-0.5 rounded" :class="r.priority==='P0'?'bg-red-50 text-red-500':r.priority==='P1'?'bg-amber-50 text-amber-500':'bg-gray-50 text-gray-400'" x-text="r.priority"></span>
+                    <span class="text-[10px] text-[#999]" x-text="r.id"></span>
+                  </div>
+                  <div class="text-sm font-medium text-[#333] mb-2 leading-snug" x-text="r.title"></div>
+                  <div class="flex flex-wrap gap-1 mb-2">
+                    <template x-for="tag in r.tags" :key="tag">
+                      <span class="text-[10px] px-1.5 py-0.5 bg-[#eff6ff] text-[#1e40af] rounded" x-text="tag"></span>
+                    </template>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-[11px] text-[#999]" x-text="r.assignee"></span>
+                    <div class="flex items-center gap-1">
+                      <button @click.stop="openAI(r)" class="text-[#999] hover:text-[#2563eb] text-[11px]" title="AI 拆解"><i class="fa fa-robot"></i></button>
+                      <button @click.stop="viewDetail(r)" class="text-[#999] hover:text-[#2563eb] text-[11px]"><i class="fa fa-expand"></i></button>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <div x-show="filteredByStatus(col.status).length===0" class="text-center py-8 text-[#ccc] text-[12px]">
+                暂无需求
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- LIST VIEW -->
+      <div x-show="view==='list'" class="bg-white rounded-lg border border-[#e8ecf0] overflow-hidden">
+        <table class="w-full">
+          <thead>
+            <tr class="bg-[#f5f7fa] border-b border-[#e8ecf0]">
+              <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999] uppercase tracking-wide">需求</th>
+              <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999] uppercase tracking-wide">项目</th>
+              <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999] uppercase tracking-wide">优先级</th>
+              <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999] uppercase tracking-wide">状态</th>
+              <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999] uppercase tracking-wide">负责人</th>
+              <th class="text-left px-4 py-2.5 text-[11px] font-medium text-[#999] uppercase tracking-wide">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <template x-for="r in filteredList" :key="r.id">
+              <tr class="border-t border-[#e8ecf0] hover:bg-[#f5f7fa] cursor-pointer transition" @click="viewDetail(r)">
+                <td class="px-4 py-3">
+                  <div class="text-sm font-medium text-[#333]" x-text="r.title"></div>
+                  <div class="text-[11px] text-[#999]" x-text="r.id"></div>
+                </td>
+                <td class="px-4 py-3 text-sm text-[#475569]" x-text="getProjectName(r.project)"></td>
+                <td class="px-4 py-3">
+                  <span class="text-[11px] px-1.5 py-0.5 rounded" :class="r.priority==='P0'?'bg-red-50 text-red-500':r.priority==='P1'?'bg-amber-50 text-amber-500':'bg-gray-50 text-gray-400'" x-text="r.priority"></span>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-[11px] px-2 py-0.5 rounded-full" :class="r.status==='completed'?'bg-green-50 text-green-600':r.status==='developing'?'bg-blue-50 text-blue-600':r.status==='pending'?'bg-gray-50 text-gray-500':'bg-yellow-50 text-yellow-600'" x-text="statusLabel(r.status)"></span>
+                </td>
+                <td class="px-4 py-3 text-sm text-[#475569]" x-text="r.assignee"></td>
+                <td class="px-4 py-3" @click.stop>
+                  <button @click="openAI(r)" class="text-[#2563eb] hover:text-[#1d4ed8] text-sm mr-3"><i class="fa fa-robot mr-1"></i>AI拆解</button>
+                  <button @click="viewDetail(r)" class="text-[#999] hover:text-[#475569] text-sm"><i class="fa fa-expand"></i></button>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+        <div x-show="filteredList.length===0" class="text-center py-12 text-[#999]">
+          <i class="fa fa-inbox text-4xl mb-3"></i>
+          <p class="text-sm">没有找到匹配的需求</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Requirement Drawer -->
+  <div x-show="showCreate" x-transition.opacity class="fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/40" @click="showCreate=false"></div>
+    <aside class="absolute right-0 top-0 bottom-0 w-[480px] bg-white shadow-xl overflow-y-auto"
+           x-transition:enter="transition transform" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
+      <header class="h-12 px-5 flex items-center border-b border-[#e8ecf0] sticky top-0 bg-white z-10">
+        <span class="text-sm font-semibold text-[#1e3a8a]">新建需求</span>
+        <button @click="showCreate=false" class="ml-auto text-gray-400 hover:text-gray-600"><i class="fa fa-times"></i></button>
+      </header>
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-[#475569] mb-1.5">需求标题 <span class="text-red-500">*</span></label>
+          <input x-model="newReq.title" type="text" placeholder="一句话描述需求" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb]">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#475569] mb-1.5">详细描述</label>
+          <textarea x-model="newReq.description" rows="4" placeholder="请输入需求详细描述..." class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb] resize-none"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-[#475569] mb-1.5">关联项目</label>
+            <select x-model="newReq.project" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb]">
+              <template x-for="p in projects" :key="p.id"><option :value="p.id" x-text="p.name"></option></template>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-[#475569] mb-1.5">优先级</label>
+            <select x-model="newReq.priority" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb]">
+              <option value="P0">P0</option><option value="P1">P1</option><option value="P2">P2</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-[#475569] mb-1.5">负责人</label>
+          <select x-model="newReq.assignee" class="w-full border border-[#e8ecf0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#2563eb]">
+            <option value="张工">张工</option><option value="李工">李工</option><option value="王工">王工</option><option value="赵工">赵工</option><option value="刘工">刘工</option>
+          </select>
+        </div>
+        <div class="pt-4 border-t border-[#e8ecf0] flex gap-3">
+          <button @click="createReq()" class="flex-1 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-sm font-medium transition">确认创建</button>
+          <button @click="showCreate=false" class="px-6 py-2.5 border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:bg-[#f5f7fa] transition">取消</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Requirement Detail Drawer -->
+  <div x-show="selectedReq" x-transition.opacity class="fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-black/40" @click="selectedReq=null"></div>
+    <aside class="absolute right-0 top-0 bottom-0 w-[500px] bg-white shadow-xl overflow-y-auto"
+           x-transition:enter="transition transform" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
+      <header class="h-12 px-5 flex items-center border-b border-[#e8ecf0] sticky top-0 bg-white z-10">
+        <span class="text-sm font-semibold text-[#1e3a8a]">需求详情</span>
+        <button @click="selectedReq=null" class="ml-auto text-gray-400 hover:text-gray-600"><i class="fa fa-times"></i></button>
+      </header>
+      <div class="p-5" x-show="selectedReq">
+        <div class="text-sm font-semibold text-[#1e3a8a] mb-1" x-text="selectedReq.title"></div>
+        <div class="text-[11px] text-[#999] mb-4" x-text="selectedReq.id + ' · ' + getProjectName(selectedReq.project)"></div>
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <div class="bg-[#f5f7fa] rounded-lg p-3">
+            <div class="text-[11px] text-[#999] mb-1">优先级</div>
+            <span class="text-sm font-semibold" :class="selectedReq.priority==='P0'?'text-red-500':selectedReq.priority==='P1'?'text-amber-500':'text-[#475569]'" x-text="selectedReq.priority"></span>
+          </div>
+          <div class="bg-[#f5f7fa] rounded-lg p-3">
+            <div class="text-[11px] text-[#999] mb-1">负责人</div>
+            <div class="text-sm text-[#333]" x-text="selectedReq.assignee"></div>
+          </div>
+          <div class="bg-[#f5f7fa] rounded-lg p-3">
+            <div class="text-[11px] text-[#999] mb-1">工时估量</div>
+            <div class="text-sm text-[#333]" x-text="selectedReq.estimate+' 人天'"></div>
+          </div>
+          <div class="bg-[#f5f7fa] rounded-lg p-3">
+            <div class="text-[11px] text-[#999] mb-1">状态</div>
+            <span class="text-[11px] px-2 py-0.5 rounded-full" :class="selectedReq.status==='completed'?'bg-green-50 text-green-600':selectedReq.status==='developing'?'bg-blue-50 text-blue-600':'bg-gray-50 text-gray-400'" x-text="statusLabel(selectedReq.status)"></span>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-1 mb-4">
+          <template x-for="tag in selectedReq.tags" :key="tag">
+            <span class="text-[11px] px-2 py-0.5 bg-[#eff6ff] text-[#1e40af] rounded-full" x-text="tag"></span>
+          </template>
+        </div>
+        <div class="border-t border-[#e8ecf0] pt-4 mt-4">
+          <div class="text-sm font-medium text-[#1e3a8a] mb-2">AI 智能拆解</div>
+          <button @click="openAI(selectedReq)" class="w-full py-3 border-2 border-dashed border-[#2563eb] rounded-lg text-[#2563eb] text-sm hover:bg-[#eff6ff] transition flex items-center justify-center gap-2">
+            <i class="fa fa-robot"></i>点击 AI 拆解任务
+          </button>
+          <div x-show="aiResult" class="mt-3 bg-[#eff6ff] rounded-lg p-3 text-sm text-[#1e40af]" x-text="aiResult"></div>
+        </div>
+        <div class="flex gap-3 mt-5">
+          <button @click="openAI(selectedReq)" class="flex-1 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-lg text-sm font-medium transition"><i class="fa fa-robot mr-1"></i>AI 拆解任务</button>
+          <button class="px-4 py-2.5 border border-[#e8ecf0] rounded-lg text-sm text-[#475569] hover:bg-[#f5f7fa] transition"><i class="fa fa-edit mr-1"></i>编辑</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Toast -->
+  <div class="fixed top-14 right-4 z-50 space-y-2">
+    <template x-for="t in toasts" :key="t.id">
+      <div x-show="!t.removing" x-transition class="bg-[#1e3a8a] text-white text-sm px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 min-w-[200px]">
+        <i class="fa fa-check-circle text-green-400"></i><span x-text="t.msg"></span>
+      </div>
+    </template>
+  </div>
+
+  <script src="js/charts.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+  <script>
+    function req() {
+      return {
+        requirements: [], projects: [], view: 'kanban', showCreate: false, selectedReq: null,
+        selectedTask: null, dragOverCol: null, dragging: null,
+        aiResult: '', toasts: [], _tid: 0,
+        filter: { project:'', priority:'', assignee:'', keyword:'' },
+        newReq: { title:'', description:'', project:'P001', priority:'P1', assignee:'张工', tags:[] },
+        kanbanCols: [
+          { status:'pending', label:'待评审', color:'bg-gray-400' },
+          { status:'developing', label:'开发中', color:'bg-blue-500' },
+          { status:'completed', label:'已完成', color:'bg-green-500' }
+        ],
+        get filteredList() { return this.filtered(); },
+        filtered() {
+          return this.requirements.filter(r => {
+            if(this.filter.project && r.project!==this.filter.project) return false;
+            if(this.filter.priority && r.priority!==this.filter.priority) return false;
+            if(this.filter.assignee && r.assignee!==this.filter.assignee) return false;
+            if(this.filter.keyword && !r.title.includes(this.filter.keyword)) return false;
+            return true;
+          });
+        },
+        filteredByStatus(status) { return this.filtered().filter(r=>r.status===status); },
+        statusLabel(s) { return {pending:'待评审',reviewing:'评审中',adopted:'已采纳',developing:'开发中',completed:'已完成',closed:'已关闭'}[s]||s; },
+        getProjectName(id) { const p=this.projects.find(p=>p.id===id); return p?p.name:id; },
+        async init() {
+          try {
+            const [r, p] = await Promise.all([
+              fetch('data/requirements.json').then(r=>r.json()),
+              fetch('data/projects.json').then(r=>r.json())
+            ]);
+            this.requirements = r; this.projects = p;
+          } catch(e) {}
+        },
+        viewDetail(r) { this.selectedReq = r; this.aiResult = ''; },
+        dragCard(r) { this.dragging = r; },
+        dropCard(status) {
+          if(this.dragging && this.dragging.status !== status) {
+            this.dragging.status = status;
+            this.showToast('需求已移至「' + this.kanbanCols.find(c=>c.status===status).label + '」');
+          }
+          this.dragging = null; this.dragOverCol = null;
+        },
+        addToCol(status) { this.showCreate = true; this.newReq.status = status; },
+        createReq() {
+          if(!this.newReq.title) { this.showToast('请输入需求标题','error'); return; }
+          const id = 'R' + String(Date.now()).slice(-6);
+          this.requirements.push({ id, ...this.newReq, status:this.newReq.status||'pending', tags:[], estimate:0 });
+          this.showCreate = false;
+          this.newReq = { title:'', description:'', project:'P001', priority:'P1', assignee:'张工', tags:[] };
+          this.showToast('需求创建成功');
+        },
+        openAI(r) {
+          this.selectedReq = r;
+          this.aiResult = '🤖 AI 正在分析需求「' + r.title + '」...
+正在生成任务拆解方案，预计生成 5-8 个子任务';
+          setTimeout(() => {
+            this.aiResult = '✅ AI 任务拆解完成：
+
+1. 需求分析评审（0.5人天）
+2. 数据库设计（1人天）
+3. API 接口开发（2人天）
+4. 前端页面实现（1.5人天）
+5. 单元测试编写（1人天）
+6. 集成联调（1人天）
+
+💡 建议：优先级 P0，预计总工时 7 人天';
+            this.showToast('AI 任务拆解完成');
+          }, 2000);
+        },
+        showToast(msg, type='success') {
+          const id=++this._tid; this.toasts.push({id,msg,removing:false});
+          setTimeout(()=>{const t=this.toasts.find(t=>t.id===id);if(t)t.removing=true;setTimeout(()=>this.toasts=this.toasts.filter(t=>t.id!==id),350);},2500);
+        }
+      };
+    }
+  </script>
+</body>
+</html>
