@@ -7,6 +7,7 @@ build/
 *.dmg
 *.exe
 *.blockmap
+*.zip
 
 # Local env / secrets (real keys live in ~/.product-lobster/, never in repo)
 # NOTE: config-templates/.env is a committed placeholder template, kept on purpose.
