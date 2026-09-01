@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-8">
       <div>
-        <h1 class="text-2xl font-bold text-slate-800">我的产品项目</h1>
+        <h1 class="text-2xl font-bold text-slate-800">我的FDE产品项目</h1>
         <p class="text-sm text-slate-500 mt-1">管理你的产品设计项目，从需求到原型一站式完成</p>
       </div>
       <RouterLink
@@ -47,23 +47,41 @@
         class="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all cursor-pointer"
         @click="openProject(project.slug)"
       >
+        <!-- Delete button (visible on hover) -->
+        <button
+          @click.stop="confirmDeleteProject(project)"
+          class="absolute top-3 right-3 z-10 w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all"
+          title="删除项目"
+        >
+          <i class="fa-solid fa-trash-can text-xs"></i>
+        </button>
         <!-- Card content -->
         <div class="p-5">
-          <div class="flex items-start justify-between mb-3">
+          <div class="flex items-center gap-3 mb-3">
             <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
               <i class="fa-solid fa-cube text-blue-700"></i>
             </div>
-            <!-- Delete button (visible on hover) -->
-            <button
-              @click.stop="confirmDeleteProject(project)"
-              class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all"
-              title="删除项目"
-            >
-              <i class="fa-solid fa-trash-can text-xs"></i>
-            </button>
+            <!-- FDE stage badge -->
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[11px] font-medium shadow-sm">
+              <i class="fa-solid fa-flag-checkered text-[10px]"></i>
+              第 {{ toCn(stageOf(project)) }} 阶段 · {{ stageShort(project) }}
+            </span>
           </div>
           <h3 class="text-base font-semibold text-slate-800 mb-1 truncate">{{ project.name }}</h3>
-          <p class="text-xs text-slate-400 mb-4">{{ formatDate(project.createdAt) }}</p>
+          <p class="text-xs text-slate-400 mb-3">{{ formatDate(project.createdAt) }}</p>
+          <!-- FDE five-stage progress dots -->
+          <div class="flex items-center gap-1.5 mb-4" :title="`FDE 五阶段作战链 · 当前第 ${toCn(stageOf(project))} 阶段`">
+            <span
+              v-for="n in 5"
+              :key="n"
+              class="h-1.5 flex-1 rounded-full transition-colors"
+              :class="{
+                'bg-blue-400': dotState(project, n) === 'done',
+                'bg-blue-600': dotState(project, n) === 'active',
+                'bg-slate-200': dotState(project, n) === 'todo',
+              }"
+            ></span>
+          </div>
           <!-- Status badges -->
           <div class="flex items-center gap-2 flex-wrap">
             <span
@@ -129,6 +147,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { getStage, DEFAULT_STAGE } from '@/data/fde-stages';
 
 const router = useRouter();
 const projects = ref([]);
@@ -170,6 +189,32 @@ const doDelete = async () => {
     deleteTarget.value = null;
   }
 };
+
+const CN_NUM = ['', '一', '二', '三', '四', '五'];
+
+// 当前 FDE 阶段(1~5),缺省回落到默认阶段并夹在合法区间内。
+// stage 是权威字段(=正在做的阶段/active);stageStatus 仅用于渲染"已完成"点。
+const stageOf = (project) => {
+  const s = Number(project?.stage);
+  if (!Number.isFinite(s)) return DEFAULT_STAGE;
+  return Math.min(5, Math.max(1, Math.round(s)));
+};
+
+// 某一段(1~5)相对当前项目的状态:done / active / todo
+// 优先信任 stage(当前阶段)——它之前的都算 done、它本身 active;
+// 之后的段落再看 stageStatus 是否被显式标 done(容忍历史脏数据不越权前推 active)。
+const dotState = (project, n) => {
+  const cur = stageOf(project);
+  if (n === cur) return 'active';
+  if (n < cur) return 'done';
+  return project?.stageStatus?.[n] === 'done' ? 'done' : 'todo';
+};
+
+// 阶段简称(如"沟通·原型"),取自 fde-stages 单一数据源
+const stageShort = (project) => getStage(stageOf(project))?.short || '';
+
+// 阿拉伯数字转中文(1~5)
+const toCn = (n) => CN_NUM[n] || String(n);
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';

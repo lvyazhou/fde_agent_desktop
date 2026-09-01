@@ -30,10 +30,54 @@
         </div>
 
         <div class="bg-white rounded-3xl border border-slate-200/70 shadow-lg shadow-blue-500/5 p-8">
-          <!-- 步骤1:环境自检 -->
+          <!-- 步骤1:授权 -->
           <div v-if="step === 0">
+            <h1 class="text-xl font-bold text-slate-800 mb-1">软件授权</h1>
+            <p class="text-[13px] text-slate-500 mb-6">导入授权文件激活。若尚未授权,请把下方机器码提供给供应方获取授权文件。</p>
+
+            <!-- 机器码 -->
+            <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 mb-4">
+              <div class="text-[11px] text-slate-400 mb-1.5">本机机器码</div>
+              <div class="flex items-center gap-2">
+                <code class="flex-1 min-w-0 text-[13px] font-mono text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 truncate">{{ machineSn || '计算中...' }}</code>
+                <button @click="copySn" :disabled="!machineSn" class="shrink-0 text-[12px] px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40">
+                  <i class="fa-solid" :class="copied ? 'fa-check' : 'fa-copy'"></i> {{ copied ? '已复制' : '复制' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- 授权状态 -->
+            <div v-if="licState" class="mb-4 p-3 rounded-xl text-[12px] flex items-start gap-2"
+                 :class="licState.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
+              <i class="fa-solid mt-0.5" :class="licState.ok ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
+              <span>{{ licStatusText }}</span>
+            </div>
+
+            <div class="flex items-center justify-between mt-6">
+              <button @click="refreshLicense" :disabled="licLoading" class="text-[13px] px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50">
+                <i class="fa-solid" :class="licLoading ? 'fa-spinner fa-spin' : 'fa-rotate-right'"></i> 刷新状态
+              </button>
+              <div class="flex items-center gap-2">
+                <button @click="importLicense" :disabled="importing" class="text-[13px] px-4 py-2.5 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40">
+                  <i class="fa-solid" :class="importing ? 'fa-spinner fa-spin' : 'fa-file-import'"></i>
+                  {{ importing ? ' 导入中' : ' 导入授权文件' }}
+                </button>
+                <button
+                  @click="goNextFromLicense"
+                  :disabled="!(licState && licState.ok)"
+                  class="text-[13px] px-5 py-2.5 rounded-xl font-medium text-white transition-colors"
+                  :class="(licState && licState.ok) ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'"
+                >
+                  下一步 <i class="fa-solid fa-arrow-right text-[11px] ml-1"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 步骤2:环境自检 -->
+          <div v-else-if="step === 1">
             <h1 class="text-xl font-bold text-slate-800 mb-1">环境自检</h1>
-            <p class="text-[13px] text-slate-500 mb-6">先确认运行环境就绪,避免装完跑不起来。</p>
+            <p class="text-[13px] text-slate-500 mb-6">确认运行环境就绪,避免装完跑不起来。</p>
 
             <div class="space-y-3">
               <div v-for="c in checkRows" :key="c.key" class="flex items-start gap-3 p-3.5 rounded-xl border" :class="rowClass(c.state)">
@@ -74,8 +118,8 @@
             </p>
           </div>
 
-          <!-- 步骤2:配置并验证 Key -->
-          <div v-else-if="step === 1">
+          <!-- 步骤3:配置并验证 Key -->
+          <div v-else-if="step === 2">
             <h1 class="text-xl font-bold text-slate-800 mb-1">配置 LLM API Key</h1>
             <p class="text-[13px] text-slate-500 mb-6">填写你的大模型 API Key,点「测试连接」确认能调通后再继续。</p>
 
@@ -105,7 +149,7 @@
             </div>
 
             <div class="flex items-center justify-between mt-6">
-              <button @click="step = 0" class="text-[13px] px-4 py-2.5 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">
+              <button @click="step = 1" class="text-[13px] px-4 py-2.5 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">
                 <i class="fa-solid fa-arrow-left text-[11px] mr-1"></i> 上一步
               </button>
               <div class="flex items-center gap-2">
@@ -129,7 +173,7 @@
             </div>
           </div>
 
-          <!-- 步骤3:完成 -->
+          <!-- 步骤4:完成 -->
           <div v-else class="text-center py-8">
             <div class="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4">
               <i class="fa-solid fa-circle-check text-emerald-500 text-3xl"></i>
@@ -148,8 +192,71 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-const steps = ['环境自检', '配置 Key', '完成'];
+const steps = ['软件授权', '环境自检', '配置 Key', '完成'];
 const step = ref(0);
+
+// --- 授权 ---
+const machineSn = ref('');
+const copied = ref(false);
+const licState = ref(null);
+const licLoading = ref(false);
+const importing = ref(false);
+
+const LIC_STATUS_TEXT = {
+  ACTIVE_PERMANENT: '已授权(永久)',
+  ACTIVE_TEMPORARY: '已授权(临时)',
+  GRACE_PERIOD: '授权已到期,处于缓冲期,请尽快续期',
+  HARD_EXPIRED: '授权已过期,请导入新的授权文件',
+  NO_LICENSE: '尚未授权,请导入授权文件',
+  SN_MISMATCH: '授权文件与本机不匹配(换机需重新授权)',
+  TAMPERED: '授权文件无效或已损坏',
+  CLOCK_ROLLBACK: '检测到系统时间异常,请校正后重试',
+  FINGERPRINT_FAIL: '无法读取本机标识',
+};
+const licStatusText = computed(() => {
+  if (!licState.value) return '';
+  const s = licState.value.status;
+  let t = LIC_STATUS_TEXT[s] || s;
+  if (licState.value.customer) t += ` · ${licState.value.customer}`;
+  if (licState.value.expireAt) t += ` · 到期 ${licState.value.expireAt}`;
+  return t;
+});
+
+const loadSn = async () => {
+  try {
+    const r = await window.api.license.machineSn();
+    if (r && r.success) machineSn.value = r.sn;
+  } catch (e) { /* ignore */ }
+};
+const refreshLicense = async () => {
+  licLoading.value = true;
+  try {
+    const r = await window.api.license.status();
+    if (r && r.success !== false) licState.value = r;
+  } catch (e) { console.error('license.status failed', e); }
+  finally { licLoading.value = false; }
+};
+const copySn = async () => {
+  try { await navigator.clipboard.writeText(machineSn.value); copied.value = true; setTimeout(() => copied.value = false, 1500); }
+  catch { /* clipboard 不可用时忽略 */ }
+};
+const importLicense = async () => {
+  importing.value = true;
+  try {
+    const r = await window.api.license.import();
+    if (r && r.success) {
+      await refreshLicense();
+    } else if (r && r.rejected) {
+      licState.value = { ok: false, status: r.status };
+    }
+  } catch (e) { console.error('license.import failed', e); }
+  finally { importing.value = false; }
+};
+const goNextFromLicense = () => {
+  if (!(licState.value && licState.value.ok)) return;
+  step.value = 1;
+  runCheck();
+};
 
 // --- 自检 ---
 const checking = ref(false);
@@ -178,7 +285,6 @@ const runCheck = async () => {
     const res = await window.api.env.check();
     if (res && res.success) {
       checkData.value = res;
-      // key 已配 + 引擎就绪 → 直接跳完成(无感)
       if (res.allOk) finishToApp();
     }
   } catch (e) { console.error('env.check failed', e); }
@@ -196,9 +302,8 @@ const restartEngine = async () => {
 
 const goNextFromCheck = () => {
   if (!engineReady.value) return;
-  // 预填已有配置
   if (checkData.value?.apiKey?.baseUrl) baseUrl.value = checkData.value.apiKey.baseUrl;
-  step.value = 1;
+  step.value = 2;
 };
 
 // --- 配置 Key ---
@@ -241,11 +346,19 @@ const saveAndFinish = async () => {
 };
 
 const finishToApp = () => {
-  step.value = 2;
+  step.value = 3;
   setTimeout(() => router.replace('/'), 800);
 };
 
-onMounted(runCheck);
+onMounted(async () => {
+  await loadSn();
+  await refreshLicense();
+  // 已授权 → 直接进环境自检
+  if (licState.value && licState.value.ok) {
+    step.value = 1;
+    runCheck();
+  }
+});
 </script>
 
 <style scoped>

@@ -1,5 +1,13 @@
 <template>
   <div class="bg-white border-b border-slate-200/80 px-5 py-3 shrink-0">
+    <!-- 标题 -->
+    <div class="flex items-center gap-2 mb-2.5">
+      <span class="w-5 h-5 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
+        <i class="fa-solid fa-industry text-white text-[10px]"></i>
+      </span>
+      <span class="text-[13px] font-bold text-slate-700 tracking-tight">FDE 工业化流水线</span>
+      <span class="text-[11px] text-slate-400 font-medium">五阶段一条链 · 上一阶段的输出＝下一阶段的输入</span>
+    </div>
     <div class="flex items-center gap-1 overflow-x-auto">
       <template v-for="(stage, idx) in stages" :key="stage.id">
         <!-- 阶段节点 -->
@@ -68,3 +76,7 @@ function dotClass(id) {
   return 'bg-slate-100 text-slate-400';
 }
 </script>
+
+<style scoped>
+button { cursor: pointer; }
+</style>

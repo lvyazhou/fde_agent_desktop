@@ -71,10 +71,14 @@
             @keydown.ctrl.enter.prevent="handleSend"
             @keydown.meta.enter.prevent="handleSend"
           ></textarea>
-          <!-- Attachment preview -->
+          <!-- Attachment preview (images + files) -->
           <div v-if="attachments.length > 0" class="flex items-center gap-2 px-4 py-1.5 flex-wrap">
             <div v-for="(att, ai) in attachments" :key="ai" class="relative group/att">
-              <img :src="'data:' + att.media_type + ';base64,' + att.data" class="w-12 h-12 object-cover rounded-lg border border-slate-200" />
+              <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-12 h-12 object-cover rounded-lg border border-slate-200" />
+              <div v-else class="flex items-center gap-1.5 h-12 px-2.5 rounded-lg border border-slate-200 bg-white max-w-[160px]">
+                <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
+                <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
+              </div>
               <button @click="attachments.splice(ai, 1)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[8px] flex items-center justify-center opacity-0 group-hover/att:opacity-100 transition-opacity cursor-pointer">
                 <i class="fa-solid fa-xmark"></i>
               </button>
@@ -94,13 +98,27 @@
             </div>
             <div class="flex items-center gap-2">
               <button @click="pickImage" class="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors cursor-pointer" title="上传图片">
+                <i class="fa-solid fa-image text-xs"></i>
+              </button>
+              <button @click="pickFile" class="w-8 h-8 rounded-full bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-colors cursor-pointer" title="上传文件">
                 <i class="fa-solid fa-paperclip text-xs"></i>
               </button>
               <button
+                @click="toggleRecording"
+                :disabled="!recordingSupported"
+                class="w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                :class="isRecording ? 'text-white bg-rose-500 hover:bg-rose-600' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-blue-600'"
+                :title="recordingSupported ? (isRecording ? '停止录音' : '语音输入') : '当前环境不支持录音'"
+              >
+                <i class="fa-solid text-xs" :class="isRecording ? 'fa-stop' : 'fa-microphone'"></i>
+              </button>
+              <span v-if="isRecording" class="text-[10px] text-rose-500 font-medium select-none tabular-nums">{{ recordSeconds }}s</span>
+              <span v-else-if="isTranscribing" class="text-[10px] text-blue-500 font-medium select-none">识别中…</span>
+              <button
                 @click="handleSend"
-                :disabled="!inputText.trim()"
+                :disabled="!inputText.trim() && attachments.length === 0"
                 class="w-8 h-8 rounded-full flex items-center justify-center transition-all"
-                :class="inputText.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
+                :class="(inputText.trim() || attachments.length > 0) ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer shadow-sm' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
               >
                 <i class="fa-solid fa-arrow-up text-xs"></i>
               </button>
@@ -114,7 +132,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick, onBeforeUnmount } from 'vue';
 
 const emit = defineEmits(['send-quick', 'navigate', 'fill-input', 'send-with-attachments']);
 
@@ -141,6 +159,148 @@ const pickImage = () => {
   input.click();
 };
 
+// ACP embedded-resource cap is 512KB on the server side.
+const MAX_FILE_BYTES = 512 * 1024;
+const TEXT_EXT = new Set([
+  'txt', 'md', 'markdown', 'json', 'csv', 'log', 'yaml', 'yml', 'xml', 'html', 'htm',
+  'css', 'js', 'ts', 'jsx', 'tsx', 'vue', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'go',
+  'rs', 'rb', 'php', 'sh', 'sql', 'ini', 'conf', 'toml', 'env',
+]);
+const isTextFile = (file) => {
+  const idx = file.name.lastIndexOf('.');
+  const ext = idx >= 0 ? file.name.slice(idx + 1).toLowerCase() : '';
+  return TEXT_EXT.has(ext) || (file.type || '').startsWith('text/');
+};
+
+const pickFile = () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.txt,.md,.markdown,.json,.csv,.log,.yaml,.yml,.xml,.html,.htm,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.epub';
+  input.multiple = true;
+  input.onchange = async (e) => {
+    for (const file of e.target.files) {
+      if (file.size > MAX_FILE_BYTES) {
+        alert(`「${file.name}」超过 ${Math.round(MAX_FILE_BYTES / 1024)}KB，已跳过`);
+        continue;
+      }
+      if (isTextFile(file)) {
+        const text = await file.text();
+        attachments.value.push({ type: 'file', text, media_type: file.type || 'text/plain', name: file.name });
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const base64 = ev.target.result.split(',')[1];
+          attachments.value.push({ type: 'file', data: base64, media_type: file.type || 'application/octet-stream', name: file.name });
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+  input.click();
+};
+
+// ===== Voice input: record → 360 ASR → fill input box =====
+const recordingSupported = typeof window !== 'undefined'
+  && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+  && typeof window.MediaRecorder !== 'undefined';
+const isRecording = ref(false);
+const isTranscribing = ref(false);
+const recordSeconds = ref(0);
+let mediaRecorder = null;
+let mediaStream = null;
+let recordChunks = [];
+let recordTimer = null;
+let recordStartAt = 0;
+const MIN_RECORD_MS = 800;
+
+const stopTracks = () => {
+  if (mediaStream) { mediaStream.getTracks().forEach((t) => t.stop()); mediaStream = null; }
+  if (recordTimer) { clearInterval(recordTimer); recordTimer = null; }
+};
+
+const blobToBase64 = (blob) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+  reader.onerror = reject;
+  reader.readAsDataURL(blob);
+});
+
+// 识别失败时把录音落盘兜底（欢迎页无项目 slug，存到全局录音目录）；提示并可打开文件夹。
+const saveRecordingOnFailure = async (base64, mime, errMsg) => {
+  const reason = errMsg || '语音识别失败';
+  if (!base64) { alert(reason); return; }
+  const ext = (mime.split('/')[1] || 'webm').split(';')[0];
+  let saved = null;
+  try {
+    saved = await window.api.hermes.saveRecording('', base64, ext);
+  } catch { /* ignore */ }
+  if (saved?.success) {
+    const open = confirm(`${reason}\n\n录音已保存到：\n${saved.filePath}\n\n点击“确定”打开所在文件夹。`);
+    if (open) {
+      try { await window.api.shell.openPath(saved.dirPath); } catch { /* ignore */ }
+    }
+  } else {
+    alert(`${reason}（录音保存失败：${saved?.error || '未知错误'}）`);
+  }
+};
+
+const toggleRecording = async () => {
+  if (!recordingSupported) return;
+  if (isRecording.value) { mediaRecorder?.stop(); return; }
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    alert('无法访问麦克风，请检查权限设置');
+    return;
+  }
+  recordChunks = [];
+  try {
+    mediaRecorder = new MediaRecorder(mediaStream);
+  } catch {
+    alert('当前环境不支持录音');
+    stopTracks();
+    return;
+  }
+  recordStartAt = performance.now();
+  mediaRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) recordChunks.push(ev.data); };
+  mediaRecorder.onstop = async () => {
+    const durationMs = performance.now() - recordStartAt;
+    const mime = mediaRecorder?.mimeType || 'audio/webm';
+    stopTracks();
+    isRecording.value = false;
+    const blob = new Blob(recordChunks, { type: mime });
+    if (durationMs < MIN_RECORD_MS || blob.size === 0) { return; }
+    isTranscribing.value = true;
+    let base64 = '';
+    try {
+      base64 = await blobToBase64(blob);
+      const res = await window.api.hermes.transcribe(base64, mime);
+      if (res?.success && res.text) {
+        inputText.value = (inputText.value ? inputText.value + ' ' : '') + res.text;
+        nextTick(() => inputRef.value?.focus());
+      } else {
+        await saveRecordingOnFailure(base64, mime, res?.error);
+      }
+    } catch (err) {
+      await saveRecordingOnFailure(base64, mime, err?.message);
+    } finally {
+      isTranscribing.value = false;
+    }
+  };
+  mediaRecorder.start();
+  isRecording.value = true;
+  recordSeconds.value = 0;
+  // 不限录音时长：只更新计时显示，由用户手动点停。
+  recordTimer = setInterval(() => {
+    recordSeconds.value = Math.floor((performance.now() - recordStartAt) / 1000);
+  }, 250);
+};
+
+onBeforeUnmount(() => {
+  try { if (mediaRecorder && isRecording.value) mediaRecorder.stop(); } catch { /* ignore */ }
+  stopTracks();
+});
+
 const fillInput = (text) => {
   inputText.value = text;
   inputRef.value?.focus();
@@ -150,7 +310,7 @@ const handleSend = () => {
   const text = inputText.value.trim();
   if (!text && attachments.value.length === 0) return;
   if (attachments.value.length > 0) {
-    emit('send-with-attachments', text || '请分析这张图片', [...attachments.value]);
+    emit('send-with-attachments', text || '请分析这个附件', [...attachments.value]);
   } else {
     emit('send-quick', text);
   }

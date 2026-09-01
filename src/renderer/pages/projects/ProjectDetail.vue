@@ -7,43 +7,26 @@
           <i class="fa-solid fa-arrow-left text-sm"></i>
         </RouterLink>
         <h1 class="text-lg font-bold text-slate-800 truncate">{{ projectName }}</h1>
-        <!-- Panel toggle buttons (visible only for requirement/iterate tabs) -->
-        <div v-if="activeTab === 'requirement' || activeTab === 'iterate'" class="ml-auto flex items-center gap-1">
-          <button
-            @click="showSessionPanel = !showSessionPanel"
-            class="w-7 h-7 inline-flex items-center justify-center rounded-md transition-colors text-[11px]"
-            :class="showSessionPanel ? 'bg-blue-50 text-blue-700' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'"
-            title="会话侧栏"
-          >
-            <i class="fa-solid fa-bars-staggered"></i>
-          </button>
-          <button
-            @click="showLogsPanel = !showLogsPanel"
-            class="w-7 h-7 inline-flex items-center justify-center rounded-md transition-colors text-[11px]"
-            :class="showLogsPanel ? 'bg-blue-50 text-blue-700' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'"
-            title="执行日志"
-          >
-            <i class="fa-solid fa-terminal"></i>
-          </button>
-        </div>
       </div>
       <!-- FDE 五阶段时间线 -->
       <div class="-mx-6 mb-0">
         <StageTimeline :current="currentStage" :stage-status="stageStatus" @select="selectStage" />
       </div>
-      <!-- Tabs(仅阶段②工作区显示) -->
-      <div v-if="isWorkspaceStage" class="flex items-center gap-1 -mb-px mt-3">
+      <!-- Tabs(仅工作区阶段显示) -->
+      <div v-if="isWorkspaceStage" class="flex items-center gap-6 mt-3.5 px-1">
         <button
           v-for="tab in tabs"
           :key="tab.key"
           @click="activeTab = tab.key"
-          class="px-4 py-2.5 text-sm font-medium rounded-t-lg border-b-2 transition-all"
-          :class="activeTab === tab.key
-            ? 'border-blue-700 text-blue-700 bg-blue-50/50'
-            : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'"
+          class="group relative inline-flex items-center gap-2 pb-2.5 text-[14px] transition-colors duration-200"
+          :class="activeTab === tab.key ? 'text-blue-600 font-semibold' : 'text-slate-400 hover:text-slate-700 font-medium'"
         >
-          <i :class="tab.icon" class="mr-1.5 text-xs"></i>
+          <i :class="tab.icon" class="text-[13px]"></i>
           {{ tab.label }}
+          <span
+            class="absolute -bottom-px left-0 right-0 h-0.5 rounded-full transition-all duration-200"
+            :class="activeTab === tab.key ? 'bg-blue-600' : 'bg-transparent'"
+          ></span>
         </button>
       </div>
     </div>
@@ -59,362 +42,179 @@
     <!-- 阶段②工作区:现有 tab 内容(需求对话/功能清单/原型/迭代/导出) -->
     <div v-show="isWorkspaceStage" class="flex-1 flex min-h-0 overflow-hidden">
 
-      <!-- Requirement Chat Tab — three-column layout -->
+      <!-- 阶段② 对话 Tab (requirement) — 豆包风格,与「智能对话」一致 -->
       <div v-if="activeTab === 'requirement'" class="flex h-full w-full">
-        <!-- Left: Session panel -->
-        <div v-show="showSessionPanel" class="w-[220px] shrink-0 bg-white border-r border-slate-200/60 flex flex-col overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">会话</span>
-            <button class="text-slate-400 hover:text-slate-600 text-xs" @click="showSessionPanel = false">
-              <i class="fa-solid fa-chevron-left"></i>
-            </button>
-          </div>
-          <div class="flex-1 overflow-y-auto p-2">
-            <div v-if="userMessageSummaries.length === 0" class="text-xs text-slate-400 text-center py-6">
-              暂无对话记录
+        <div class="flex-1 flex flex-col min-w-0 relative bg-white">
+          <div ref="chatContainerRef" class="flex-1 overflow-y-auto px-4 pt-6" :class="messages.length > 0 ? 'pb-[150px]' : ''">
+            <!-- Loading -->
+            <div v-if="messagesLoading" class="flex flex-col items-center justify-center py-24">
+              <div class="relative w-12 h-12 mb-5">
+                <div class="absolute inset-0 rounded-full border-2 border-blue-100"></div>
+                <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin"></div>
+              </div>
+              <p class="text-sm text-slate-500 font-medium">正在加载对话记录...</p>
             </div>
-            <!-- Current session item - active -->
-            <div class="px-3 py-2.5 rounded-xl bg-blue-50 border border-blue-100/60 mb-1">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
-                <span class="text-[13px] font-medium text-blue-800 truncate">{{ projectName }}</span>
+
+            <!-- Empty state -->
+            <div v-else-if="messages.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-5 shadow-lg shadow-blue-500/25">
+                <i class="fa-solid fa-comments text-xl text-white"></i>
               </div>
-              <div class="text-[11px] text-blue-600/70 mt-1 ml-4">当前对话</div>
+              <h3 class="text-[17px] font-semibold text-slate-800 mb-1.5">阶段② · 需求沟通 + 原型设计</h3>
+              <p class="text-[13px] text-slate-400 max-w-md leading-relaxed">聊透需求，出对接确认表与 AI 能力清单，再到「交付物」生成功能清单、「原型」出可交互 Demo。</p>
+              <div class="flex flex-wrap gap-2 justify-center mt-6 max-w-lg">
+                <button
+                  v-for="q in stage2Quick"
+                  :key="q"
+                  @click="chatInput = q; sendMessage()"
+                  class="px-3.5 py-2 rounded-full bg-slate-50 hover:bg-blue-50 border border-slate-200/70 hover:border-blue-200 text-[12.5px] text-slate-600 hover:text-blue-700 transition-all"
+                >
+                  {{ q }}
+                </button>
+              </div>
             </div>
-            <button
-              v-for="(entry, i) in userMessageSummaries"
-              :key="i"
-              @click="scrollToMessage(entry.index)"
-              class="w-full text-left px-3 py-2 rounded-xl text-xs text-slate-600 hover:bg-blue-50 hover:text-blue-700 transition-colors truncate flex items-center gap-2 group"
-            >
-              <span class="w-5 h-5 rounded-full bg-slate-100 group-hover:bg-blue-100 flex items-center justify-center shrink-0 text-[10px] text-slate-400 group-hover:text-blue-500 font-semibold">
-                {{ i + 1 }}
-              </span>
-              <span class="truncate">{{ entry.preview }}</span>
-            </button>
-          </div>
-        </div>
 
-        <!-- Center: Chat area -->
-        <div class="flex-1 flex flex-col min-w-0 relative bg-[#f4f7f6]">
-          <!-- Toggle left panel button when hidden -->
-          <button v-if="!showSessionPanel" @click="showSessionPanel = true"
-            class="absolute top-3 left-3 z-10 w-8 h-8 rounded-lg bg-white/80 backdrop-blur border border-slate-200/60 text-slate-400 hover:text-slate-600 flex items-center justify-center shadow-sm transition-all">
-            <i class="fa-solid fa-bars text-xs"></i>
-          </button>
-
-          <!-- Messages area -->
-          <div ref="chatContainerRef" class="flex-1 overflow-y-auto px-4 pt-5 pb-[160px]">
-            <div class="w-full max-w-4xl mx-auto space-y-6">
-              <!-- Loading state -->
-              <div v-if="messagesLoading" class="flex flex-col items-center justify-center py-24">
-                <div class="relative w-12 h-12 mb-5">
-                  <div class="absolute inset-0 rounded-full border-2 border-blue-100"></div>
-                  <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin"></div>
-                  <div class="absolute inset-2 rounded-full bg-white flex items-center justify-center">
-                    <i class="fa-solid fa-comments text-blue-400 text-sm"></i>
-                  </div>
-                </div>
-                <p class="text-sm text-slate-500 font-medium">正在加载对话记录...</p>
-                <p class="text-[11px] text-slate-400 mt-1">请稍候</p>
-              </div>
-
-              <!-- Empty state -->
-              <div v-else-if="messages.length === 0" class="flex flex-col items-center justify-center h-full text-slate-400 py-20">
-                <div class="w-16 h-16 rounded-[20px] bg-gradient-to-br from-white to-blue-50 shadow-card border border-white flex items-center justify-center mb-5">
-                  <i class="fa-solid fa-comments text-2xl text-blue-400"></i>
-                </div>
-                <p class="text-sm font-medium text-slate-500">阶段② 需求沟通 —— 聊透需求,出对接确认表与原型</p>
-                <p class="text-xs text-slate-400 mt-1">Ctrl + Enter 发送消息</p>
-              </div>
-
-              <!-- Message list -->
+            <!-- Message list -->
+            <div v-else class="w-full max-w-3xl mx-auto space-y-7">
               <div
                 v-for="(msg, idx) in messages"
                 :key="idx"
                 :data-msg-index="idx"
-                class="flex gap-4 w-full group transition-all duration-300 rounded-2xl"
-                :class="msg.role === 'user' ? 'justify-end' : ''"
+                class="flex flex-col w-full group"
+                :class="msg.role === 'user' ? 'items-end' : 'items-start'"
               >
-                <!-- Assistant Avatar -->
-                <div v-if="msg.role === 'assistant'" class="shrink-0 w-10 h-10 rounded-[16px] bg-white border border-blue-100/80 flex items-center justify-center shadow-sm self-start mt-1 transform transition-transform group-hover:scale-105 overflow-hidden">
-                  <i class="fa-solid fa-robot text-blue-500 text-sm"></i>
-                </div>
-
-                <!-- Spacer for user alignment -->
-                <div v-if="msg.role === 'user'" class="shrink-0 w-10 h-10 invisible"></div>
-
-                <!-- User Message -->
-                <div v-if="msg.role === 'user'" class="relative w-full flex-1 min-w-0 max-w-[85%] flex flex-col items-end">
-                  <div class="rounded-[20px] rounded-br-[6px] px-4 py-3 leading-relaxed text-sm bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md shadow-blue-600/20 whitespace-pre-wrap break-words border border-blue-500/20 inline-block text-left">
+                <!-- User -->
+                <div v-if="msg.role === 'user'" class="max-w-[80%] flex flex-col items-end">
+                  <div v-if="msg.attachments && msg.attachments.length" class="flex flex-wrap gap-2 mb-1.5 justify-end">
+                    <template v-for="(att, ai) in msg.attachments" :key="ai">
+                      <img v-if="att.type === 'image'" :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data" class="max-w-[160px] max-h-[120px] object-cover rounded-xl border border-slate-200" />
+                      <div v-else class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 max-w-[180px]">
+                        <i class="fa-solid fa-file-lines text-blue-500 text-xs shrink-0"></i>
+                        <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
+                      </div>
+                    </template>
+                  </div>
+                  <div v-if="msg.content" class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
                     {{ msg.content }}
                   </div>
-                  <div v-if="msg.timestamp" class="text-[11px] text-slate-400/80 mt-1.5 mr-1 font-medium">{{ msg.timestamp }}</div>
                 </div>
 
-                <!-- Assistant Message -->
-                <div v-else class="w-full flex-1 min-w-0 flex flex-col items-start">
-                  <!-- Thinking Steps -->
-                  <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0" class="mb-3 w-full">
-                    <!-- Thinking Header -->
-                    <button
-                      type="button"
-                      class="cursor-pointer group/think flex items-center gap-2.5 w-full text-left transition-all duration-300"
-                      @click="msg.expanded = !msg.expanded"
-                    >
-                      <div
-                        class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500"
-                        :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-blue-50'"
-                      >
-                        <i
-                          class="fa-solid text-xs transition-all duration-300"
-                          :class="msg.thinkingDone ? 'fa-circle-check text-blue-500' : 'fa-brain text-blue-500 animate-pulse'"
-                        ></i>
+                <!-- Assistant -->
+                <div v-else class="w-full flex flex-col items-start">
+                  <!-- AI 头像 + 名字 + 状态 -->
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shrink-0">
+                      <i class="fa-solid fa-robot text-white text-[12px]"></i>
+                    </div>
+                    <span class="text-[13px] font-semibold text-slate-700">AI 助手</span>
+                    <span class="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full"
+                      :class="(isStreaming && idx === messages.length - 1) ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'">
+                      <span class="w-1.5 h-1.5 rounded-full" :class="(isStreaming && idx === messages.length - 1) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'"></span>
+                      {{ (isStreaming && idx === messages.length - 1) ? '工作中' : '已完成' }}
+                    </span>
+                  </div>
+                  <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0 && (!msg.thinkingDone || msg.expanded)" class="mb-3 w-full">
+                    <button type="button" class="flex items-center gap-2.5 text-left" @click="msg.expanded = !msg.expanded">
+                      <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-gradient-to-br from-blue-100 to-indigo-50'">
+                        <i class="fa-solid fa-brain text-sm" :class="msg.thinkingDone ? 'text-slate-400' : 'text-blue-500 animate-pulse'"></i>
                       </div>
-                      <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                          <span
-                            class="text-[13px] font-semibold tracking-tight transition-colors"
-                            :class="msg.thinkingDone ? 'text-slate-600' : 'text-blue-700'"
-                          >
-                            {{ msg.thinkingDone ? '推理完成' : '深度推理中' }}
-                          </span>
-                          <span class="text-[11px] text-slate-400 font-normal">{{ msg.thinkingSteps.filter(s => s.visible).length }} 个步骤</span>
-                          <span v-if="!msg.thinkingDone" class="flex gap-[3px]">
-                            <span class="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 0ms"></span>
-                            <span class="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 150ms"></span>
-                            <span class="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 300ms"></span>
-                          </span>
-                          <template v-if="msg.thinkingDone">
-                            <span class="text-[11px] text-blue-500 ml-1 cursor-pointer">· 点击{{ msg.expanded ? '收起' : '展开' }}详情</span>
-                            <i class="fa-solid fa-chevron-up text-[9px] text-slate-400 transition-transform duration-300" :class="msg.expanded ? '' : 'rotate-180'"></i>
-                          </template>
-                        </div>
-                      </div>
+                      <span class="text-[13px] font-semibold" :class="msg.thinkingDone ? 'text-slate-500' : 'text-blue-700'">
+                        {{ msg.thinkingDone ? '推理完成' : '深度推理中' }}
+                      </span>
                     </button>
-
-                    <!-- Steps Timeline — always visible during streaming, toggleable after done -->
-                    <div v-show="msg.expanded || !msg.thinkingDone" class="mt-3 ml-3 pl-4 border-l-2 border-blue-100 space-y-2 max-h-[400px] overflow-y-auto transition-all pr-1 scrollbar-hide">
-                      <div
-                        v-for="(step, si) in msg.thinkingSteps"
-                        :key="si"
-                        v-show="step.visible"
-                        class="flex items-start gap-2.5 py-0.5 transition-all duration-300"
-                      >
-                        <div
-                          class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 -ml-[0.8rem]"
-                          :class="si === msg.thinkingSteps.filter(s => s.visible).length - 1 && !msg.thinkingDone
-                            ? 'bg-blue-500 text-white shadow-sm'
-                            : step.icon === 'fa-solid fa-circle-check' || step.icon === 'fa-solid fa-flag-checkered'
-                              ? 'bg-blue-50 text-blue-500'
-                              : 'bg-white border border-slate-200 text-slate-400'"
-                        >
-                          <i :class="step.icon" class="text-[8px]"></i>
+                    <div class="mt-2 ml-4 pl-4 border-l-2 border-blue-200/40 space-y-0.5 max-h-[220px] overflow-y-auto scrollbar-hide">
+                      <div v-for="(step, si) in msg.thinkingSteps" :key="si" v-show="step.visible !== false" class="flex items-start gap-2.5 py-1">
+                        <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 bg-white border border-slate-200/60 text-slate-400">
+                          <i :class="step.icon || 'fa-solid fa-circle'" class="text-[8px]"></i>
                         </div>
-                        <div class="flex-1 min-w-0">
-                          <div
-                            class="leading-relaxed break-all whitespace-pre-wrap compact-markdown text-[12px]"
-                            :class="si === msg.thinkingSteps.filter(s => s.visible).length - 1 && !msg.thinkingDone ? 'text-slate-700 font-medium' : 'text-slate-500'"
-                            v-html="renderMarkdown(step.text)"
-                          ></div>
-                        </div>
+                        <span class="text-[12px] leading-relaxed text-slate-600 compact-markdown" v-html="renderMarkdown(step.text)"></span>
                       </div>
                     </div>
                   </div>
-
-                  <!-- Content Block -->
-                  <div
-                    v-show="!msg.thinkingSteps || msg.thinkingSteps.length === 0 || msg.thinkingDone || msg.typingContent || msg.content"
-                    class="rounded-[20px] rounded-bl-[6px] px-4 py-3 leading-relaxed text-[13px] bg-white shadow-sm border border-slate-100 text-slate-700 w-full"
-                  >
-                    <div class="markdown-body leading-relaxed text-[13px] text-slate-700" v-html="renderAssistantContent(msg, idx)"></div>
-                  </div>
-                  <div v-if="msg.timestamp" class="text-[11px] text-slate-400/80 mt-1.5 ml-1 font-medium">{{ msg.timestamp }}</div>
+                  <div v-if="msg.content || (isStreaming && idx === messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)"></div>
+                  <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
                 </div>
-
-                <!-- User Avatar -->
-                <div v-if="msg.role === 'user'" class="shrink-0 w-10 h-10 rounded-[16px] bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center text-slate-600 font-black self-start mt-1 transform transition-transform group-hover:scale-105">
-                  <span>U</span>
-                </div>
-
-                <!-- Spacer for assistant alignment -->
-                <div v-if="msg.role === 'assistant'" class="shrink-0 w-10 h-10 invisible"></div>
               </div>
             </div>
           </div>
 
-          <!-- Floating input area -->
-          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#f4f7f6] via-[#f4f7f6]/95 to-transparent pt-6 pb-3 px-6 z-10">
-            <div class="w-full max-w-4xl mx-auto">
-              <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <!-- Composer -->
+          <div v-if="messages.length > 0" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-10 pb-5 px-4">
+            <div class="w-full max-w-3xl mx-auto">
+              <!-- 快捷操作芯片（贴输入框上方，豆包式）-->
+              <div class="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide pb-0.5">
+                <button
+                  v-for="act in quickActions"
+                  :key="act.key"
+                  @click="runQuickAction(act)"
+                  :disabled="isStreaming || deliverableBusy"
+                  class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i :class="act.icon" class="text-[8px] text-blue-500"></i>
+                  {{ act.label }}
+                </button>
+              </div>
+              <div class="rounded-[26px] border transition-all duration-200 bg-slate-50 border-slate-200 hover:border-slate-300 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)] focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_6px_28px_-8px_rgba(59,130,246,0.28)]">
+                <!-- 附件预览 -->
+                <div v-if="reqComposer.attachments.value.length" class="flex items-center gap-2 px-5 pt-4 flex-wrap">
+                  <div v-for="(att, ai) in reqComposer.attachments.value" :key="ai" class="relative group/att">
+                    <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-14 h-14 object-cover rounded-xl border border-slate-200" />
+                    <div v-else class="flex items-center gap-2 h-14 px-3 rounded-xl border border-slate-200 bg-white max-w-[200px]">
+                      <i class="fa-solid fa-file-lines text-blue-500 text-base shrink-0"></i>
+                      <span class="text-[12px] text-slate-700 truncate">{{ att.name }}</span>
+                    </div>
+                    <button @click="reqComposer.removeAttachment(ai)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center shadow-sm">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+                </div>
                 <textarea
                   v-model="chatInput"
-                  rows="3"
-                  placeholder="向智能体提问，输入 / 触发提示词；Enter 发送，Shift+Enter 换行"
-                  class="w-full resize-none bg-transparent text-sm placeholder:text-slate-400 text-slate-800 outline-none px-5 pt-4 pb-3 leading-relaxed"
+                  rows="1"
+                  :placeholder="isStreaming ? 'AI 正在响应中…' : '聊需求、输入 / 唤起指令，Ctrl + Enter 发送'"
                   :disabled="isStreaming"
-                  @keydown.ctrl.enter="sendMessage"
-                  @keydown.enter.exact.prevent="sendMessage"
-                  @keydown.shift.enter.exact="null"
+                  class="w-full resize-none text-[14px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-6 px-5 pt-4 pb-1 max-h-[160px] scrollbar-hide disabled:opacity-60"
+                  @keydown.ctrl.enter.prevent="sendMessage"
+                  @keydown.meta.enter.prevent="sendMessage"
                 ></textarea>
-                <div class="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
-                  <div class="flex items-center gap-3">
-                    <span class="text-[11px] text-slate-400">Enter 发送，Shift+Enter 换行</span>
+                <div class="flex items-center justify-between px-3 pb-3 pt-1.5 gap-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <button @click="reqComposer.pickImage" :disabled="isStreaming" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传图片">
+                      <i class="fa-solid fa-image text-sm"></i>
+                    </button>
+                    <button @click="reqComposer.pickFile" :disabled="isStreaming" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传文件">
+                      <i class="fa-solid fa-paperclip text-sm"></i>
+                    </button>
+                    <button @click="reqComposer.toggleRecording" :disabled="isStreaming || !reqComposer.recordingSupported" class="w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="reqComposer.isRecording.value ? 'text-white bg-rose-500 hover:bg-rose-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="reqComposer.recordingSupported ? (reqComposer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
+                      <i class="fa-solid text-sm" :class="reqComposer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
+                    </button>
+                    <span v-if="reqComposer.isRecording.value" class="text-[11px] text-rose-500 font-medium tabular-nums">{{ reqComposer.recordSeconds.value }}s</span>
+                    <span v-else-if="reqComposer.isTranscribing.value" class="text-[11px] text-blue-500 font-medium">识别中…</span>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-[11px] text-slate-400 select-none">Ctrl + Enter 发送</span>
                     <button
                       v-if="isStreaming"
                       @click="cancelStream"
-                      class="w-8 h-8 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-all shadow-sm"
+                      class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all shadow-sm"
                       title="停止生成"
                     >
-                      <i class="fa-solid fa-stop text-[10px]"></i>
+                      <span class="w-3 h-3 rounded-[3px] bg-white"></span>
                     </button>
                     <button
                       v-else
                       @click="sendMessage"
-                      :disabled="!chatInput.trim()"
-                      class="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm"
-                      :class="chatInput.trim() ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                      :disabled="!chatInput.trim() && reqComposer.attachments.value.length === 0"
+                      class="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
+                      :class="(chatInput.trim() || reqComposer.attachments.value.length) ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30 hover:shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
                     >
-                      <i class="fa-solid fa-arrow-up text-xs"></i>
+                      <i class="fa-solid fa-arrow-up text-sm"></i>
                     </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Right: Agent Logs panel -->
-        <div v-show="showLogsPanel" class="w-[280px] shrink-0 bg-white border-l border-slate-200/60 flex flex-col overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <i class="fa-solid fa-terminal text-blue-500 mr-1.5"></i>执行日志
-            </span>
-            <div class="flex items-center gap-1">
-              <button @click="agentLogs = []" class="text-slate-400 hover:text-slate-600 text-[10px] px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors" title="清空">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-              <button @click="showLogsPanel = false" class="text-slate-400 hover:text-slate-600 text-xs px-1" title="关闭">
-                <i class="fa-solid fa-chevron-right"></i>
-              </button>
-            </div>
-          </div>
-          <div ref="logsContainerRef" class="flex-1 overflow-y-auto p-3 space-y-1.5 font-mono text-[11px]">
-            <div v-if="agentLogs.length === 0" class="text-slate-400 text-center py-8">
-              <i class="fa-solid fa-satellite-dish text-lg mb-2 block text-slate-300"></i>
-              等待 Agent 活动...
-            </div>
-            <div v-for="log in agentLogs" :key="log.id"
-              class="px-2.5 py-1.5 rounded-md leading-relaxed"
-              :class="{
-                'bg-slate-50': log.type === 'thought',
-                'bg-sky-50 border-l-2 border-sky-400': log.type === 'tool' && log.status === 'running',
-                'bg-blue-50 border-l-2 border-blue-400': log.type === 'tool' && log.status === 'completed',
-                'bg-rose-50 border-l-2 border-rose-400': log.type === 'tool' && log.status === 'failed',
-                'bg-amber-50': log.type === 'usage',
-                'bg-violet-50': log.type === 'api',
-                'bg-rose-50': log.type === 'error',
-                'bg-blue-50': log.type === 'info',
-              }"
-            >
-              <div class="flex items-start gap-2">
-                <span class="text-slate-400 shrink-0 text-[10px] mt-0.5 font-mono">{{ log.time }}</span>
-                <div class="flex-1 min-w-0">
-                  <span v-if="log.type === 'thought'" class="text-slate-500 break-words">
-                    <i class="fa-solid fa-brain mr-1 text-[9px] text-slate-400"></i>{{ log.content }}
-                  </span>
-                  <span v-else-if="log.type === 'tool'" class="break-words" :class="log.status === 'failed' ? 'text-rose-600' : log.status === 'completed' ? 'text-blue-600' : 'text-sky-600'">
-                    <i class="mr-1 text-[9px]" :class="log.status === 'completed' ? 'fa-solid fa-circle-check' : log.status === 'failed' ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-gear fa-spin'"></i>{{ log.content }}
-                  </span>
-                  <span v-else-if="log.type === 'usage'" class="text-amber-600">
-                    <i class="fa-solid fa-chart-pie mr-1 text-[9px]"></i>{{ log.content }}
-                  </span>
-                  <span v-else-if="log.type === 'api'" class="text-violet-600">
-                    <i class="fa-solid fa-bolt mr-1 text-[9px]"></i>{{ log.content }}
-                  </span>
-                  <span v-else-if="log.type === 'error'" class="text-rose-600">
-                    <i class="fa-solid fa-triangle-exclamation mr-1 text-[9px]"></i>{{ log.content }}
-                  </span>
-                  <span v-else class="text-blue-600">
-                    <i class="fa-solid fa-circle-info mr-1 text-[9px]"></i>{{ log.content }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Spec Tab — full width -->
-      <div v-else-if="activeTab === 'spec'" class="flex flex-col h-full w-full">
-        <div class="shrink-0 flex items-center gap-3 px-6 py-3 border-b border-slate-100 bg-white">
-          <button
-            @click="toggleSpecEdit"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-colors"
-            :class="specEditing ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
-          >
-            <i :class="specEditing ? 'fa-solid fa-eye' : 'fa-solid fa-pen'" class="text-[10px]"></i>
-            {{ specEditing ? '预览' : '编辑' }}
-          </button>
-          <button
-            @click="generatePrototype"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-blue-700 hover:bg-blue-800 text-white transition-colors"
-            :disabled="isStreaming"
-          >
-            <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
-            生成原型
-          </button>
-          <button
-            @click="exportSpec"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
-          >
-            <i class="fa-solid fa-download text-[10px]"></i>
-            导出 .md
-          </button>
-          <button
-            @click="exportWord"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
-          >
-            <i class="fa-solid fa-file-word text-[10px]"></i>
-            导出 .docx
-          </button>
-        </div>
-        <div class="flex-1 overflow-y-auto p-6">
-          <div v-if="specLoading" class="flex items-center justify-center py-20 text-slate-400">
-            <i class="fa-solid fa-spinner fa-spin mr-2"></i> 加载中...
-          </div>
-          <div v-else-if="!specContent" class="flex flex-col items-center justify-center py-20">
-            <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-              <i class="fa-solid fa-file-lines text-2xl text-slate-300"></i>
-            </div>
-            <p class="text-sm text-slate-500 mb-4">尚未生成功能清单</p>
-            <p class="text-xs text-slate-400 mb-6">先在"需求对话"中与 AI 头脑风暴，确认方向后点击下方按钮生成</p>
-            <button
-              @click="generateSpec"
-              :disabled="isStreaming"
-              class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-blue-700 hover:bg-blue-800 text-white transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
-              生成功能清单
-            </button>
-          </div>
-          <div v-else-if="specEditing">
-            <textarea
-              v-model="specContent"
-              class="w-full h-[calc(100vh-280px)] px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
-            ></textarea>
-            <div class="mt-3 flex justify-end">
-              <button
-                @click="saveSpec"
-                class="px-4 py-2 text-xs bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors"
-              >
-                <i class="fa-solid fa-check mr-1"></i> 保存修改
-              </button>
-            </div>
-          </div>
-          <div v-else class="prose prose-sm prose-slate max-w-none" v-html="renderedSpec"></div>
         </div>
       </div>
 
@@ -465,9 +265,65 @@
             </button>
           </div>
           <div class="flex-1 min-h-0">
-            <div v-if="!selectedFile && prototypeFiles.length === 0" class="flex flex-col items-center justify-center h-full">
+            <!-- AI 工作进度：生成 / 迭代原型时实时展示推理步骤、工具调用与输出 -->
+            <div
+              v-if="streamTargetTab === 'iterate' && iterateMessages.length > 0 && (isStreaming || !selectedFile)"
+              ref="iterateChatRef"
+              class="h-full overflow-y-auto px-4 py-5"
+            >
+              <div class="w-full max-w-3xl mx-auto space-y-7">
+                <div
+                  v-for="(msg, idx) in iterateMessages"
+                  :key="idx"
+                  class="flex flex-col w-full"
+                  :class="msg.role === 'user' ? 'items-end' : 'items-start'"
+                >
+                  <!-- User -->
+                  <div v-if="msg.role === 'user'" class="max-w-[80%] flex flex-col items-end">
+                    <div v-if="msg.content" class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                      {{ msg.content }}
+                    </div>
+                  </div>
+                  <!-- Assistant -->
+                  <div v-else class="w-full flex flex-col items-start">
+                    <div class="flex items-center gap-2 mb-2">
+                      <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shrink-0">
+                        <i class="fa-solid fa-robot text-white text-[12px]"></i>
+                      </div>
+                      <span class="text-[13px] font-semibold text-slate-700">AI 助手</span>
+                      <span class="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full"
+                        :class="(isStreaming && idx === iterateMessages.length - 1) ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'">
+                        <span class="w-1.5 h-1.5 rounded-full" :class="(isStreaming && idx === iterateMessages.length - 1) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'"></span>
+                        {{ (isStreaming && idx === iterateMessages.length - 1) ? '工作中' : '已完成' }}
+                      </span>
+                    </div>
+                    <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0 && (!msg.thinkingDone || msg.expanded)" class="mb-3 w-full">
+                      <button type="button" class="flex items-center gap-2.5 text-left" @click="msg.expanded = !msg.expanded">
+                        <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-gradient-to-br from-blue-100 to-indigo-50'">
+                          <i class="fa-solid fa-brain text-sm" :class="msg.thinkingDone ? 'text-slate-400' : 'text-blue-500 animate-pulse'"></i>
+                        </div>
+                        <span class="text-[13px] font-semibold" :class="msg.thinkingDone ? 'text-slate-500' : 'text-blue-700'">
+                          {{ msg.thinkingDone ? '推理完成' : '深度推理中' }}
+                        </span>
+                      </button>
+                      <div class="mt-2 ml-4 pl-4 border-l-2 border-blue-200/40 space-y-0.5 max-h-[220px] overflow-y-auto scrollbar-hide">
+                        <div v-for="(step, si) in msg.thinkingSteps" :key="si" v-show="step.visible !== false" class="flex items-start gap-2.5 py-1">
+                          <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 bg-white border border-slate-200/60 text-slate-400">
+                            <i :class="step.icon || 'fa-solid fa-circle'" class="text-[8px]"></i>
+                          </div>
+                          <span class="text-[12px] leading-relaxed text-slate-600 compact-markdown" v-html="renderMarkdown(step.text)"></span>
+                        </div>
+                      </div>
+                    </div>
+                    <div v-if="msg.content || (isStreaming && idx === iterateMessages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)"></div>
+                    <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else-if="!selectedFile && prototypeFiles.length === 0" class="flex flex-col items-center justify-center h-full">
               <div class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
-                <i class="fa-solid fa-browser text-2xl text-slate-300"></i>
+                <i class="fa-solid fa-window-maximize text-2xl text-slate-300"></i>
               </div>
               <p class="text-sm text-slate-500 mb-4">尚未生成原型</p>
               <button
@@ -490,212 +346,227 @@
               sandbox="allow-scripts allow-same-origin"
             ></iframe>
           </div>
-        </div>
-      </div>
 
-      <!-- Iterate Tab — three-column layout -->
-      <div v-else-if="activeTab === 'iterate'" class="flex h-full w-full">
-        <!-- Left: Session panel -->
-        <div v-show="showSessionPanel" class="w-[220px] shrink-0 bg-white border-r border-slate-200/60 flex flex-col overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">会话</span>
-            <button class="text-slate-400 hover:text-slate-600 text-xs" @click="showSessionPanel = false">
-              <i class="fa-solid fa-chevron-left"></i>
-            </button>
-          </div>
-          <div class="flex-1 overflow-y-auto p-2">
-            <!-- Current session item - active -->
-            <div class="px-3 py-2.5 rounded-xl bg-blue-50 border border-blue-100/60 mb-1">
-              <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
-                <span class="text-[13px] font-medium text-blue-800 truncate">{{ projectName }}</span>
-              </div>
-              <div class="text-[11px] text-blue-600/70 mt-1 ml-4">当前对话</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Center: Chat area -->
-        <div class="flex-1 flex flex-col min-w-0 relative bg-[#f4f7f6]">
-          <!-- Toggle left panel button when hidden -->
-          <button v-if="!showSessionPanel" @click="showSessionPanel = true"
-            class="absolute top-3 left-3 z-10 w-8 h-8 rounded-lg bg-white/80 backdrop-blur border border-slate-200/60 text-slate-400 hover:text-slate-600 flex items-center justify-center shadow-sm transition-all">
-            <i class="fa-solid fa-bars text-xs"></i>
-          </button>
-
-          <!-- Messages area -->
-          <div ref="iterateChatRef" class="flex-1 overflow-y-auto px-4 pt-5 pb-[160px]">
-            <div class="w-full max-w-4xl mx-auto space-y-6">
-              <!-- Loading state -->
-              <div v-if="messagesLoading" class="flex flex-col items-center justify-center py-24">
-                <div class="relative w-12 h-12 mb-5">
-                  <div class="absolute inset-0 rounded-full border-2 border-blue-100"></div>
-                  <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin"></div>
-                  <div class="absolute inset-2 rounded-full bg-white flex items-center justify-center">
-                    <i class="fa-solid fa-arrows-rotate text-blue-400 text-sm"></i>
+          <!-- 迭代对话条（就地改原型，原「迭代修改」tab 并入这里）-->
+          <div v-if="prototypeFiles.length > 0 || isStreaming" class="shrink-0 border-t border-slate-100 bg-white px-4 py-3">
+            <div class="max-w-3xl mx-auto">
+              <!-- 附件预览 -->
+              <div v-if="iterateComposer.attachments.value.length" class="flex items-center gap-2 mb-2 flex-wrap">
+                <div v-for="(att, ai) in iterateComposer.attachments.value" :key="ai" class="relative group/att">
+                  <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-12 h-12 object-cover rounded-lg border border-slate-200" />
+                  <div v-else class="flex items-center gap-1.5 h-12 px-2.5 rounded-lg border border-slate-200 bg-white max-w-[160px]">
+                    <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
+                    <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
                   </div>
+                  <button @click="iterateComposer.removeAttachment(ai)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[8px] flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
                 </div>
-                <p class="text-sm text-slate-500 font-medium">正在加载对话记录...</p>
-                <p class="text-[11px] text-slate-400 mt-1">请稍候</p>
               </div>
-
-              <!-- Empty state -->
-              <div v-else-if="iterateMessages.length === 0" class="flex flex-col items-center justify-center h-full text-slate-400 py-20">
-                <div class="w-16 h-16 rounded-[20px] bg-gradient-to-br from-white to-blue-50 shadow-card border border-white flex items-center justify-center mb-5">
-                  <i class="fa-solid fa-arrows-rotate text-2xl text-blue-400"></i>
-                </div>
-                <p class="text-sm font-medium text-slate-500">告诉 AI 你想修改什么，它会自动更新原型</p>
-                <p class="text-xs text-slate-400 mt-1">例如："把首页的导航栏改成左侧边栏"</p>
-              </div>
-
-              <!-- Message list -->
-              <div
-                v-for="(msg, idx) in iterateMessages"
-                :key="idx"
-                class="flex gap-4 w-full group"
-                :class="msg.role === 'user' ? 'justify-end' : ''"
-              >
-                <!-- Assistant Avatar -->
-                <div v-if="msg.role === 'assistant'" class="shrink-0 w-10 h-10 rounded-[16px] bg-white border border-blue-100/80 flex items-center justify-center shadow-sm self-start mt-1 transform transition-transform group-hover:scale-105 overflow-hidden">
-                  <i class="fa-solid fa-robot text-blue-500 text-sm"></i>
-                </div>
-
-                <!-- Spacer for user alignment -->
-                <div v-if="msg.role === 'user'" class="shrink-0 w-10 h-10 invisible"></div>
-
-                <!-- User Message -->
-                <div v-if="msg.role === 'user'" class="relative w-full flex-1 min-w-0 max-w-[85%] flex flex-col items-end">
-                  <div class="rounded-[20px] rounded-br-[6px] px-4 py-3 leading-relaxed text-sm bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md shadow-blue-600/20 whitespace-pre-wrap break-words border border-blue-500/20 inline-block text-left">
-                    {{ msg.content }}
-                  </div>
-                  <div v-if="msg.timestamp" class="text-[11px] text-slate-400/80 mt-1.5 mr-1 font-medium">{{ msg.timestamp }}</div>
-                </div>
-
-                <!-- Assistant Message -->
-                <div v-else class="w-full flex-1 min-w-0 flex flex-col items-start">
-                  <!-- Thinking Steps -->
-                  <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0" class="mb-3 w-full">
-                    <!-- Thinking Header -->
-                    <button
-                      type="button"
-                      class="cursor-pointer group/think flex items-center gap-2.5 w-full text-left transition-all duration-300"
-                      @click="msg.expanded = !msg.expanded"
-                    >
-                      <div
-                        class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-500"
-                        :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-blue-50'"
-                      >
-                        <i
-                          class="fa-solid text-xs transition-all duration-300"
-                          :class="msg.thinkingDone ? 'fa-circle-check text-blue-500' : 'fa-brain text-blue-500 animate-pulse'"
-                        ></i>
-                      </div>
-                      <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2">
-                          <span
-                            class="text-[13px] font-semibold tracking-tight transition-colors"
-                            :class="msg.thinkingDone ? 'text-slate-600' : 'text-blue-700'"
-                          >
-                            {{ msg.thinkingDone ? '推理完成' : '深度推理中' }}
-                          </span>
-                          <span class="text-[11px] text-slate-400 font-normal">{{ msg.thinkingSteps.filter(s => s.visible).length }} 个步骤</span>
-                          <span v-if="!msg.thinkingDone" class="flex gap-[3px]">
-                            <span class="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 0ms"></span>
-                            <span class="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 150ms"></span>
-                            <span class="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 300ms"></span>
-                          </span>
-                          <template v-if="msg.thinkingDone">
-                            <span class="text-[11px] text-blue-500 ml-1 cursor-pointer">· 点击{{ msg.expanded ? '收起' : '展开' }}详情</span>
-                            <i class="fa-solid fa-chevron-up text-[9px] text-slate-400 transition-transform duration-300" :class="msg.expanded ? '' : 'rotate-180'"></i>
-                          </template>
-                        </div>
-                      </div>
-                    </button>
-
-                    <!-- Steps Timeline — always visible during streaming, toggleable after done -->
-                    <div v-show="msg.expanded || !msg.thinkingDone" class="mt-3 ml-3 pl-4 border-l-2 border-blue-100 space-y-2 max-h-[400px] overflow-y-auto transition-all pr-1 scrollbar-hide">
-                      <div
-                        v-for="(step, si) in msg.thinkingSteps"
-                        :key="si"
-                        v-show="step.visible"
-                        class="flex items-start gap-2.5 py-0.5 transition-all duration-300"
-                      >
-                        <div
-                          class="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 -ml-[0.8rem]"
-                          :class="si === msg.thinkingSteps.filter(s => s.visible).length - 1 && !msg.thinkingDone
-                            ? 'bg-blue-500 text-white shadow-sm'
-                            : step.icon === 'fa-solid fa-circle-check' || step.icon === 'fa-solid fa-flag-checkered'
-                              ? 'bg-blue-50 text-blue-500'
-                              : 'bg-white border border-slate-200 text-slate-400'"
-                        >
-                          <i :class="step.icon" class="text-[8px]"></i>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                          <div
-                            class="leading-relaxed break-all whitespace-pre-wrap compact-markdown text-[12px]"
-                            :class="si === msg.thinkingSteps.filter(s => s.visible).length - 1 && !msg.thinkingDone ? 'text-slate-700 font-medium' : 'text-slate-500'"
-                            v-html="renderMarkdown(step.text)"
-                          ></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Content Block -->
-                  <div
-                    v-show="!msg.thinkingSteps || msg.thinkingSteps.length === 0 || msg.thinkingDone || msg.typingContent || msg.content"
-                    class="rounded-[20px] rounded-bl-[6px] px-4 py-3 leading-relaxed text-[13px] bg-white shadow-sm border border-slate-100 text-slate-700 w-full"
-                  >
-                    <div class="markdown-body leading-relaxed text-[13px] text-slate-700" v-html="renderAssistantContent(msg, idx)"></div>
-                  </div>
-                  <div v-if="msg.timestamp" class="text-[11px] text-slate-400/80 mt-1.5 ml-1 font-medium">{{ msg.timestamp }}</div>
-                </div>
-
-                <!-- User Avatar -->
-                <div v-if="msg.role === 'user'" class="shrink-0 w-10 h-10 rounded-[16px] bg-gradient-to-br from-slate-100 to-slate-200 border border-white shadow-sm flex items-center justify-center text-slate-600 font-black self-start mt-1 transform transition-transform group-hover:scale-105">
-                  <span>U</span>
-                </div>
-
-                <!-- Spacer for assistant alignment -->
-                <div v-if="msg.role === 'assistant'" class="shrink-0 w-10 h-10 invisible"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Floating input area -->
-          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#f4f7f6] via-[#f4f7f6]/95 to-transparent pt-6 pb-3 px-6 z-10">
-            <div class="w-full max-w-4xl mx-auto">
-              <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+              <div class="rounded-2xl border transition-all duration-200 bg-slate-50 border-slate-200 focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_4px_20px_-8px_rgba(59,130,246,0.25)] flex items-end gap-2 pr-2">
                 <textarea
                   v-model="iterateInput"
-                  rows="3"
-                  placeholder="向智能体提问，输入 / 触发提示词；Enter 发送，Shift+Enter 换行"
-                  class="w-full resize-none bg-transparent text-sm placeholder:text-slate-400 text-slate-800 outline-none px-5 pt-4 pb-3 leading-relaxed"
+                  rows="1"
+                  :placeholder="isStreaming ? 'AI 正在修改原型…' : '说出你想改什么，AI 就地更新原型，例如：把首页导航改成左侧栏'"
                   :disabled="isStreaming"
+                  class="flex-1 resize-none text-[13px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-6 px-4 py-3 max-h-[120px] scrollbar-hide disabled:opacity-60"
                   @keydown.enter.exact.prevent="sendIterate"
                   @keydown.shift.enter.exact="null"
                 ></textarea>
-                <div class="flex items-center justify-between px-4 py-2.5 border-t border-slate-100 bg-slate-50/50">
-                  <div class="flex items-center gap-3">
-                    <span class="text-[11px] text-slate-400">Enter 发送，Shift+Enter 换行</span>
+                <button @click="iterateComposer.pickImage" :disabled="isStreaming" class="mb-1.5 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed" title="上传图片">
+                  <i class="fa-solid fa-image text-xs"></i>
+                </button>
+                <button @click="iterateComposer.pickFile" :disabled="isStreaming" class="mb-1.5 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed" title="上传文件">
+                  <i class="fa-solid fa-paperclip text-xs"></i>
+                </button>
+                <button @click="iterateComposer.toggleRecording" :disabled="isStreaming || !iterateComposer.recordingSupported" class="mb-1.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="iterateComposer.isRecording.value ? 'text-white bg-rose-500 hover:bg-rose-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="iterateComposer.recordingSupported ? (iterateComposer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
+                  <i class="fa-solid text-xs" :class="iterateComposer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
+                </button>
+                <button
+                  v-if="isStreaming"
+                  @click="cancelStream"
+                  class="mb-1.5 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center shrink-0"
+                  title="停止"
+                >
+                  <span class="w-3 h-3 rounded-[3px] bg-white"></span>
+                </button>
+                <button
+                  v-else
+                  @click="sendIterate"
+                  :disabled="!iterateInput.trim() && iterateComposer.attachments.value.length === 0"
+                  class="mb-1.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all"
+                  :class="(iterateInput.trim() || iterateComposer.attachments.value.length) ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
+                >
+                  <i class="fa-solid fa-arrow-up text-xs"></i>
+                </button>
+              </div>
+              <p class="text-[10px] text-slate-400 mt-1.5 text-center">Enter 发送迭代 · 修改会直接作用到当前原型文件</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- 阶段③ 对话 Tab (chat3) — 豆包风格,与「智能对话」一致 -->
+      <div v-else-if="activeTab === 'chat3'" class="flex h-full w-full">
+        <!-- Center: Chat area -->
+        <div class="flex-1 flex flex-col min-w-0 relative bg-white">
+          <div ref="stage3ChatRef" class="flex-1 overflow-y-auto px-4 pt-6" :class="stage3Messages.length > 0 ? 'pb-[150px]' : ''">
+            <!-- Empty state -->
+            <div v-if="stage3Messages.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6">
+              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-5 shadow-lg shadow-blue-500/25">
+                <i class="fa-solid fa-diagram-project text-xl text-white"></i>
+              </div>
+              <h3 class="text-[17px] font-semibold text-slate-800 mb-1.5">阶段③ · 需求确认 + 智能体设计</h3>
+              <p class="text-[13px] text-slate-400 max-w-md leading-relaxed">把需求签字定稿、拆智能体矩阵。聊透后到「交付物」一键生成确认表 / 设计表 / PRD。</p>
+              <div class="flex flex-wrap gap-2 justify-center mt-6 max-w-lg">
+                <button
+                  v-for="q in stage3Quick"
+                  :key="q"
+                  @click="stage3Input = q; sendStage3()"
+                  class="px-3.5 py-2 rounded-full bg-slate-50 hover:bg-blue-50 border border-slate-200/70 hover:border-blue-200 text-[12.5px] text-slate-600 hover:text-blue-700 transition-all"
+                >
+                  {{ q }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Message list -->
+            <div v-else class="w-full max-w-3xl mx-auto space-y-7">
+              <div
+                v-for="(msg, idx) in stage3Messages"
+                :key="idx"
+                class="flex flex-col w-full group"
+                :class="msg.role === 'user' ? 'items-end' : 'items-start'"
+              >
+                <!-- User -->
+                <div v-if="msg.role === 'user'" class="max-w-[80%] flex flex-col items-end">
+                  <div v-if="msg.attachments && msg.attachments.length" class="flex flex-wrap gap-2 mb-1.5 justify-end">
+                    <template v-for="(att, ai) in msg.attachments" :key="ai">
+                      <img v-if="att.type === 'image'" :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data" class="max-w-[160px] max-h-[120px] object-cover rounded-xl border border-slate-200" />
+                      <div v-else class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 max-w-[180px]">
+                        <i class="fa-solid fa-file-lines text-blue-500 text-xs shrink-0"></i>
+                        <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
+                      </div>
+                    </template>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div v-if="msg.content" class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                    {{ msg.content }}
+                  </div>
+                </div>
+
+                <!-- Assistant -->
+                <div v-else class="w-full flex flex-col items-start">
+                  <!-- AI 头像 + 名字 + 状态 -->
+                  <div class="flex items-center gap-2 mb-2">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shrink-0">
+                      <i class="fa-solid fa-robot text-white text-[12px]"></i>
+                    </div>
+                    <span class="text-[13px] font-semibold text-slate-700">AI 助手</span>
+                    <span class="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full"
+                      :class="(isStreaming && idx === stage3Messages.length - 1) ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'">
+                      <span class="w-1.5 h-1.5 rounded-full" :class="(isStreaming && idx === stage3Messages.length - 1) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'"></span>
+                      {{ (isStreaming && idx === stage3Messages.length - 1) ? '工作中' : '已完成' }}
+                    </span>
+                  </div>
+                  <!-- Thinking steps -->
+                  <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0 && (!msg.thinkingDone || msg.expanded)" class="mb-3 w-full">
+                    <button type="button" class="flex items-center gap-2.5 text-left" @click="msg.expanded = !msg.expanded">
+                      <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-gradient-to-br from-blue-100 to-indigo-50'">
+                        <i class="fa-solid fa-brain text-sm" :class="msg.thinkingDone ? 'text-slate-400' : 'text-blue-500 animate-pulse'"></i>
+                      </div>
+                      <span class="text-[13px] font-semibold" :class="msg.thinkingDone ? 'text-slate-500' : 'text-blue-700'">
+                        {{ msg.thinkingDone ? '推理完成' : '深度推理中' }}
+                      </span>
+                    </button>
+                    <div class="mt-2 ml-4 pl-4 border-l-2 border-blue-200/40 space-y-0.5 max-h-[220px] overflow-y-auto scrollbar-hide">
+                      <div v-for="(step, si) in msg.thinkingSteps" :key="si" v-show="step.visible !== false" class="flex items-start gap-2.5 py-1">
+                        <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 bg-white border border-slate-200/60 text-slate-400">
+                          <i :class="step.icon || 'fa-solid fa-circle'" class="text-[8px]"></i>
+                        </div>
+                        <span class="text-[12px] leading-relaxed text-slate-600 compact-markdown" v-html="renderMarkdown(step.text)"></span>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Content: no bubble, plain text -->
+                  <div v-if="msg.content || (isStreaming && idx === stage3Messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)"></div>
+                  <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Composer — 豆包圆角风格 -->
+          <div v-if="stage3Messages.length > 0" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-10 pb-5 px-4">
+            <div class="w-full max-w-3xl mx-auto">
+              <!-- 快捷操作芯片（贴输入框上方，豆包式）-->
+              <div class="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide pb-0.5">
+                <button
+                  v-for="act in quickActions"
+                  :key="act.key"
+                  @click="runQuickAction(act)"
+                  :disabled="isStreaming || deliverableBusy"
+                  class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <i :class="act.icon" class="text-[8px] text-blue-500"></i>
+                  {{ act.label }}
+                </button>
+              </div>
+              <div class="rounded-[26px] border transition-all duration-200 bg-slate-50 border-slate-200 hover:border-slate-300 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)] focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_6px_28px_-8px_rgba(59,130,246,0.28)]">
+                <!-- 附件预览 -->
+                <div v-if="stage3Composer.attachments.value.length" class="flex items-center gap-2 px-5 pt-4 flex-wrap">
+                  <div v-for="(att, ai) in stage3Composer.attachments.value" :key="ai" class="relative group/att">
+                    <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-14 h-14 object-cover rounded-xl border border-slate-200" />
+                    <div v-else class="flex items-center gap-2 h-14 px-3 rounded-xl border border-slate-200 bg-white max-w-[200px]">
+                      <i class="fa-solid fa-file-lines text-blue-500 text-base shrink-0"></i>
+                      <span class="text-[12px] text-slate-700 truncate">{{ att.name }}</span>
+                    </div>
+                    <button @click="stage3Composer.removeAttachment(ai)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center shadow-sm">
+                      <i class="fa-solid fa-xmark"></i>
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  v-model="stage3Input"
+                  rows="1"
+                  :placeholder="isStreaming ? 'AI 正在响应中…' : '聊需求确认、智能体矩阵设计，Ctrl + Enter 发送'"
+                  :disabled="isStreaming"
+                  class="w-full resize-none text-[14px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-6 px-5 pt-4 pb-1 max-h-[160px] scrollbar-hide disabled:opacity-60"
+                  @keydown.ctrl.enter.prevent="sendStage3"
+                  @keydown.meta.enter.prevent="sendStage3"
+                ></textarea>
+                <div class="flex items-center justify-between px-3 pb-3 pt-1.5 gap-2.5">
+                  <div class="flex items-center gap-1.5">
+                    <button @click="stage3Composer.pickImage" :disabled="isStreaming" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传图片">
+                      <i class="fa-solid fa-image text-sm"></i>
+                    </button>
+                    <button @click="stage3Composer.pickFile" :disabled="isStreaming" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传文件">
+                      <i class="fa-solid fa-paperclip text-sm"></i>
+                    </button>
+                    <button @click="stage3Composer.toggleRecording" :disabled="isStreaming || !stage3Composer.recordingSupported" class="w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="stage3Composer.isRecording.value ? 'text-white bg-rose-500 hover:bg-rose-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="stage3Composer.recordingSupported ? (stage3Composer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
+                      <i class="fa-solid text-sm" :class="stage3Composer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
+                    </button>
+                    <span v-if="stage3Composer.isRecording.value" class="text-[11px] text-rose-500 font-medium tabular-nums">{{ stage3Composer.recordSeconds.value }}s</span>
+                    <span v-else-if="stage3Composer.isTranscribing.value" class="text-[11px] text-blue-500 font-medium">识别中…</span>
+                  </div>
+                  <div class="flex items-center gap-2.5">
+                    <span class="text-[11px] text-slate-400 select-none">Ctrl + Enter 发送</span>
                     <button
                       v-if="isStreaming"
                       @click="cancelStream"
-                      class="w-8 h-8 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center transition-all shadow-sm"
+                      class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all shadow-sm"
                       title="停止生成"
                     >
-                      <i class="fa-solid fa-stop text-[10px]"></i>
+                      <span class="w-3 h-3 rounded-[3px] bg-white"></span>
                     </button>
                     <button
                       v-else
-                      @click="sendIterate"
-                      :disabled="!iterateInput.trim() || isStreaming"
-                      class="w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm"
-                      :class="iterateInput.trim() && !isStreaming ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-100 text-slate-400 cursor-not-allowed'"
+                      @click="sendStage3"
+                      :disabled="!stage3Input.trim() && stage3Composer.attachments.value.length === 0"
+                      class="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
+                      :class="(stage3Input.trim() || stage3Composer.attachments.value.length) ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30 hover:shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
                     >
-                      <i class="fa-solid fa-arrow-up text-xs"></i>
+                      <i class="fa-solid fa-arrow-up text-sm"></i>
                     </button>
                   </div>
                 </div>
@@ -703,124 +574,24 @@
             </div>
           </div>
         </div>
-
-        <!-- Right: Agent Logs panel -->
-        <div v-show="showLogsPanel" class="w-[280px] shrink-0 bg-white border-l border-slate-200/60 flex flex-col overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              <i class="fa-solid fa-terminal text-blue-500 mr-1.5"></i>执行日志
-            </span>
-            <div class="flex items-center gap-1">
-              <button @click="agentLogs = []" class="text-slate-400 hover:text-slate-600 text-[10px] px-1.5 py-0.5 rounded hover:bg-slate-100 transition-colors" title="清空">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-              <button @click="showLogsPanel = false" class="text-slate-400 hover:text-slate-600 text-xs px-1" title="关闭">
-                <i class="fa-solid fa-chevron-right"></i>
-              </button>
-            </div>
-          </div>
-          <div ref="iterateLogsContainerRef" class="flex-1 overflow-y-auto p-3 space-y-1.5 font-mono text-[11px]">
-            <div v-if="agentLogs.length === 0" class="text-slate-400 text-center py-8">
-              <i class="fa-solid fa-satellite-dish text-lg mb-2 block text-slate-300"></i>
-              等待 Agent 活动...
-            </div>
-            <div v-for="log in agentLogs" :key="log.id"
-              class="px-2.5 py-1.5 rounded-md leading-relaxed"
-              :class="{
-                'bg-slate-50': log.type === 'thought',
-                'bg-sky-50 border-l-2 border-sky-400': log.type === 'tool' && log.status === 'running',
-                'bg-blue-50 border-l-2 border-blue-400': log.type === 'tool' && log.status === 'completed',
-                'bg-rose-50 border-l-2 border-rose-400': log.type === 'tool' && log.status === 'failed',
-                'bg-amber-50': log.type === 'usage',
-                'bg-violet-50': log.type === 'api',
-                'bg-rose-50': log.type === 'error',
-                'bg-blue-50': log.type === 'info',
-              }"
-            >
-              <div class="flex items-start gap-2">
-                <span class="text-slate-400 shrink-0 text-[10px] mt-0.5 font-mono">{{ log.time }}</span>
-                <div class="flex-1 min-w-0">
-                  <span v-if="log.type === 'thought'" class="text-slate-500 break-words">
-                    <i class="fa-solid fa-brain mr-1 text-[9px] text-slate-400"></i>{{ log.content }}
-                  </span>
-                  <span v-else-if="log.type === 'tool'" class="break-words" :class="log.status === 'failed' ? 'text-rose-600' : log.status === 'completed' ? 'text-blue-600' : 'text-sky-600'">
-                    <i class="mr-1 text-[9px]" :class="log.status === 'completed' ? 'fa-solid fa-circle-check' : log.status === 'failed' ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-gear fa-spin'"></i>{{ log.content }}
-                  </span>
-                  <span v-else-if="log.type === 'usage'" class="text-amber-600">
-                    <i class="fa-solid fa-chart-pie mr-1 text-[9px]"></i>{{ log.content }}
-                  </span>
-                  <span v-else-if="log.type === 'api'" class="text-violet-600">
-                    <i class="fa-solid fa-bolt mr-1 text-[9px]"></i>{{ log.content }}
-                  </span>
-                  <span v-else-if="log.type === 'error'" class="text-rose-600">
-                    <i class="fa-solid fa-triangle-exclamation mr-1 text-[9px]"></i>{{ log.content }}
-                  </span>
-                  <span v-else class="text-blue-600">
-                    <i class="fa-solid fa-circle-info mr-1 text-[9px]"></i>{{ log.content }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Export Tab — full width -->
-      <div v-else-if="activeTab === 'export'" class="flex-1 overflow-y-auto p-8">
-        <h2 class="text-lg font-bold text-slate-800 mb-6">导出项目</h2>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <!-- Export zip -->
-          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center text-center hover:border-blue-200 transition-colors">
-            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
-              <i class="fa-solid fa-file-zipper text-xl text-blue-600"></i>
-            </div>
-            <h3 class="font-semibold text-slate-800 mb-1">导出完整项目</h3>
-            <p class="text-xs text-slate-500 mb-4">包含功能清单和所有原型文件</p>
-            <button
-              @click="exportZip"
-              class="w-full py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors"
-            >
-              下载 .zip
-            </button>
-          </div>
-          <!-- Export spec -->
-          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center text-center hover:border-blue-200 transition-colors">
-            <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
-              <i class="fa-solid fa-file-lines text-xl text-blue-600"></i>
-            </div>
-            <h3 class="font-semibold text-slate-800 mb-1">导出功能清单</h3>
-            <p class="text-xs text-slate-500 mb-4">Markdown 或 Word 格式的功能需求文档</p>
-            <div class="w-full flex gap-2">
-              <button
-                @click="exportSpec"
-                class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-medium transition-colors"
-              >
-                下载 .md
-              </button>
-              <button
-                @click="exportWord"
-                class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-colors"
-              >
-                下载 .docx
-              </button>
-            </div>
-          </div>
-          <!-- Open in browser -->
-          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 flex flex-col items-center text-center hover:border-blue-200 transition-colors">
-            <div class="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center mb-4">
-              <i class="fa-solid fa-arrow-up-right-from-square text-xl text-violet-600"></i>
-            </div>
-            <h3 class="font-semibold text-slate-800 mb-1">在浏览器打开原型</h3>
-            <p class="text-xs text-slate-500 mb-4">使用系统浏览器查看 HTML 原型</p>
-            <button
-              @click="openInBrowser"
-              class="w-full py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-sm font-medium transition-colors"
-            >
-              打开浏览器
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- 交付物 Tab (阶段②③ 通用) -->
+      <Stage3Deliverables
+        v-else-if="activeTab === 'deliverables2' || activeTab === 'deliverables3'"
+        :deliverables="activeDeliverables"
+        :selected="deliverableSelected"
+        :status-map="deliverableStatus"
+        :content="activeDeliverableContent"
+        :busy="deliverableBusy"
+        :editing="deliverableEditing"
+        @select="deliverableSelected = $event"
+        @generate="generateDeliverable"
+        @toggle-edit="deliverableEditing = !deliverableEditing"
+        @export-md="exportDeliverableMd"
+        @update-content="updateDeliverableContent"
+        @save="saveDeliverable"
+      />
 
     </div><!-- end tab content body -->
   </div>
@@ -832,7 +603,9 @@ import { useRoute } from 'vue-router';
 import { marked } from 'marked';
 import StageTimeline from '@/components/workbench/StageTimeline.vue';
 import StagePanel from '@/components/workbench/StagePanel.vue';
+import Stage3Deliverables from '@/components/workbench/StageDeliverables.vue';
 import { FDE_STAGES, getStage, DEFAULT_STAGE } from '@/data/fde-stages';
+import { useChatComposer } from '@/composables/useChatComposer';
 
 const props = defineProps({
   slug: { type: String, required: true },
@@ -846,15 +619,22 @@ const projectMeta = ref(null);
 const activeTab = ref('requirement');
 
 // --- FDE 五阶段工作台状态 ---
-const WORKSPACE_STAGE = 2; // 阶段②承载现有工作区(需求对话/功能清单/原型/迭代/导出)
+const WORKSPACE_STAGES = [2, 3]; // 阶段②③承载真实工作区;①④⑤仍走 StagePanel 展示
 const currentStage = ref(DEFAULT_STAGE);
 const stageStatus = ref({ 1: 'done', 2: 'active', 3: 'todo', 4: 'todo', 5: 'todo' });
 const activeStageObj = computed(() => getStage(currentStage.value));
-const isWorkspaceStage = computed(() => currentStage.value === WORKSPACE_STAGE);
+const isWorkspaceStage = computed(() => WORKSPACE_STAGES.includes(currentStage.value));
 
 async function selectStage(id) {
   if (id === currentStage.value) return;
   currentStage.value = id;
+  // 切阶段时重置到该阶段第一个 tab
+  const firstTab = tabsForStage(id)[0];
+  if (firstTab) activeTab.value = firstTab.key;
+  // 交付物：选中该阶段第一件，并加载该阶段已生成的交付物
+  const firstDeliv = deliverablesForStage(id)[0];
+  if (firstDeliv) deliverableSelected.value = firstDeliv.key;
+  loadDeliverablesForStage(id);
   // 更新阶段状态:比 id 小的算 done、id 为 active、比 id 大的保持 todo
   const next = {};
   for (let i = 1; i <= 5; i++) {
@@ -941,13 +721,75 @@ const scrollToMessage = (msgIndex) => {
   });
 };
 
-const tabs = [
-  { key: 'requirement', label: '需求对话', icon: 'fa-solid fa-comments' },
-  { key: 'spec', label: '功能清单', icon: 'fa-solid fa-list-check' },
-  { key: 'prototype', label: '原型预览', icon: 'fa-solid fa-browser' },
-  { key: 'iterate', label: '迭代修改', icon: 'fa-solid fa-arrows-rotate' },
-  { key: 'export', label: '导出', icon: 'fa-solid fa-download' },
+// tab 集按阶段计算：阶段②③ 统一为 对话 | 交付物 | 原型
+const STAGE2_TABS = [
+  { key: 'requirement', label: '智能对话', icon: 'fa-solid fa-comments' },
+  { key: 'deliverables2', label: '交付物', icon: 'fa-solid fa-box-open' },
+  { key: 'prototype', label: '原型', icon: 'fa-solid fa-window-maximize' },
 ];
+const STAGE3_TABS = [
+  { key: 'chat3', label: '智能对话', icon: 'fa-solid fa-comments' },
+  { key: 'deliverables3', label: '交付物', icon: 'fa-solid fa-box-open' },
+  { key: 'prototype', label: '定稿原型', icon: 'fa-solid fa-window-maximize' },
+];
+function tabsForStage(id) {
+  if (id === 3) return STAGE3_TABS;
+  return STAGE2_TABS;
+}
+const tabs = computed(() => tabsForStage(currentStage.value));
+
+// 阶段②交付物定义（4 件都接 AI；功能清单走 product-feature-spec skill）
+const STAGE2_DELIVERABLES = [
+  {
+    key: 'contact-form', name: '需求与数据对接确认表', short: '对接确认表',
+    icon: 'fa-solid fa-clipboard-list', file: 'stage2/contact-form.md',
+    tplHtml: { stage: '02', html: '2-需求与数据对接确认表【交付】（含组织关系）.html' },
+    hint: '第一轮摸清组织关系五层人 + 逐轮挖需求、对数据源就绪度。',
+  },
+  {
+    key: 'ai-capability', name: 'AI 需求能力清单', short: 'AI能力清单',
+    icon: 'fa-solid fa-wand-magic-sparkles', file: 'stage2/ai-capability.md',
+    tplHtml: { stage: '02', html: '3-AI需求能力清单【交付】.html' },
+    hint: '客户要的 AI 能力逐条列出，每条带效果指标 + 验收口径（如“问数≤30秒/准确率≥95%”）。',
+  },
+  {
+    key: 'feature-spec', name: '产品功能清单（六字段）', short: '功能清单',
+    icon: 'fa-solid fa-list-check', file: 'spec.md',
+    skill: 'product-feature-spec',
+    hint: '六字段红线：功能名称/所属页面/功能描述/优先级/关联智能体/数据依赖，缺一阶段四可打回。',
+  },
+  {
+    key: 'prd2', name: '产品需求文档 PRD（三层）', short: 'PRD',
+    icon: 'fa-solid fa-file-lines', file: 'stage2/prd.md',
+    tpl: { stage: '03', md: '2.4-产品需求文档PRD(模板)【交付】.md' },
+    hint: '目标层 / 功能层 / 交互层三层拆解，功能可追溯到需求。',
+  },
+];
+
+// 阶段③交付物定义（AI 参照 FDE 手册模板生成）
+const STAGE3_DELIVERABLES = [
+  {
+    key: 'final-req', name: '需求最终确认表', short: '需求确认表',
+    icon: 'fa-solid fa-file-signature', file: 'stage3/final-req.md',
+    tpl: { stage: '03', md: '2.4-产品需求文档PRD(模板)【交付】.md' }, // 无独立 md 模板时以 PRD 模板兜底结构
+    hint: '把阶段②收敛后的需求签字定稿——项目概述/痛点/AI赋能方案/需求清单/验收口径。',
+  },
+  {
+    key: 'agent-design', name: '智能体设计表', short: '设计表',
+    icon: 'fa-solid fa-diagram-project', file: 'stage3/agent-design.md',
+    tpl: { stage: '03', md: '1-智能体设计表【交付】.md' },
+    hint: '一个环节一个智能体：身份卡→五层拆解→六组件→提示词→知识库→技能→A/B→验收上线。',
+  },
+  {
+    key: 'prd', name: '产品需求文档 PRD（定稿）', short: 'PRD',
+    icon: 'fa-solid fa-file-lines', file: 'stage3/prd.md',
+    tpl: { stage: '03', md: '2.4-产品需求文档PRD(模板)【交付】.md' },
+    hint: '需求签字后升级为定稿版 PRD——目标/功能/交互三层，功能可追溯到需求。',
+  },
+];
+
+// 当前阶段的交付物清单
+const deliverablesForStage = (id) => (id === 3 ? STAGE3_DELIVERABLES : STAGE2_DELIVERABLES);
 
 // Chat state - enhanced message structure
 const messages = ref([]);
@@ -975,11 +817,87 @@ const iterateMessages = ref([]);
 const iterateInput = ref('');
 const iterateChatRef = ref(null);
 
+// 原型「生成 / 重新生成」的流式消息（就地显示在原型页，不进对话 tab）
+const prototypeGenMessages = ref([]);
+
+// --- 阶段③ state ---
+const stage3Messages = ref([]);
+const stage3Input = ref('');
+const stage3ChatRef = ref(null);
+
+// 三个对话 tab 各自的多模态输入器（图片 / 文件 / 语音）。
+// 语音识别文本回填到对应 tab 的输入框；发送时把 attachments 传入 hermes.prompt。
+const reqComposer = useChatComposer({
+  onTranscribe: (t) => { chatInput.value = (chatInput.value ? chatInput.value + ' ' : '') + t; },
+  getSlug: () => props.slug,
+});
+const iterateComposer = useChatComposer({
+  onTranscribe: (t) => { iterateInput.value = (iterateInput.value ? iterateInput.value + ' ' : '') + t; },
+  getSlug: () => props.slug,
+});
+const stage3Composer = useChatComposer({
+  onTranscribe: (t) => { stage3Input.value = (stage3Input.value ? stage3Input.value + ' ' : '') + t; },
+  getSlug: () => props.slug,
+});
+
+// —— 通用交付物状态（阶段②③共用，按 currentStage 键控）——
+const deliverableStage = ref(3);              // 当前打开交付物的阶段
+const deliverableSelected = ref('');          // 当前选中的交付物 key
+const deliverableContents = ref({});          // { 'stage:key': markdown }
+const deliverableEditing = ref(false);
+const deliverableBusy = ref(false);
+
+// 当前阶段交付物清单 + 选中项 + 状态
+const activeDeliverables = computed(() => (currentStage.value === 3 ? STAGE3_DELIVERABLES : STAGE2_DELIVERABLES));
+const selectedDeliverable = computed(() =>
+  activeDeliverables.value.find((d) => d.key === deliverableSelected.value) || null
+);
+const activeDeliverableContent = computed(() =>
+  deliverableContents.value[`${currentStage.value}:${deliverableSelected.value}`] || ''
+);
+const deliverableStatus = computed(() => {
+  const m = {};
+  activeDeliverables.value.forEach((d) => {
+    m[d.key] = deliverableContents.value[`${currentStage.value}:${d.key}`] ? 'ready' : 'empty';
+  });
+  return m;
+});
+
+const stage3Quick = [
+  '帮我把阶段②收敛的需求整理成最终确认清单',
+  '这个项目该拆成哪几个智能体？画个矩阵',
+  '梳理一下每个智能体的输入输出和边界',
+];
+const stage2Quick = [
+  '帮我梳理这个项目的核心需求和使用场景',
+  '这个客户可能有哪些痛点？该问哪些问题',
+  '基于我们聊的，列一下需要哪些 AI 能力',
+];
+
 // Session update subscription
 let unsubscribe = null;
 
 // Determine which messages array to target based on active tab
-const currentMessages = computed(() => activeTab.value === 'iterate' ? iterateMessages : messages);
+const currentMessages = computed(() => activeTab.value === 'iterate' ? iterateMessages : (activeTab.value === 'chat3' ? stage3Messages : messages));
+
+// 按当前 tab 取对应的消息数组（.value）——统一入口，供流式渲染/追加使用
+// streamTargetTab 非空时优先（用于原型页迭代：在 prototype tab 触发，但内容应归到 iterate 流）
+const streamTargetTab = ref('');
+function activeMessagesArr() {
+  const t = streamTargetTab.value || activeTab.value;
+  if (t === 'iterate') return iterateMessages.value;
+  if (t === 'chat3') return stage3Messages.value;
+  if (t === 'prototype-gen') return prototypeGenMessages.value;
+  return messages.value;
+}
+// 当前 tab 对应的持久化 tab 名
+function activeTabName() {
+  const t = streamTargetTab.value || activeTab.value;
+  if (t === 'iterate') return 'iterate';
+  if (t === 'chat3') return 'chat3';
+  if (t === 'prototype-gen') return 'prototype-gen';
+  return 'requirement';
+}
 
 // --- Helper: create a fresh message object ---
 function createMessage(role, content, extra = {}) {
@@ -1056,7 +974,7 @@ const renderedSpec = computed(() => {
 
 // --- Render assistant content with typewriter cursor ---
 const renderAssistantContent = (msg, index) => {
-  const targetMessages = activeTab.value === 'iterate' ? iterateMessages.value : messages.value;
+  const targetMessages = activeMessagesArr();
   const isLast = index === targetMessages.length - 1;
 
   // If still streaming and this is the last message, show typing content with cursor
@@ -1085,13 +1003,17 @@ const loadProject = async () => {
       if (typeof m.stage === 'number') currentStage.value = m.stage;
       if (m.stageStatus && typeof m.stageStatus === 'object') stageStatus.value = m.stageStatus;
       if (data.messages && data.messages.length > 0) {
-        const reqMsgs = data.messages.filter(m => m.tab !== 'iterate');
+        const reqMsgs = data.messages.filter(m => m.tab !== 'iterate' && m.tab !== 'chat3');
         const itMsgs = data.messages.filter(m => m.tab === 'iterate');
+        const s3Msgs = data.messages.filter(m => m.tab === 'chat3');
         if (reqMsgs.length) {
           messages.value = reqMsgs.map(m => createMessage(m.role || 'assistant', m.content || ''));
         }
         if (itMsgs.length) {
           iterateMessages.value = itMsgs.map(m => createMessage(m.role || 'assistant', m.content || ''));
+        }
+        if (s3Msgs.length) {
+          stage3Messages.value = s3Msgs.map(m => createMessage(m.role || 'assistant', m.content || ''));
         }
       }
       if (data.sessionRecovered) {
@@ -1158,7 +1080,7 @@ const flushTypewriterQueue = () => {
 };
 
 const appendAssistantText = (text) => {
-  const targetMessages = activeTab.value === 'iterate' ? iterateMessages.value : messages.value;
+  const targetMessages = activeMessagesArr();
   const lastMsg = targetMessages[targetMessages.length - 1];
   if (lastMsg && lastMsg.role === 'assistant') {
     // Append to typingContent (which shows during streaming) and content (the final)
@@ -1176,7 +1098,7 @@ const appendAssistantText = (text) => {
 
 // --- Finalize the last assistant message when streaming ends ---
 const finalizeLastAssistantMessage = () => {
-  const targetMessages = activeTab.value === 'iterate' ? iterateMessages.value : messages.value;
+  const targetMessages = activeMessagesArr();
   const lastMsg = targetMessages[targetMessages.length - 1];
   if (lastMsg && lastMsg.role === 'assistant') {
     lastMsg.thinkingDone = true;
@@ -1198,7 +1120,7 @@ const finalizeLastAssistantMessage = () => {
 
     // Persist assistant message
     if (lastMsg.content) {
-      const tab = activeTab.value === 'iterate' ? 'iterate' : 'requirement';
+      const tab = activeTabName();
       window.api.hermes.saveMessage(props.slug, { role: 'assistant', content: lastMsg.content, tab, timestamp: new Date().toISOString() });
     }
   }
@@ -1206,7 +1128,7 @@ const finalizeLastAssistantMessage = () => {
 
 // --- Get or create the current assistant message for streaming ---
 const getOrCreateAssistantMsg = () => {
-  const targetMessages = activeTab.value === 'iterate' ? iterateMessages.value : messages.value;
+  const targetMessages = activeMessagesArr();
   const lastMsg = targetMessages[targetMessages.length - 1];
   // 未结束 → 继续追加
   if (lastMsg && lastMsg.role === 'assistant' && !lastMsg.thinkingDone) {
@@ -1367,11 +1289,19 @@ const handleSessionUpdate = (data) => {
       doneMsg += ` | tokens: ${input}→${output} (${total})`;
     }
     addLog('info', doneMsg);
-    if (activeTab.value === 'iterate') {
+    // 原型迭代结束：刷新 iframe 并清除流目标标记
+    if (activeTab.value === 'iterate' || streamTargetTab.value === 'iterate') {
       iframeKey.value++;
+      refreshPrototypeFiles();
+      streamTargetTab.value = '';
     }
     loadSpec();
     refreshPrototypeFiles();
+    // 阶段②③：AI 可能刚写完交付物文件，读回渲染
+    if (currentStage.value === 2 || currentStage.value === 3) {
+      deliverableBusy.value = false;
+      loadDeliverablesForStage(currentStage.value);
+    }
   } else if (type === 'usage_update' || type === 'usage') {
     // Rich usage info: model, tokens, latency
     const used = update.used || 0;
@@ -1409,7 +1339,7 @@ const handleSessionUpdate = (data) => {
     isStreaming.value = false;
     isToolRunning.value = false;
     addLog('error', update.message || '请求失败');
-    const targetMessages = activeTab.value === 'iterate' ? iterateMessages.value : messages.value;
+    const targetMessages = activeMessagesArr();
     targetMessages.push(createMessage('assistant', `**Error:** ${update.message || '请求失败'}`));
   }
 };
@@ -1417,10 +1347,13 @@ const handleSessionUpdate = (data) => {
 // --- Chat functions ---
 const sendMessage = async () => {
   const text = chatInput.value.trim();
-  if (!text || isStreaming.value) return;
+  const atts = reqComposer.attachments.value;
+  if ((!text && atts.length === 0) || isStreaming.value) return;
 
-  messages.value.push(createMessage('user', text));
+  messages.value.push(createMessage('user', text, atts.length ? { attachments: [...atts] } : {}));
   chatInput.value = '';
+  const sending = [...atts];
+  reqComposer.clearAttachments();
   isStreaming.value = true;
   currentStreamId = Date.now().toString();
 
@@ -1441,7 +1374,7 @@ const sendMessage = async () => {
   scrollToBottom();
 
   try {
-    await window.api.hermes.prompt(props.slug, text);
+    await window.api.hermes.prompt(props.slug, text, sending);
     // 延迟兜底：正常情况由 agent_message_end 事件结束
     setTimeout(() => {
       if (isStreaming.value) {
@@ -1459,10 +1392,14 @@ const sendMessage = async () => {
 
 const sendIterate = async () => {
   const text = iterateInput.value.trim();
-  if (!text || isStreaming.value) return;
+  const atts = iterateComposer.attachments.value;
+  if ((!text && atts.length === 0) || isStreaming.value) return;
 
-  iterateMessages.value.push(createMessage('user', text));
+  streamTargetTab.value = 'iterate';   // 原型页迭代：内容归到 iterate 流，不污染需求对话
+  iterateMessages.value.push(createMessage('user', text, atts.length ? { attachments: [...atts] } : {}));
   iterateInput.value = '';
+  const sending = [...atts];
+  iterateComposer.clearAttachments();
   isStreaming.value = true;
   currentStreamId = Date.now().toString();
 
@@ -1480,10 +1417,8 @@ const sendIterate = async () => {
     streamId: currentStreamId,
   }));
 
-  scrollToBottom();
-
   try {
-    await window.api.hermes.prompt(props.slug, `/prototype-iterate ${text}`);
+    await window.api.hermes.prompt(props.slug, `/prototype-iterate ${text}`, sending);
     // 延迟兜底：正常情况由 agent_message_end 事件结束
     setTimeout(() => {
       if (isStreaming.value) {
@@ -1492,12 +1427,181 @@ const sendIterate = async () => {
         isToolRunning.value = false;
         iframeKey.value++;
         refreshPrototypeFiles();
+        streamTargetTab.value = '';
       }
     }, 2000);
   } catch (e) {
     console.error('Iterate prompt failed:', e);
     isStreaming.value = false;
+    streamTargetTab.value = '';
   }
+};
+
+// ============ 阶段③：需求确认 + 智能体设计 ============
+
+// 阶段③对话发送（复用项目级 prompt 通道，注入阶段语境）
+const sendStage3 = async () => {
+  const text = stage3Input.value.trim();
+  const atts = stage3Composer.attachments.value;
+  if ((!text && atts.length === 0) || isStreaming.value) return;
+
+  stage3Messages.value.push(createMessage('user', text, atts.length ? { attachments: [...atts] } : {}));
+  stage3Input.value = '';
+  const sending = [...atts];
+  stage3Composer.clearAttachments();
+  isStreaming.value = true;
+  currentStreamId = Date.now().toString();
+
+  window.api.hermes.saveMessage(props.slug, { role: 'user', content: text, tab: 'chat3', timestamp: new Date().toISOString() });
+
+  stage3Messages.value.push(createMessage('assistant', '', {
+    thinkingSteps: [{ text: '已发送请求，等待 AI 响应...', icon: 'fa-solid fa-cloud-arrow-up', visible: true }],
+    thinkingDone: false, expanded: true, typingContent: '', timestamp: '', streamId: currentStreamId,
+  }));
+  scrollToBottom();
+
+  const framed = `【阶段③ 需求确认+智能体设计】你是 FDE 交付工程师。当前任务：把阶段②收敛后的需求签字定死，并把业务链路拆成智能体矩阵（一个环节一个智能体、上游输出=下游输入、过 Eval 门禁）。请围绕以下用户输入继续推进，必要时追问澄清：\n\n${text}`;
+  try {
+    await window.api.hermes.prompt(props.slug, framed, sending);
+    setTimeout(() => {
+      if (isStreaming.value) {
+        finalizeLastAssistantMessage();
+        isStreaming.value = false;
+        isToolRunning.value = false;
+      }
+    }, 2000);
+  } catch (e) {
+    console.error('Stage3 prompt failed:', e);
+    isStreaming.value = false;
+  }
+};
+
+// —— 通用交付物：读取 / 加载 / 生成 / 保存 / 导出（阶段②③共用）——
+
+const dkey = (stageId, key) => `${stageId}:${key}`;
+
+// 读取某份交付物文件到 deliverableContents
+const loadDeliverable = async (stageId, d) => {
+  try {
+    const result = await window.api.hermes.readFile(props.slug, d.file);
+    if (result && result.success && result.content) {
+      deliverableContents.value = { ...deliverableContents.value, [dkey(stageId, d.key)]: result.content };
+    }
+  } catch (e) { /* 未生成，忽略 */ }
+};
+
+const loadDeliverablesForStage = async (stageId) => {
+  for (const d of deliverablesForStage(stageId)) {
+    await loadDeliverable(stageId, d);
+  }
+};
+
+// 生成某份交付物：读模板(md/html)或走 skill → 拼 prompt → AI 真跑 write_file → 读回
+const generateDeliverable = async (key) => {
+  if (isStreaming.value || deliverableBusy.value) return;
+  const stageId = currentStage.value;
+  const d = deliverablesForStage(stageId).find((x) => x.key === key);
+  if (!d) return;
+
+  deliverableSelected.value = key;
+  deliverableBusy.value = true;
+  isStreaming.value = true;
+
+  // 生成留痕：写到当前阶段的对话流
+  const chatArr = stageId === 3 ? stage3Messages : messages;
+  chatArr.value.push(createMessage('user', `请生成《${d.name}》`));
+  chatArr.value.push(createMessage('assistant', '', {
+    thinkingSteps: [{ text: `正在生成《${d.name}》...`, icon: 'fa-solid fa-wand-magic-sparkles', visible: true }],
+    thinkingDone: false, expanded: true, typingContent: '', timestamp: '',
+  }));
+
+  const reqName = projectMeta.value?.name || props.slug;
+  let prompt = '';
+
+  if (d.skill) {
+    // 走现成 skill（如 product-feature-spec），不塞模板
+    prompt = `/${d.skill} 根据本项目"${reqName}"之前的需求对话上下文，生成《${d.name}》。\n\n`
+      + `【重要】把生成的完整内容用 write_file 工具写入当前项目目录下的 \`${d.file}\` 文件（Markdown 格式）。`;
+  } else {
+    // 读手册模板（md 优先，否则 html 当结构参考）
+    let tplText = '';
+    try {
+      if (d.tpl) {
+        const t = await window.api.handbook.readMd(d.tpl.stage, d.tpl.md);
+        if (t && t.success) tplText = t.content || '';
+      } else if (d.tplHtml) {
+        const t = await window.api.handbook.readHtml(d.tplHtml.stage, d.tplHtml.html);
+        if (t && t.success) tplText = t.content || '';
+      }
+    } catch (e) { tplText = ''; }
+
+    prompt = `【阶段${stageId} 交付物生成】基于本项目"${reqName}"之前的需求对话上下文，生成《${d.name}》。\n\n`
+      + (tplText
+        ? `严格参照以下 FDE 手册模板的结构与字段（这是标准格式，不要照抄示例内容，要结合本项目实际填写）：\n\n----- 模板开始 -----\n${tplText.slice(0, 6000)}\n----- 模板结束 -----\n\n`
+        : `请按该交付物的行业标准结构组织内容。\n\n`)
+      + `【重要】把生成的完整内容用 write_file 工具写入当前项目目录下的 \`${d.file}\` 文件（Markdown 格式，若目录不存在请一并创建）。`;
+  }
+
+  try {
+    await window.api.hermes.prompt(props.slug, prompt);
+    setTimeout(async () => {
+      finalizeLastAssistantMessage();
+      isStreaming.value = false;
+      isToolRunning.value = false;
+      deliverableBusy.value = false;
+      await loadDeliverable(stageId, d);
+    }, 3000);
+  } catch (e) {
+    console.error('Generate deliverable failed:', e);
+    isStreaming.value = false;
+    deliverableBusy.value = false;
+  }
+};
+
+// —— 对话顶部「快捷操作」：按阶段动态。每件交付物一个生成按钮 + 一个「生成原型」——
+const quickActions = computed(() => {
+  const acts = activeDeliverables.value.map((d) => ({
+    key: d.key, label: `生成${d.short}`, icon: d.icon, kind: 'deliverable',
+  }));
+  acts.push({ key: '__proto__gen', label: '生成原型', icon: 'fa-solid fa-wand-magic-sparkles', kind: 'prototype' });
+  return acts;
+});
+
+const runQuickAction = (act) => {
+  if (isStreaming.value || deliverableBusy.value) return;
+  if (act.kind === 'prototype') {
+    activeTab.value = 'prototype';
+    generatePrototype();
+  } else {
+    deliverableSelected.value = act.key;
+    activeTab.value = currentStage.value === 3 ? 'deliverables3' : 'deliverables2';
+    generateDeliverable(act.key);
+  }
+};
+
+const saveDeliverable = async (key) => {
+  const stageId = currentStage.value;
+  const d = deliverablesForStage(stageId).find((x) => x.key === key);
+  if (!d) return;
+  try {
+    await window.api.hermes.writeFile(props.slug, d.file, deliverableContents.value[dkey(stageId, key)] || '');
+    deliverableEditing.value = false;
+  } catch (e) { console.error('Save deliverable failed:', e); }
+};
+
+const updateDeliverableContent = (val) => {
+  deliverableContents.value = { ...deliverableContents.value, [dkey(currentStage.value, deliverableSelected.value)]: val };
+};
+
+const exportDeliverableMd = async (key) => {
+  const stageId = currentStage.value;
+  const d = deliverablesForStage(stageId).find((x) => x.key === key);
+  const content = d && deliverableContents.value[dkey(stageId, key)];
+  if (!d || !content) return;
+  try {
+    await window.api.hermes.writeFile(props.slug, d.file, content);
+    await window.api.hermes.openInBrowser(props.slug, d.file);
+  } catch (e) { console.error('Export deliverable md failed:', e); }
 };
 
 const cancelStream = async () => {
@@ -1514,8 +1618,10 @@ const cancelStream = async () => {
 
 const scrollToBottom = () => {
   nextTick(() => {
-    if (activeTab.value === 'iterate' && iterateChatRef.value) {
+    if ((activeTab.value === 'iterate' || (activeTab.value === 'prototype' && streamTargetTab.value === 'iterate')) && iterateChatRef.value) {
       iterateChatRef.value.scrollTop = iterateChatRef.value.scrollHeight;
+    } else if (activeTab.value === 'chat3' && stage3ChatRef.value) {
+      stage3ChatRef.value.scrollTop = stage3ChatRef.value.scrollHeight;
     } else if (chatContainerRef.value) {
       chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight;
     }
@@ -1564,7 +1670,7 @@ const generateSpec = async () => {
     finalizeLastAssistantMessage();
     isStreaming.value = false;
     loadSpec();
-    activeTab.value = 'spec';
+    activeTab.value = 'deliverables2';
   } catch (e) {
     console.error('Generate spec failed:', e);
     isStreaming.value = false;
@@ -1654,23 +1760,56 @@ const openInBrowser = async () => {
 const generatePrototype = async () => {
   if (isStreaming.value) return;
   activeTab.value = 'prototype';
+  streamTargetTab.value = 'iterate';           // 生成过程的流归到 iterate 消息数组，供原型页进度面板展示
   isStreaming.value = true;
+  currentStreamId = Date.now().toString();
+  iterateMessages.value.push(createMessage('user', '基于 stage2/prd.md 生成 HTML 原型'));
+  iterateMessages.value.push(createMessage('assistant', '', {
+    thinkingSteps: [
+      { text: '正在准备生成原型...', icon: 'fa-solid fa-wand-magic-sparkles', visible: true },
+    ],
+    thinkingDone: false,
+    expanded: true,
+    typingContent: '',
+    timestamp: '',
+    streamId: currentStreamId,
+  }));
+  scrollToBottom();
   try {
-    await window.api.hermes.prompt(props.slug, '/prototype-generator 基于当前项目目录下的 spec.md 生成 HTML 原型，输出到 prototype/ 目录');
+    await window.api.hermes.prompt(props.slug, '/prototype-generator 基于当前项目目录下的 stage2/prd.md 生成 HTML 原型，输出到 prototype/ 目录');
   } catch (e) {
     console.error('Generate prototype failed:', e);
+    finalizeLastAssistantMessage();
     isStreaming.value = false;
+    streamTargetTab.value = '';
   }
 };
 
 const regeneratePrototype = async () => {
   if (isStreaming.value) return;
+  activeTab.value = 'prototype';
+  streamTargetTab.value = 'iterate';
   isStreaming.value = true;
+  currentStreamId = Date.now().toString();
+  iterateMessages.value.push(createMessage('user', '基于 stage2/prd.md 重新生成 HTML 原型'));
+  iterateMessages.value.push(createMessage('assistant', '', {
+    thinkingSteps: [
+      { text: '正在准备重新生成原型...', icon: 'fa-solid fa-wand-magic-sparkles', visible: true },
+    ],
+    thinkingDone: false,
+    expanded: true,
+    typingContent: '',
+    timestamp: '',
+    streamId: currentStreamId,
+  }));
+  scrollToBottom();
   try {
-    await window.api.hermes.prompt(props.slug, '/prototype-generator 基于当前项目目录下的 spec.md 重新生成 HTML 原型，输出到 prototype/ 目录');
+    await window.api.hermes.prompt(props.slug, '/prototype-generator 基于当前项目目录下的 stage2/prd.md 重新生成 HTML 原型，输出到 prototype/ 目录');
   } catch (e) {
     console.error('Regenerate prototype failed:', e);
+    finalizeLastAssistantMessage();
     isStreaming.value = false;
+    streamTargetTab.value = '';
   }
 };
 
@@ -1687,9 +1826,15 @@ const exportZip = async () => {
 onMounted(async () => {
   await loadProject();
 
+  // 依据恢复后的当前阶段，把 activeTab 设为该阶段第一个 tab
+  const stageTabs = tabsForStage(currentStage.value);
+  if (!stageTabs.some(t => t.key === activeTab.value)) {
+    activeTab.value = stageTabs[0]?.key || 'requirement';
+  }
+
   // Set initial tab from query
   const queryTab = route.query.tab;
-  if (queryTab && tabs.some(t => t.key === queryTab)) {
+  if (queryTab && tabs.value.some(t => t.key === queryTab)) {
     activeTab.value = queryTab;
   }
 
@@ -1700,6 +1845,11 @@ onMounted(async () => {
 
   // Load spec
   loadSpec();
+
+  // 交付物：初始化当前阶段选中项 + 读回已生成的交付物
+  const firstDeliv = deliverablesForStage(currentStage.value)[0];
+  if (firstDeliv && !deliverableSelected.value) deliverableSelected.value = firstDeliv.key;
+  loadDeliverablesForStage(currentStage.value);
 
   // Load prototype files
   refreshPrototypeFiles();
@@ -1743,8 +1893,8 @@ onUnmounted(() => {
 
 // Watch tab changes to load relevant data
 watch(activeTab, (newTab) => {
-  if (newTab === 'spec') {
-    loadSpec();
+  if (newTab === 'deliverables2' || newTab === 'deliverables3') {
+    loadDeliverablesForStage(currentStage.value);
   } else if (newTab === 'prototype') {
     refreshPrototypeFiles();
   }
@@ -1752,6 +1902,21 @@ watch(activeTab, (newTab) => {
 </script>
 
 <style scoped>
+/* 所有可点击元素统一小手光标；禁用态恢复默认 */
+button:not(:disabled),
+[role="button"],
+a,
+textarea,
+summary,
+label[for] {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+textarea {
+  cursor: text;
+}
 /* Markdown Body Styles */
 :deep(.markdown-body) {
   word-wrap: break-word;

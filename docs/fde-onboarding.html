@@ -1,0 +1,537 @@
+<title>FDE 前线交付作战图</title>
+<meta name="description" content="新入职前线交付工程师的五阶段实战路径:从备弹进场到定稿交付。">
+<style>
+  :root {
+    --ink: #0f1729;          /* 深墨蓝 · 指挥屏 */
+    --ink-soft: #1c2740;
+    --paper: #f7f5f0;        /* 暖白纸 */
+    --paper-card: #ffffff;
+    --brass: #c8862a;        /* 黄铜琥珀 · 强调 */
+    --alert: #b5433a;        /* 铁律赤 */
+    --alert-soft: #f3e2df;
+    --neutral: #5a6270;      /* 蓝灰中性 */
+    --neutral-line: #dfdbd1;
+    --neutral-faint: #ece8de;
+    --text: #232937;
+    --text-dim: #5a6270;
+    --text-oninK: #eef1f7;
+    --text-oninK-dim: #9aa6bd;
+    --accent-on-ink: #e3a94a;
+    --shadow: 0 1px 2px rgba(15,23,41,.06), 0 8px 24px rgba(15,23,41,.06);
+    --radius: 10px;
+  }
+  :root:not([data-theme="light"]) {
+    @media (prefers-color-scheme: dark) {
+      --paper: #10151f;
+      --paper-card: #171e2b;
+      --text: #e6e9f0;
+      --text-dim: #97a1b4;
+      --neutral: #97a1b4;
+      --neutral-line: #2a3448;
+      --neutral-faint: #1b2333;
+      --brass: #e0a94a;
+      --alert: #e0736a;
+      --alert-soft: #2c1e1d;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #10151f;
+    --paper-card: #171e2b;
+    --text: #e6e9f0;
+    --text-dim: #97a1b4;
+    --neutral: #97a1b4;
+    --neutral-line: #2a3448;
+    --neutral-faint: #1b2333;
+    --brass: #e0a94a;
+    --alert: #e0736a;
+    --alert-soft: #2c1e1d;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--text);
+    font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, .serif {
+    font-family: "Noto Serif SC", Georgia, "Songti SC", serif;
+    text-wrap: balance;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+
+  /* ---------- HERO ---------- */
+  .hero {
+    background: var(--ink);
+    color: var(--text-oninK);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: "";
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(900px 420px at 82% -10%, rgba(200,134,42,.18), transparent 60%),
+      linear-gradient(180deg, rgba(255,255,255,.03), transparent 40%);
+    pointer-events: none;
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(180deg, black, transparent 78%);
+    pointer-events: none;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+  .hero-inner { position: relative; padding: 78px 0 72px; }
+  .eyebrow {
+    font-size: 12.5px; letter-spacing: .28em; text-transform: uppercase;
+    color: var(--accent-on-ink); font-weight: 600; margin: 0 0 22px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .eyebrow::before { content: ""; width: 30px; height: 1px; background: var(--accent-on-ink); }
+  .hero h1 {
+    font-size: clamp(34px, 5.4vw, 58px);
+    line-height: 1.08; margin: 0 0 20px; font-weight: 700;
+    letter-spacing: -.01em;
+  }
+  .hero h1 .amber { color: var(--accent-on-ink); }
+  .hero-lead {
+    font-size: clamp(16px, 1.9vw, 19px); color: var(--text-oninK-dim);
+    max-width: 60ch; margin: 0 0 34px;
+  }
+  .thesis {
+    display: inline-flex; flex-wrap: wrap; gap: 10px 14px; align-items: center;
+    padding: 16px 20px; border: 1px solid rgba(227,169,74,.35);
+    border-radius: var(--radius); background: rgba(200,134,42,.07);
+    font-family: "Noto Serif SC", serif; font-size: clamp(14px,1.6vw,16.5px);
+  }
+  .thesis b { color: var(--accent-on-ink); font-weight: 700; }
+  .thesis .arrow { color: rgba(227,169,74,.6); }
+
+  .role-strip {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.09);
+    border-radius: var(--radius); overflow: hidden; margin-top: 42px;
+  }
+  .role-strip div { background: var(--ink); padding: 18px 20px; }
+  .role-strip .k { color: var(--accent-on-ink); font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .role-strip .v { color: var(--text-oninK-dim); font-size: 13.5px; line-height: 1.6; }
+
+  /* ---------- LAYOUT ---------- */
+  .layout { display: grid; grid-template-columns: 220px 1fr; gap: 46px; align-items: start; padding: 56px 0 90px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 0; } }
+
+  nav.rail { position: sticky; top: 24px; }
+  @media (max-width: 900px) { nav.rail { position: static; margin-bottom: 20px; } }
+  nav.rail .rail-title { font-size: 11.5px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 16px; font-weight: 600; }
+  nav.rail a {
+    display: flex; gap: 12px; align-items: baseline; text-decoration: none;
+    color: var(--text-dim); padding: 9px 0; border-top: 1px solid var(--neutral-faint);
+    transition: color .15s;
+  }
+  nav.rail a:hover, nav.rail a.active { color: var(--text); }
+  nav.rail a .num { font-family: ui-monospace, monospace; font-size: 12px; color: var(--brass); font-weight: 600; min-width: 20px; }
+  nav.rail a .lbl { font-size: 13.5px; line-height: 1.4; }
+  nav.rail a.active .lbl { font-weight: 600; }
+
+  /* ---------- STAGE ---------- */
+  .stage { scroll-margin-top: 20px; margin-bottom: 64px; }
+  .stage-head { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 8px; }
+  .stage-num {
+    font-family: ui-monospace, monospace; font-size: 15px; font-weight: 700;
+    color: var(--brass); border: 1.5px solid var(--brass); border-radius: 8px;
+    width: 46px; height: 46px; display: grid; place-items: center; flex: 0 0 auto;
+    background: color-mix(in srgb, var(--brass) 8%, transparent);
+  }
+  .stage-head h2 { font-size: clamp(21px, 2.8vw, 27px); margin: 2px 0 4px; line-height: 1.2; }
+  .stage-head .short { font-size: 12.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; }
+  .mainline {
+    margin: 14px 0 26px 66px; padding: 14px 18px; border-left: 3px solid var(--brass);
+    background: var(--neutral-faint); border-radius: 0 8px 8px 0;
+    font-family: "Noto Serif SC", serif; font-size: 15.5px; color: var(--text);
+  }
+  @media (max-width: 640px) { .mainline { margin-left: 0; } }
+
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 22px; }
+  @media (max-width: 720px) { .cols { grid-template-columns: 1fr; } }
+  .panel {
+    background: var(--paper-card); border: 1px solid var(--neutral-line);
+    border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow);
+  }
+  .panel h3 { font-size: 14px; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+  .panel h3 .tag { font-family: ui-monospace, monospace; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--brass); border: 1px solid var(--brass); border-radius: 4px; padding: 1px 6px; font-weight: 600; }
+  .panel ul { margin: 0; padding-left: 18px; }
+  .panel li { margin-bottom: 7px; font-size: 14px; color: var(--text); }
+  .panel li::marker { color: var(--brass); }
+  .panel.deliv h3 .tag { color: #2f7d54; border-color: #2f7d54; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 12.5px; padding: 5px 11px; border-radius: 20px;
+    background: var(--neutral-faint); border: 1px solid var(--neutral-line); color: var(--text);
+  }
+  .chip.none { font-style: italic; color: var(--text-dim); }
+
+  .know-title { font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: var(--text-dim); font-weight: 600; margin: 26px 0 14px; }
+  .know-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 720px) { .know-grid { grid-template-columns: 1fr; } }
+  .know {
+    background: var(--paper-card); border: 1px solid var(--neutral-line);
+    border-radius: var(--radius); padding: 16px 18px;
+  }
+  .know .kh { font-weight: 600; font-size: 14.5px; margin: 0 0 5px; color: var(--text); }
+  .know .kb { font-size: 13.5px; color: var(--text-dim); margin: 0; line-height: 1.6; }
+
+  .creed {
+    margin-top: 22px; border-left: 3px solid var(--alert);
+    background: var(--alert-soft); border-radius: 0 8px 8px 0; padding: 16px 20px;
+  }
+  .creed .ct { font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--alert); font-weight: 700; margin: 0 0 10px; }
+  .creed p { margin: 0 0 8px; font-family: "Noto Serif SC", serif; font-size: 15px; color: var(--text); }
+  .creed p:last-child { margin-bottom: 0; }
+  .creed p .lead { color: var(--alert); font-weight: 700; }
+
+  hr.div { border: 0; border-top: 1px solid var(--neutral-line); margin: 0 0 56px; }
+
+  footer { background: var(--ink); color: var(--text-oninK-dim); padding: 40px 0; font-size: 13px; }
+  footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: center; }
+  footer b { color: var(--accent-on-ink); font-family: "Noto Serif SC", serif; }
+
+  a.tprint { color: inherit; }
+  @media (prefers-reduced-motion: no-preference) {
+    .stage { animation: rise .5s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700&display=swap">
+
+<header class="hero">
+  <div class="hero-grid"></div>
+  <div class="wrap hero-inner">
+    <p class="eyebrow">FDE 入职作战手册 · 前线交付工程师</p>
+    <h1>把弹备足，进场，<br>把智能体<span class="amber">跑成客户真在用</span>的系统。</h1>
+    <p class="hero-lead">
+      FDE（Forward Deployed Engineer，前线交付工程师）不签单、不谈价，做的是三件事：<b style="color:var(--text-oninK)">需求对接 · 技术信任 · 方案落地</b>。
+      从进客户门那一刻起，你要走完一条五阶段的实战路径 —— 这一页是它的地图。
+    </p>
+    <div class="thesis">
+      <b>备弹进场</b><span class="arrow">→</span>
+      <b>沟通出原型</b><span class="arrow">→</span>
+      <b>拆智能体矩阵</b><span class="arrow">→</span>
+      <b>搭行业工作台</b><span class="arrow">→</span>
+      <b>试用定稿盯使用率</b>
+    </div>
+    <div class="role-strip">
+      <div><div class="k">你负责</div><div class="v">需求对接、技术信任、把方案在客户现场落地跑通</div></div>
+      <div><div class="k">你不越界</div><div class="v">价格转商务，竞品不主动谈，不替客户拍业务的板</div></div>
+      <div><div class="k">怎么算数</div><div class="v">验收只代表"当时能跑"，30 天使用率才代表"真有人用"</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="layout">
+    <nav class="rail" id="rail">
+      <p class="rail-title">五阶段路径</p>
+      <a href="#s1"><span class="num">01</span><span class="lbl">调研准备 · 备弹知识</span></a>
+      <a href="#s2"><span class="num">02</span><span class="lbl">需求沟通 · 原型设计</span></a>
+      <a href="#s3"><span class="num">03</span><span class="lbl">需求确认 · 智能体设计</span></a>
+      <a href="#s4"><span class="num">04</span><span class="lbl">纳米Work 行业工作台</span></a>
+      <a href="#s5"><span class="num">05</span><span class="lbl">客户试用 · 智能体优化</span></a>
+    </nav>
+
+    <main>
+      <!-- STAGE 1 -->
+      <section class="stage" id="s1">
+        <div class="stage-head">
+          <div class="stage-num">01</div>
+          <div>
+            <div class="short">调研备弹 · 纯知识内化</div>
+            <h2>调研准备 + 备弹知识</h2>
+          </div>
+        </div>
+        <div class="mainline">读规范 → 背备弹 → 练框架 → 带话术。进客户门<b>之前</b>就把弹备足，练到条件反射。这一阶段没有交付物，练的是"怎么聊"的内功。</div>
+
+        <div class="cols">
+          <div class="panel">
+            <h3>你要做什么</h3>
+            <ul>
+              <li>背熟备弹知识：行业政策、术语、六大痛点带全国数据、对标案例带量化</li>
+              <li>练透六项调研框架 SOP，配五层拆解法一层层钻到底</li>
+              <li>练熟话术，把七种咨询/控场方法带进现场</li>
+            </ul>
+          </div>
+          <div class="panel deliv">
+            <h3>交付物 <span class="tag">交付</span></h3>
+            <div class="chips"><span class="chip none">无 —— 阶段一不填表、不签字</span></div>
+            <p style="font-size:13px;color:var(--text-dim);margin:12px 0 0;">产出是"内化产出"：张口能接的备弹、烂熟的调研框架、条件反射的话术。</p>
+          </div>
+        </div>
+
+        <div class="know-title">核心装备</div>
+        <div class="know-grid">
+          <div class="know"><p class="kh">备弹知识库</p><p class="kb">进场前背熟政策（国考/DRG/CMI/药占比）、术语、六大痛点与对标案例，做到与客户同频。</p></div>
+          <div class="know"><p class="kh">六项调研框架 SOP</p><p class="kb">目标 / 要什么 / 痛点 / 价值 / 业务流程 / 数据流程，保证聊全不漏项；业务流程要拆到每个节点的输入输出。</p></div>
+          <div class="know"><p class="kh">SPIN + 七维引导</p><p class="kb">情境→痛点→影响→需求回报；核心信息→目标→现状→痛点→业务流程→数据流程→验收，前一维答案自然引出下一问。</p></div>
+          <div class="know"><p class="kh">七种控场方法</p><p class="kb">STAR / 5W1H / 量化锚定 / 吐槽法 / 场景重现 / 如果法 / 反面教材；控场三招：关键词桥接、价值锚定、白板牵引。</p></div>
+          <div class="know"><p class="kh">FAB + AI 价值翻译</p><p class="kb">把 LLM/RAG/多智能体/OCR 等技术能力翻译成甲方听得懂的业务价值，每个技术词后跟一句"也就是说……"。</p></div>
+          <div class="know"><p class="kh">四步澄清法</p><p class="kb">客户说不清需求时：接住 → 翻译给场景菜单 → 具象"谁+做什么+多久" → 量化。</p></div>
+        </div>
+
+        <div class="creed">
+          <p class="ct">铁律 · 记在脑子里</p>
+          <p><span class="lead">备弹是最关键一环</span> —— 第一印象搞不定，后边再努力得几百倍。</p>
+          <p><span class="lead">先问后讲、让客户自己说</span> —— 痛点从甲方嘴里出来他才认账。</p>
+          <p>业务规则直接问、数据资产找 IT 要、隐性经验靠激不靠问；<b>只跟 IT 聊不出业务需求</b>，决策权在业务部门。</p>
+        </div>
+      </section>
+      <hr class="div">
+
+      <!-- STAGE 2 -->
+      <section class="stage" id="s2">
+        <div class="stage-head">
+          <div class="stage-num">02</div>
+          <div>
+            <div class="short">沟通 · 原型</div>
+            <h2>需求沟通 + 原型设计</h2>
+          </div>
+        </div>
+        <div class="mainline">第一轮先启动、先摸组织关系 → 多轮沟通挖需求、对齐 AI 能力 → 出原型 → 用<b>能看能点的原型</b>把需求收敛对齐 → 交棒阶段三签字定稿。</div>
+
+        <div class="cols">
+          <div class="panel">
+            <h3>你要做什么</h3>
+            <ul>
+              <li>第一轮 = 启动会 + 摸清五层人（谁拍板/谁负责/谁配合数据）</li>
+              <li>分轮沟通，每轮当场发群对齐（群确认等同签字）</li>
+              <li>把确认表 + 能力清单喂"产品设计专家智能体"出原型，约 3 小时出一版</li>
+            </ul>
+          </div>
+          <div class="panel deliv">
+            <h3>交付物 <span class="tag">交付</span></h3>
+            <div class="chips">
+              <span class="chip">需求与数据对接确认表（含组织关系）</span>
+              <span class="chip">AI 需求能力清单</span>
+              <span class="chip">产品原型 Demo（含 PRD 三层）</span>
+            </div>
+            <p style="font-size:13px;color:var(--text-dim);margin:12px 0 0;">节奏"2+1"主场：一轮=2次需求对接+1次确认出原型，按次数算不按天卡。</p>
+          </div>
+        </div>
+
+        <div class="know-title">核心方法</div>
+        <div class="know-grid">
+          <div class="know"><p class="kh">先摸组织关系</p><p class="kb">当场摸清五层人（院长/总经理→分管副总→部门主任→操作员→信息科），直接填进对接确认表。人没对齐就往下聊，聊到验收才发现拍板人是另一个。</p></div>
+          <div class="know"><p class="kh">原型驱动收敛</p><p class="kb">很多说不清的需求，客户看到能点的东西才反应过来"对/不对"，用原型一轮轮磨到方向认可。</p></div>
+          <div class="know"><p class="kh">FDE 专属产品设计专家</p><p class="kb">统一用它出 PRD + 原型，内部自动跑结构化拆解、PRD 三层、信息架构、六区块生成。别散着拼提示词。</p></div>
+          <div class="know"><p class="kh">AI 能力量化可验收</p><p class="kb">每个能力写清输入/输出/效果指标（如"问数≤30秒/准确率≥95%"）/验收口径/异常处理，不写"好用""智能"。</p></div>
+          <div class="know"><p class="kh">功能清单六字段</p><p class="kb">功能名/所属页面/描述/优先级/关联智能体/数据依赖 —— 后两项是进入阶段三的红线，也是阶段三智能体矩阵设计的输入。</p></div>
+          <div class="know"><p class="kh">两层签字别混</p><p class="kb">阶段二是"每轮当轮确认"（群确认等同签字）；阶段三才把收敛后需求上《需求最终确认表》总签定死。</p></div>
+        </div>
+
+        <div class="creed">
+          <p class="ct">铁律 · 四条</p>
+          <p><span class="lead">第一轮先启动、先摸组织关系</span>；<span class="lead">原型驱动需求收敛</span>，别指望上来就签死。</p>
+          <p><span class="lead">原型统一用 FDE 专属产品设计专家</span> —— 智能体出的交付物才标准、可复制。</p>
+          <p><span class="lead">AI 能力要量化、可验收</span>；一进加时先发邮件留痕，防扯皮。</p>
+        </div>
+      </section>
+      <hr class="div">
+
+      <!-- STAGE 3 -->
+      <section class="stage" id="s3">
+        <div class="stage-head">
+          <div class="stage-num">03</div>
+          <div>
+            <div class="short">需求确认 · 智能体设计 · 最核心技术阶段</div>
+            <h2>需求确认 + 智能体设计</h2>
+          </div>
+        </div>
+        <div class="mainline">需求签字定稿 → 拆智能体矩阵 → 逐个照设计表填 → 配六组件 → A/B 调优 → 过 Eval 门禁上线。一个环节一个专用智能体，各管一段首尾相接。</div>
+
+        <div class="cols">
+          <div class="panel">
+            <h3>标准动作 · 六步</h3>
+            <ul>
+              <li>需求签字定稿（确认表/任务计划/验收标准跟客户签死）</li>
+              <li>拆矩阵：一个环节一个智能体，不越界不重叠</li>
+              <li>逐个照 1 号设计表填：身份卡 → 五层拆解 → 六组件</li>
+              <li>用 A/B 测试挑最优提示词，过 Eval 门禁才上线</li>
+            </ul>
+          </div>
+          <div class="panel deliv">
+            <h3>交付物 <span class="tag">交付</span></h3>
+            <div class="chips">
+              <span class="chip">智能体设计表</span>
+              <span class="chip">需求最终确认表</span>
+              <span class="chip">项目任务计划表</span>
+              <span class="chip">项目验收标准表</span>
+              <span class="chip">产品需求文档 PRD</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="know-title">核心标准模板</div>
+        <div class="know-grid">
+          <div class="know"><p class="kh">智能体设计表 <span style="color:var(--brass);font-size:12px;">核心 · 一体一份</span></p><p class="kb">八部分自包含。<b>五层拆解</b>（Workflow→节点数据流→Playbook规则→边界→异常）是核心，把业务专家隐性经验拆成可执行结构。</p></div>
+          <div class="know"><p class="kh">PRD 产品需求文档</p><p class="kb">阶段四建模与验收的直接依据。第七章功能清单<b>六字段缺一不可</b>，"关联智能体""数据依赖"是红线；签字后走变更记录，不口头改。</p></div>
+          <div class="know"><p class="kh">提示词工程</p><p class="kb">六要素结构：角色/任务/输入/规则/输出格式/约束。规则从五层拆解搬，不拍脑袋写；用 Git 管版本，一体一个 prompt.md。</p></div>
+          <div class="know"><p class="kh">技能 Skill</p><p class="kb">单一职责·错误处理·命名规范·可复用。优先用平台 64 个标准 Skill（api-*32 + vben-*32），能复用别自研；简单≤3秒/复杂≤10秒。</p></div>
+          <div class="know"><p class="kh">连接器 Connector</p><p class="kb">工具（原子能力）vs 连接器（对接外部系统的桥接层）。推荐 MCP 协议，自定义走 DataHub MCP APIHub + 纳米Work，配置六步含异常/超时/降级。</p></div>
+          <div class="know"><p class="kh">知识库配置</p><p class="kb">内部/行业/外部三类型。数据质量四条：权限（科室 Agent 不看全院）、时效、结构（按层级/条款/语义切片，不按固定字数切）、安全（脱敏可追溯）。</p></div>
+          <div class="know"><p class="kh">A/B 测试</p><p class="kb">四维度对比：提示词写法/工作流编排/知识库范围/Skill 配置。用真实数据≥10 用例跑，记录准确率+理由+业务方签字。</p></div>
+          <div class="know"><p class="kh">Eval 评测 · 上线门禁</p><p class="kb">达标线：准确率≥90% / 召回率≥85% / 精确率≥90% / F1≥87% / 响应≤10秒。用例配比 正常60% / 边界20% / 异常20%。</p></div>
+        </div>
+
+        <div class="creed">
+          <p class="ct">根本铁律</p>
+          <p><span class="lead">以智能体设计为主，平台为辅。</span></p>
+          <p><span class="lead">需求先签字再设计</span> —— 猜错一条后面全返工；<span class="lead">一个环节一个智能体</span>，数据流首尾闭环。</p>
+          <p><span class="lead">边界和异常最容易漏</span> —— 正常路径谁都会写，异常兜底和转人工规则才是上线不翻车的关键；<span class="lead">准确率≥90% 不达标不放行。</span></p>
+        </div>
+      </section>
+      <hr class="div">
+
+      <!-- STAGE 4 -->
+      <section class="stage" id="s4">
+        <div class="stage-head">
+          <div class="stage-num">04</div>
+          <div>
+            <div class="short">工作台上线 · 最易失控的一步</div>
+            <h2>纳米Work 行业工作台</h2>
+          </div>
+        </div>
+        <div class="mainline">把阶段二的原型、阶段三的智能体矩阵，变成客户能访问、能用、能上线的行业工作台。靠<b>技术栈锁死 + 统一 skill</b>保证能复制到下一个行业。</div>
+
+        <div class="cols">
+          <div class="panel">
+            <h3>五步标准流程</h3>
+            <ul>
+              <li>① 建模（api-er-modeling）→ ② 后端（api-guide）</li>
+              <li>③ 前端（vben-guide）→ ④ 联调（走 requestClient，跑真实数据非 mock）</li>
+              <li>⑤ 上线（极库云流水线 → 360 智汇云容器云，给可访问 URL）</li>
+              <li>两步交付：先 demo 验方向，后完整（P0+P1+异常+权限+部署）</li>
+            </ul>
+          </div>
+          <div class="panel deliv">
+            <h3>交付物 <span class="tag">交付</span></h3>
+            <div class="chips">
+              <span class="chip">ER 模型图（数据验证过）</span>
+              <span class="chip">demo 版系统</span>
+              <span class="chip">完整前后端工作台</span>
+              <span class="chip">部署文档</span>
+              <span class="chip">源代码（无硬编码密钥）</span>
+              <span class="chip">项目进度表（甘特图）</span>
+            </div>
+            <p style="font-size:13px;color:var(--text-dim);margin:12px 0 0;">本阶段【交付】主体是能跑的系统本身。节奏 3/7/14 天版本主场，等甲方时间算加时周期单独记。</p>
+          </div>
+        </div>
+
+        <div class="know-title">核心知识点</div>
+        <div class="know-grid">
+          <div class="know"><p class="kh">纳米Work 是什么</p><p class="kb">"360 纳米Work 行业 AI 工作台"（代号 ai-work-platform），三个可独立部署的服务：API(8100) / Scheduler(8101) / Frontend，多租户权限底座 + 任务调度引擎。</p></div>
+          <div class="know"><p class="kh">技术栈锁死</p><p class="kb">后端 FastAPI+SQLAlchemy 2.0(async)+Pydantic 2；前端 Vue3+TS+Vben Admin 5+Element Plus。多租户强制 hospital_id 过滤。技术栈一乱，复制就无从谈起。</p></div>
+          <div class="know"><p class="kh">64 skill + 三层门禁</p><p class="kb">.claude/skills 沉淀 64 个 skill；铁律(CLAUDE.md) + 规范库(按任务触发) + 门禁(redline-guard 静态检查 + pre-commit/CI 硬拦截)约束 AI。</p></div>
+          <div class="know"><p class="kh">ER 建模三步 + 数据演练</p><p class="kb">实体识别 → 关系建模（四维校验）→ 灌真实脱敏数据走核心流程找断点。脏数据、缺字段才是上线后真正的坑。</p></div>
+          <div class="know"><p class="kh">智能体接入规范</p><p class="kb">智能体与引擎解耦：一体可挂多引擎（SeaFactory 主力 + Dify），每引擎一 adapter，调用落 log_mcp_queries。标配三页：管理页/测试页(SSE)/工具箱页。</p></div>
+          <div class="know"><p class="kh">职责不混</p><p class="kb">智能体设计归阶段三、工作台实现归阶段四。阶段四不重新设计智能体，只把设计好的挂上去跑起来。</p></div>
+        </div>
+
+        <div class="creed">
+          <p class="ct">铁律</p>
+          <p><span class="lead">上游给垃圾，下游出精致的垃圾</span> —— 功能清单缺"关联智能体/数据依赖"，实现岗有权打回。</p>
+          <p><span class="lead">AI 编程工具是放大器，不是造物主</span>；<span class="lead">建模不通不许往下走</span>，跑真实数据，不是 mock。</p>
+          <p><span class="lead">先 demo 后完整</span> —— 别一口气憋大的。</p>
+        </div>
+      </section>
+      <hr class="div">
+
+      <!-- STAGE 5 -->
+      <section class="stage" id="s5">
+        <div class="stage-head">
+          <div class="stage-num">05</div>
+          <div>
+            <div class="short">试用 · 定稿 · 盯使用率</div>
+            <h2>客户试用 + 智能体优化</h2>
+          </div>
+        </div>
+        <div class="mainline">在能跑的工作台上，通过真实试用 + 三轮迭代，完成从"能跑"到"定稿成型"，并沉淀可复制的行业模板。两条主线：跑稳跑准跑出价值，建立"反馈—响应"闭环。</div>
+
+        <div class="cols">
+          <div class="panel">
+            <h3>你要做什么</h3>
+            <ul>
+              <li>组织客户试用，跑三轮递进式定稿</li>
+              <li>四渠道收反馈 + 一张表闭环，工程化优化智能体</li>
+              <li>上线后盯 30/60/90 天使用率，打包行业模板</li>
+            </ul>
+          </div>
+          <div class="panel deliv">
+            <h3>交付物 <span class="tag">交付</span></h3>
+            <div class="chips">
+              <span class="chip">客户反馈跟踪表</span>
+              <span class="chip">三轮迭代记录表</span>
+              <span class="chip">使用率盯防表</span>
+              <span class="chip">项目交付签字表</span>
+            </div>
+            <p style="font-size:13px;color:var(--text-dim);margin:12px 0 0;">建议周期 2–4 周。产出定稿产品 + 可复制行业模板。</p>
+          </div>
+        </div>
+
+        <div class="know-title">核心机制</div>
+        <div class="know-grid">
+          <div class="know"><p class="kh">三轮递进定稿</p><p class="kb">第一轮看大方向 → 第二轮抠细节（逻辑/字段）→ 第三轮定死（体验交互+全量回归）。问题粒度从粗到细，验收标准从松到严。</p></div>
+          <div class="know"><p class="kh">四渠道 + 一张表</p><p class="kb">现场陪跑（头3天）+ 答疑群 + 埋点异常告警 + 周度复盘。反馈按功能缺失/逻辑不通/体验问题三类分流，走登记→分类→响应→验证→归档五步。</p></div>
+          <div class="know"><p class="kh">响应分级 + 三件套</p><p class="kb">P0 30分钟/当天修 … P3 一周评估。每条 P0/P1 必做响应三件套：复现定位（Trace）+ 最小改动（改完跑评测集）+ 客户回执。</p></div>
+          <div class="know"><p class="kh">优化工程化闭环</p><p class="kb">问题定位→口径对齐→最小改动→对照验证→兜底补强→沉淀复用。样板：心内科归因智能体 A/B 10 病例 72%→91%。</p></div>
+          <div class="know"><p class="kh">30/60/90 盯防</p><p class="kb">30天抓小问题、60天看真实活跃率（掉了一线回访）、90天收新需求评二期看留存。</p></div>
+          <div class="know"><p class="kh">可复制行业模板</p><p class="kb">不换（通用方法）：四步标准法/五层拆解/三轮定稿/平台还原。要换（行业定制）：业务知识/ER模型/数据源/行业 skill/知识库。</p></div>
+        </div>
+
+        <div class="creed">
+          <p class="ct">铁律 · 收官</p>
+          <p><span class="lead">验收通过只代表"当时能跑"，30 天使用率才代表"真有人用"。</span></p>
+          <p><span class="lead">优化不是玄学调 Prompt</span>，而是工程化闭环；<span class="lead">结果错是硬伤，体验差是软伤，先保硬伤。</span></p>
+          <p>响应三件套缺一件视为未闭环；每条反馈<b>必须写明根因，禁止只写"已处理"</b>；同类问题≥3 次触发专项复盘。</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>FDE 前线交付作战图 · 基于《FDE 五阶段作战手册》提炼</span>
+    <span><b>备弹在脑子里，进场才打得响。</b></span>
+  </div>
+</footer>
+
+<script>
+  // rail active-state on scroll
+  const links = Array.from(document.querySelectorAll('#rail a'));
+  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = map.get(e.target.id);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+  document.querySelectorAll('.stage').forEach(s => obs.observe(s));
+
+  links.forEach(a => a.addEventListener('click', ev => {
+    ev.preventDefault();
+    document.getElementById(a.getAttribute('href').slice(1))
+      .scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }));
+</script>

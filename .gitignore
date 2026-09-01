@@ -15,6 +15,11 @@ build/
 /.env.local
 *.local
 
+# License AES secret (symmetric key: encrypts AND decrypts .lic — never commit).
+# Kept on disk for local dev/build; packaged into the app via extraResources.
+# public_key.pem is safe to distribute and is tracked on purpose.
+src/main/license/keys/aes.key
+
 # Logs
 *.log
 npm-debug.log*

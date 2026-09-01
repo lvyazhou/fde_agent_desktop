@@ -15,6 +15,8 @@ const validInvokeChannels = new Set([
   'hermes:load-project',
   'hermes:delete-project',
   'hermes:prompt',
+  'hermes:transcribe',
+  'hermes:save-recording',
   'hermes:cancel',
   'hermes:read-file',
   'hermes:write-file',
@@ -43,9 +45,19 @@ const validInvokeChannels = new Set([
   'handbook:read-html',
   'handbook:open',
   'handbook:save-as',
+  'handbook:upload',
+  // 技能库
+  'skills:get-manifest',
+  'skills:read',
+  'skills:open',
+  'skills:import-zip',
   // 环境自检 + 连通性
   'env:check',
   'env:test-connection',
+  // 授权
+  'license:status',
+  'license:machine-sn',
+  'license:import',
 ]);
 
 const validSendChannels = new Set([
@@ -59,6 +71,7 @@ const validOnChannels = new Set([
   'app:notify',
   'hermes:session-update',
   'hermes:permission-request',
+  'skills:import-progress',
 ]);
 
 function invoke(channel, payload) {
@@ -116,6 +129,8 @@ contextBridge.exposeInMainWorld('api', {
     loadProject(slug) { return invoke('hermes:load-project', slug); },
     deleteProject(slug) { return invoke('hermes:delete-project', slug); },
     prompt(slug, text, attachments) { return invoke('hermes:prompt', { slug, text, attachments }); },
+    transcribe(audioBase64, mimeType) { return invoke('hermes:transcribe', { audioBase64, mimeType }); },
+    saveRecording(slug, audioBase64, ext) { return invoke('hermes:save-recording', { slug, audioBase64, ext }); },
     cancel(slug) { return invoke('hermes:cancel', slug); },
     readFile(slug, relativePath) { return invoke('hermes:read-file', { slug, relativePath }); },
     writeFile(slug, relativePath, content) { return invoke('hermes:write-file', { slug, relativePath, content }); },
@@ -152,6 +167,11 @@ contextBridge.exposeInMainWorld('api', {
   // Skills
   skills: {
     scanLocal() { return invoke('skills:scan-local'); },
+    getManifest() { return invoke('skills:get-manifest'); },
+    read(skill, file) { return invoke('skills:read', { skill, file }); },
+    open(skill) { return invoke('skills:open', { skill }); },
+    importZip() { return invoke('skills:import-zip'); },
+    onImportProgress(handler) { return on('skills:import-progress', handler); },
   },
 
   // FDE 作战手册知识库(工作台)
@@ -161,11 +181,19 @@ contextBridge.exposeInMainWorld('api', {
     readHtml(stage, file) { return invoke('handbook:read-html', { stage, file }); },
     open(stage, file) { return invoke('handbook:open', { stage, file }); },
     saveAs(stage, file) { return invoke('handbook:save-as', { stage, file }); },
+    upload(stage, category) { return invoke('handbook:upload', { stage, category }); },
   },
 
   // 环境自检 + LLM 连通性(首次启动向导)
   env: {
     check() { return invoke('env:check'); },
     testConnection(params) { return invoke('env:test-connection', params); },
+  },
+
+  // 授权(首次启动向导)
+  license: {
+    status() { return invoke('license:status'); },
+    machineSn() { return invoke('license:machine-sn'); },
+    import() { return invoke('license:import'); },
   },
 });

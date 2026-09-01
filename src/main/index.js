@@ -29,6 +29,7 @@ let hermesReady = false;     // ACP 是否已连接且 initialize 成功(供环�
 const PRODUCT_LOBSTER_HOME = path.join(os.homedir(), '.product-lobster');
 const PROJECTS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'projects');
 const HANDBOOK_DIR = path.join(PRODUCT_LOBSTER_HOME, 'fde-handbook');
+const SKILLS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'skills');
 
 function ensureDirs() {
   for (const dir of [PRODUCT_LOBSTER_HOME, PROJECTS_DIR]) {
@@ -71,6 +72,11 @@ function ensureDirs() {
       copyDirSync(srcSkill, dstSkill);
     }
     console.log(`[main] Synced ${skillEntries.filter(e => e.isDirectory()).length} skills to ${targetSkillsDir}`);
+    // 同步 skills 根目录的 manifest.json(build-skills-manifest.js 生成)
+    const bundledSkillsManifest = path.join(bundledSkillsDir, 'manifest.json');
+    if (fs.existsSync(bundledSkillsManifest)) {
+      fs.copyFileSync(bundledSkillsManifest, path.join(targetSkillsDir, 'manifest.json'));
+    }
   }
 
   // 同步内置 FDE 作战手册知识库到 HERMES_HOME/fde-handbook(每次启动同步,确保更新)
@@ -676,6 +682,223 @@ ipcMain.handle('handbook:save-as', async (_event, { stage, file }) => {
 });
 
 // ---------------------------------------------------------------------------
+// IPC handlers — 技能库(skills/)
+// ---------------------------------------------------------------------------
+
+// 安全解析 skills 内的文件路径,防止越界
+function resolveSkillPath(skillId, file) {
+  const base = path.join(SKILLS_DIR, skillId);
+  const resolved = path.join(base, file);
+  if (!resolved.startsWith(base)) throw new Error('Invalid skill path');
+  return resolved;
+}
+
+ipcMain.handle('skills:get-manifest', async () => {
+  try {
+    const manifestPath = path.join(SKILLS_DIR, 'manifest.json');
+    if (!fs.existsSync(manifestPath)) return { success: false, error: 'skills manifest not found' };
+    return { success: true, data: JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('skills:read', async (_event, { skill, file }) => {
+  try {
+    const filePath = resolveSkillPath(skill, file || 'SKILL.md');
+    if (!fs.existsSync(filePath)) return { success: false, error: 'file not found' };
+    return { success: true, content: fs.readFileSync(filePath, 'utf-8') };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('skills:open', async (_event, { skill }) => {
+  try {
+    const dirPath = path.join(SKILLS_DIR, skill);
+    if (!fs.existsSync(dirPath)) return { success: false, error: 'skill not found' };
+    const error = await shell.openPath(dirPath);
+    if (error) return { success: false, error };
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 上传文档归档到知识库(FDE 手册某阶段目录),并登记 manifest.json
+ipcMain.handle('handbook:upload', async (_event, { stage, category }) => {
+  try {
+    const stageDir = String(stage || '').replace(/[^0-9]/g, '');
+    if (!stageDir) return { success: false, error: '无效阶段' };
+    const cat = ['knowledge', 'deliverable'].includes(category) ? category : 'knowledge';
+
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: '选择要归档的文档',
+      filters: [
+        { name: '文档', extensions: ['md', 'docx', 'doc', 'pdf', 'pptx', 'ppt', 'xlsx', 'html', 'txt'] },
+        { name: '所有文件', extensions: ['*'] },
+      ],
+      properties: ['openFile', 'multiSelections'],
+    });
+    if (canceled || !filePaths || filePaths.length === 0) return { success: false, canceled: true };
+
+    const targetDir = path.join(HANDBOOK_DIR, stageDir);
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+    // 读 manifest
+    const manifestPath = path.join(HANDBOOK_DIR, 'manifest.json');
+    if (!fs.existsSync(manifestPath)) return { success: false, error: 'manifest 缺失' };
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    const st = (manifest.stages || []).find((s) => s.dir === stageDir);
+    if (!st) return { success: false, error: '阶段不存在' };
+    st.items = st.items || [];
+
+    const added = [];
+    for (const srcPath of filePaths) {
+      let fileName = path.basename(srcPath);
+      let destPath = path.join(targetDir, fileName);
+      // 重名冲突:自动加序号保留两份
+      if (fs.existsSync(destPath)) {
+        const ext = path.extname(fileName);
+        const base = path.basename(fileName, ext);
+        let n = 2;
+        while (fs.existsSync(path.join(targetDir, `${base}(${n})${ext}`))) n++;
+        fileName = `${base}(${n})${ext}`;
+        destPath = path.join(targetDir, fileName);
+      }
+      fs.copyFileSync(srcPath, destPath);
+
+      const type = (path.extname(fileName).slice(1) || 'txt').toLowerCase();
+      const title = path.basename(fileName, path.extname(fileName)).replace(/【(知识|交付)】/g, '').trim();
+      // md/html 可内嵌预览;docx 无快照(上传件无 previewHtml),其余走「打开/下载」
+      const previewable = type === 'md' || type === 'html';
+      st.items.push({ file: fileName, title, type, category: cat, previewable, uploaded: true });
+      added.push(fileName);
+    }
+
+    // 重算 counts
+    st.counts = {
+      knowledge: st.items.filter((it) => it.category === 'knowledge').length,
+      deliverable: st.items.filter((it) => it.category === 'deliverable').length,
+    };
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+
+    return { success: true, files: added, stage: stageDir };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 导入标准技能 zip:选包 → 校验 → 解压 → 重生 manifest,分阶段回报进度
+ipcMain.handle('skills:import-zip', async () => {
+  const emit = (phase, percent, message) => {
+    try { mainWindow?.webContents.send('skills:import-progress', { phase, percent, message }); } catch (e) {}
+  };
+  try {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: '选择技能包(.zip)',
+      filters: [{ name: '技能包', extensions: ['zip'] }],
+      properties: ['openFile'],
+    });
+    if (canceled || !filePaths || filePaths.length === 0) return { success: false, canceled: true };
+
+    const zipPath = filePaths[0];
+    emit('read', 10, '读取压缩包…');
+    const JSZip = require('jszip');
+    const zip = await JSZip.loadAsync(fs.readFileSync(zipPath));
+
+    // 校验:找到 SKILL.md(顶层或单一子目录内),且 frontmatter 含 name
+    emit('validate', 35, '校验技能包结构…');
+    const norm = (p) => p.replace(/\\/g, '/');
+    // zip 原始 key -> 归一化路径,只看非目录条目
+    const fileKeys = Object.keys(zip.files).filter((k) => !zip.files[k].dir);
+    let skillMdKey = null;
+    for (const k of fileKeys) {
+      if (/(^|\/)SKILL\.md$/i.test(norm(k))) { skillMdKey = k; break; }
+    }
+    if (!skillMdKey) {
+      return { success: false, error: '无效技能包:缺少 SKILL.md' };
+    }
+    const skillMdPath = norm(skillMdKey);
+    // 技能 id = SKILL.md 所在目录名;若在顶层则用 zip 文件名
+    const parts = skillMdPath.split('/');
+    const rootPrefix = parts.length > 1 ? parts.slice(0, -1).join('/') + '/' : '';
+    let skillId = parts.length > 1 ? parts[parts.length - 2]
+      : path.basename(zipPath, '.zip');
+    skillId = skillId.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^-+|-+$/g, '') || 'imported-skill';
+
+    // 校验 frontmatter 含 name
+    const skillMdRaw = await zip.file(skillMdKey).async('string');
+    const fmMatch = skillMdRaw.replace(/\r\n?/g, '\n').match(/^---\s*\n([\s\S]*?)\n---/);
+    if (!fmMatch || !/^name:\s*\S+/m.test(fmMatch[1])) {
+      return { success: false, error: '无效技能包:SKILL.md 缺少 name 字段' };
+    }
+
+    // 重名冲突 → 询问覆盖 / 取消
+    const destDir = path.join(SKILLS_DIR, skillId);
+    if (fs.existsSync(destDir)) {
+      const { response } = await dialog.showMessageBox(mainWindow, {
+        type: 'question',
+        buttons: ['覆盖', '取消'],
+        defaultId: 1,
+        cancelId: 1,
+        title: '技能已存在',
+        message: `技能「${skillId}」已存在,是否覆盖?`,
+      });
+      if (response !== 0) return { success: false, canceled: true };
+      fs.rmSync(destDir, { recursive: true, force: true });
+    }
+
+    // 解压该技能目录下所有文件到 SKILLS_DIR/skillId
+    emit('extract', 65, '解压技能文件…');
+    fs.mkdirSync(destDir, { recursive: true });
+    const fileEntries = Object.keys(zip.files).filter((k) => {
+      const n = norm(k);
+      if (zip.files[k].dir) return false;
+      return rootPrefix ? n.startsWith(rootPrefix) : true;
+    });
+    for (const key of fileEntries) {
+      const rel = rootPrefix ? norm(key).slice(rootPrefix.length) : norm(key);
+      if (!rel || rel.includes('..')) continue;
+      const outPath = path.join(destDir, rel);
+      if (!outPath.startsWith(destDir)) continue; // zip-slip 防护
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      fs.writeFileSync(outPath, await zip.file(key).async('nodebuffer'));
+    }
+
+    // 重生 manifest(调用 build 脚本,幂等)
+    emit('manifest', 88, '更新技能清单…');
+    try {
+      const { execFileSync } = require('child_process');
+      const scriptPath = app.isPackaged
+        ? path.join(process.resourcesPath, 'scripts', 'build-skills-manifest.js')
+        : path.join(app.getAppPath(), 'scripts', 'build-skills-manifest.js');
+      if (fs.existsSync(scriptPath)) {
+        execFileSync(process.execPath, [scriptPath], {
+          env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+        });
+        // 脚本写到仓库 skills/,同步一份到运行时 SKILLS_DIR
+        const builtManifest = app.isPackaged
+          ? path.join(process.resourcesPath, 'skills', 'manifest.json')
+          : path.join(app.getAppPath(), 'skills', 'manifest.json');
+        if (fs.existsSync(builtManifest) && builtManifest !== path.join(SKILLS_DIR, 'manifest.json')) {
+          fs.copyFileSync(builtManifest, path.join(SKILLS_DIR, 'manifest.json'));
+        }
+      }
+    } catch (e) {
+      // 脚本不可用时不阻断导入(技能文件已落地),仅提示 manifest 未刷新
+      console.warn('[skills:import-zip] manifest rebuild failed:', e.message);
+    }
+
+    emit('done', 100, '导入完成');
+    return { success: true, skillId };
+  } catch (err) {
+    emit('error', 100, err.message);
+    return { success: false, error: err.message };
+  }
+});
+
+// ---------------------------------------------------------------------------
 // IPC handlers — FDE 授权
 // ---------------------------------------------------------------------------
 
@@ -1035,12 +1258,27 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
       writeProjectMeta(slug, meta);
     }
 
-    // Build prompt content blocks (text + optional images)
+    // Build prompt content blocks (text + optional images / files)
+    // ACP content-block fields are camelCase (mimeType). We also keep media_type
+    // on image blocks for backward-compat with older render paths.
     const promptBlocks = [{ type: 'text', text }];
     if (attachments && Array.isArray(attachments)) {
       for (const att of attachments) {
         if (att.type === 'image' && att.data) {
-          promptBlocks.push({ type: 'image', data: att.data, media_type: att.media_type || 'image/png' });
+          const mime = att.media_type || 'image/png';
+          promptBlocks.push({ type: 'image', data: att.data, mimeType: mime, media_type: mime });
+        } else if (att.type === 'file') {
+          // Files are inlined as ACP embedded-resource blocks. Text files carry
+          // their decoded text; binary files carry base64 in `blob`. The Hermes
+          // ACP server inlines text resources into the prompt and decodes/omits
+          // binaries as appropriate.
+          const uri = `file:///${encodeURIComponent(att.name || 'attachment')}`;
+          const mimeType = att.media_type || 'application/octet-stream';
+          if (typeof att.text === 'string') {
+            promptBlocks.push({ type: 'resource', resource: { uri, mimeType, text: att.text } });
+          } else if (att.data) {
+            promptBlocks.push({ type: 'resource', resource: { uri, mimeType, blob: att.data } });
+          }
         }
       }
     }
@@ -1058,6 +1296,113 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
     return result;
   } catch (err) {
     throw new Error(`Prompt failed: ${err.message}`);
+  }
+});
+
+// 语音转文字：录音 base64 → 360 ASR（volcengine/asr-turbo）→ 识别文本
+// 360 ASR 接受内联 base64 音频（extra_body.audio.data，无 data: 前缀），无需公网 URL。
+ipcMain.handle('hermes:transcribe', async (_event, { audioBase64, mimeType } = {}) => {
+  if (!audioBase64 || typeof audioBase64 !== 'string') {
+    return { success: false, error: '没有可识别的音频' };
+  }
+  const { apiKey, baseUrl } = parseEnvConfig();
+  if (!apiKey) {
+    return { success: false, error: '未配置 API Key，无法进行语音识别' };
+  }
+  const https = require('https');
+  const http = require('http');
+  let url;
+  try {
+    url = new URL((baseUrl || 'https://api.360.cn/v1').replace(/\/$/, '') + '/audios/generations');
+  } catch {
+    return { success: false, error: 'API 地址格式不正确' };
+  }
+  const lib = url.protocol === 'http:' ? http : https;
+  const payload = JSON.stringify({
+    model: 'volcengine/asr-turbo',
+    extra_body: {
+      user: { uid: 'product-lobster-desktop' },
+      audio: { data: audioBase64 },
+      request: { model_name: 'bigmodel' },
+    },
+  });
+
+  return await new Promise((resolve) => {
+    const req = lib.request({
+      hostname: url.hostname,
+      port: url.port || (url.protocol === 'http:' ? 80 : 443),
+      path: url.pathname,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Length': Buffer.byteLength(payload),
+      },
+    }, (res) => {
+      let body = '';
+      res.on('data', (c) => body += c);
+      res.on('end', () => {
+        const status = res.statusCode || 0;
+        if (status === 401) return resolve({ success: false, error: '鉴权失败，请检查 API Key' });
+        if (status === 429) return resolve({ success: false, error: '请求过于频繁，请稍后再试' });
+        let parsed;
+        try { parsed = JSON.parse(body); } catch {
+          // 非 JSON 响应：把状态码和原始响应片段带出来，便于定位
+          const snippet = (body || '').slice(0, 300);
+          return resolve({ success: false, error: `语音识别响应解析失败（HTTP ${status}）：${snippet}` });
+        }
+        if (parsed.error) {
+          const e = parsed.error;
+          const detail = (typeof e === 'string') ? e
+            : (e.message || e.msg || e.code || JSON.stringify(e));
+          return resolve({ success: false, error: `语音识别失败（HTTP ${status}）：${detail}` });
+        }
+        if (status < 200 || status >= 300) {
+          const snippet = (body || '').slice(0, 300);
+          return resolve({ success: false, error: `语音识别失败（HTTP ${status}）：${snippet}` });
+        }
+        // data.extra_data 是 JSON 字符串，内含 result.text
+        try {
+          const extra = JSON.parse(parsed?.data?.extra_data || '{}');
+          const textOut = extra?.result?.text || '';
+          const duration = extra?.audio_info?.duration ?? null;
+          if (!textOut) return resolve({ success: false, error: '未识别到语音内容' });
+          return resolve({ success: true, text: textOut, duration });
+        } catch {
+          return resolve({ success: false, error: '语音识别结果解析失败' });
+        }
+      });
+    });
+    req.on('error', (err) => resolve({ success: false, error: err.message || '语音识别请求失败' }));
+    req.setTimeout(120_000, () => { req.destroy(); resolve({ success: false, error: '语音识别请求超时' }); });
+    req.write(payload);
+    req.end();
+  });
+});
+
+// 保存录音到磁盘（用于语音识别失败时兜底，避免录音丢失）。
+// 有 slug → 存到 <项目>/recordings/；无 slug（如欢迎页）→ 存到全局 ~/.product-lobster/recordings/。
+// 返回 { success, filePath, dirPath }，dirPath 供前端“打开所在文件夹”。
+ipcMain.handle('hermes:save-recording', async (_event, { slug, audioBase64, ext } = {}) => {
+  try {
+    if (!audioBase64) return { success: false, error: '没有可保存的录音' };
+    const safeExt = (ext || 'webm').replace(/[^a-z0-9]/gi, '').slice(0, 8) || 'webm';
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const fileName = `recording-${stamp}.${safeExt}`;
+
+    let dirPath;
+    if (slug) {
+      dirPath = resolveProjectPath(slug, 'recordings');
+    } else {
+      dirPath = path.join(PRODUCT_LOBSTER_HOME, 'recordings');
+    }
+    if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+
+    const filePath = path.join(dirPath, fileName);
+    fs.writeFileSync(filePath, Buffer.from(audioBase64, 'base64'));
+    return { success: true, filePath, dirPath, fileName };
+  } catch (err) {
+    return { success: false, error: err.message };
   }
 });
 

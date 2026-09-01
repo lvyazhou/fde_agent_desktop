@@ -6,6 +6,8 @@ import AgentHome from '@/pages/projects/AgentHome.vue';
 import ProjectList from '@/pages/projects/ProjectList.vue';
 import ProjectCreate from '@/pages/projects/ProjectCreate.vue';
 import ProjectDetail from '@/pages/projects/ProjectDetail.vue';
+import Knowledge from '@/pages/knowledge/Knowledge.vue';
+import Skills from '@/pages/skills/Skills.vue';
 import Settings from '@/pages/settings/Settings.vue';
 
 const router = createRouter({
@@ -22,6 +24,8 @@ const router = createRouter({
         { path: 'projects', component: ProjectList },
         { path: 'projects/new', component: ProjectCreate },
         { path: 'projects/:slug', component: ProjectDetail, props: true },
+        { path: 'knowledge', component: Knowledge },
+        { path: 'skills', component: Skills },
         { path: 'settings', component: Settings },
       ],
     },
@@ -37,6 +41,12 @@ router.beforeEach(async (to) => {
   if (bootChecked) return true;
   bootChecked = true;
   try {
+    // 先查授权:未授权 / 换机 / 硬过期 → 进向导(授权步)
+    if (window.api?.license?.status) {
+      const lic = await window.api.license.status();
+      if (lic && lic.success !== false && !lic.ok) return '/setup';
+    }
+    // 再查运行环境
     if (!window.api?.env?.check) return true;
     let res = await window.api.env.check();
     if (!res || !res.success) return true; // 检查异常不阻断

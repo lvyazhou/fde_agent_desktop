@@ -8,21 +8,21 @@
       @coach="goCoach"
     />
 
-    <!-- 门户视图 -->
-    <div v-else class="h-full overflow-y-auto">
-      <div class="w-full px-6 lg:px-10 py-6 flex flex-col gap-5">
+    <!-- 门户视图(一屏自适应,不滚动) -->
+    <div v-else class="portal h-full overflow-hidden">
+      <div class="portal-inner w-full h-full flex flex-col">
         <!-- Hero:平台是什么 / 为什么做 -->
-        <div class="rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 px-8 py-6 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden shrink-0">
+        <div class="hero rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-indigo-700 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden shrink-0">
           <div class="absolute -right-10 -top-10 w-52 h-52 rounded-full bg-white/10 blur-2xl"></div>
           <div class="absolute right-20 bottom-0 w-40 h-40 rounded-full bg-indigo-400/20 blur-2xl"></div>
           <div class="relative flex items-start justify-between gap-6 flex-wrap">
             <div class="min-w-0 flex-1">
-              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-[12px] font-medium mb-3 backdrop-blur">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-[12px] font-medium mb-2 backdrop-blur">
                 <i class="fa-solid fa-wand-magic-sparkles"></i>
                 FDE 五阶段作战工作台
               </div>
-              <h1 class="text-2xl font-bold mb-2 leading-snug">把「客户要 AI」翻译成「能落地的行业工作台」</h1>
-              <p class="text-[13px] text-blue-50/90 leading-relaxed max-w-4xl">
+              <h1 class="hero-title font-bold mb-1.5 leading-snug">把「客户要 AI」翻译成「能落地的行业工作台」</h1>
+              <p class="hero-desc text-blue-50/90 leading-relaxed max-w-4xl">
                 FDE 项目经理的作战指挥台。把一次商业化 AI 交付拆成五个前后咬合的阶段——
                 <span class="font-semibold text-white">调研备弹 → 需求原型 → 智能体设计 → 工作台上线 → 试用定稿</span>,
                 每阶段的知识库、话术、交付物模板都在这里预览取用。
@@ -103,24 +103,24 @@
         </div>
 
         <!-- 五阶段作战链(流程图:输出=下一阶段输入) -->
-        <div class="flex flex-col">
-          <div class="flex items-center justify-between mb-4 shrink-0">
+        <div class="stages-section flex flex-col flex-1 min-h-0">
+          <div class="flex items-center justify-between mb-3 shrink-0">
             <h2 class="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
               <i class="fa-solid fa-diagram-project text-blue-500"></i>五阶段作战链
             </h2>
             <span class="text-[12px] text-slate-400">上一阶段的输出 = 下一阶段的输入 · 点击进入阶段</span>
           </div>
 
-          <div v-if="loading" class="flex items-center justify-center py-16 text-slate-400">
+          <div v-if="loading" class="flex items-center justify-center flex-1 text-slate-400">
             <div class="w-8 h-8 rounded-full border-2 border-blue-100 border-t-blue-500 animate-spin"></div>
           </div>
 
-          <!-- 横向流程图:五阶段卡片 + 阶段间箭头(交付物流转) -->
-          <div v-else class="flex items-stretch gap-0 overflow-x-auto pb-2">
+          <!-- 横向流程图:五阶段卡片等比铺满整行,不换行、不横向滚动 -->
+          <div v-else class="stages-row flex items-stretch gap-0 flex-1 min-h-0">
             <template v-for="(s, idx) in stages" :key="s.id">
               <button
                 @click="activeStage = s"
-                class="group text-left bg-white rounded-2xl border border-slate-200/70 hover:border-blue-300 hover:shadow-md hover:shadow-blue-500/5 transition-all cursor-pointer relative flex flex-col flex-1 min-w-[210px] overflow-hidden"
+                class="group text-left bg-white rounded-2xl border border-slate-200/70 hover:border-blue-300 hover:shadow-md hover:shadow-blue-500/5 transition-all cursor-pointer relative flex flex-col flex-1 min-w-0 overflow-hidden"
               >
                 <!-- 头部 -->
                 <div class="px-4 pt-4 pb-3 bg-gradient-to-br from-slate-50 to-white border-b border-slate-100">
@@ -145,7 +145,7 @@
                 </div>
 
                 <!-- 输出交付物 -->
-                <div class="px-4 py-2.5 flex-1">
+                <div class="px-4 py-2.5 flex-1 min-h-0 overflow-y-auto scrollbar-thin">
                   <div class="text-[10px] text-slate-400 mb-1.5"><i class="fa-solid fa-box-open mr-1 text-blue-400"></i>交付物</div>
                   <div class="space-y-1.5">
                     <div v-for="(d, di) in (s.deliverables || [])" :key="di" class="text-[11px] text-slate-600 flex items-start gap-1.5 leading-snug">
@@ -234,3 +234,33 @@ onMounted(async () => {
   }
 });
 </script>
+
+<style scoped>
+/* 门户一屏自适应:内边距与块间距随视口收缩,整体不滚动 */
+.portal-inner {
+  padding: clamp(12px, 2.2vh, 24px) clamp(16px, 3vw, 40px);
+  gap: clamp(10px, 1.8vh, 20px);
+}
+
+/* Hero 随高度收缩 */
+.hero {
+  padding: clamp(14px, 2.4vh, 24px) clamp(20px, 2.6vw, 32px);
+}
+.hero-title {
+  font-size: clamp(17px, 2.1vh, 24px);
+}
+.hero-desc {
+  font-size: clamp(11px, 1.4vh, 13px);
+}
+/* 窗口很矮时收起 Hero 描述文字,优先保证卡片一屏可读 */
+@media (max-height: 640px) {
+  .hero-desc {
+    display: none;
+  }
+}
+
+/* 五阶段卡片行:等比铺满,阶段间箭头不占据弹性宽度 */
+.stages-row > .flex.items-center {
+  flex: 0 0 auto;
+}
+</style>

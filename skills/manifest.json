@@ -1,0 +1,215 @@
+{
+  "generatedAt": "2026-09-01T10:46:07.566Z",
+  "source": "product-lobster-desktop/skills",
+  "groups": [
+    {
+      "id": "product-doc",
+      "name": "产品文档",
+      "icon": "file-lines",
+      "color": "#2563eb",
+      "count": 4
+    },
+    {
+      "id": "prototype",
+      "name": "原型设计",
+      "icon": "window-maximize",
+      "color": "#7c3aed",
+      "count": 2
+    },
+    {
+      "id": "report-image",
+      "name": "汇报出图",
+      "icon": "image",
+      "color": "#d97706",
+      "count": 4
+    },
+    {
+      "id": "dataviz",
+      "name": "数据可视化",
+      "icon": "chart-column",
+      "color": "#0891b2",
+      "count": 1
+    },
+    {
+      "id": "coach",
+      "name": "教练陪练",
+      "icon": "headset",
+      "color": "#059669",
+      "count": 1
+    },
+    {
+      "id": "thinking",
+      "name": "思考协作",
+      "icon": "lightbulb",
+      "color": "#ca8a04",
+      "count": 3
+    }
+  ],
+  "skills": [
+    {
+      "id": "fde-coach",
+      "name": "fde-coach",
+      "file": "SKILL.md",
+      "group": "coach",
+      "icon": "headset",
+      "color": "#059669",
+      "version": "",
+      "summary": "FDE 教练陪练。扮演甲方客户,陪 FDE 项目经理演练\"聊需求\"——用 SPIN + 七维丝滑串挖需求;用户说\"复盘\"时切教练视角,按六维打分表评分并给改进建议。",
+      "description": "FDE 教练陪练。扮演甲方客户,陪 FDE 项目经理演练\"聊需求\"——用 SPIN + 七维丝滑串挖需求;用户说\"复盘\"时切教练视角,按六维打分表评分并给改进建议。"
+    },
+    {
+      "id": "dashboard-generator",
+      "name": "dashboard-generator",
+      "file": "SKILL.md",
+      "group": "dataviz",
+      "icon": "chart-line",
+      "color": "#0891b2",
+      "version": "",
+      "summary": "Generate cyber/tech style business analysis dashboards using React, ECharts and Ant Desi…",
+      "description": "Generate cyber/tech style business analysis dashboards using React, ECharts and Ant Design. Use this when the user asks to generate, build, or create a data dashboard, analysis screen, large screen display (大屏), or data visualization panel based on business requirements."
+    },
+    {
+      "id": "md-export",
+      "name": "md-export",
+      "file": "SKILL.md",
+      "group": "product-doc",
+      "icon": "file-export",
+      "color": "#2563eb",
+      "version": "",
+      "summary": "Use when user says 转PDF/生成PDF/导出PDF/转Word/生成Word/导出Word/转成word/md转pdf/md转word/出个PDF版/出个W…",
+      "description": "Use when user says 转PDF/生成PDF/导出PDF/转Word/生成Word/导出Word/转成word/md转pdf/md转word/出个PDF版/出个Word版/export PDF/export Word/把这个转成PDF/把这个转成word. Converts Markdown to a styled PDF or Word (.docx) document with 360 brand styling, full Chinese font support, embedded images, and formatted tables. Auto-detects target format (PDF vs Word) from the user's request."
+    },
+    {
+      "id": "product-doc-to-word",
+      "name": "product-doc-to-word",
+      "file": "SKILL.md",
+      "group": "product-doc",
+      "icon": "file-word",
+      "color": "#2563eb",
+      "version": "",
+      "summary": "Use when user says 转成word/生成word/导出word/输出正式文档/产品功能清单word/word文档/生成产品文档/做成word.",
+      "description": "Use when user says 转成word/生成word/导出word/输出正式文档/产品功能清单word/word文档/生成产品文档/做成word. Converts a product feature list (Markdown) into a formal Word document (.docx) with Chinese government-standard formatting."
+    },
+    {
+      "id": "product-feature-spec",
+      "name": "product-feature-spec",
+      "file": "SKILL.md",
+      "group": "product-doc",
+      "icon": "list-check",
+      "color": "#2563eb",
+      "version": "",
+      "summary": "Use ONLY when user explicitly wants a LIGHTWEIGHT 功能清单 (feature list) without full PRD d…",
+      "description": "Use ONLY when user explicitly wants a LIGHTWEIGHT 功能清单 (feature list) without full PRD depth — e.g. 生成精简功能清单/只要功能清单/快速出功能清单/功能列表. Produces 需求概述 + 产品架构 + 功能模块清单（功能名+一句话说明），without per-feature business-logic tables, without diagrams. For a full PRD (每个功能点业务逻辑 + 架构图 + 流程图 + 数据字典 + 非功能需求), use `product-prd-allinone` instead. Accepts ANY input form (a sentence, a doc, prototype HTML, a directory). Output: Markdown (+ optional Word)."
+    },
+    {
+      "id": "product-prd-allinone",
+      "name": "product-prd-allinone",
+      "file": "SKILL.md",
+      "group": "product-doc",
+      "icon": "file-contract",
+      "color": "#2563eb",
+      "version": "",
+      "summary": "Use when user says 生成PRD/写PRD/产品需求文档/生成产品需求文档/写产品文档/生成功能清单/出功能清单/产品功能需求/出产品清单.",
+      "description": "Use when user says 生成PRD/写PRD/产品需求文档/生成产品需求文档/写产品文档/生成功能清单/出功能清单/产品功能需求/出产品清单. This is the DEFAULT for any 产品需求文档/PRD request. Accepts ANY input form: a single sentence describing a product idea, a requirements doc, prototype files (HTML), a paragraph of text, a meeting transcript, or a directory of files. One self-contained skill that produces a complete PRD (产品需求文档) AND its diagrams in one flow: 需求概述 + 产品架构（自动生成商务架构图）+ 功能清单 + 每个功能点的业务逻辑（结构化字段）+ 核心业务流程（自动生成流程图/时序图）+ 页面交互 + 数据字典 + 非功能性需求 + 需求对照 + 演进。Diagram generation is built in — architecture image via image-generator, flow/sequence diagrams via handcrafted SVG + rsvg-convert. Output: Markdown + images/（PNG）, optional Word. (For a lightweight feature list with no business-logic tables and no diagrams, use `product-feature-spec` instead.)"
+    },
+    {
+      "id": "prototype-generator",
+      "name": "prototype-generator",
+      "file": "SKILL.md",
+      "group": "prototype",
+      "icon": "wand-magic-sparkles",
+      "color": "#7c3aed",
+      "version": "",
+      "summary": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/做个demo/做个页面/prototype/做系统原型.",
+      "description": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/做个demo/做个页面/prototype/做系统原型. Accepts ANY input (sentence, doc, image, requirements). Generates high-fidelity interactive HTML prototypes with real mock data, following the unified design specification. Output: multi-page HTML + JS + data/ directory, ready to open in browser or package with Electron."
+    },
+    {
+      "id": "prototype-iterate",
+      "name": "prototype-iterate",
+      "file": "SKILL.md",
+      "group": "prototype",
+      "icon": "pen-ruler",
+      "color": "#7c3aed",
+      "version": "1.0.0",
+      "summary": "Use when the user wants to modify an existing HTML prototype with natural language.",
+      "description": "Use when the user wants to modify an existing HTML prototype with natural language. Reads current prototype files, applies precise targeted edits, preserves the design system. Trigger phrases include \"改一下原型\", \"调整页面\", \"把首页改成\", \"修改原型\"."
+    },
+    {
+      "id": "360-ppt-generator",
+      "name": "360-ppt-generator",
+      "file": "SKILL.md",
+      "group": "report-image",
+      "icon": "file-powerpoint",
+      "color": "#d97706",
+      "version": "",
+      "summary": "Generates 360-branded PPT presentations in text mode, poster mode, hybrid mode, or backg…",
+      "description": "Generates 360-branded PPT presentations in text mode, poster mode, hybrid mode, or background-image-with-text mode. Supports blue and green color themes."
+    },
+    {
+      "id": "business-architecture-image",
+      "name": "business-architecture-image",
+      "file": "SKILL.md",
+      "group": "report-image",
+      "icon": "sitemap",
+      "color": "#d97706",
+      "version": "",
+      "summary": "Use when generating a formal business architecture diagram image for hospitals, informat…",
+      "description": "Use when generating a formal business architecture diagram image for hospitals, information systems, AI platforms, security solutions, executive reports, or serious presentation settings, especially when the brief requires white background, dark blue corporate styling, balanced layered layout, and no red/yellow/warm colors."
+    },
+    {
+      "id": "fireworks-tech-graph",
+      "name": "fireworks-tech-graph",
+      "file": "SKILL.md",
+      "group": "report-image",
+      "icon": "diagram-project",
+      "color": "#d97706",
+      "version": "",
+      "summary": "Use when the user wants to create any technical diagram - architecture, data flow, flowc…",
+      "description": "Use when the user wants to create any technical diagram - architecture, data flow, flowchart, sequence, agent/memory, or concept map - and export as SVG+PNG. Trigger on: \"画图\" \"帮我画\" \"生成图\" \"做个图\" \"架构图\" \"流程图\" \"可视化一下\" \"出图\" \"generate diagram\" \"draw diagram\" \"visualize\" or any system/flow description the user wants illustrated."
+    },
+    {
+      "id": "image-generator",
+      "name": "image-generator",
+      "file": "SKILL.md",
+      "group": "report-image",
+      "icon": "palette",
+      "color": "#d97706",
+      "version": "",
+      "summary": "Use when the user wants to generate an image, create a picture, make an illustration, de…",
+      "description": "Use when the user wants to generate an image, create a picture, make an illustration, design a cover, or do image-to-image editing."
+    },
+    {
+      "id": "brainstorming",
+      "name": "brainstorming",
+      "file": "SKILL.md",
+      "group": "thinking",
+      "icon": "lightbulb",
+      "color": "#ca8a04",
+      "version": "1.0.0",
+      "summary": "Use when the user wants to brainstorm, explore ideas, think through a product concept, c…",
+      "description": "Use when the user wants to brainstorm, explore ideas, think through a product concept, compare approaches, or needs creative divergent thinking before committing to a direction. Trigger phrases include \"头脑风暴\", \"想想\", \"探索一下\", \"有什么方案\", \"怎么设计\", \"brainstorm\", \"帮我想想\"."
+    },
+    {
+      "id": "collaborative-planning-board",
+      "name": "collaborative-planning-board",
+      "file": "SKILL.md",
+      "group": "thinking",
+      "icon": "chalkboard-user",
+      "color": "#ca8a04",
+      "version": "",
+      "summary": "Use when the user wants to collaboratively design, plan, or think through a topic using …",
+      "description": "Use when the user wants to collaboratively design, plan, or think through a topic using a visual interactive board. Triggers on \"协作面板\", \"规划面板\", \"一起设计\", \"做个面板讨论\", \"planning board\", \"collaborative board\", or when the user says they want to think through / plan something together in a structured visual way (not just text)."
+    },
+    {
+      "id": "first-principles-critic",
+      "name": "first-principles-critic",
+      "file": "SKILL.md",
+      "group": "thinking",
+      "icon": "scale-balanced",
+      "color": "#ca8a04",
+      "version": "",
+      "summary": "第一性原理批判性分析智能体。",
+      "description": "第一性原理批判性分析智能体。接收任何方案/计划/设计文档，\n用第一性原理五阶段工作流进行深度解构和批判：定义现状→解构假设→识别公理→零基重构→总结行动。\n不做表面赞美，准确、不留情面地指出隐藏假设、类比陷阱和逻辑漏洞。\n当用户提到「第一性原理分析」「帮我批判」「找出问题」「客观分析不足」「挑毛病」「从底层拆解」时触发。\n也可用于产品方案评审、技术架构挑战、商业模式验证、战略方向质疑。"
+    }
+  ]
+}

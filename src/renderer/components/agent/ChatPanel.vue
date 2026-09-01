@@ -36,14 +36,22 @@
         >
           <!-- User Message -->
           <div v-if="msg.role === 'user'" class="relative max-w-[80%] flex flex-col items-end">
-            <!-- User image attachments -->
+            <!-- User attachments (images + files) -->
             <div v-if="msg.attachments && msg.attachments.length > 0" class="flex flex-wrap gap-2 mb-2 justify-end">
-              <img
-                v-for="(att, ai) in msg.attachments"
-                :key="ai"
-                :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data"
-                class="max-w-[200px] max-h-[150px] object-cover rounded-xl border border-slate-200 shadow-sm"
-              />
+              <template v-for="(att, ai) in msg.attachments" :key="ai">
+                <img
+                  v-if="att.type === 'image' || (!att.type && att.data)"
+                  :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data"
+                  class="max-w-[200px] max-h-[150px] object-cover rounded-xl border border-slate-200 shadow-sm"
+                />
+                <div
+                  v-else
+                  class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-sm max-w-[220px]"
+                >
+                  <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
+                  <span class="text-[12px] text-slate-600 truncate">{{ att.name || '附件' }}</span>
+                </div>
+              </template>
             </div>
             <div class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words inline-block text-left">
               {{ msg.displayContent || msg.content }}
@@ -164,10 +172,17 @@
           class="group/composer rounded-[26px] border transition-all duration-200"
           :class="isFocused ? 'bg-white border-blue-400/70 shadow-[0_6px_28px_-8px_rgba(59,130,246,0.28)]' : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]'"
         >
-          <!-- Attachment preview -->
+          <!-- Attachment preview (images + files) -->
           <div v-if="chatAttachments.length > 0" class="flex items-center gap-2 px-5 pt-4 flex-wrap">
             <div v-for="(att, ai) in chatAttachments" :key="ai" class="relative group/att">
-              <img :src="'data:' + att.media_type + ';base64,' + att.data" class="w-14 h-14 object-cover rounded-xl border border-slate-200" />
+              <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-14 h-14 object-cover rounded-xl border border-slate-200" />
+              <div v-else class="flex items-center gap-2 h-14 px-3 rounded-xl border border-slate-200 bg-white max-w-[200px]">
+                <i class="fa-solid fa-file-lines text-blue-500 text-base shrink-0"></i>
+                <div class="min-w-0">
+                  <div class="text-[12px] text-slate-700 truncate">{{ att.name }}</div>
+                  <div class="text-[10px] text-slate-400">{{ att.text != null ? '文本' : '文件' }}</div>
+                </div>
+              </div>
               <button @click="chatAttachments.splice(ai, 1)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center transition-colors cursor-pointer shadow-sm">
                 <i class="fa-solid fa-xmark"></i>
               </button>
@@ -197,8 +212,27 @@
                 class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 title="上传图片"
               >
+                <i class="fa-solid fa-image text-sm"></i>
+              </button>
+              <button
+                @click="pickFile"
+                :disabled="isStreaming"
+                class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                title="上传文件"
+              >
                 <i class="fa-solid fa-paperclip text-sm"></i>
               </button>
+              <button
+                @click="toggleRecording"
+                :disabled="isStreaming || !recordingSupported"
+                class="w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                :class="isRecording ? 'text-white bg-rose-500 hover:bg-rose-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'"
+                :title="recordingSupported ? (isRecording ? '停止录音' : '语音输入') : '当前环境不支持录音'"
+              >
+                <i class="fa-solid text-sm" :class="isRecording ? 'fa-stop' : 'fa-microphone'"></i>
+              </button>
+              <span v-if="isRecording" class="text-[11px] text-rose-500 font-medium select-none tabular-nums">{{ recordSeconds }}s · 点击停止</span>
+              <span v-else-if="isTranscribing" class="text-[11px] text-blue-500 font-medium select-none">识别中…</span>
               <button
                 @click="triggerSlash"
                 :disabled="isStreaming"
@@ -241,7 +275,7 @@ import { ref, nextTick, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import { marked } from 'marked';
 import WelcomeHero from './WelcomeHero.vue';
 
-defineProps({
+const props = defineProps({
   slug: { type: String, required: true },
   projectName: { type: String, default: '' },
   messages: { type: Array, default: () => [] },
@@ -289,7 +323,11 @@ const copyMessage = async (content, idx) => {
 // Close the "more" menu when clicking anywhere outside it
 const closeMenu = () => { menuIdx.value = null; };
 onMounted(() => document.addEventListener('click', closeMenu));
-onBeforeUnmount(() => document.removeEventListener('click', closeMenu));
+onBeforeUnmount(() => {
+  document.removeEventListener('click', closeMenu);
+  try { if (mediaRecorder && isRecording.value) mediaRecorder.stop(); } catch { /* ignore */ }
+  stopTracks();
+});
 
 const pickImage = () => {
   const input = document.createElement('input');
@@ -308,6 +346,144 @@ const pickImage = () => {
   };
   input.click();
 };
+
+// ACP embedded-resource cap is 512KB on the server side; keep uploads within it
+// so text/binary resources pass through whole rather than being truncated/omitted.
+const MAX_FILE_BYTES = 512 * 1024;
+const TEXT_EXT = new Set([
+  'txt', 'md', 'markdown', 'json', 'csv', 'log', 'yaml', 'yml', 'xml', 'html', 'htm',
+  'css', 'js', 'ts', 'jsx', 'tsx', 'vue', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'go',
+  'rs', 'rb', 'php', 'sh', 'sql', 'ini', 'conf', 'toml', 'env',
+]);
+const isTextFile = (file) => {
+  const idx = file.name.lastIndexOf('.');
+  const ext = idx >= 0 ? file.name.slice(idx + 1).toLowerCase() : '';
+  return TEXT_EXT.has(ext) || (file.type || '').startsWith('text/');
+};
+
+const pickFile = () => {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.txt,.md,.markdown,.json,.csv,.log,.yaml,.yml,.xml,.html,.htm,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.epub';
+  input.multiple = true;
+  input.onchange = async (e) => {
+    for (const file of e.target.files) {
+      if (file.size > MAX_FILE_BYTES) {
+        alert(`「${file.name}」超过 ${Math.round(MAX_FILE_BYTES / 1024)}KB，已跳过`);
+        continue;
+      }
+      if (isTextFile(file)) {
+        const text = await file.text();
+        chatAttachments.value.push({ type: 'file', text, media_type: file.type || 'text/plain', name: file.name });
+      } else {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const base64 = ev.target.result.split(',')[1];
+          chatAttachments.value.push({ type: 'file', data: base64, media_type: file.type || 'application/octet-stream', name: file.name });
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+  input.click();
+};
+
+// ===== Voice input: record → 360 ASR → fill input box =====
+const recordingSupported = typeof window !== 'undefined'
+  && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+  && typeof window.MediaRecorder !== 'undefined';
+const isRecording = ref(false);
+const isTranscribing = ref(false);
+const recordSeconds = ref(0);
+let mediaRecorder = null;
+let mediaStream = null;
+let recordChunks = [];
+let recordTimer = null;
+let recordStartAt = 0;
+const MIN_RECORD_MS = 800;
+
+const stopTracks = () => {
+  if (mediaStream) { mediaStream.getTracks().forEach((t) => t.stop()); mediaStream = null; }
+  if (recordTimer) { clearInterval(recordTimer); recordTimer = null; }
+};
+
+// 识别失败时把录音落盘兜底，避免录音丢失；提示用户并可打开所在文件夹。
+const saveRecordingOnFailure = async (base64, mime, errMsg) => {
+  const reason = errMsg || '语音识别失败';
+  if (!base64) { alert(reason); return; }
+  const ext = (mime.split('/')[1] || 'webm').split(';')[0];
+  let saved = null;
+  try {
+    saved = await window.api.hermes.saveRecording(props.slug || '', base64, ext);
+  } catch { /* ignore */ }
+  if (saved?.success) {
+    const open = confirm(`${reason}\n\n录音已保存到：\n${saved.filePath}\n\n点击“确定”打开所在文件夹。`);
+    if (open) {
+      try { await window.api.shell.openPath(saved.dirPath); } catch { /* ignore */ }
+    }
+  } else {
+    alert(`${reason}（录音保存失败：${saved?.error || '未知错误'}）`);
+  }
+};
+
+const toggleRecording = async () => {
+  if (!recordingSupported) return;
+  if (isRecording.value) { mediaRecorder?.stop(); return; }
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch {
+    alert('无法访问麦克风，请检查权限设置');
+    return;
+  }
+  recordChunks = [];
+  try {
+    mediaRecorder = new MediaRecorder(mediaStream);
+  } catch {
+    alert('当前环境不支持录音');
+    stopTracks();
+    return;
+  }
+  recordStartAt = performance.now();
+  mediaRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) recordChunks.push(ev.data); };
+  mediaRecorder.onstop = async () => {
+    const durationMs = performance.now() - recordStartAt;
+    const mime = mediaRecorder?.mimeType || 'audio/webm';
+    stopTracks();
+    isRecording.value = false;
+    const blob = new Blob(recordChunks, { type: mime });
+    if (durationMs < MIN_RECORD_MS || blob.size === 0) { return; }
+    isTranscribing.value = true;
+    let base64 = '';
+    try {
+      base64 = await blobToBase64(blob);
+      const res = await window.api.hermes.transcribe(base64, mime);
+      if (res?.success && res.text) {
+        inputText.value = (inputText.value ? inputText.value + ' ' : '') + res.text;
+        nextTick(() => { autoGrow(); inputRef.value?.focus(); });
+      } else {
+        await saveRecordingOnFailure(base64, mime, res?.error);
+      }
+    } catch (err) {
+      await saveRecordingOnFailure(base64, mime, err?.message);
+    } finally {
+      isTranscribing.value = false;
+    }
+  };
+  mediaRecorder.start();
+  isRecording.value = true;
+  recordSeconds.value = 0;
+  // 不限录音时长：只更新计时显示，由用户手动点停。
+  recordTimer = setInterval(() => {
+    recordSeconds.value = Math.floor((performance.now() - recordStartAt) / 1000);
+  }, 250);
+};
+
+const blobToBase64 = (blob) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+  reader.onerror = reject;
+  reader.readAsDataURL(blob);
+});
 
 // Slash command menu
 const showSlashMenu = ref(false);
