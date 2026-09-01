@@ -608,6 +608,8 @@ watch(messages, () => {
 
 // --- 教练陪练:从工作台 ?coach=1 进入时,自动起一局陪练 ---
 const COACH_OPENING = '/fde-coach\n\n(系统:进入 FDE 教练陪练模式。请先用教练口吻做简短开场,说明玩法——你扮演甲方客户,我用 SPIN + 七维挖需求;我随时说"复盘"你就按六维打分表点评。然后让我选行业和客户类型。)';
+// 用户气泡里展示的干净文案(系统指令对用户隐藏)
+const COACH_OPENING_DISPLAY = '开始 FDE 教练陪练';
 
 const startCoachSession = async () => {
   // 新建一个陪练会话
@@ -615,15 +617,49 @@ const startCoachSession = async () => {
   const chatSlug = `coach-${Date.now()}`;
   currentSlug.value = chatSlug;
   currentProjectName.value = 'FDE 教练陪练';
+
+  // 先立刻给出反馈：展示用户开场消息 + "正在启动教练"动画，避免建会话期间界面空白
+  messages.value.push(createMessage('user', COACH_OPENING, { displayContent: COACH_OPENING_DISPLAY }));
+  isStreaming.value = true;
+  currentStreamId = Date.now().toString();
+  messages.value.push(createMessage('assistant', '', {
+    thinkingSteps: [{ text: '正在启动 FDE 教练陪练…', icon: 'fa-solid fa-headset', visible: true }],
+    thinkingDone: false,
+    expanded: true,
+    typingContent: '',
+    timestamp: '',
+    streamId: currentStreamId,
+  }));
+  await nextTick();
+  chatPanelRef.value?.scrollToBottom?.();
+
+  // 后台建会话
   try {
     await window.api.hermes.createProject({ name: 'FDE 教练陪练', requirement: 'FDE 教练陪练', slug: chatSlug });
-    loadProjects();
+    loadProjects(); // 不 await，后台刷新
   } catch (e) {
     console.error('Create coach session failed:', e);
+    isStreaming.value = false;
+    messages.value.pop(); // 移除 AI 占位
     return;
   }
-  // 发送开场 prompt(触发 skill + 人设)
-  handleSend(COACH_OPENING);
+
+  // 会话已就绪，直接发送开场 prompt（currentSlug 已设，handleSend 不会重复建项目，也会复用已展示的占位消息）
+  // 持久化存干净文案，避免历史记录里露出系统指令；prompt 仍发完整指令给 agent
+  await window.api.hermes.saveMessage(currentSlug.value, { role: 'user', content: COACH_OPENING_DISPLAY, tab: 'requirement', timestamp: new Date().toISOString() });
+  try {
+    await window.api.hermes.prompt(currentSlug.value, COACH_OPENING);
+    setTimeout(() => {
+      if (isStreaming.value) {
+        finalizeLastAssistantMessage();
+        isStreaming.value = false;
+        isToolRunning.value = false;
+      }
+    }, 2000);
+  } catch (e) {
+    console.error('Coach prompt failed:', e);
+    isStreaming.value = false;
+  }
 };
 
 // --- Lifecycle ---

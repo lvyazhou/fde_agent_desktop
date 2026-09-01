@@ -7,6 +7,9 @@ const os = require('os');
 const http = require('http');
 const { spawn } = require('child_process');
 const AcpClient = require('./acp-client.js');
+const licenseVerifier = require('./license/verifier.js');
+const licenseStore = require('./license/store.js');
+const licenseFingerprint = require('./license/fingerprint.js');
 
 let mainWindow;
 let splashWindow;
@@ -673,6 +676,49 @@ ipcMain.handle('handbook:save-as', async (_event, { stage, file }) => {
 });
 
 // ---------------------------------------------------------------------------
+// IPC handlers — FDE 授权
+// ---------------------------------------------------------------------------
+
+// 授权状态(无 .lic → NO_LICENSE)
+ipcMain.handle('license:status', async () => {
+  try {
+    return { success: true, ...licenseVerifier.currentStatus() };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 本机机器码(授权页显示,给用户报给签发方)
+ipcMain.handle('license:machine-sn', async () => {
+  try {
+    return { success: true, sn: licenseFingerprint.computeSN() };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 导入 .lic:选文件 → 校验 → 通过则落盘
+ipcMain.handle('license:import', async () => {
+  try {
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+      title: '选择授权文件 (.lic)',
+      filters: [{ name: '授权文件', extensions: ['lic'] }],
+      properties: ['openFile'],
+    });
+    if (canceled || !filePaths || !filePaths[0]) return { success: false, canceled: true };
+    const bytes = fs.readFileSync(filePaths[0]);
+    const result = licenseVerifier.loadAndVerify(bytes);
+    if (!result.ok) {
+      return { success: false, rejected: true, status: result.status, reason: result.reason, detail: result };
+    }
+    licenseStore.saveLicense(bytes);
+    return { success: true, status: result.status, sn: result.sn };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// ---------------------------------------------------------------------------
 // IPC handlers — Hermes project management
 // ---------------------------------------------------------------------------
 
@@ -715,9 +761,9 @@ ipcMain.handle('hermes:create-project', async (_event, { name, requirement, slug
     if (acp) {
       const result = await acp.request('session/new', { cwd: projectDir, mcpServers: [] });
       sessionId = result && result.sessionId ? result.sessionId : null;
-      // Auto-approve all edits — no approval dialog needed for a local product tool
+      // Auto-approve all edits — fire-and-forget so we don't block project creation on a second round-trip
       if (sessionId) {
-        await acp.request('session/set_mode', { sessionId, modeId: 'dont_ask' }).catch(() => {});
+        acp.request('session/set_mode', { sessionId, modeId: 'dont_ask' }).catch(() => {});
       }
     }
 

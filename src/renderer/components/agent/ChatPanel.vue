@@ -46,7 +46,7 @@
               />
             </div>
             <div class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words inline-block text-left">
-              {{ msg.content }}
+              {{ msg.displayContent || msg.content }}
             </div>
           </div>
 
