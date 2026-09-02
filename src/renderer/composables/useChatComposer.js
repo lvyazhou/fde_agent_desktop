@@ -6,10 +6,14 @@
 // hermes:prompt — {type:'image'|'file', data?, text?, media_type, name} — so send
 // handlers just pass `attachments.value` straight through to window.api.hermes.prompt.
 import { ref, onBeforeUnmount } from 'vue';
+import { prepareImage } from './imagePrep';
 
-// ACP embedded-resource cap is 512KB on the server side; keep uploads within it so
-// text/binary resources pass through whole rather than being truncated/omitted.
+// Cap for plain text/code files: the ACP server inlines these whole, so keep
+// them modest. Rich documents (PDF/Word/Excel/PPT) get a larger cap because the
+// server extracts their text (and caps the extracted text itself) — the raw
+// file, commonly a few MB, just needs to arrive.
 const MAX_FILE_BYTES = 512 * 1024;
+const MAX_DOC_BYTES = 10 * 1024 * 1024;
 const MIN_RECORD_MS = 800;
 
 const TEXT_EXT = new Set([
@@ -18,10 +22,20 @@ const TEXT_EXT = new Set([
   'rs', 'rb', 'php', 'sh', 'sql', 'ini', 'conf', 'toml', 'env',
 ]);
 
-function isTextFile(file) {
+// Binary document formats the server can extract text from (pdf/word/excel/ppt).
+const DOC_EXT = new Set(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']);
+
+function fileExt(file) {
   const idx = file.name.lastIndexOf('.');
-  const ext = idx >= 0 ? file.name.slice(idx + 1).toLowerCase() : '';
-  return TEXT_EXT.has(ext) || (file.type || '').startsWith('text/');
+  return idx >= 0 ? file.name.slice(idx + 1).toLowerCase() : '';
+}
+
+function isTextFile(file) {
+  return TEXT_EXT.has(fileExt(file)) || (file.type || '').startsWith('text/');
+}
+
+function isDocFile(file) {
+  return DOC_EXT.has(fileExt(file));
 }
 
 function blobToBase64(blob) {
@@ -44,14 +58,16 @@ export function useChatComposer(options = {}) {
     input.type = 'file';
     input.accept = 'image/*';
     input.multiple = true;
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       for (const file of e.target.files) {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          const base64 = ev.target.result.split(',')[1];
-          attachments.value.push({ type: 'image', data: base64, media_type: file.type || 'image/png', name: file.name });
-        };
-        reader.readAsDataURL(file);
+        try {
+          const { data, media_type } = await prepareImage(file);
+          if (!data) continue;
+          attachments.value.push({ type: 'image', data, media_type, name: file.name });
+        } catch (err) {
+          console.error('[composer] pickImage failed for', file.name, err);
+          alert(`「${file.name}」读取失败，已跳过`);
+        }
       }
     };
     input.click();
@@ -64,8 +80,9 @@ export function useChatComposer(options = {}) {
     input.multiple = true;
     input.onchange = async (e) => {
       for (const file of e.target.files) {
-        if (file.size > MAX_FILE_BYTES) {
-          alert(`「${file.name}」超过 ${Math.round(MAX_FILE_BYTES / 1024)}KB，已跳过`);
+        const cap = isDocFile(file) ? MAX_DOC_BYTES : MAX_FILE_BYTES;
+        if (file.size > cap) {
+          alert(`「${file.name}」超过 ${Math.round(cap / 1024 / 1024 * 10) / 10}MB，已跳过`);
           continue;
         }
         if (isTextFile(file)) {

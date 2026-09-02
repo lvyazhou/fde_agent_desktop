@@ -19,8 +19,11 @@
       <WelcomeHero
         v-else-if="messages.length === 0"
         class="h-full"
+        :available-models="availableModels"
+        :current-model="currentModel"
         @send-quick="(text) => $emit('send-quick', text)"
         @navigate="(tab) => $emit('navigate', tab)"
+        @change-model="(id) => $emit('change-model', id)"
       />
 
       <!-- Message list -->
@@ -206,40 +209,50 @@
           <!-- Bottom toolbar -->
           <div class="flex items-center justify-between px-3 pb-3 pt-1.5">
             <div class="flex items-center gap-1.5">
+              <ModelSelector
+                :models="availableModels"
+                :current="currentModel"
+                @change="(id) => $emit('change-model', id)"
+              />
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 cursor-pointer hover:bg-blue-100 transition-colors" style="font-size:10px;line-height:1">
+                <i class="fa-solid fa-robot" style="font-size:9px"></i>
+                AI 产品设计智能体
+                <i class="fa-solid fa-chevron-down ml-0.5" style="font-size:7px"></i>
+              </span>
               <button
                 @click="pickImage"
                 :disabled="isStreaming"
-                class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 title="上传图片"
               >
-                <i class="fa-solid fa-image text-sm"></i>
+                <i class="fa-solid fa-image text-xs"></i>
               </button>
               <button
                 @click="pickFile"
                 :disabled="isStreaming"
-                class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 title="上传文件"
               >
-                <i class="fa-solid fa-paperclip text-sm"></i>
+                <i class="fa-solid fa-paperclip text-xs"></i>
               </button>
               <button
                 @click="toggleRecording"
                 :disabled="isStreaming || !recordingSupported"
-                class="w-9 h-9 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                class="w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 :class="isRecording ? 'text-white bg-rose-500 hover:bg-rose-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'"
                 :title="recordingSupported ? (isRecording ? '停止录音' : '语音输入') : '当前环境不支持录音'"
               >
-                <i class="fa-solid text-sm" :class="isRecording ? 'fa-stop' : 'fa-microphone'"></i>
+                <i class="fa-solid text-xs" :class="isRecording ? 'fa-stop' : 'fa-microphone'"></i>
               </button>
               <span v-if="isRecording" class="text-[11px] text-rose-500 font-medium select-none tabular-nums">{{ recordSeconds }}s · 点击停止</span>
               <span v-else-if="isTranscribing" class="text-[11px] text-blue-500 font-medium select-none">识别中…</span>
               <button
                 @click="triggerSlash"
                 :disabled="isStreaming"
-                class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                 title="指令"
               >
-                <i class="fa-solid fa-slash text-sm"></i>
+                <i class="fa-solid fa-slash text-xs"></i>
               </button>
             </div>
 
@@ -248,7 +261,7 @@
               <button
                 v-if="isStreaming"
                 @click="$emit('cancel')"
-                class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
+                class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
                 title="停止生成"
               >
                 <span class="w-3 h-3 rounded-[3px] bg-white"></span>
@@ -257,10 +270,10 @@
                 v-else
                 @click="sendMessage"
                 :disabled="!inputText.trim() && chatAttachments.length === 0"
-                class="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
+                class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
                 :class="(inputText.trim() || chatAttachments.length > 0) ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white cursor-pointer shadow-md shadow-blue-500/30 hover:shadow-lg hover:shadow-blue-500/40 active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
               >
-                <i class="fa-solid fa-arrow-up text-sm"></i>
+                <i class="fa-solid fa-arrow-up text-xs"></i>
               </button>
             </div>
           </div>
@@ -274,6 +287,8 @@
 import { ref, nextTick, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { marked } from 'marked';
 import WelcomeHero from './WelcomeHero.vue';
+import ModelSelector from './ModelSelector.vue';
+import { prepareImage } from '@/composables/imagePrep';
 
 const props = defineProps({
   slug: { type: String, required: true },
@@ -282,9 +297,11 @@ const props = defineProps({
   isStreaming: { type: Boolean, default: false },
   isLoading: { type: Boolean, default: false },
   availableCommands: { type: Array, default: () => [] },
+  availableModels: { type: Array, default: () => [] },
+  currentModel: { type: String, default: '' },
 });
 
-const emit = defineEmits(['send', 'send-quick', 'send-with-attachments', 'cancel', 'navigate', 'fork', 'regenerate', 'feedback', 'delete']);
+const emit = defineEmits(['send', 'send-quick', 'send-with-attachments', 'cancel', 'navigate', 'fork', 'regenerate', 'feedback', 'delete', 'change-model']);
 
 const inputText = ref('');
 const inputRef = ref(null);
@@ -334,32 +351,38 @@ const pickImage = () => {
   input.type = 'file';
   input.accept = 'image/*';
   input.multiple = true;
-  input.onchange = (e) => {
+  input.onchange = async (e) => {
     for (const file of e.target.files) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const base64 = ev.target.result.split(',')[1];
-        chatAttachments.value.push({ type: 'image', data: base64, media_type: file.type || 'image/png', name: file.name });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const { data, media_type } = await prepareImage(file);
+        if (!data) continue;
+        chatAttachments.value.push({ type: 'image', data, media_type, name: file.name });
+      } catch (err) {
+        console.error('[ChatPanel] pickImage failed for', file.name, err);
+        alert(`「${file.name}」读取失败，已跳过`);
+      }
     }
   };
   input.click();
 };
 
-// ACP embedded-resource cap is 512KB on the server side; keep uploads within it
-// so text/binary resources pass through whole rather than being truncated/omitted.
+// Plain text/code files are inlined whole by the server, so keep them modest.
+// Rich documents (PDF/Word/Excel/PPT) get a larger cap — the server extracts
+// their text, so the raw file (a few MB) just needs to arrive.
 const MAX_FILE_BYTES = 512 * 1024;
+const MAX_DOC_BYTES = 10 * 1024 * 1024;
 const TEXT_EXT = new Set([
   'txt', 'md', 'markdown', 'json', 'csv', 'log', 'yaml', 'yml', 'xml', 'html', 'htm',
   'css', 'js', 'ts', 'jsx', 'tsx', 'vue', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'go',
   'rs', 'rb', 'php', 'sh', 'sql', 'ini', 'conf', 'toml', 'env',
 ]);
-const isTextFile = (file) => {
+const DOC_EXT = new Set(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']);
+const fileExt = (file) => {
   const idx = file.name.lastIndexOf('.');
-  const ext = idx >= 0 ? file.name.slice(idx + 1).toLowerCase() : '';
-  return TEXT_EXT.has(ext) || (file.type || '').startsWith('text/');
+  return idx >= 0 ? file.name.slice(idx + 1).toLowerCase() : '';
 };
+const isTextFile = (file) => TEXT_EXT.has(fileExt(file)) || (file.type || '').startsWith('text/');
+const isDocFile = (file) => DOC_EXT.has(fileExt(file));
 
 const pickFile = () => {
   const input = document.createElement('input');
@@ -368,8 +391,9 @@ const pickFile = () => {
   input.multiple = true;
   input.onchange = async (e) => {
     for (const file of e.target.files) {
-      if (file.size > MAX_FILE_BYTES) {
-        alert(`「${file.name}」超过 ${Math.round(MAX_FILE_BYTES / 1024)}KB，已跳过`);
+      const cap = isDocFile(file) ? MAX_DOC_BYTES : MAX_FILE_BYTES;
+      if (file.size > cap) {
+        alert(`「${file.name}」超过 ${Math.round(cap / 1024 / 1024 * 10) / 10}MB，已跳过`);
         continue;
       }
       if (isTextFile(file)) {

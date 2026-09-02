@@ -2,6 +2,8 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 import AppShellLayout from '@/components/layout/AppShellLayout.vue';
 import Setup from '@/pages/setup/Setup.vue';
 import Workbench from '@/pages/workbench/Workbench.vue';
+import ProjectSpec from '@/components/workbench/ProjectSpec.vue';
+import TrainingGuide from '@/pages/training/TrainingGuide.vue';
 import AgentHome from '@/pages/projects/AgentHome.vue';
 import ProjectList from '@/pages/projects/ProjectList.vue';
 import ProjectCreate from '@/pages/projects/ProjectCreate.vue';
@@ -20,6 +22,8 @@ const router = createRouter({
       component: AppShellLayout,
       children: [
         { path: '', component: Workbench },
+        { path: 'project-spec', component: ProjectSpec },
+        { path: 'training', component: TrainingGuide },
         { path: 'chat', component: AgentHome },
         { path: 'projects', component: ProjectList },
         { path: 'projects/new', component: ProjectCreate },

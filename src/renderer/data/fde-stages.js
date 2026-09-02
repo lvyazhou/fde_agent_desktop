@@ -136,3 +136,35 @@ export const DEFAULT_STAGE = 2;
 export function getStage(id) {
   return FDE_STAGES.find((s) => s.id === id) || null;
 }
+
+/**
+ * 交付物文件名(不含扩展名)→ 展示元数据。
+ * 后端扫描 stageN/ 目录只知道文件名,列表页/详情页用这张表把文件名翻成
+ * 中文名 + 图标 + 简称。key 用磁盘上的实际 basename(与详情页 STAGEx_DELIVERABLES 的 file 对齐)。
+ */
+export const DELIVERABLE_META = {
+  // 阶段②
+  'contact-form':   { name: '需求与数据对接确认表', short: '对接确认表', icon: 'fa-solid fa-file-signature' },
+  'ai-capability':  { name: 'AI 需求能力清单',      short: 'AI能力清单', icon: 'fa-solid fa-list-check' },
+  'prd':            { name: '产品需求文档 PRD',      short: 'PRD',       icon: 'fa-solid fa-file-lines' },
+  // 阶段③
+  'final-req':      { name: '需求最终确认表',        short: '需求确认表', icon: 'fa-solid fa-file-circle-check' },
+  'agent-design':   { name: '智能体设计表',          short: '智能体设计', icon: 'fa-solid fa-diagram-project' },
+  'agent-matrix':   { name: '智能体矩阵',            short: '智能体矩阵', icon: 'fa-solid fa-table-cells' },
+  'task-plan':      { name: '项目任务计划表',        short: '任务计划',   icon: 'fa-solid fa-list-ol' },
+  'acceptance':     { name: '项目验收标准表',        short: '验收标准',   icon: 'fa-solid fa-clipboard-check' },
+  // 阶段④
+  'er-model':       { name: 'ER 数据模型图',         short: 'ER模型',    icon: 'fa-solid fa-sitemap' },
+  'deploy-doc':     { name: '部署文档',              short: '部署文档',   icon: 'fa-solid fa-server' },
+  'progress':       { name: '项目进度表',            short: '进度表',     icon: 'fa-solid fa-bars-progress' },
+  // 阶段⑤
+  'feedback':       { name: '客户反馈跟踪表',        short: '反馈跟踪',   icon: 'fa-solid fa-comment-dots' },
+  'iteration':      { name: '三轮迭代记录表',        short: '迭代记录',   icon: 'fa-solid fa-rotate' },
+  'usage-watch':    { name: '使用率盯防表',          short: '使用率',     icon: 'fa-solid fa-chart-line' },
+  'delivery-sign':  { name: '项目交付签字表',        short: '交付签字',   icon: 'fa-solid fa-file-signature' },
+};
+
+/** 按文件 basename 取交付物展示元数据;未登记的文件回退用文件名本身 */
+export function getDeliverableMeta(base) {
+  return DELIVERABLE_META[base] || { name: base, short: base, icon: 'fa-solid fa-file' };
+}

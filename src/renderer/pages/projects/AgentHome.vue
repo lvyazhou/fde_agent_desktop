@@ -19,12 +19,15 @@
       :is-streaming="isStreaming"
       :is-loading="messagesLoading"
       :available-commands="availableCommands"
+      :available-models="availableModels"
+      :current-model="currentModel"
       @send="handleSend"
       @send-quick="handleQuickSend"
       @send-with-attachments="handleSendWithAttachments"
       @cancel="handleCancel"
       @navigate="handleNavigate"
       @fork="handleFork"
+      @change-model="handleChangeModel"
     />
 
     <!-- Right: Info sidebar -->
@@ -89,6 +92,7 @@ const contextUsage = ref({ used: 0, size: 0 });   // Feature 6: context window u
 const planItems = ref([]);                          // Feature 7: task plan
 const availableCommands = ref([]);                  // Feature 5: slash commands
 const currentModel = ref('');                       // Feature 1: current model name
+const availableModels = ref([]);                    // Feature 1: model list for top-bar selector
 const knowledgeFiles = ref([]);
 const showSessionPanel = ref(true);
 const showInfoPanel = ref(true);
@@ -159,6 +163,7 @@ const selectProject = async (slug) => {
   }
 
   loadKnowledgeFiles();
+  loadModels();  // 会话已建立，此时模型列表才有值
 };
 
 // --- Start new chat ---
@@ -371,7 +376,11 @@ const handleSessionUpdate = (data) => {
         loadProjects();
       }
     }
-    if (update.model) currentModel.value = update.model;
+    // 仅当 hermes 推送的模型与当前显示的「裸名」不同才覆盖，避免带前缀格式差异导致闪回
+    if (update.model) {
+      const bare = (s) => String(s || '').includes(':') ? String(s).slice(String(s).lastIndexOf(':') + 1) : String(s || '');
+      if (bare(update.model) !== bare(currentModel.value)) currentModel.value = update.model;
+    }
   }
   // Feature 7: Plan updates
   if (type === 'plan') {
@@ -537,12 +546,46 @@ const handleNavigate = (tab) => {
 };
 
 // --- Feature 1: Model switching ---
+// 加载可选模型列表 + 回填当前模型（顶栏下拉框数据源）
+const loadModels = async (retries = 5) => {
+  try {
+    const res = await window.api?.hermes?.listModels?.();
+    const list = (res && res.models) || [];
+    if (list.length > 0) availableModels.value = list;
+    // 当前模型：优先 session 返回的 current
+    if (res?.current && !currentModel.value) currentModel.value = res.current;
+    // 列表可能来自 main 的 warmup session（异步），空则稍后重试
+    if (list.length === 0 && retries > 0) {
+      setTimeout(() => loadModels(retries - 1), 1200);
+    }
+  } catch (e) {
+    console.error('List models failed:', e);
+  }
+  // 初始当前模型兜底：config.yaml（持久化真值），避免顶栏空白
+  if (!currentModel.value) {
+    try {
+      const cfg = await window.api?.hermes?.readConfigModel?.();
+      if (cfg?.model) currentModel.value = cfg.model;
+    } catch (_) { /* ignore */ }
+  }
+};
+
 const handleChangeModel = async (modelId) => {
-  if (!currentSlug.value) return;
+  // 乐观更新：立即把胶囊显示切过去，不等后端回执（体验上"点了就变"）
+  currentModel.value = modelId;
+  if (!currentSlug.value) {
+    // 无活动会话时也持久化，下次启动生效
+    try {
+      await window.api?.hermes?.setConfigModel?.(modelId);
+    } catch (e) {
+      console.error('Persist model failed:', e);
+    }
+    return;
+  }
   try {
     const result = await window.api.hermes.setModel(currentSlug.value, modelId);
-    if (result?.success) {
-      currentModel.value = modelId;
+    if (!result?.success) {
+      console.warn('Set model returned:', result);
     }
   } catch (e) {
     console.error('Set model failed:', e);
@@ -666,6 +709,7 @@ const startCoachSession = async () => {
 onMounted(async () => {
   await loadProjects();
   loadSkills();
+  loadModels();
 
   if (window.api?.hermes?.onSessionUpdate) {
     unsubscribe = window.api.hermes.onSessionUpdate(handleSessionUpdate);

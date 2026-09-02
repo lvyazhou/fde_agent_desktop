@@ -1,10 +1,12 @@
 <template>
-  <div class="flex h-full min-h-0 bg-[#f5f7fa]">
+  <div class="flex h-full min-h-0 kb-bg">
     <!-- ── 左侧:五阶段分类树 ────────────────────────── -->
-    <aside class="kb-tree shrink-0 flex flex-col bg-white border-r border-slate-200/70">
+    <aside class="kb-tree shrink-0 flex flex-col bg-white/95 backdrop-blur border-r border-slate-200/70">
       <div class="px-4 pt-4 pb-3 border-b border-slate-100">
-        <div class="flex items-center gap-2 mb-3">
-          <i class="fa-solid fa-book-open text-blue-600"></i>
+        <div class="flex items-center gap-2.5 mb-3">
+          <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-sm shadow-blue-500/30">
+            <i class="fa-solid fa-book-open text-white text-[12px]"></i>
+          </span>
           <span class="text-[13px] font-bold text-slate-800">FDE 作战手册</span>
         </div>
         <div class="relative">
@@ -75,13 +77,13 @@
 
         <!-- 统计条 -->
         <div class="grid grid-cols-4 gap-4 mb-5">
-          <div v-for="s in statCards" :key="s.label" class="bg-white rounded-xl border border-slate-200/70 p-4 flex items-center gap-3">
-            <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: s.bg }">
+          <div v-for="s in statCards" :key="s.label" class="stat-card">
+            <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px ${s.bg}55` }">
               <i :class="'fa-solid ' + s.icon"></i>
             </div>
             <div>
-              <div class="text-xl font-bold text-slate-800 leading-none">{{ s.value }}</div>
-              <div class="text-[11px] text-slate-400 mt-1">{{ s.label }}</div>
+              <div class="text-[22px] font-bold text-slate-800 leading-none tracking-tight">{{ s.value }}</div>
+              <div class="text-[11px] text-slate-400 mt-1.5">{{ s.label }}</div>
             </div>
           </div>
         </div>
@@ -104,13 +106,14 @@
           <button
             v-for="item in filtered"
             :key="item.stageDir + '/' + item.file"
-            class="kb-card text-left"
+            class="kb-card text-left group"
             @click="openDoc(item)"
           >
+            <div class="kb-card__accent" :style="{ background: fmtColor(item.type) }"></div>
             <div class="flex items-start gap-3">
               <span class="fmt-badge" :style="{ background: fmtColor(item.type) }">{{ item.type.toUpperCase() }}</span>
               <div class="flex-1 min-w-0">
-                <h3 class="text-[13.5px] font-semibold text-slate-800 leading-snug line-clamp-2">{{ item.title }}</h3>
+                <h3 class="text-[13.5px] font-semibold text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">{{ item.title }}</h3>
                 <div class="flex items-center gap-1.5 mt-1.5">
                   <span class="cat-chip" :class="catChipCls(item.category)">{{ catLabel(item.category) }}</span>
                   <span class="text-[11px] text-slate-400">阶段{{ CN_NUM[item.stageIndex] }}</span>
@@ -181,7 +184,7 @@
     <!-- Toast -->
     <transition name="fade">
       <div v-if="toast" class="fixed top-4 right-4 z-[60] bg-slate-800 text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2">
-        <i class="fa-solid fa-circle-check text-emerald-400"></i>{{ toast }}
+        <i class="fa-solid fa-circle-check text-blue-400"></i>{{ toast }}
       </div>
     </transition>
   </div>
@@ -192,7 +195,7 @@ import { ref, computed, onMounted } from 'vue';
 import DocViewer from '@/components/workbench/DocViewer.vue';
 
 const CN_NUM = ['一', '二', '三', '四', '五'];
-const STAGE_COLORS = ['#2563eb', '#7c3aed', '#0891b2', '#d97706', '#059669'];
+const STAGE_COLORS = ['#2563eb', '#1d4ed8', '#3b82f6', '#0ea5e9', '#1e40af'];
 
 const stages = ref([]);       // manifest.stages,并给每个 item 注入 stageDir/stageIndex
 const active = ref('all');    // 'all' | stage.dir
@@ -282,9 +285,9 @@ const filtered = computed(() => {
 
 const statCards = computed(() => [
   { label: '文档总数', value: allItems.value.length, icon: 'fa-file-lines', bg: '#2563eb' },
-  { label: '交付物', value: allItems.value.filter((i) => i.category === 'deliverable').length, icon: 'fa-box-open', bg: '#0891b2' },
-  { label: '知识模板', value: allItems.value.filter((i) => i.category === 'knowledge').length, icon: 'fa-lightbulb', bg: '#059669' },
-  { label: '作战阶段', value: stages.value.length, icon: 'fa-layer-group', bg: '#7c3aed' },
+  { label: '交付物', value: allItems.value.filter((i) => i.category === 'deliverable').length, icon: 'fa-box-open', bg: '#3b82f6' },
+  { label: '知识模板', value: allItems.value.filter((i) => i.category === 'knowledge').length, icon: 'fa-lightbulb', bg: '#0ea5e9' },
+  { label: '作战阶段', value: stages.value.length, icon: 'fa-layer-group', bg: '#1d4ed8' },
 ]);
 
 function stageShort(i) {
@@ -302,7 +305,7 @@ function catChipCls(c) {
   }[c] || 'cat-chip--sp';
 }
 function fmtColor(t) {
-  return { md: '#0f766e', docx: '#2563eb', doc: '#2563eb', html: '#7c3aed', pdf: '#dc2626', pptx: '#d97706' }[t] || '#64748b';
+  return { md: '#0ea5e9', docx: '#2563eb', doc: '#2563eb', html: '#3b82f6', pdf: '#1e40af', pptx: '#1d4ed8' }[t] || '#64748b';
 }
 function openDoc(item) {
   selected.value = item;
@@ -310,6 +313,12 @@ function openDoc(item) {
 </script>
 
 <style scoped>
+.kb-bg {
+  background:
+    radial-gradient(900px 500px at 100% 0%, rgba(37, 99, 235, 0.06), transparent 60%),
+    radial-gradient(700px 400px at 0% 100%, rgba(14, 165, 233, 0.05), transparent 55%),
+    #f4f7fb;
+}
 .kb-tree { width: 272px; }
 
 .tree-node {
@@ -322,11 +331,12 @@ function openDoc(item) {
   font-size: 12.5px;
   color: #475569;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
 }
-.tree-node:hover { background: #f5f7fa; }
+.tree-node:hover { background: #f0f5ff; color: #2563eb; }
+.tree-node:hover .tree-badge { transform: scale(1.06); }
 .tree-node--active {
-  background: linear-gradient(90deg, #eff6ff, #f5f9ff);
+  background: linear-gradient(90deg, #e8f1ff, #f3f8ff);
   color: #1d4ed8;
   font-weight: 600;
   box-shadow: inset 3px 0 0 #2563eb;
@@ -343,6 +353,8 @@ function openDoc(item) {
   font-size: 11px;
   font-weight: 700;
   flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.14);
+  transition: transform 0.15s;
 }
 .tree-badge--all { background: #64748b; }
 
@@ -356,26 +368,67 @@ function openDoc(item) {
 }
 .tree-node--active .tree-count { color: #2563eb; background: #dbeafe; }
 
+/* 统计卡片 */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px solid #e8ecf3;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+}
+.stat-card:hover {
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.10);
+  transform: translateY(-2px);
+  border-color: #d4e2fb;
+}
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
 .kb-card {
+  position: relative;
   display: block;
   width: 100%;
   background: #fff;
   border: 1px solid #e8ecf0;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
+  overflow: hidden;
   cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+  transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
+}
+.kb-card__accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  opacity: 0;
+  transition: opacity 0.22s ease;
 }
 .kb-card:hover {
-  box-shadow: 0 8px 24px rgba(30, 58, 138, 0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(30, 58, 138, 0.13);
+  transform: translateY(-3px);
   border-color: #c7d7f5;
 }
+.kb-card:hover .kb-card__accent { opacity: 1; }
 
 .fmt-badge {
   width: 40px;
   height: 48px;
-  border-radius: 7px;
+  border-radius: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -383,7 +436,7 @@ function openDoc(item) {
   font-size: 9px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.22);
 }
 
 .cat-chip {
@@ -392,7 +445,7 @@ function openDoc(item) {
   border-radius: 999px;
   font-weight: 500;
 }
-.cat-chip--kn { background: #ecfdf5; color: #059669; }
+.cat-chip--kn { background: #e0f2fe; color: #0369a1; }
 .cat-chip--dl { background: #eff6ff; color: #2563eb; }
 .cat-chip--sp { background: #f1f5f9; color: #64748b; }
 

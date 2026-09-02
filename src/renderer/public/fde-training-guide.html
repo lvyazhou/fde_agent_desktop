@@ -1,0 +1,887 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDE 新任项目经理 · 从0到上手 完整培训教程</title>
+<meta name="description" content="纯新人 FDE 项目经理入职培训:五阶段、医疗架构、技术底座、工作台、极库云、项管规范、实战,一份读完。">
+<style>
+  :root{
+    --ink:#0f1729;--ink-soft:#1c2740;--paper:#f7f5f0;--paper-card:#fff;--brass:#c8862a;
+    --alert:#b5433a;--alert-soft:#f3e2df;--ok:#2f7d54;--neutral:#5a6270;--neutral-line:#dfdbd1;
+    --neutral-faint:#ece8de;--text:#232937;--text-dim:#5a6270;--text-oninK:#eef1f7;--text-oninK-dim:#9aa6bd;
+    --accent-on-ink:#e3a94a;--shadow:0 1px 2px rgba(15,23,41,.06),0 8px 24px rgba(15,23,41,.06);--radius:10px;
+  }
+  :root[data-theme="dark"],:root:not([data-theme="light"]){@media (prefers-color-scheme:dark){
+    --paper:#10151f;--paper-card:#171e2b;--text:#e6e9f0;--text-dim:#97a1b4;--neutral:#97a1b4;
+    --neutral-line:#2a3448;--neutral-faint:#1b2333;--brass:#e0a94a;--alert:#e0736a;--alert-soft:#2c1e1d;--ok:#5bb98a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--text);font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.78;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.serif{font-family:"Noto Serif SC",Georgia,"Songti SC",serif;text-wrap:balance}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+
+  /* HERO */
+  .hero{background:var(--ink);color:var(--text-oninK);position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(900px 420px at 82% -10%,rgba(200,134,42,.18),transparent 60%),linear-gradient(180deg,rgba(255,255,255,.03),transparent 40%);pointer-events:none}
+  .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(180deg,black,transparent 78%);pointer-events:none}
+  .hero-inner{position:relative;padding:74px 0 64px}
+  .eyebrow{font-size:12.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent-on-ink);font-weight:600;margin:0 0 20px;display:flex;align-items:center;gap:12px}
+  .eyebrow::before{content:"";width:30px;height:1px;background:var(--accent-on-ink)}
+  .hero h1{font-size:clamp(31px,5vw,52px);line-height:1.1;margin:0 0 18px;font-weight:700;letter-spacing:-.01em}
+  .hero h1 .amber{color:var(--accent-on-ink)}
+  .hero-lead{font-size:clamp(16px,1.9vw,19px);color:var(--text-oninK-dim);max-width:62ch;margin:0 0 32px}
+  .thesis{display:inline-flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:16px 20px;border:1px solid rgba(227,169,74,.35);border-radius:var(--radius);background:rgba(200,134,42,.07);font-family:"Noto Serif SC",serif;font-size:clamp(14px,1.6vw,16.5px)}
+  .thesis b{color:var(--accent-on-ink);font-weight:700}.thesis .arrow{color:rgba(227,169,74,.6)}
+
+  /* LAYOUT + RAIL */
+  .layout{display:grid;grid-template-columns:210px 1fr;gap:46px;align-items:start;padding:48px 0 90px}
+  @media (max-width:900px){.layout{grid-template-columns:1fr;gap:0}}
+  nav.rail{position:sticky;top:22px}
+  @media (max-width:900px){nav.rail{position:static;margin-bottom:20px}}
+  nav.rail .rail-title{font-size:11.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--text-dim);margin:0 0 14px;font-weight:600}
+  nav.rail a{display:flex;gap:11px;align-items:baseline;text-decoration:none;color:var(--text-dim);padding:8px 0;border-top:1px solid var(--neutral-faint);transition:color .15s}
+  nav.rail a:hover,nav.rail a.active{color:var(--text)}
+  nav.rail a .num{font-family:ui-monospace,monospace;font-size:12px;color:var(--brass);font-weight:600;min-width:22px}
+  nav.rail a .lbl{font-size:13px;line-height:1.35}
+  nav.rail a.active .lbl{font-weight:600}
+
+  /* MODULE */
+  .mod{scroll-margin-top:18px;margin-bottom:58px}
+  .mod-head{display:flex;align-items:flex-start;gap:18px;margin-bottom:14px}
+  .mod-num{font-family:ui-monospace,monospace;font-size:15px;font-weight:700;color:var(--brass);border:1.5px solid var(--brass);border-radius:8px;width:48px;height:48px;display:grid;place-items:center;flex:0 0 auto;background:color-mix(in srgb,var(--brass) 8%,transparent)}
+  .mod-head h2{font-size:clamp(21px,2.8vw,28px);margin:2px 0 3px;line-height:1.2}
+  .mod-head .short{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-dim);font-weight:600}
+  .goal{margin:8px 0 20px;padding:12px 18px;border-left:3px solid var(--brass);background:var(--neutral-faint);border-radius:0 8px 8px 0;font-family:"Noto Serif SC",serif;font-size:15px}
+  .goal b{color:var(--brass)}
+  p.body{font-size:15px;max-width:76ch;margin:0 0 14px}
+  h3.sub{font-size:16px;margin:24px 0 10px;color:var(--text);display:flex;align-items:center;gap:9px}
+  h3.sub::before{content:"";width:14px;height:14px;border-radius:3px;background:var(--brass);flex:0 0 auto}
+  .metaphor{border-left:3px solid var(--brass);background:color-mix(in srgb,var(--brass) 6%,transparent);border-radius:0 8px 8px 0;padding:12px 18px;margin:14px 0;font-family:"Noto Serif SC",serif;font-size:14.5px}
+  .metaphor .mt{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);font-weight:700;margin:0 0 4px;font-family:"Noto Sans SC",sans-serif}
+
+  .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:14px 0}
+  .c3{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:760px){.cards,.c3{grid-template-columns:1fr}}
+  .card{background:var(--paper-card);border:1px solid var(--neutral-line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+  .card .ch{font-weight:600;font-size:14px;margin:0 0 6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card .ch .tag{font-family:ui-monospace,monospace;font-size:10px;letter-spacing:.05em;color:var(--brass);border:1px solid var(--brass);border-radius:4px;padding:1px 6px;font-weight:700}
+  .card .ch .en{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--text-dim);font-weight:600}
+  .card p{margin:0;font-size:13px;color:var(--text-dim);line-height:1.62}
+  .card ul{margin:5px 0 0;padding-left:15px}.card li{font-size:12.5px;margin-bottom:4px;color:var(--text-dim)}.card li::marker{color:var(--brass)}
+
+  .tbl-wrap{overflow-x:auto;border:1px solid var(--neutral-line);border-radius:var(--radius);box-shadow:var(--shadow);margin:14px 0}
+  table{border-collapse:collapse;width:100%;font-size:13px;background:var(--paper-card);min-width:600px}
+  thead th{background:var(--ink);color:var(--text-oninK);text-align:left;padding:10px 12px;font-weight:600;font-size:12px}
+  tbody td{padding:10px 12px;border-top:1px solid var(--neutral-line);vertical-align:top}
+  tbody tr:nth-child(even) td{background:color-mix(in srgb,var(--neutral-faint) 45%,transparent)}
+  td .k{font-weight:700;color:var(--text);white-space:nowrap}
+  td code,p code{font-family:ui-monospace,monospace;font-size:12px;background:var(--neutral-faint);padding:1px 5px;border-radius:4px}
+
+  .flow{background:var(--ink);color:var(--text-oninK-dim);border-radius:var(--radius);padding:18px 20px;margin:14px 0;font-family:ui-monospace,monospace;font-size:12px;line-height:1.85;overflow-x:auto}
+  .flow .amber{color:var(--accent-on-ink);font-weight:700}.flow .hl{color:var(--text-oninK)}
+
+  /* SVG 图 */
+  .diagram{background:var(--paper-card);border:1px solid var(--neutral-line);border-radius:var(--radius);padding:18px;margin:14px 0;box-shadow:var(--shadow);overflow-x:auto}
+  .diagram svg{display:block;width:100%;height:auto;max-width:100%}
+  .diagram .cap{font-size:12px;color:var(--text-dim);text-align:center;margin:10px 0 0}
+  .diagram text{font-family:"Noto Sans SC",sans-serif}
+
+  .creed{margin:16px 0;border-left:3px solid var(--alert);background:var(--alert-soft);border-radius:0 8px 8px 0;padding:14px 18px}
+  .creed .ct{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--alert);font-weight:700;margin:0 0 9px}
+  .creed p{margin:0 0 7px;font-family:"Noto Serif SC",serif;font-size:14.5px;color:var(--text)}
+  .creed p:last-child{margin-bottom:0}.creed .lead{color:var(--alert);font-weight:700}
+
+  .drill{border:1px dashed var(--brass);border-radius:var(--radius);padding:14px 18px;margin:14px 0;background:color-mix(in srgb,var(--brass) 5%,transparent)}
+  .drill .dt{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);font-weight:700;margin:0 0 8px}
+  .drill ol{margin:0;padding-left:19px}.drill li{font-size:13.5px;margin-bottom:5px}
+  .drill .chk{margin-top:10px;padding-top:9px;border-top:1px solid var(--neutral-line);font-size:13px;color:var(--text-dim)}
+  .drill .chk b{color:var(--ok)}
+
+  /* 导读区 */
+  .intro{background:var(--neutral-faint);border-bottom:1px solid var(--neutral-line);padding:44px 0 48px}
+  .intro-head{margin:0 0 18px}
+  .intro-head h2{font-size:clamp(19px,2.4vw,25px);margin:0 0 6px}
+  .intro-head p{font-size:14.5px;color:var(--text-dim);max-width:74ch;margin:0}
+  .map-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media (max-width:780px){.map-strip{grid-template-columns:1fr}}
+  .map-col{border:1px solid var(--neutral-line);border-radius:var(--radius);padding:15px 17px;background:var(--paper-card)}
+  .map-col .mh{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:700;margin:0 0 9px}
+  .map-col ul{margin:0;padding-left:16px}.map-col li{font-size:13px;margin-bottom:6px;color:var(--text)}.map-col li::marker{color:var(--brass)}
+  .baseline{border-left:3px solid var(--brass);background:var(--paper-card);border-radius:0 8px 8px 0;padding:14px 18px;margin:0 0 20px;font-family:"Noto Serif SC",serif;font-size:15px;box-shadow:var(--shadow)}
+  .baseline b{color:var(--brass)}
+  .path{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  @media (max-width:820px){.path{grid-template-columns:1fr 1fr}}
+  @media (max-width:520px){.path{grid-template-columns:1fr}}
+  .step{background:var(--paper-card);border:1px solid var(--neutral-line);border-radius:var(--radius);padding:14px 16px}
+  .step .sn{font-family:ui-monospace,monospace;color:var(--brass);font-weight:700;font-size:12px}
+  .step .sh{font-weight:600;font-size:14px;margin:3px 0 5px}
+  .step .sb,.step p{font-size:12.5px;color:var(--text-dim);margin:0;line-height:1.55}
+  hr.div{border:0;border-top:1px solid var(--neutral-line);margin:0 0 50px}
+  .reading{font-size:12.5px;color:var(--text-dim);margin:10px 0 0}
+  .reading .wl{color:var(--brass);font-family:ui-monospace,monospace}
+  footer{background:var(--ink);color:var(--text-oninK-dim);padding:40px 0;font-size:13px}
+  footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:center}
+  footer b{color:var(--accent-on-ink);font-family:"Noto Serif SC",serif}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700&display=swap">
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-grid"></div>
+  <div class="wrap hero-inner">
+    <p class="eyebrow">FDE 新任项目经理 · 从 0 到上手 · 完整培训教程</p>
+    <h1>行业和 AI 都从零讲起,<br>练到<span class="amber">能独立接一个医疗项目</span>。</h1>
+    <p class="hero-lead">
+      这一份从头读到尾,就是新任 FDE 项目经理该会的全部:岗位是干嘛、五阶段怎么走、医院有哪些系统、
+      SEAF 和 SDR 是啥、工作台怎么搭、极库云怎么上线、项管有什么规矩、日常在极库云怎么协作干活,最后一个实战串起来。一份读完。
+    </p>
+    <div class="thesis">
+      <b>懂岗位</b><span class="arrow">→</span><b>补医疗底</b><span class="arrow">→</span><b>吃透底座</b><span class="arrow">→</span><b>走五阶段</b><span class="arrow">→</span><b>实战出师</b>
+    </div>
+  </div>
+</header>
+
+<!-- 导读区 -->
+<section class="intro">
+  <div class="wrap">
+    <div class="intro-head">
+      <h2>怎么用这份教程</h2>
+      <p>八大块内容,挂在 FDE 五阶段这根骨架上。新人从上往下读一遍打底,再对着实战反复练。三个学法先记住。</p>
+    </div>
+    <div class="cards c3" style="margin:0 0 34px">
+      <div class="card"><div class="ch">① 以考促育</div><p>不是听完再考,是拿考试倒逼学习。每块末尾有当堂检查点,卡不过去当场补,别攒到最后。</p></div>
+      <div class="card"><div class="ch">② 教练智能体扮客户</div><p>沟通最难练。用教练智能体扮科室主任/信息科/临床医生,脾气各不同,你拿方法去撬,撬不动换招。四院经验:吐槽法最好使。</p></div>
+      <div class="card"><div class="ch">③ 实操为主</div><p>约七成时间动手,三成听。听懂不算会,手上跑通才算。每块都配练习,不产出等于没学。</p></div>
+    </div>
+
+    <div class="intro-head"><h2>八大块怎么挂在五阶段上</h2>
+      <p>用户列的八块不是并列的,有层次。五阶段是主干,其他都挂上去——这就是这份教程的编排逻辑。先看这张全景图,再往下读细节。</p>
+    </div>
+    <div class="diagram">
+      <svg viewBox="0 0 960 340" role="img" aria-label="培训全景总图">
+        <defs>
+          <marker id="pa" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker>
+        </defs>
+        <!-- 主干:五阶段 -->
+        <text x="30" y="40" fill="#c8862a" font-size="13" font-weight="700">主干骨架 · FDE 五阶段(01)</text>
+        <g font-size="12" font-weight="700">
+          <rect x="30" y="54" width="160" height="58" rx="8" fill="#0f1729"/><text x="110" y="80" text-anchor="middle" fill="#eef1f7">① 调研备弹</text><text x="110" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段一</text>
+          <rect x="222" y="54" width="160" height="58" rx="8" fill="#0f1729"/><text x="302" y="80" text-anchor="middle" fill="#eef1f7">② 沟通出原型</text><text x="302" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段二</text>
+          <rect x="414" y="54" width="160" height="58" rx="8" fill="#0f1729"/><text x="494" y="80" text-anchor="middle" fill="#eef1f7">③ 智能体设计</text><text x="494" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段三</text>
+          <rect x="606" y="54" width="160" height="58" rx="8" fill="#0f1729"/><text x="686" y="80" text-anchor="middle" fill="#eef1f7">④ 行业工作台</text><text x="686" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段四</text>
+          <rect x="798" y="54" width="140" height="58" rx="8" fill="#0f1729"/><text x="868" y="80" text-anchor="middle" fill="#eef1f7">⑤ 试用定稿</text><text x="868" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段五</text>
+        </g>
+        <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#pa)">
+          <line x1="190" y1="83" x2="218" y2="83"/><line x1="382" y1="83" x2="410" y2="83"/><line x1="574" y1="83" x2="602" y2="83"/><line x1="766" y1="83" x2="794" y2="83"/>
+        </g>
+        <!-- 对应模块标注 -->
+        <g font-size="10.5" fill="#5a6270">
+          <text x="302" y="130" text-anchor="middle">M4 需求与智能体设计(01/02/03)</text>
+          <text x="686" y="130" text-anchor="middle">M5 工作台 · M6 极库云+容器云上线</text>
+          <text x="868" y="130" text-anchor="middle">M7 试用优化</text>
+        </g>
+        <!-- 底座 -->
+        <text x="30" y="180" fill="#2f7d54" font-size="13" font-weight="700">底座与认知 · 支撑主干</text>
+        <rect x="30" y="194" width="290" height="50" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="175" y="215" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M2 医疗架构</text><text x="175" y="233" text-anchor="middle" fill="#5a6270" font-size="10.5">新人补底 · 系统/术语/智能体矩阵</text>
+        <rect x="345" y="194" width="290" height="50" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="490" y="215" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M3 技术底座 SEAF + SDR</text><text x="490" y="233" text-anchor="middle" fill="#5a6270" font-size="10.5">引擎底座 + 数据地基,藏背后供能</text>
+        <rect x="660" y="194" width="278" height="50" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="799" y="215" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M6 极库云 + 容器云</text><text x="799" y="233" text-anchor="middle" fill="#5a6270" font-size="10.5">阶段四上线用 · 代码/知识库/CI + 部署</text>
+        <!-- 规矩与收口 -->
+        <text x="30" y="278" fill="#b5433a" font-size="13" font-weight="700">规矩与收口 · 贯穿全程</text>
+        <rect x="30" y="292" width="450" height="40" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="255" y="317" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M8 项目管理规范(五类规范 · 极库云项目管理 · 复制模式)</text>
+        <rect x="500" y="292" width="438" height="40" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="719" y="317" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M9 项目实战演练(串一遍 · 答辩出师)</text>
+      </svg>
+      <p class="cap">全景总图:五阶段是主干(横向一条链),底座(M2/M3/M6)在下面撑着,规矩(M8)和收口(M9)贯穿全程</p>
+    </div>
+    <div class="map-strip">
+      <div class="map-col"><p class="mh">主干骨架</p><ul>
+        <li><b>01 五阶段</b>——一条链,后面全挂在这</li>
+        <li><b>04 需求与智能体设计</b>=阶段一二三</li>
+        <li><b>05 行业工作台</b>=阶段四产出物</li>
+        <li><b>07 客户试用</b>=阶段五</li>
+      </ul></div>
+      <div class="map-col"><p class="mh">底座与认知</p><ul>
+        <li><b>02 医疗架构</b>——新人补底,从 0 讲</li>
+        <li><b>03 技术底座</b>——SEAF+SDR 藏在背后供能</li>
+        <li><b>06 极库云</b>——阶段四上线用,独立成课</li>
+      </ul></div>
+      <div class="map-col"><p class="mh">规矩与收口</p><ul>
+        <li><b>08 项管规范</b>——贯穿五阶段的规矩</li>
+        <li><b>09 项目实战</b>——串一遍,答辩出师</li>
+      </ul></div>
+    </div>
+
+    <div class="intro-head" style="margin-top:34px"><h2>练到什么份上算过</h2>
+      <p>给一条最直白的判断线,和一条从课堂到独立扛活的成长路径。</p>
+    </div>
+    <div class="baseline">
+      客户随口说"你从 HIS 里把这个月数据拉一下",你脑子里立刻反应过来——HIS 是挂号收费系统、数据在哪张表、跟 EMR/LIS 怎么打通,而不是站那儿问"HIS 是啥"。<b>到这份上才算基础过关。</b>
+    </div>
+    <div class="path">
+      <div class="step"><div class="sn">第 1 步</div><div class="sh">拿证</div><p>过入职培训认证——会用平台、会拆场景、能接术语。无证不上岗。</p></div>
+      <div class="step"><div class="sn">第 2 步</div><div class="sh">跟岗 4–6 周</div><p>跟一位 Senior FDE 进真实项目当副手,看+打下手+复盘,跟满一个完整交付周期。</p></div>
+      <div class="step"><div class="sn">第 3 步</div><div class="sh">独立交付</div><p>带一个小场景独立交付,Senior 兜底不插手。验收过、30 天使用率达标,才算能打。</p></div>
+      <div class="step"><div class="sn">第 4 步</div><div class="sh">带人</div><p>交付过几单、有沉淀,反过来带新人。带徒弟算进晋升分。</p></div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+<div class="layout">
+
+  <nav class="rail" id="rail">
+    <p class="rail-title">教程目录</p>
+    <a href="#m0"><span class="num">00</span><span class="lbl">你来是干嘛的</span></a>
+    <a href="#m1"><span class="num">01</span><span class="lbl">FDE 五阶段总览</span></a>
+    <a href="#m2"><span class="num">02</span><span class="lbl">医疗行业架构</span></a>
+    <a href="#m3"><span class="num">03</span><span class="lbl">技术底座 SEAF+SDR</span></a>
+    <a href="#m4"><span class="num">04</span><span class="lbl">需求与智能体设计</span></a>
+    <a href="#m5"><span class="num">05</span><span class="lbl">行业工作台</span></a>
+    <a href="#m6"><span class="num">06</span><span class="lbl">极库云 + 容器云</span></a>
+    <a href="#m7"><span class="num">07</span><span class="lbl">客户试用与优化</span></a>
+    <a href="#m8"><span class="num">08</span><span class="lbl">项目管理规范</span></a>
+    <a href="#m9"><span class="num">09</span><span class="lbl">项目实战演练</span></a>
+  </nav>
+
+  <main>
+
+    <!-- 00 岗位 -->
+    <section class="mod" id="m0">
+      <div class="mod-head"><div class="mod-num">00</div><div><div class="short">开篇 · 先讲清你的角色</div><h2>你来是干嘛的</h2></div></div>
+      <div class="goal"><b>学完能:</b> 一句话说清 FDE 做什么、不做什么,分清"验收"和"真有人用"的区别。</div>
+      <p class="body">讲白了,FDE(前线交付工程师)不签单、不谈价,就管三件事:<b>需求对接、技术信任、方案落地</b>。从进客户门那一刻起,你带一个 3–5 人小组,把一个医疗智能体产品从客户的一句话,做成线上真能用的行业工作台。</p>
+      <div class="cards c3">
+        <div class="card"><div class="ch">你负责</div><p>需求对接、建立技术信任、把方案在客户现场落地跑通。</p></div>
+        <div class="card"><div class="ch">你不越界</div><p>价格转商务,竞品不主动谈,不替客户拍业务的板。</p></div>
+        <div class="card"><div class="ch">怎么算数</div><p>验收只代表"当时能跑",30 天使用率才代表"真有人用"。</p></div>
+      </div>
+      <div class="creed"><p class="ct">一条总铁律</p><p><span class="lead">以智能体设计为主,平台为辅。</span> 这句话贯穿整个五阶段,别一上来就折腾平台。</p></div>
+    </section>
+    <hr class="div">
+
+    <!-- 01 五阶段 -->
+    <section class="mod" id="m1">
+      <div class="mod-head"><div class="mod-num">01</div><div><div class="short">骨架课 · 后面全挂在这</div><h2>FDE 五阶段总览</h2></div></div>
+      <div class="goal"><b>学完能:</b> 复述五阶段一条链,说清每阶段产出什么,分清 2+1 和 3/7/14 两套节奏。</div>
+      <p class="body">先记一条<b>主线</b>:客户一句话 → 调研备弹 → 沟通挖需求出原型 → 需求确认+智能体设计 → 工作台上线 → 客户试用定稿 → 复制到下个行业。再记一条<b>并行线</b>:进院必备的网络、VPN、部署基础服务(对信息科走)。两条线各走各的,互不等,<b>两线都齐了才交付版本</b>。</p>
+      <div class="metaphor"><p class="mt">打个比方</p>五阶段像盖楼:阶段一<b>备料进场</b>、阶段二<b>跟业主确认效果图</b>、阶段三<b>把图纸拆成施工方案签字定死</b>、阶段四<b>真盖起来能住人</b>、阶段五<b>业主住进去挑毛病验收</b>。哪步跳过,后面都返工。</div>
+      <div class="flow">
+客户一句话
+  ↓ 一、调研准备+备弹知识    → 话术卡+调研SOP(<span class="hl">纯知识,无交付物</span>)
+  ↓ 二、需求沟通+原型设计    → 对接确认表+AI能力清单+原型Demo   <span class="amber">【2+1 主场】</span>
+  ↓ 三、需求确认+智能体设计  → 需求最终确认表(签字定稿)+智能体矩阵  <span class="amber">【2+1的"1"】</span>
+  ↓ 四、纳米Work行业工作台   → 能访问的工作台系统+项目进度表   <span class="amber">【3/7/14 交付】</span>
+  ↓ 五、客户试用+智能体优化  → 三轮定稿产品+交付签字+可复制模板
+  ↓ 沉淀模板 → 复制到下一个行业
+      </div>
+      <div class="diagram">
+        <svg viewBox="0 0 760 220" role="img" aria-label="两条线并行图">
+          <defs><marker id="m1a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <text x="20" y="30" fill="#2f7d54" font-size="12.5" font-weight="700">环境地基线(对信息科)</text>
+          <rect x="20" y="40" width="150" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="95" y="66" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">摸底踩点</text>
+          <rect x="210" y="40" width="120" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="270" y="66" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">开 VPN</text>
+          <rect x="370" y="40" width="150" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="445" y="66" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">部署基础服务</text>
+          <rect x="560" y="40" width="120" height="44" rx="8" fill="#2f7d54"/><text x="620" y="66" text-anchor="middle" fill="#fff" font-size="11.5" font-weight="700">底座就绪</text>
+          <g stroke="#2f7d54" stroke-width="1.5" marker-end="url(#m1a)"><line x1="170" y1="62" x2="206" y2="62"/><line x1="330" y1="62" x2="366" y2="62"/><line x1="520" y1="62" x2="556" y2="62"/></g>
+          <text x="360" y="118" text-anchor="middle" fill="#5a6270" font-size="11" font-style="italic">‖ 两条线并行,互不等 · 两线齐了才交付版本 ‖</text>
+          <text x="20" y="150" fill="#c8862a" font-size="12.5" font-weight="700">需求主线(对业务科室)</text>
+          <rect x="20" y="160" width="150" height="44" rx="8" fill="#0f1729"/><text x="95" y="182" text-anchor="middle" fill="#eef1f7" font-size="11" font-weight="700">①②③ 需求设计</text><text x="95" y="197" text-anchor="middle" fill="#9aa6bd" font-size="9.5">2+1 主场</text>
+          <rect x="370" y="160" width="150" height="44" rx="8" fill="#0f1729"/><text x="445" y="182" text-anchor="middle" fill="#eef1f7" font-size="11" font-weight="700">④ 工作台上线</text><text x="445" y="197" text-anchor="middle" fill="#9aa6bd" font-size="9.5">3/7/14 交付</text>
+          <rect x="560" y="160" width="120" height="44" rx="8" fill="#0f1729"/><text x="620" y="182" text-anchor="middle" fill="#eef1f7" font-size="11" font-weight="700">⑤ 试用定稿</text>
+          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m1a)"><line x1="170" y1="182" x2="366" y2="182"/><line x1="520" y1="182" x2="556" y2="182"/></g>
+        </svg>
+        <p class="cap">两条线并行:环境地基线(绿,对信息科)和需求主线(墨蓝,对业务科室)各走各的,两线齐了才交付版本</p>
+      </div>
+      <h3 class="sub">两套节奏别讲混</h3>
+      <div class="cards">
+        <div class="card"><div class="ch">2+1 = 需求侧节奏(数"次")</div><p>一轮 = 3 次 = 2 次需求对接 + 1 次签字出原型,落在阶段二三。按次数算,不按天卡;需求大就多跑几轮。</p></div>
+        <div class="card"><div class="ch">3/7/14 = 签字后开发(算"天")</div><p>需求签字 + 环境就绪(两线齐)后进开发,按需求大小 小3 / 中7 / 大14 天,主要在阶段四。</p></div>
+      </div>
+      <p class="body"><b>加时赛(外部项目尤其医院):</b>甲方卡住(不签字、不开 VPN、不给接口)就进加时——第一动作发邮件告知甲方留痕,加时时间单独记、不算进版本时间。</p>
+      <div class="drill"><p class="dt">当堂练习 + 检查点</p>
+        <ol><li>合上教程,白板画出五阶段一条链,每阶段标一个核心交付物。</li><li>判断三个场景各属于 2+1 / 3/7/14 / 加时周期。</li></ol>
+        <p class="chk"><b>过关:</b> 五阶段无遗漏无颠倒,节奏判断全对。</p>
+      </div>
+      <p class="reading">延伸:<span class="wl">[[99 FDE模式/100 FDE作战手册/_md源/FDE五阶段作战总览.md]]</span></p>
+    </section>
+    <hr class="div">
+
+    <!-- 02 医疗架构 -->
+    <section class="mod" id="m2">
+      <div class="mod-head"><div class="mod-num">02</div><div><div class="short">新人重灾区 · 从0讲透</div><h2>医疗行业架构</h2></div></div>
+      <div class="goal"><b>学完能:</b> 画出医院系统草图,接住核心术语,说清智能体挂在哪个科室。</div>
+      <p class="body">医疗智能体的燃料是数据,数据都躺在这几个系统里。<b>HIS 是几乎所有业务数据的源头</b>,先记住它。去客户之前就画一张系统草图——哪些数据在系统里、哪些还在 Excel 手工维护,<b>手工维护的地方往往就是痛点</b>。</p>
+      <h3 class="sub">医院五大系统</h3>
+      <div class="cards c3">
+        <div class="card"><div class="ch">HIS <span class="en">医院信息系统</span></div><p>挂号/收费/开单/药房/住院,业务总台。所有业务数据的源头。</p></div>
+        <div class="card"><div class="ch">EMR <span class="en">电子病历</span></div><p>病人诊疗档案。质控、DRG 入组、病历分析靠它。</p></div>
+        <div class="card"><div class="ch">LIS <span class="en">检验系统</span></div><p>化验数据:血常规、生化。危急值、指标趋势用它。</p></div>
+        <div class="card"><div class="ch">PACS <span class="en">影像系统</span></div><p>CT/MRI/X 光片子和诊断报告。</p></div>
+        <div class="card"><div class="ch">CDR <span class="en">临床数据中心</span></div><p>把上面几个系统汇到一起的中央仓库。没有 CDR 取数就难——正是下一课 SDR 要解决的。</p></div>
+        <div class="card"><div class="ch">怎么用</div><p>对着五个系统问:数据在哪个系统?接口啥类型?系统之间通不通?问完就有草图了。</p></div>
+      </div>
+      <div class="diagram">
+        <svg viewBox="0 0 720 250" role="img" aria-label="医院五大系统数据流图">
+          <defs><marker id="m2a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <rect x="20" y="100" width="130" height="56" rx="8" fill="#0f1729"/><text x="85" y="124" text-anchor="middle" fill="#e3a94a" font-size="13" font-weight="700">HIS</text><text x="85" y="143" text-anchor="middle" fill="#9aa6bd" font-size="10">挂号收费 · 数据源头</text>
+          <rect x="220" y="20" width="130" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="285" y="40" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">EMR</text><text x="285" y="57" text-anchor="middle" fill="#5a6270" font-size="10">电子病历</text>
+          <rect x="220" y="104" width="130" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="285" y="124" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">LIS</text><text x="285" y="141" text-anchor="middle" fill="#5a6270" font-size="10">检验化验</text>
+          <rect x="220" y="188" width="130" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="285" y="208" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">PACS</text><text x="285" y="225" text-anchor="middle" fill="#5a6270" font-size="10">影像片子</text>
+          <rect x="430" y="104" width="140" height="48" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="500" y="124" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">CDR</text><text x="500" y="141" text-anchor="middle" fill="#5a6270" font-size="10">临床数据中心 · 汇总</text>
+          <rect x="620" y="104" width="80" height="48" rx="8" fill="#2f7d54"/><text x="660" y="125" text-anchor="middle" fill="#fff" font-size="11.5" font-weight="700">智能体</text><text x="660" y="142" text-anchor="middle" fill="#cfe8da" font-size="9.5">取数</text>
+          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m2a)">
+            <line x1="150" y1="118" x2="216" y2="46"/><line x1="150" y1="128" x2="216" y2="128"/><line x1="150" y1="138" x2="216" y2="210"/>
+            <line x1="350" y1="46" x2="426" y2="118"/><line x1="350" y1="128" x2="426" y2="128"/><line x1="350" y1="210" x2="426" y2="138"/>
+            <line x1="570" y1="128" x2="616" y2="128"/>
+          </g>
+        </svg>
+        <p class="cap">数据流向:HIS 是源头 → 分流到 EMR/LIS/PACS → 全汇到 CDR 中央仓库 → 智能体从 CDR 取数。没 CDR 就得一个个系统接(这就是 SDR 要解决的)</p>
+      </div>
+      <h3 class="sub">必须听懂的术语(带人话翻译)</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:110px">术语</th><th>是什么</th><th>也就是说</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">国考</span></td><td>三级公立医院绩效考核,55 项指标</td><td>医院年度大考,排名掉院长最急,最好切入的痛点</td></tr>
+          <tr><td><span class="k">DRG/DIP</span></td><td>按疾病诊断相关分组付费</td><td>医保按"病种打包"付钱,入组准不准直接影响收入</td></tr>
+          <tr><td><span class="k">CMI</span></td><td>病例组合指数</td><td>科室收的病"难不难",CMI 高=大病多、技术含量高</td></tr>
+          <tr><td><span class="k">药占比</span></td><td>药品收入占总收入比</td><td>药费占比,国家要压,太高被考核</td></tr>
+          <tr><td><span class="k">平均住院日</span></td><td>病人平均住多少天</td><td>周转效率,住越久床位越紧,医院想压短</td></tr>
+        </tbody>
+      </table></div>
+      <h3 class="sub">现有医疗智能体矩阵</h3>
+      <div class="cards c3">
+        <div class="card"><div class="ch">围术期 <span class="tag">麻醉科</span></div><p>手术前中后流程与风险、术后监测。</p></div>
+        <div class="card"><div class="ch">医疗质量 <span class="tag">质控</span></div><p>病历质量、诊疗规范,对着国考 DRG 指标。</p></div>
+        <div class="card"><div class="ch">患者分析 <span class="tag">运营</span></div><p>患者画像、分层、随访,有完整 PRD 样板。</p></div>
+        <div class="card"><div class="ch">运营决策 <span class="tag">运营管理部</span></div><p>上海四院样板:心内科"四步归因"(总量→周→亚专业→医生/病人),3 天压到 15 分钟。</p></div>
+        <div class="card"><div class="ch">人力资源 <span class="tag">党办/人事</span></div><p>干部考核、人才盘点、HR 数据分析。</p></div>
+        <div class="card"><div class="ch">怎么用</div><p>接新场景先看矩阵有没有相近的能搬。方法通用、结果定制。</p></div>
+      </div>
+      <div class="creed"><p class="ct">医疗现场铁律</p>
+        <p><span class="lead">只跟 IT 聊不出业务需求</span> —— 决策权在业务部门,信息科是给数据的配合方。</p>
+        <p><span class="lead">业务方向对人</span> —— 运营分析找运营管理部、围术期找麻醉科、干部考核找党办。</p>
+      </div>
+      <div class="drill"><p class="dt">当堂练习 + 检查点</p>
+        <ol><li>盲画五大系统 + 数据流向,标出源头和中央仓库。</li><li>老师报术语,你立刻用"也就是说……"翻人话。</li></ol>
+        <p class="chk"><b>过关:</b> 系统草图五个齐、源头标对;术语翻译不愣三秒。</p>
+      </div>
+      <p class="reading">延伸:<span class="wl">[[99 FDE模式/01 正式文档/FDE备弹知识体系-三段话.md]]</span></p>
+    </section>
+    <hr class="div">
+
+    <!-- 03 技术底座 -->
+    <section class="mod" id="m3">
+      <div class="mod-head"><div class="mod-num">03</div><div><div class="short">藏在背后的地基</div><h2>技术底座 · SEAF + SDR</h2></div></div>
+      <div class="goal"><b>学完能:</b> 说清 SEAF 藏在哪、SDR 解决什么,以及"客户只面对一个纳米Work"这句话。</div>
+      <h3 class="sub">SEAF = 智能体引擎底座</h3>
+      <p class="body">记住一句话:<b>对外只有一个产品——纳米Work 行业工作台;SEAF 只在底层供能力,不单独露面</b>。工作台里的智能体、Skill、知识库、MCP、工作流,都是工作台的入口/组件;它们底层的能力(智能体引擎、工作流、长期记忆、离线大模型)由 SEAF 提供。相当于把 SEAF 封装成工作台的组件,客户从头到尾只用一个工作台。</p>
+      <div class="metaphor"><p class="mt">打个比方</p>SEAF 像发电厂,纳米Work 工作台像你家墙上的插座和电器。客户只跟插座和电器打交道,不用知道电从哪个发电厂来。</div>
+      <div class="diagram">
+        <svg viewBox="0 0 720 300" role="img" aria-label="技术底座分层架构图">
+          <!-- 客户 -->
+          <rect x="240" y="14" width="240" height="40" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
+          <text x="360" y="39" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">客户 · 只面对一个入口</text>
+          <line x1="360" y1="54" x2="360" y2="74" stroke="#c8862a" stroke-width="1.5"/>
+          <!-- 纳米Work 顶层 -->
+          <rect x="60" y="74" width="600" height="58" rx="8" fill="#0f1729"/>
+          <text x="360" y="98" text-anchor="middle" fill="#e3a94a" font-size="13.5" font-weight="700">纳米Work 行业工作台(唯一露面)</text>
+          <text x="360" y="118" text-anchor="middle" fill="#9aa6bd" font-size="11">智能体 · Skill · 知识库 · MCP · 工作流(都是这里的入口/组件)</text>
+          <!-- 分隔:封装 -->
+          <text x="360" y="150" text-anchor="middle" fill="#5a6270" font-size="10.5">↑ SEAF 的能力被封装成工作台组件 · 客户看不到下面 ↑</text>
+          <!-- SEAF 引擎层 -->
+          <rect x="60" y="160" width="440" height="58" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/>
+          <text x="280" y="184" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">SEAF 智能体引擎底座(藏底层供能)</text>
+          <text x="280" y="204" text-anchor="middle" fill="#5a6270" font-size="10.5">智能体引擎 · 工作流 · 长期记忆 · 分权 · 离线大模型</text>
+          <!-- SDR 数据层 -->
+          <rect x="520" y="160" width="140" height="58" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/>
+          <text x="590" y="184" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">SDR</text>
+          <text x="590" y="203" text-anchor="middle" fill="#5a6270" font-size="10">数据地基</text>
+          <!-- 数据源 -->
+          <rect x="60" y="242" width="600" height="46" rx="8" fill="#ece8de"/>
+          <text x="360" y="262" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">客户业务系统(数据源)</text>
+          <text x="360" y="279" text-anchor="middle" fill="#5a6270" font-size="10.5">HIS · EMR · LIS · PACS · HR · 财务 …… SDR 零代码接入,统一成标准字段</text>
+          <!-- 连线 -->
+          <line x1="280" y1="132" x2="280" y2="158" stroke="#c8862a" stroke-width="1.5"/>
+          <line x1="590" y1="218" x2="590" y2="240" stroke="#2f7d54" stroke-width="1.5"/>
+          <line x1="520" y1="189" x2="502" y2="189" stroke="#2f7d54" stroke-width="1.5"/>
+        </svg>
+        <p class="cap">分层架构:客户只看纳米Work(顶层)→ SEAF 引擎在下面供能 → SDR 把底层各业务系统的数据接上来喂进去</p>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="ch">SEAF 供什么能力</div><ul><li>智能体引擎、工作流编排</li><li>长期记忆(让智能体"越用越聪明")</li><li>分科室/分角色权限</li><li>离线大模型(数据不出院)</li><li>L2/L4 分层调用能力</li></ul></div>
+        <div class="card"><div class="ch">为什么不露面</div><p>客户只面对纳米Work 一个入口,体验统一、好复制。SEAF 的欠账(长期记忆、分权、审计埋点)由平台统一跟进,别分散在各项目重复提。</p></div>
+      </div>
+      <h3 class="sub">SDR = 数据地基</h3>
+      <p class="body">智能体要跑起来靠数据,可商业化项目全卡在同一个地方——<b>数据太多、太乱、拿不出来</b>。一个客户少则三五个业务系统,多的十几个;每家厂商字段名还不一样;客户又不愿意开数据库直连。结果每接一个客户都要重写一遍对接代码,耗在数据上的时间比做智能体还多。<b>没数据 → 智能体是空壳。</b></p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:220px">卡点</th><th>SDR 怎么解</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">每个客户重写对接代码</span></td><td>通用连接器 + 配置映射,<b>零代码接入</b></td></tr>
+          <tr><td><span class="k">字段名各家不同</span></td><td>映射层统一成标准字段,<b>智能体侧零改动</b></td></tr>
+          <tr><td><span class="k">客户不给直连</span></td><td>只读客户授权的 View,<b>数据不出内网</b></td></tr>
+          <tr><td><span class="k">云端进不了内网</span></td><td>SDR <b>主动出站</b>连云端,客户不用开端口</td></tr>
+        </tbody>
+      </table></div>
+      <div class="creed"><p class="ct">底座铁律</p>
+        <p><span class="lead">SDR 不是锦上添花,是智能体商业化的地基</span> —— 数据这关过不去,后面所有项目都推不动。</p>
+        <p><span class="lead">对客户只有一个纳米Work</span> —— SEAF 藏底层供能,别在客户面前拆开讲。</p>
+      </div>
+      <div class="drill"><p class="dt">当堂练习 + 检查点</p>
+        <ol><li>用发电厂的比喻,给同伴讲清 SEAF 和纳米Work 的关系。</li><li>说出 SDR 解决的四个卡点各对应哪个解法。</li></ol>
+        <p class="chk"><b>过关:</b> 能讲清"客户只面对一个产品";四个卡点对应无错。</p>
+      </div>
+      <p class="reading">延伸:<span class="wl">[[98 FDE项目管理/00 SEAF底座跟进/SEAF问题跟进.md]]</span> · <span class="wl">[[98 FDE项目管理/02 上海四院/SDR数据仓库/为什么必须做SDR.md]]</span></p>
+    </section>
+    <hr class="div">
+
+    <!-- 04 需求与智能体设计 -->
+    <section class="mod" id="m4">
+      <div class="mod-head"><div class="mod-num">04</div><div><div class="short">阶段一二三 · 最核心技术阶段</div><h2>需求与智能体设计</h2></div></div>
+      <div class="goal"><b>学完能:</b> 用六项框架挖需求、四把钥匙撬隐性经验、五层拆解法把业务拆成可执行的智能体。</div>
+      <h3 class="sub">阶段一:备弹进场(纯知识)</h3>
+      <p class="body">进场前把弹备足:行业政策、术语、痛点、组织关系摸清,练调研话术。<b>这阶段没有交付物</b>,练的是"怎么聊"的内功。<b>先问后讲、让客户自己说</b>——痛点从甲方嘴里出来他才认账。</p>
+      <div class="flow">
+72 小时作战地图(前三天怎么打)
+<span class="amber">Day 0 备弹</span>(行业知识+业务调研+组织与人+基础方法) → <span class="amber">Day 1 破冰</span>(启动会+摸组织关系)
+→ <span class="amber">Day 2 深挖</span>(六项框架挖需求) → <span class="amber">Day 3+ 拉齐</span>(收敛对齐+出原型)
+      </div>
+      <h3 class="sub">阶段二:沟通出原型</h3>
+      <p class="body">带话术进场,第一轮先启动、摸清五层关键人(谁拍板/谁负责/谁配合数据),填进《对接确认表》。每轮沟通当场发群确认(群确认等同签字)。再把确认表喂给<b>产品设计专家智能体</b>出原型,约 3 小时一版。</p>
+      <div class="cards">
+        <div class="card"><div class="ch">六项调研框架</div><p>目标 / 要什么 / 痛点 / 价值 / 业务流程 / 数据流程。业务流程要拆到每个节点的输入输出。</p></div>
+        <div class="card"><div class="ch">四把钥匙(撬隐性经验)</div><p>吐槽法 / 场景重现 / 如果法 / 反面教材。业务规则直接问、数据找 IT 要、隐性经验靠激不靠问。</p></div>
+      </div>
+      <h3 class="sub">阶段三:签字定稿 + 拆智能体矩阵</h3>
+      <p class="body">先把需求收敛成《需求最终确认表》签字定死,再把一条业务链路拆成智能体矩阵——<b>一个环节一个专用智能体,各管一段、首尾相接</b>。每个智能体照设计表走。</p>
+      <div class="flow">
+五层拆解法(把业务专家的隐性经验拆成可执行结构)
+<span class="amber">Workflow</span>(整体流程) → <span class="amber">节点数据流</span> → <span class="amber">Playbook</span>(规则) → <span class="amber">边界</span>(管到哪) → <span class="amber">异常</span>(出岔子怎么办)
+              ↓ 映射到
+Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 / 记忆</span>
+              ↓ 写 Prompt → 编排 Skill → A/B 测试 → 过 <span class="amber">Eval 门禁(准确率≥90%)</span> 才上线
+      </div>
+      <div class="diagram">
+        <svg viewBox="0 0 720 300" role="img" aria-label="五层拆解到上线流程图">
+          <defs><marker id="m4a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <text x="20" y="26" fill="#c8862a" font-size="12.5" font-weight="700">第一层:五层拆解(把隐性经验拆成可执行结构)</text>
+          <g font-size="11" font-weight="700">
+            <rect x="20" y="38" width="120" height="44" rx="8" fill="#0f1729"/><text x="80" y="65" text-anchor="middle" fill="#eef1f7">Workflow</text>
+            <rect x="160" y="38" width="120" height="44" rx="8" fill="#0f1729"/><text x="220" y="65" text-anchor="middle" fill="#eef1f7">节点数据流</text>
+            <rect x="300" y="38" width="120" height="44" rx="8" fill="#0f1729"/><text x="360" y="65" text-anchor="middle" fill="#eef1f7">Playbook 规则</text>
+            <rect x="440" y="38" width="120" height="44" rx="8" fill="#0f1729"/><text x="500" y="65" text-anchor="middle" fill="#eef1f7">边界</text>
+            <rect x="580" y="38" width="120" height="44" rx="8" fill="#b5433a"/><text x="640" y="65" text-anchor="middle" fill="#fff">异常</text>
+          </g>
+          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m4a)"><line x1="140" y1="60" x2="156" y2="60"/><line x1="280" y1="60" x2="296" y2="60"/><line x1="420" y1="60" x2="436" y2="60"/><line x1="560" y1="60" x2="576" y2="60"/></g>
+          <text x="360" y="106" text-anchor="middle" fill="#5a6270" font-size="10.5">↓ 映射到 ↓</text>
+          <text x="20" y="130" fill="#c8862a" font-size="12.5" font-weight="700">第二层:Agent 六组件</text>
+          <g font-size="11" font-weight="700">
+            <rect x="20" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="74" y="167" text-anchor="middle" fill="#232937">角色</text>
+            <rect x="138" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="192" y="167" text-anchor="middle" fill="#232937">Prompt</text>
+            <rect x="256" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="310" y="167" text-anchor="middle" fill="#232937">知识库</text>
+            <rect x="374" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="428" y="167" text-anchor="middle" fill="#232937">技能</text>
+            <rect x="492" y="142" width="100" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="542" y="167" text-anchor="middle" fill="#232937">工具</text>
+            <rect x="602" y="142" width="98" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="651" y="167" text-anchor="middle" fill="#232937">记忆</text>
+          </g>
+          <text x="360" y="206" text-anchor="middle" fill="#5a6270" font-size="10.5">↓ 落地上线 ↓</text>
+          <text x="20" y="230" fill="#2f7d54" font-size="12.5" font-weight="700">第三层:调优上线</text>
+          <g font-size="11" font-weight="700">
+            <rect x="20" y="242" width="150" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="95" y="269" text-anchor="middle" fill="#232937">写 Prompt / 编排 Skill</text>
+            <rect x="210" y="242" width="130" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="275" y="269" text-anchor="middle" fill="#232937">A/B 测试挑最优</text>
+            <rect x="380" y="242" width="320" height="44" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="540" y="264" text-anchor="middle" fill="#232937">Eval 门禁 · 准确率≥90%</text><text x="540" y="279" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">不达标不放行</text>
+          </g>
+          <g stroke="#2f7d54" stroke-width="1.5" marker-end="url(#m4a)"><line x1="170" y1="264" x2="206" y2="264"/><line x1="340" y1="264" x2="376" y2="264"/></g>
+        </svg>
+        <p class="cap">从拆解到上线三层:五层拆解(红色"异常"最易漏)→ 映射进六组件 → 调优后过 Eval 门禁(≥90%)才放行</p>
+      </div>
+      <h3 class="sub">举个真实例子:心内科"四步归因"</h3>
+      <p class="body">别停在概念上,看四院这个样板怎么落地。科室主任的痛点是:每月运营数据掉了,查原因靠人一层层翻,要花 3 天。拆成智能体后压到 15 分钟。它的 Workflow 就是一条"四步归因链路"——层层往下钻,每步缩小范围。</p>
+      <div class="flow">
+心内科运营归因(把 3 天压到 15 分钟)
+第一步 <span class="amber">看总量</span>(哪个指标掉了) → 第二步 <span class="amber">拆到周</span>(哪一周开始掉)
+→ 第三步 <span class="amber">拆到亚专业</span>(哪个方向的问题) → 第四步 <span class="amber">拆到医生/病人</span>(定位到具体人/病例)
+每步都是"缩小范围"的一次追问,正好对应五层里的 Workflow + 节点数据流
+      </div>
+      <div class="creed"><p class="ct">核心铁律</p>
+        <p><span class="lead">需求先签字再设计</span> —— 猜错一条后面全返工。</p>
+        <p><span class="lead">边界和异常最容易漏</span> —— 正常路径谁都会写,异常兜底和转人工才是上线不翻车的关键;<span class="lead">准确率≥90% 不达标不放行。</span></p>
+      </div>
+      <div class="drill"><p class="dt">当堂练习 + 检查点</p>
+        <ol><li>拿一个假场景("科室想看月度运营"),用六项框架列出该问哪些问题。</li><li>把这个场景用五层拆解法拆一遍,标出边界和异常。</li></ol>
+        <p class="chk"><b>过关:</b> 六项框架不漏项;五层里边界、异常都写到了。</p>
+      </div>
+      <p class="reading">延伸:阶段一/二/三规范说明(<span class="wl">99 FDE模式/100 FDE作战手册</span> 各阶段文件夹)</p>
+    </section>
+    <hr class="div">
+
+    <!-- 05 工作台 -->
+    <section class="mod" id="m5">
+      <div class="mod-head"><div class="mod-num">05</div><div><div class="short">阶段四 · 最易失控的一步</div><h2>行业工作台</h2></div></div>
+      <div class="goal"><b>学完能:</b> 说清工作台是什么、技术栈为什么锁死、五步走怎么把智能体挂上去跑起来。</div>
+      <p class="body">阶段四把阶段二的原型、阶段三的智能体矩阵,变成客户<b>能访问、能用、能上线</b>的行业工作台。靠技术栈锁死 + 统一 skill 保证能复制到下一个行业。<b>阶段四不重新设计智能体,只把设计好的挂上去跑起来。</b></p>
+      <div class="cards">
+        <div class="card"><div class="ch">纳米Work 是什么</div><p>"360 纳米Work 行业 AI 工作台",三个可独立部署的服务:API / Scheduler / 前端,多租户权限底座 + 任务调度引擎。</p></div>
+        <div class="card"><div class="ch">技术栈锁死</div><p>后端 FastAPI+SQLAlchemy 2.0+Pydantic 2;前端 Vue3+TS+Vben Admin。多租户强制 <code>hospital_id</code> 过滤。技术栈一乱,复制就无从谈起。</p></div>
+      </div>
+      <div class="flow">
+五步标准流程
+① <span class="amber">建模</span>(api-er-modeling) → ② <span class="amber">后端</span>(api-guide) → ③ <span class="amber">前端</span>(vben-guide)
+→ ④ <span class="amber">联调</span>(走真实数据,非 mock) → ⑤ <span class="amber">上线</span>(极库云 → 360智汇云容器云,给可访问 URL)
+两步交付:<span class="hl">先 demo 验方向,后完整</span>(P0+P1+异常+权限+部署) · 节奏 3/7/14 天版本
+      </div>
+      <div class="diagram">
+        <svg viewBox="0 0 720 180" role="img" aria-label="工作台五步走流程">
+          <defs><marker id="m5a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <g font-size="11.5" font-weight="700">
+            <rect x="10" y="50" width="120" height="70" rx="8" fill="#0f1729"/><text x="70" y="76" text-anchor="middle" fill="#e3a94a">① 建模</text><text x="70" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">api-er-modeling</text><text x="70" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">ER模型+真实数据演练</text>
+            <rect x="150" y="50" width="120" height="70" rx="8" fill="#0f1729"/><text x="210" y="76" text-anchor="middle" fill="#e3a94a">② 后端</text><text x="210" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">api-guide</text><text x="210" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">FastAPI+SQLAlchemy</text>
+            <rect x="290" y="50" width="120" height="70" rx="8" fill="#0f1729"/><text x="350" y="76" text-anchor="middle" fill="#e3a94a">③ 前端</text><text x="350" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">vben-guide</text><text x="350" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">Vue3+TS+Vben</text>
+            <rect x="430" y="50" width="120" height="70" rx="8" fill="#0f1729"/><text x="490" y="76" text-anchor="middle" fill="#e3a94a">④ 联调</text><text x="490" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">跑真实数据</text><text x="490" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">非 mock</text>
+            <rect x="570" y="50" width="140" height="70" rx="8" fill="#2f7d54"/><text x="640" y="76" text-anchor="middle" fill="#fff">⑤ 上线</text><text x="640" y="94" text-anchor="middle" fill="#cfe8da" font-size="10" font-weight="400">极库云→容器云</text><text x="640" y="108" text-anchor="middle" fill="#cfe8da" font-size="9.5" font-weight="400">给可访问URL</text>
+          </g>
+          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m5a)"><line x1="130" y1="85" x2="146" y2="85"/><line x1="270" y1="85" x2="286" y2="85"/><line x1="410" y1="85" x2="426" y2="85"/><line x1="550" y1="85" x2="566" y2="85"/></g>
+          <text x="360" y="26" text-anchor="middle" fill="#5a6270" font-size="11">上一步的输出 = 下一步的输入 · 建模不通不许往下走</text>
+          <text x="360" y="152" text-anchor="middle" fill="#5a6270" font-size="11">节奏 3/7/14 天版本 · 先 demo 后完整(别一口气憋大的)</text>
+        </svg>
+        <p class="cap">工作台五步走:建模 → 后端 → 前端 → 联调(真实数据)→ 上线(极库云→容器云给 URL)</p>
+      </div>
+      <p class="body"><b>怎么约束 AI 别乱写:</b>平台沉淀了 64 个标准 skill(api-* 32 个 + vben-* 32 个),三层门禁把关——铁律(CLAUDE.md)+ 规范库(按任务触发)+ 门禁(redline-guard 静态检查 + CI 硬拦截)。照规范生成,不从零手写。</p>
+      <div class="creed"><p class="ct">工作台铁律</p>
+        <p><span class="lead">上游给垃圾,下游出精致的垃圾</span> —— 功能清单缺"关联智能体/数据依赖",实现岗有权打回。</p>
+        <p><span class="lead">建模不通不许往下走</span>,跑真实脱敏数据找断点,不是 mock;<span class="lead">先 demo 后完整</span>,别一口气憋大的。</p>
+      </div>
+      <div class="drill"><p class="dt">当堂练习 + 检查点</p>
+        <ol><li>背出五步流程和每步对应的 skill。</li><li>说清为什么技术栈必须锁死、多租户为什么强制 hospital_id。</li></ol>
+        <p class="chk"><b>过关:</b> 五步顺序对;能讲清锁死和隔离的理由。</p>
+      </div>
+      <p class="reading">延伸:阶段四规范说明、工作台开发标准(<span class="wl">99 FDE模式/100 FDE作战手册/04 纳米Work行业工作台</span>)</p>
+    </section>
+    <hr class="div">
+
+    <!-- 06 极库云 -->
+    <section class="mod" id="m6">
+      <div class="mod-head"><div class="mod-num">06</div><div><div class="short">阶段四上线用 · 独立成课</div><h2>极库云 + 容器云</h2></div></div>
+      <div class="goal"><b>学完能:</b> 说清极库云三重身份、上线链路,以及多租户隔离怎么做。</div>
+      <p class="body">工作台做好了要上线,走的是这条链:<b>极库云 → 360 智汇云容器云</b>,最后给客户一个能访问的 URL。极库云不只是放代码的地方,它有三重身份。</p>
+      <div class="cards c3">
+        <div class="card"><div class="ch">代码托管 + 版本管理</div><p>代码放极库云,统一托管、版本可追溯。一体一个 prompt.md,用 Git 管版本。</p></div>
+        <div class="card"><div class="ch">知识库中心</div><p>行业知识库统一在极库云管理,不散落在各处。</p></div>
+        <div class="card"><div class="ch">CI 流水线</div><p>代码提交后走流水线,构建、检查、部署到容器云。</p></div>
+      </div>
+      <div class="flow">
+上线链路
+写代码 → <span class="amber">极库云</span>(托管+版本+CI流水线) → 构建 → <span class="amber">360智汇云容器云</span>(部署) → <span class="hl">可访问 URL 交给客户</span>
+关键动作:鉴权走通 · 多租户 <span class="amber">hospital_id</span> 隔离(A 院看不到 B 院数据)· 无硬编码密钥
+      </div>
+      <div class="diagram">
+        <svg viewBox="0 0 720 170" role="img" aria-label="上线链路图">
+          <defs><marker id="m6a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <g font-size="11.5" font-weight="700">
+            <rect x="10" y="50" width="110" height="60" rx="8" fill="#ece8de"/><text x="65" y="84" text-anchor="middle" fill="#232937">写代码</text>
+            <rect x="160" y="42" width="170" height="76" rx="8" fill="#fff" stroke="#c8862a" stroke-width="2"/><text x="245" y="66" text-anchor="middle" fill="#232937">极库云</text><text x="245" y="84" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">代码托管+版本管理</text><text x="245" y="98" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">知识库中心 · CI 流水线</text>
+            <rect x="370" y="50" width="150" height="60" rx="8" fill="#0f1729"/><text x="445" y="78" text-anchor="middle" fill="#e3a94a">360智汇云容器云</text><text x="445" y="95" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">部署</text>
+            <rect x="560" y="50" width="150" height="60" rx="8" fill="#2f7d54"/><text x="635" y="78" text-anchor="middle" fill="#fff">可访问 URL</text><text x="635" y="95" text-anchor="middle" fill="#cfe8da" font-size="9.5" font-weight="400">交给客户</text>
+          </g>
+          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m6a)"><line x1="120" y1="80" x2="156" y2="80"/><line x1="330" y1="80" x2="366" y2="80"/><line x1="520" y1="80" x2="556" y2="80"/></g>
+          <text x="360" y="26" text-anchor="middle" fill="#5a6270" font-size="11">极库云的三重身份都在这一步:代码托管 + 知识库中心 + CI 流水线</text>
+          <text x="360" y="142" text-anchor="middle" fill="#b5433a" font-size="10.5" font-weight="700">全程守住:鉴权走通 · hospital_id 多租户隔离 · 无硬编码密钥</text>
+        </svg>
+        <p class="cap">上线链路:写代码 → 极库云(托管/知识库/CI 三重身份)→ 360 智汇云容器云部署 → 给客户可访问 URL</p>
+      </div>
+      <div class="creed"><p class="ct">上线铁律</p>
+        <p><span class="lead">先 demo 后完整</span> —— demo 验方向,过了再补完整功能上线。</p>
+        <p><span class="lead">多租户必须隔离</span> —— hospital_id 过滤是硬要求,数据串了是事故;源代码里不许有硬编码密钥。</p>
+      </div>
+      <div class="drill"><p class="dt">当堂练习 + 检查点</p>
+        <ol><li>画出从写代码到给客户 URL 的完整上线链路。</li><li>说清极库云的三重身份分别是什么。</li></ol>
+        <p class="chk"><b>过关:</b> 链路完整(极库云→容器云→URL);三重身份说全。</p>
+      </div>
+      <p class="reading">延伸:<span class="wl">[[99 FDE模式/101 FDE项目管理/商业化FDE规范要求.md]]</span> 四、工具规范</p>
+    </section>
+    <hr class="div">
+
+    <!-- 07 客户试用 -->
+    <section class="mod" id="m7">
+      <div class="mod-head"><div class="mod-num">07</div><div><div class="short">阶段五 · 试用定稿盯使用率</div><h2>客户试用与优化</h2></div></div>
+      <div class="goal"><b>学完能:</b> 说清三轮定稿、反馈三分类、以及为什么要盯 30/60/90 天使用率。</div>
+      <p class="body">产品做出来不是结束,是试运行的开始。先找客户试跑,收反馈、分类处理、三轮定稿。智能体越用越准。</p>
+      <div class="cards c3">
+        <div class="card"><div class="ch">三轮递进定稿</div><p>第一轮看大方向 → 第二轮抠细节(逻辑/字段)→ 第三轮定死(体验+全量回归)。问题从粗到细,标准从松到严。</p></div>
+        <div class="card"><div class="ch">反馈三分类</div><p>功能缺失 / 逻辑不通 / 体验问题,分流处理。走登记→分类→响应→验证→归档五步。</p></div>
+        <div class="card"><div class="ch">Trace 全链路</div><p>出问题用 Trace 回放定位:是理解错了,还是工具调用异常。</p></div>
+      </div>
+      <p class="body"><b>上线后盯使用率:</b>30 天抓小问题、60 天看真实活跃率(掉了一线回访)、90 天收新需求评二期看留存。</p>
+      <div class="diagram">
+        <svg viewBox="0 0 720 180" role="img" aria-label="三轮定稿漏斗图">
+          <defs><marker id="m7a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <text x="20" y="30" fill="#c8862a" font-size="12.5" font-weight="700">三轮递进定稿 · 问题从粗到细,标准从松到严</text>
+          <rect x="20" y="46" width="680" height="32" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
+          <text x="360" y="67" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">第一轮 · 看大方向(对不对)</text>
+          <rect x="120" y="88" width="480" height="32" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
+          <text x="360" y="109" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">第二轮 · 抠细节(逻辑 / 字段)</text>
+          <rect x="240" y="130" width="240" height="32" rx="8" fill="#0f1729"/>
+          <text x="360" y="151" text-anchor="middle" fill="#e3a94a" font-size="12" font-weight="700">第三轮 · 定死(体验 + 全量回归)</text>
+          <g stroke="#c8862a" stroke-width="1.2" marker-end="url(#m7a)"><line x1="360" y1="78" x2="360" y2="84"/><line x1="360" y1="120" x2="360" y2="126"/></g>
+          <text x="660" y="90" fill="#5a6270" font-size="10.5">← 收窄</text>
+          <text x="660" y="142" fill="#5a6270" font-size="10.5">→ 定死</text>
+        </svg>
+        <p class="cap">三轮定稿像漏斗:第一轮看方向 → 第二轮抠细节 → 第三轮定死。验收标准一轮比一轮严</p>
+      </div>
+      <div class="creed"><p class="ct">收官铁律</p>
+        <p><span class="lead">验收只代表"当时能跑",30 天使用率才代表"真有人用"。</span></p>
+        <p><span class="lead">优化不是玄学调 Prompt,是工程化闭环</span> —— 每条反馈必须写明根因,禁止只写"已处理"。</p>
+      </div>
+      <div class="drill"><p class="dt">当堂练习 + 检查点</p>
+        <ol><li>把三个假反馈各归到"功能缺失/逻辑不通/体验"三类里。</li><li>说清 30/60/90 天各盯什么。</li></ol>
+        <p class="chk"><b>过关:</b> 三分类归对;30/60/90 说清。</p>
+      </div>
+      <p class="reading">延伸:阶段五规范说明(<span class="wl">99 FDE模式/100 FDE作战手册/05 客户试用-智能体优化</span>)</p>
+    </section>
+    <hr class="div">
+
+    <!-- 08 项目管理规范 -->
+    <section class="mod" id="m8">
+      <div class="mod-head"><div class="mod-num">08</div><div><div class="short">贯穿五阶段的规矩 · 落在极库云上</div><h2>项目管理规范</h2></div></div>
+      <div class="goal"><b>学完能:</b> 记住五类规范和验收硬标准,并在极库云上把五阶段项目管起来——分工、拆需求排版本、盯进度、走产品复制。</div>
+      <p class="body">这一块是 FDE 的<b>项目管理规范</b>——既是"守什么规矩"(五类规范),也是"平时在哪、怎么干"。日常项目都落在<b>极库云(Geelib)</b>上,项目管理、需求管理、进度把控都在这。两个常用入口先收藏好:</p>
+      <div class="cards">
+        <div class="card"><div class="ch">知识库文档</div><p><a href="https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=4632&docId=442814" target="_blank" style="color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass)">geelib.qihoo.net · 工作模式文档</a><br>完整项目管理规范,进场必读。</p></div>
+        <div class="card"><div class="ch">需求管理入口</div><p><a href="https://geelib.qihoo.net/geelib/project/projectOverview?subId=7175" target="_blank" style="color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass)">geelib.qihoo.net · 需求管理</a><br>日常看需求进度、建迭代版本的地方。</p></div>
+      </div>
+
+      <h3 class="sub">一、五类规范(守什么规矩)</h3>
+      <p class="body">这五类规范别当五个名词背——它们是<b>按项目推进顺序卡在不同节点上的</b>。从签字前到交付后,一条线走下来,每个节点该守哪条规矩,看下面这张时间线就清楚了。</p>
+      <div class="flow">
+项目推进时间线 · 每个节点卡一道规矩
+签字前 <span class="amber">交付规范</span>(边界阶段一定死·72h签字制) → 设计时 <span class="amber">设计规范</span>(五层拆解→六组件→Eval)
+→ 开发中 <span class="amber">质量规范</span>(每节点检查·卡住不许往下) → 要交付 <span class="amber">验收规范</span>(三条硬标准)
+→ 交付后 <span class="amber">复制规范</span>(沉淀模板) + <span class="hl">P0–P3 SLA</span>(出问题分级响应)
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:90px">规范</th><th style="width:90px">卡在哪</th><th>核心要求</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">交付规范</span></td><td>签字前</td><td>每阶段有明确输入/输出/责任人;输出必须成文档;交接干净不掉链子;边界阶段一就签字定</td></tr>
+          <tr><td><span class="k">设计规范</span></td><td>设计时</td><td>照《智能体设计标准模板》:五层拆解→六组件→Prompt→Skill→A/B→Eval 门禁</td></tr>
+          <tr><td><span class="k">质量规范</span></td><td>开发中</td><td>准确率≥90% 才放行;每节点检查输出完整性,卡住不许往下;三轮定稿;全流程 Trace 可回放</td></tr>
+          <tr><td><span class="k">验收规范</span></td><td>要交付</td><td>三条才算交付完成:①经过三轮定稿 ②准确率达标 ③业务方确认可用;交付后沉淀成模板</td></tr>
+          <tr><td><span class="k">复制规范</span></td><td>交付后</td><td>方法通用、结果定制;团队要覆盖六种能力(业务/智能体/AI编程/技能/知识库/连接器)</td></tr>
+        </tbody>
+      </table></div>
+      <p class="body">时间线上有三个"闸口"要特别记住——它们是最容易踩坑、也最能防返工的地方:</p>
+      <div class="cards c3">
+        <div class="card"><div class="ch">72h 签字制 <span class="tag">签字前</span></div><p>产品原型阶段用 72 小时签字制卡返工:<b>不签字不开工</b>。需求没定死就动手,后面全返工。</p></div>
+        <div class="card"><div class="ch">三个人工确认节点 <span class="tag">全程</span></div><p>原型签字 / 建模评审 / 合并审核。其余交给 AI 自主运行,只在这三处人工把关。</p></div>
+        <div class="card"><div class="ch">P0–P3 响应 SLA <span class="tag">交付后</span></div><p>P0 30 分钟响应/当天修,往下按级递减到 P3 一周评估。每条 P0/P1 做<b>响应三件套</b>:复现定位(Trace)+ 最小改动(改完跑评测集)+ 客户回执。</p></div>
+      </div>
+
+      <h3 class="sub">二、角色分工 + 五阶段在极库云怎么落</h3>
+      <div class="cards">
+        <div class="card"><div class="ch">FDE 项目经理 <span class="tag">规划</span></div><p>负责迭代版本的规划、需求和任务的创建。把用户需求拆条、排优先级、规划进哪个版本。</p></div>
+        <div class="card"><div class="ch">FDE 交付 <span class="tag">执行</span></div><p>根据产品需求做任务拆解,在迭代版本的时间范围内完成。<b>每天定期更新需求任务。</b></p></div>
+      </div>
+      <p class="body">五阶段项目管理落到极库云,一共六项要管起来。前两项照五阶段走(需求沟通+原型、需求确认+智能体设计),后面四项是极库云上要额外产出/维护的:</p>
+      <div class="flow">
+五阶段项目管理 · 极库云上要管的六项
+① <span class="amber">需求沟通 + 原型设计</span>   ② <span class="amber">需求确认 + 智能体设计</span>
+③ <span class="amber">产品实施计划说明书</span>(定位产品复制模式)   ④ <span class="amber">工作日报</span>(按月建文件·按天竖排)
+⑤ <span class="amber">工作周报</span>(按季度建文件·按周竖排)   ⑥ <span class="amber">相关材料</span>(录音/客户资料/竞品调研)
+      </div>
+      <div class="cards">
+        <div class="card"><div class="ch"><span class="tag">①②</span> 前两阶段</div><p>照五阶段照旧走:需求沟通+原型设计、需求确认+智能体设计。产出对接确认表、原型、需求最终确认表、智能体设计表。</p></div>
+        <div class="card"><div class="ch"><span class="tag">③</span> 产品实施计划说明书</div><p>定位到产品复制模式,由项目经理和交付共同完成。举例 HIS 厂商的<b>标品交付 SOP</b>:①账号开通 → ②数据治理 → ③智能体调试 → ④平台调试 → ⑤客户试用。</p></div>
+        <div class="card"><div class="ch"><span class="tag">④</span> 工作日报</div><p><b>按月新建文件,按天竖排。</b>一个月一个文件,每天一条往下排。</p></div>
+        <div class="card"><div class="ch"><span class="tag">⑤</span> 工作周报</div><p><b>按季度新建文件,按周竖排。</b>一个季度一个文件,每周一条往下排。</p></div>
+        <div class="card"><div class="ch"><span class="tag">⑥</span> 相关材料归档</div><p>录音、客户资料、我们调研的竞品材料,统一归档到项目下。</p></div>
+      </div>
+
+      <h3 class="sub">三、项目需求管理(拆需求 → 排版本 → 盯进度)</h3>
+      <p class="body">核心是<b>把需求拆条、规划进迭代版本、盯着交付每天更新</b>。以"医疗质量风险管理"为例,把用户最终的 10 个需求,在极库云需求管理里逐条拆成 10 个,再规划到 3 个版本里,按优先级分:</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:230px">迭代版本</th><th style="width:90px">优先级</th><th>装什么需求</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">医疗质量分析管理 v1.0.0</span></td><td>P0</td><td>最核心、必须先上的需求</td></tr>
+          <tr><td><span class="k">医疗质量分析管理 v1.0.1</span></td><td>P1</td><td>次要、第二批做的需求</td></tr>
+          <tr><td><span class="k">医疗质量分析管理 v1.0.2</span></td><td>P2</td><td>可以往后放的需求</td></tr>
+        </tbody>
+      </table></div>
+      <div class="diagram">
+        <svg viewBox="0 0 760 240" role="img" aria-label="需求管理流程图">
+          <defs>
+            <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker>
+          </defs>
+          <!-- 用户10需求 -->
+          <rect x="8" y="90" width="120" height="60" rx="8" fill="#0f1729"/>
+          <text x="68" y="114" text-anchor="middle" fill="#eef1f7" font-size="13" font-weight="700">用户 10 个需求</text>
+          <text x="68" y="133" text-anchor="middle" fill="#9aa6bd" font-size="11">医疗质量风险管理</text>
+          <!-- 极库云拆条 -->
+          <rect x="188" y="90" width="120" height="60" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/>
+          <text x="248" y="114" text-anchor="middle" fill="#232937" font-size="13" font-weight="700">极库云拆条</text>
+          <text x="248" y="133" text-anchor="middle" fill="#5a6270" font-size="11">逐条拆成 10 个</text>
+          <!-- 三个版本 -->
+          <rect x="368" y="18" width="150" height="52" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
+          <text x="443" y="40" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">v1.0.0 · P0</text>
+          <text x="443" y="57" text-anchor="middle" fill="#5a6270" font-size="10.5">最核心先上</text>
+          <rect x="368" y="94" width="150" height="52" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
+          <text x="443" y="116" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">v1.0.1 · P1</text>
+          <text x="443" y="133" text-anchor="middle" fill="#5a6270" font-size="10.5">第二批做</text>
+          <rect x="368" y="170" width="150" height="52" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
+          <text x="443" y="192" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">v1.0.2 · P2</text>
+          <text x="443" y="209" text-anchor="middle" fill="#5a6270" font-size="10.5">往后放</text>
+          <!-- 交付拆任务 -->
+          <rect x="578" y="64" width="120" height="52" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/>
+          <text x="638" y="86" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">交付拆任务</text>
+          <text x="638" y="103" text-anchor="middle" fill="#5a6270" font-size="10.5">每天更新</text>
+          <!-- 看成果 -->
+          <rect x="578" y="150" width="120" height="60" rx="8" fill="#0f1729"/>
+          <text x="638" y="172" text-anchor="middle" fill="#e3a94a" font-size="11.5" font-weight="700">盯进度看成果</text>
+          <text x="638" y="189" text-anchor="middle" fill="#9aa6bd" font-size="10">纳米Work 看需求</text>
+          <text x="638" y="203" text-anchor="middle" fill="#9aa6bd" font-size="10">SEAF 看智能体</text>
+          <!-- 箭头 -->
+          <line x1="128" y1="120" x2="184" y2="120" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="308" y1="112" x2="364" y2="46" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="308" y1="120" x2="364" y2="120" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="308" y1="128" x2="364" y2="194" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="518" y1="90" x2="574" y2="90" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="638" y1="116" x2="638" y2="146" stroke="#2f7d54" stroke-width="1.5" marker-end="url(#arw)"/>
+        </svg>
+        <p class="cap">需求管理流程:用户需求 → 极库云拆条 → 排进迭代版本(P0/P1/P2)→ 交付拆任务日更 → 两个平台看成果</p>
+      </div>
+      <p class="body">交付拿到需求后做任务拆解,在版本的时间范围内完成。<b>项目经理每天盯交付的任务执行情况</b>,或者拉一个专项群让交付定期同步进度。进度和成果从两个地方看:</p>
+      <div class="cards">
+        <div class="card"><div class="ch">看需求成果</div><p>从 <code>aimed.mss.360.net</code> 纳米Work 医疗行业工作台里看做出来的东西。</p></div>
+        <div class="card"><div class="ch">看智能体成果</div><p>从 SEAF 智能体平台里看智能体编排成果(项目经理和交付一起完成的)。</p></div>
+      </div>
+
+      <h3 class="sub">四、产品复制模式(标品 / 定制化)</h3>
+      <p class="body">同一套产品复制到新客户,分两种模式走,别混。</p>
+      <div class="cards">
+        <div class="card"><div class="ch">① 标品模式</div><p>有一份<b>标品实施部署说明书</b>(项目经理和交付共同完成)。在极库云创建需求、规划进迭代版本(比如 7 天),照 SOP 走并跟进项目。走得快、能复制。</p></div>
+        <div class="card"><div class="ch">② 定制化模式</div><p>又分两种:<b>新增需求</b>(共性、通用性功能)——可做;<b>完全定制</b>——先评估工作量和预算,再决定要不要做。<b>两种定制都要重新走 FDE 五阶段,从需求到交付。</b></p></div>
+      </div>
+      <div class="diagram">
+        <svg viewBox="0 0 720 250" role="img" aria-label="产品复制模式决策图">
+          <defs>
+            <marker id="arw2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker>
+          </defs>
+          <!-- 起点 -->
+          <rect x="8" y="98" width="120" height="54" rx="8" fill="#0f1729"/>
+          <text x="68" y="122" text-anchor="middle" fill="#eef1f7" font-size="13" font-weight="700">复制到新客户</text>
+          <text x="68" y="140" text-anchor="middle" fill="#9aa6bd" font-size="10.5">这单怎么走?</text>
+          <!-- 判断菱形 -->
+          <path d="M255,125 L305,90 L355,125 L305,160 Z" fill="#faf3e6" stroke="#c8862a" stroke-width="1.5"/>
+          <text x="305" y="122" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">是标品吗?</text>
+          <text x="305" y="138" text-anchor="middle" fill="#5a6270" font-size="10">有说明书?</text>
+          <!-- 标品 -->
+          <rect x="470" y="18" width="240" height="56" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/>
+          <text x="490" y="40" fill="#232937" font-size="12.5" font-weight="700">标品模式</text>
+          <text x="490" y="58" fill="#5a6270" font-size="10.5">照标品说明书 · 极库云建需求排 7 天版本</text>
+          <!-- 新增需求 -->
+          <rect x="470" y="97" width="240" height="56" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/>
+          <text x="490" y="119" fill="#232937" font-size="12.5" font-weight="700">定制 · 新增需求(通用)</text>
+          <text x="490" y="137" fill="#5a6270" font-size="10.5">共性/通用功能 —— 可做 · 重走五阶段</text>
+          <!-- 完全定制 -->
+          <rect x="470" y="176" width="240" height="56" rx="8" fill="#fff" stroke="#b5433a" stroke-width="1.5"/>
+          <text x="490" y="198" fill="#232937" font-size="12.5" font-weight="700">定制 · 完全定制</text>
+          <text x="490" y="216" fill="#5a6270" font-size="10.5">先评估工作量+预算 —— 再决定接不接</text>
+          <!-- 箭头 -->
+          <line x1="128" y1="125" x2="251" y2="125" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw2)"/>
+          <line x1="355" y1="112" x2="466" y2="52" stroke="#2f7d54" stroke-width="1.5" marker-end="url(#arw2)"/>
+          <text x="400" y="76" fill="#2f7d54" font-size="10.5" font-weight="700">是</text>
+          <line x1="355" y1="125" x2="466" y2="125" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw2)"/>
+          <line x1="355" y1="138" x2="466" y2="200" stroke="#b5433a" stroke-width="1.5" marker-end="url(#arw2)"/>
+          <text x="392" y="176" fill="#b5433a" font-size="10.5" font-weight="700">否 · 定制</text>
+        </svg>
+        <p class="cap">复制模式决策:先判断是不是标品 → 是就照说明书快走;不是就看定制类型(通用需求可做 / 完全定制先评估)</p>
+      </div>
+
+      <div class="creed"><p class="ct">项管铁律</p>
+        <p><span class="lead">输出成文档、设计有模板、上线过门禁、验收有标准、复制留模板</span> —— 每一步都有规矩,不靠拍脑袋。</p>
+        <p><span class="lead">需求先拆条、排版本、定优先级</span> —— 10 个需求拆 10 条,按 P0/P1/P2 装进不同版本,别一锅端。</p>
+        <p><span class="lead">交付每天更新任务,项目经理每天盯</span> —— 进度靠日更盯出来,不是等到 deadline 才发现没做完。</p>
+        <p><span class="lead">完全定制先评估再接</span> —— 通用功能可做,完全定制先算清工作量和预算,值不值得再决定。</p>
+      </div>
+      <div class="drill"><p class="dt">当堂练习 + 检查点</p>
+        <ol><li>背出五类规范和验收的三条硬标准,说清三个人工确认节点卡在什么时候。</li><li>给一个假项目("某院要 8 个需求"),拆条并规划进 2–3 个版本、标 P0/P1/P2。</li><li>判断三个新客户场景各该走标品、新增需求、还是完全定制。</li></ol>
+        <p class="chk"><b>过关:</b> 五类规范说全、验收三条不漏;需求拆条清晰、优先级合理;三个复制场景判断对。</p>
+      </div>
+      <p class="reading">延伸:<span class="wl">[[99 FDE模式/101 FDE项目管理/商业化FDE规范要求.md]]</span> · <a href="https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=4632&docId=442814" target="_blank" style="color:var(--brass)">极库云工作模式文档</a></p>
+    </section>
+    <hr class="div">
+
+    <!-- 09 实战 -->
+    <section class="mod" id="m9">
+      <div class="mod-head"><div class="mod-num">09</div><div><div class="short">收口 · 串起来练一遍</div><h2>项目实战演练</h2></div></div>
+      <div class="goal"><b>学完能:</b> 分组接一个陌生医疗场景,从阶段一走到阶段四出 demo,答辩过五维评分。</div>
+      <p class="body">前面八块学完,最后用实战串一遍。3–4 人一组,接一个<b>陌生但真实</b>的医疗场景(比如"某院想要个能看科室运营的东西"),从头走到底。</p>
+      <h3 class="sub">场景剧本:教练智能体扮客户</h3>
+      <p class="body">教练智能体扮三种人设,脾气各不同:<b>科室主任</b>(要结果、没耐心)、<b>信息科</b>(担心数据安全、给数据抠)、<b>临床医生</b>(嫌麻烦、说不清需求)。学员用四把钥匙一点点撬需求。</p>
+      <h3 class="sub">分组任务:每阶段有明确产出物</h3>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:130px">阶段</th><th>要干的事</th><th>产出物</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">阶段一 备弹</span></td><td>研究场景、备术语、画组织地图</td><td>调研准备(话术+组织地图)</td></tr>
+          <tr><td><span class="k">阶段二 挖需求</span></td><td>跟教练客户对话挖需求、喂智能体出原型</td><td>对接确认表 + 原型 Demo</td></tr>
+          <tr><td><span class="k">阶段三 定稿+拆矩阵</span></td><td>需求签字定稿、拆智能体矩阵、五层拆解</td><td>需求最终确认表 + 智能体设计表</td></tr>
+          <tr><td><span class="k">阶段四 出 demo</span></td><td>建模→前后端→联调,把智能体挂上去</td><td>能演示的 demo 系统</td></tr>
+        </tbody>
+      </table></div>
+      <h3 class="sub">五维计分卡(答辩加权打分)</h3>
+      <p class="body">考核不看单一指标,五个维度加权。<b>后两项(产品化贡献+知识沉淀)占 30%</b>——交付完不算完,得给整个体系留下东西。通过率控在 60–70%,宁可少发证别发错证。</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:130px">维度</th><th style="width:70px">权重</th><th>看什么</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">交付效率</span></td><td>20%</td><td>场景从头到尾花了多久,有没有拖、有没有该发邮件留痕的没发</td></tr>
+          <tr><td><span class="k">验收通过率</span></td><td>25%</td><td>客户签字验收一次过,还是反复返工;准确率是否≥90%</td></tr>
+          <tr><td><span class="k">30 天使用率</span></td><td>25%</td><td>交付完 30 天,客户还在不在用</td></tr>
+          <tr><td><span class="k">产品化贡献</span></td><td>15%</td><td>有没有沉淀出可复用的 Skill / 模板</td></tr>
+          <tr><td><span class="k">知识沉淀</span></td><td>15%</td><td>有没有把踩的坑、行业知识写进知识库</td></tr>
+        </tbody>
+      </table></div>
+      <h3 class="sub">质量三道防线</h3>
+      <div class="cards c3">
+        <div class="card"><div class="ch">① 准入防线</div><p>入职认证,不过关进不了场。<b>无证不上岗。</b></p></div>
+        <div class="card"><div class="ch">② 过程防线</div><p>S1–S4 每个节点检查:发现完对场景确认单和边界、构建完看能不能跑、调优看指标、上线看部署。哪节卡住不许往下走。</p></div>
+        <div class="card"><div class="ch">③ 结果防线</div><p>30/60/90 天三个时间点回看使用率,客户真在用才算真交付。掉了得回去补。</p></div>
+      </div>
+      <div class="creed"><p class="ct">实战铁律</p>
+        <p><span class="lead">陌生场景才验真本事</span> —— 用没练过的场景,考的是方法迁移,不是背答案。</p>
+        <p><span class="lead">答辩过五维评分卡才算出师。</span></p>
+      </div>
+      <p class="reading">延伸:<span class="wl">[[99 FDE模式/04 培训体系/00 培训总纲——10天集训作战方案.md]]</span> · 上海四院实战样板</p>
+    </section>
+
+  </main>
+</div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <span>FDE 新任项目经理 · 从 0 到上手 完整培训教程 · 基于 vault 现有作战手册编排</span>
+    <span><b>备弹在脑子里,进场才打得响。</b></span>
+  </div>
+</footer>
+
+<script>
+  const links = Array.from(document.querySelectorAll('#rail a'));
+  const map = new Map(links.map(a => [a.getAttribute('href').slice(1), a]));
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = map.get(e.target.id);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -75% 0px' });
+  document.querySelectorAll('.mod').forEach(s => obs.observe(s));
+  links.forEach(a => a.addEventListener('click', ev => {
+    ev.preventDefault();
+    document.getElementById(a.getAttribute('href').slice(1))
+      .scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }));
+</script>
+</body>
+</html>

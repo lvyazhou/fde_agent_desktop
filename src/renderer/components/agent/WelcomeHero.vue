@@ -86,14 +86,15 @@
           </div>
           <div class="flex items-center justify-between px-4 pb-2.5">
             <div class="flex items-center gap-2">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[10px] text-slate-500 cursor-pointer hover:bg-slate-100 transition-colors">
-                <i class="fa-solid fa-globe text-[9px]"></i>
-                MiniMax
-              </span>
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-[10px] text-blue-600 cursor-pointer hover:bg-blue-100 transition-colors">
-                <i class="fa-solid fa-robot text-[9px]"></i>
+              <ModelSelector
+                :models="availableModels"
+                :current="currentModel"
+                @change="(id) => $emit('change-model', id)"
+              />
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 cursor-pointer hover:bg-blue-100 transition-colors" style="font-size:10px;line-height:1">
+                <i class="fa-solid fa-robot" style="font-size:9px"></i>
                 AI 产品设计智能体
-                <i class="fa-solid fa-chevron-down text-[7px] ml-0.5"></i>
+                <i class="fa-solid fa-chevron-down ml-0.5" style="font-size:7px"></i>
               </span>
             </div>
             <div class="flex items-center gap-2">
@@ -133,8 +134,15 @@
 
 <script setup>
 import { ref, nextTick, onBeforeUnmount } from 'vue';
+import ModelSelector from './ModelSelector.vue';
+import { prepareImage } from '@/composables/imagePrep';
 
-const emit = defineEmits(['send-quick', 'navigate', 'fill-input', 'send-with-attachments']);
+const props = defineProps({
+  availableModels: { type: Array, default: () => [] },
+  currentModel: { type: String, default: '' },
+});
+
+const emit = defineEmits(['send-quick', 'navigate', 'fill-input', 'send-with-attachments', 'change-model']);
 
 const inputText = ref('');
 const inputRef = ref(null);
@@ -145,32 +153,37 @@ const pickImage = () => {
   input.type = 'file';
   input.accept = 'image/*';
   input.multiple = true;
-  input.onchange = (e) => {
+  input.onchange = async (e) => {
     for (const file of e.target.files) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const base64 = ev.target.result.split(',')[1];
-        const mediaType = file.type || 'image/png';
-        attachments.value.push({ type: 'image', data: base64, media_type: mediaType, name: file.name });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const { data, media_type } = await prepareImage(file);
+        if (!data) continue;
+        attachments.value.push({ type: 'image', data, media_type, name: file.name });
+      } catch (err) {
+        console.error('[WelcomeHero] pickImage failed for', file.name, err);
+        alert(`「${file.name}」读取失败，已跳过`);
+      }
     }
   };
   input.click();
 };
 
-// ACP embedded-resource cap is 512KB on the server side.
+// Plain text/code files are inlined whole by the server; documents (PDF/Word/
+// Excel/PPT) get a larger cap because the server extracts their text.
 const MAX_FILE_BYTES = 512 * 1024;
+const MAX_DOC_BYTES = 10 * 1024 * 1024;
 const TEXT_EXT = new Set([
   'txt', 'md', 'markdown', 'json', 'csv', 'log', 'yaml', 'yml', 'xml', 'html', 'htm',
   'css', 'js', 'ts', 'jsx', 'tsx', 'vue', 'py', 'java', 'c', 'cpp', 'h', 'hpp', 'go',
   'rs', 'rb', 'php', 'sh', 'sql', 'ini', 'conf', 'toml', 'env',
 ]);
-const isTextFile = (file) => {
+const DOC_EXT = new Set(['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx']);
+const fileExt = (file) => {
   const idx = file.name.lastIndexOf('.');
-  const ext = idx >= 0 ? file.name.slice(idx + 1).toLowerCase() : '';
-  return TEXT_EXT.has(ext) || (file.type || '').startsWith('text/');
+  return idx >= 0 ? file.name.slice(idx + 1).toLowerCase() : '';
 };
+const isTextFile = (file) => TEXT_EXT.has(fileExt(file)) || (file.type || '').startsWith('text/');
+const isDocFile = (file) => DOC_EXT.has(fileExt(file));
 
 const pickFile = () => {
   const input = document.createElement('input');
@@ -179,8 +192,9 @@ const pickFile = () => {
   input.multiple = true;
   input.onchange = async (e) => {
     for (const file of e.target.files) {
-      if (file.size > MAX_FILE_BYTES) {
-        alert(`「${file.name}」超过 ${Math.round(MAX_FILE_BYTES / 1024)}KB，已跳过`);
+      const cap = isDocFile(file) ? MAX_DOC_BYTES : MAX_FILE_BYTES;
+      if (file.size > cap) {
+        alert(`「${file.name}」超过 ${Math.round(cap / 1024 / 1024 * 10) / 10}MB，已跳过`);
         continue;
       }
       if (isTextFile(file)) {

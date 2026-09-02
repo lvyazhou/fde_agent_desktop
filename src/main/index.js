@@ -19,6 +19,7 @@ let prototypeServer = null;
 let prototypeServerPort = null;
 let prototypeServingDir = null;
 let cachedModels = [];       // Cached model list from initialize/session
+let currentModelId = '';     // 当前会话模型 id（来自 session/new 的 modelState）
 let cachedCapabilities = {}; // Cached ACP capabilities
 let hermesReady = false;     // ACP 是否已连接且 initialize 成功(供环境自检读取)
 
@@ -30,6 +31,90 @@ const PRODUCT_LOBSTER_HOME = path.join(os.homedir(), '.product-lobster');
 const PROJECTS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'projects');
 const HANDBOOK_DIR = path.join(PRODUCT_LOBSTER_HOME, 'fde-handbook');
 const SKILLS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'skills');
+const CONFIG_YAML_PATH = path.join(PRODUCT_LOBSTER_HOME, 'config.yaml');
+
+// --- config.yaml model persistence -----------------------------------------
+// config.yaml 是 hermes 选择模型的唯一事实来源（cli.py 明确不读 LLM_MODEL/OPENAI_MODEL 环境变量）。
+// 结构：
+//   model:
+//     provider: custom
+//     default: <model-id>   ← 只改这一行
+//     base_url: ...
+// 用行级正则替换，避免引入 YAML 库改变文件里的注释/格式。
+
+function readConfigModel() {
+  try {
+    if (!fs.existsSync(CONFIG_YAML_PATH)) return '';
+    const content = fs.readFileSync(CONFIG_YAML_PATH, 'utf-8');
+    // 切出 model: 块（从 "model:" 行到下一个顶格 key 或文件尾）
+    const m = content.match(/^model:[ \t]*\n([\s\S]*?)(?=^\S|$(?![\r\n]))/m);
+    const block = m ? m[1] : content;
+    // 块内找缩进的 default: <value>
+    const dm = block.match(/^[ \t]+default:[ \t]*(.+?)[ \t]*$/m);
+    if (dm) return dm[1].replace(/^["']|["']$/g, '').trim();
+    return '';
+  } catch (e) {
+    console.error('[main] readConfigModel failed:', e.message);
+    return '';
+  }
+}
+
+// best-effort 写回 model.default；成功返回 true。不抛异常（持久化失败不应阻断秒切）。
+// 注意：hermes 秒切用带 provider 前缀的完整 id（如 openai-api:deepseek/deepseek-v4-pro），
+// 但 config.yaml 的 model.default 应存「裸模型名」（deepseek/deepseek-v4-pro），
+// 与现有 provider: custom + default: minimax/... 的格式一致，避免 provider 解析歧义。
+function stripModelPrefix(id) {
+  const s = String(id || '');
+  // 去掉最外层 provider 前缀：custom:openai-api:deepseek/... 或 openai-api:deepseek/... → deepseek/...
+  // 规则：若含 ':' 且冒号后仍是 provider:model 形式，剥到最后一个非厂商冒号段。
+  // 实测格式：[custom:]<runtime>:<vendor>/<model>，vendor/model 里不含 ':'，所以取最后一个 ':' 之后。
+  return s.includes(':') ? s.slice(s.lastIndexOf(':') + 1) : s;
+}
+
+function writeConfigModel(modelId) {
+  try {
+    if (!modelId) return false;
+    modelId = stripModelPrefix(modelId);
+    ensureDirs();
+    let content = fs.existsSync(CONFIG_YAML_PATH)
+      ? fs.readFileSync(CONFIG_YAML_PATH, 'utf-8')
+      : '';
+
+    // 只替换 model: 块内那一行 default:，其余原样保留。
+    if (/^model:[ \t]*$/m.test(content) && /^[ \t]+default:[ \t]*.+$/m.test(content)) {
+      content = content.replace(
+        /^([ \t]+)default:[ \t]*.+$/m,
+        (_full, indent) => `${indent}default: ${modelId}`
+      );
+    } else {
+      // 没有可识别的 model.default 结构：补一个最小 model 块（沿用现有 provider/base_url 若存在则不动）。
+      const block = `model:\n  provider: custom\n  default: ${modelId}\n`;
+      content = content ? `${block}\n${content}` : block;
+    }
+
+    fs.writeFileSync(CONFIG_YAML_PATH, content, 'utf-8');
+    return true;
+  } catch (e) {
+    console.warn('[main] writeConfigModel failed (persist skipped):', e.message);
+    return false;
+  }
+}
+
+// 从 session/new 的响应里抓模型列表 + 当前模型。
+// ACP 的 SessionModelState 结构：{ available_models: [{model_id,name,description}], current_model_id }
+// 注意：字段可能是 snake_case（availableModels/available_models、currentModelId/current_model_id 两种都兼容）。
+function captureModelsFromSession(result) {
+  try {
+    const ms = result && (result.models || result.modelState || result.model_state);
+    if (!ms) return;
+    const list = ms.available_models || ms.availableModels || [];
+    if (Array.isArray(list) && list.length > 0) cachedModels = list;
+    const cur = ms.current_model_id || ms.currentModelId || '';
+    if (cur) currentModelId = cur;
+  } catch (e) {
+    console.warn('[main] captureModelsFromSession failed:', e.message);
+  }
+}
 
 function ensureDirs() {
   for (const dir of [PRODUCT_LOBSTER_HOME, PROJECTS_DIR]) {
@@ -305,6 +390,12 @@ async function initializeHermes() {
     if (result && result.models) cachedModels = result.models;
     hermesReady = true;
     updateSplash(80, '设计引擎已就绪');
+
+    // Warmup：模型列表来自 session/new（initialize 不含），这里建一个临时会话把列表抓下来，
+    // 让欢迎页（尚未选项目、无活动会话）也能立即拿到可选模型。fire-and-forget，不阻塞。
+    acp.request('session/new', { cwd: PRODUCT_LOBSTER_HOME, mcpServers: [] })
+      .then((s) => { captureModelsFromSession(s); })
+      .catch(() => { /* ignore warmup failure */ });
     return result;
   } catch (err) {
     console.error('[main] hermes-acp initialize failed:', err.message);
@@ -398,7 +489,37 @@ function computeProjectOutputs(slug) {
     hasPrototype = files.length > 0;
     prototypeFileCount = files.length;
   }
-  return { hasSpec, hasPrototype, prototypeFileCount };
+  // 扫描各阶段目录下已产出的交付物文件(stage1~stage5/*.md|*.docx|*.html)。
+  // 只登记文件相对路径 + 阶段号,中文名/图标由前端按文件名映射(单一数据源在 fde-stages.js)。
+  const deliverables = [];
+  for (let s = 1; s <= 5; s++) {
+    const stageDir = resolveProjectPath(slug, `stage${s}`);
+    if (!fs.existsSync(stageDir)) continue;
+    let entries = [];
+    try { entries = fs.readdirSync(stageDir, { withFileTypes: true }); } catch { continue; }
+    for (const e of entries) {
+      if (!e.isFile()) continue;
+      const ext = path.extname(e.name).toLowerCase();
+      // 只把可交付文档算作交付物;图片/svg 等附图不单列
+      if (!['.md', '.docx', '.doc', '.html', '.pdf', '.xlsx'].includes(ext)) continue;
+      // 同名 md/html 视作同一份交付物,优先记 md,避免 prd.md + prd.html 重复计数
+      const base = e.name.replace(/\.(md|html|docx|doc|pdf|xlsx)$/i, '');
+      const existingIdx = deliverables.findIndex(d => d.stage === s && d.base === base);
+      if (existingIdx >= 0) {
+        // 已有同名:md 优先保留
+        if (ext === '.md') deliverables[existingIdx] = { stage: s, base, file: `stage${s}/${e.name}`, ext };
+        continue;
+      }
+      deliverables.push({ stage: s, base, file: `stage${s}/${e.name}`, ext });
+    }
+  }
+  // 按"实际产出"推断项目到达的阶段:有交付物文件的最高 stage 号最可靠。
+  // meta.stage 是创建时写死的默认值(常年停在②),不反映真实进度——故以文件为准。
+  // 有原型/spec 但还没有任何 stageN 交付物时,至少算到阶段②(原型收敛阶段)。
+  let derivedStage = 0;
+  for (const d of deliverables) derivedStage = Math.max(derivedStage, d.stage);
+  if (derivedStage === 0 && (hasPrototype || hasSpec)) derivedStage = 2;
+  return { hasSpec, hasPrototype, prototypeFileCount, deliverables, derivedStage };
 }
 
 function appendMessage(slug, message) {
@@ -956,7 +1077,10 @@ ipcMain.handle('hermes:list-projects', async () => {
       if (meta) {
         const outputs = computeProjectOutputs(entry.name);
         const phase = meta.phase || (outputs.hasPrototype ? 'iterating' : outputs.hasSpec ? 'prototype' : 'brainstorming');
-        projects.push({ slug: entry.name, ...meta, outputs, hasSpec: outputs.hasSpec, hasPrototype: outputs.hasPrototype, phase });
+        // 真实阶段:以磁盘产出推断的 derivedStage 为准(文件不会骗人),
+        // 与 meta.stage(可能被手动切到更靠后)取较大值——已推进过的阶段不回退。
+        const stage = Math.max(outputs.derivedStage || 0, Number(meta.stage) || 0) || FDE_DEFAULT_STAGE;
+        projects.push({ slug: entry.name, ...meta, stage, outputs, hasSpec: outputs.hasSpec, hasPrototype: outputs.hasPrototype, deliverables: outputs.deliverables, derivedStage: outputs.derivedStage, phase });
       }
     }
     projects.sort((a, b) => (b.updatedAt || b.createdAt || '').localeCompare(a.updatedAt || a.createdAt || ''));
@@ -979,11 +1103,18 @@ ipcMain.handle('hermes:create-project', async (_event, { name, requirement, slug
     }
     fs.mkdirSync(projectDir, { recursive: true });
 
+    // 预建 FDE 标准子目录（交付物/原型的落点）。不预建 spec.md 等文件——
+    // deriveOutputs 以文件是否存在判断阶段进度，空文件会误判为"已生成"。
+    for (const sub of ['stage2', 'stage3', 'prototype']) {
+      fs.mkdirSync(path.join(projectDir, sub), { recursive: true });
+    }
+
     // Create session via ACP
     let sessionId = null;
     if (acp) {
       const result = await acp.request('session/new', { cwd: projectDir, mcpServers: [] });
       sessionId = result && result.sessionId ? result.sessionId : null;
+      captureModelsFromSession(result);
       // Auto-approve all edits — fire-and-forget so we don't block project creation on a second round-trip
       if (sessionId) {
         acp.request('session/set_mode', { sessionId, modeId: 'dont_ask' }).catch(() => {});
@@ -1037,6 +1168,7 @@ ipcMain.handle('hermes:load-project', async (_event, slug) => {
       const projectDir = resolveProjectPath(slug);
       const newSession = await acp.request('session/new', { cwd: projectDir, mcpServers: [] });
       if (newSession && newSession.sessionId) {
+        captureModelsFromSession(newSession);
         meta.sessionId = newSession.sessionId;
         writeProjectMeta(slug, meta);
         await acp.request('session/set_mode', { sessionId: meta.sessionId, modeId: 'dont_ask' }).catch(() => {});
@@ -1152,19 +1284,48 @@ ipcMain.handle('hermes:upload-knowledge', async (_event, { slug }) => {
 
 // Feature 1: Model switching
 ipcMain.handle('hermes:list-models', async () => {
-  return { models: cachedModels };
+  return { models: cachedModels, current: currentModelId };
 });
 
 ipcMain.handle('hermes:set-model', async (_event, { slug, modelId }) => {
+  // 关键：360 custom provider 下，运行时 session/set_model 会被 hermes 误判成 openrouter
+  // provider（detect_provider_for_model 看到 vendor/model 格式即判 openrouter）→ 401。
+  // 唯一可靠方式：写 config.yaml 的 model.default(裸名) + 重启引擎，让 provider: custom 生效。
   try {
-    const meta = readProjectMeta(slug);
-    if (!meta || !meta.sessionId || !acp) return { success: false, error: 'No active session' };
-    const result = await acp.request('session/set_model', { sessionId: meta.sessionId, modelId });
-    if (result && result.models) cachedModels = result.models;
-    return { success: true, result };
+    const persisted = writeConfigModel(modelId);   // 内部会剥掉 openai-api: 等前缀，存裸名
+    if (!persisted) return { success: false, error: '写入 config.yaml 失败' };
+    // 重启 hermes 让新模型生效（provider=custom 路由到 360）
+    await stopHermes();
+    startHermes();
+    await initializeHermes();
+    // 重启后所有旧 sessionId 在新进程里已失效：清掉每个项目的 sessionId，
+    // 下次发消息时 hermes:prompt 会自动 session/new 重建（带项目上下文恢复）。
+    try {
+      if (fs.existsSync(PROJECTS_DIR)) {
+        for (const entry of fs.readdirSync(PROJECTS_DIR, { withFileTypes: true })) {
+          if (!entry.isDirectory()) continue;
+          const m = readProjectMeta(entry.name);
+          if (m && m.sessionId) updateProjectMeta(entry.name, { sessionId: null });
+        }
+      }
+    } catch (e) {
+      console.warn('[main] clear sessionIds after model switch failed:', e.message);
+    }
+    return { success: true, persisted, restarted: true };
   } catch (err) {
     return { success: false, error: err.message };
   }
+});
+
+// 读 config.yaml 当前默认模型（供顶栏初始回填）
+ipcMain.handle('hermes:read-config-model', async () => {
+  return { model: readConfigModel() };
+});
+
+// 只写 config.yaml 的 model.default（兜底/独立持久化，不走 session/set_model）
+ipcMain.handle('hermes:set-config-model', async (_event, { modelId }) => {
+  const ok = writeConfigModel(modelId);
+  return { success: ok };
 });
 
 // Feature 3: Session history list
@@ -1253,6 +1414,7 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
     if (!meta.sessionId) {
       const projectDir = resolveProjectPath(slug);
       const newSession = await acp.request('session/new', { cwd: projectDir, mcpServers: [] });
+      captureModelsFromSession(newSession);
       meta.sessionId = newSession.sessionId;
       await acp.request('session/set_mode', { sessionId: meta.sessionId, modeId: 'dont_ask' }).catch(() => {});
       writeProjectMeta(slug, meta);
@@ -1557,6 +1719,30 @@ ipcMain.handle('hermes:read-file', async (_event, { slug, relativePath }) => {
   }
 });
 
+// 读取项目内的图片/二进制文件，返回 data URI（renderer 无法直接读磁盘文件）
+const MIME_BY_EXT = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.bmp': 'image/bmp',
+  '.ico': 'image/x-icon',
+};
+ipcMain.handle('hermes:read-file-data-uri', async (_event, { slug, relativePath }) => {
+  try {
+    const filePath = resolveProjectPath(slug, relativePath);
+    if (!fs.existsSync(filePath)) return { success: false, error: 'file not found' };
+    const ext = path.extname(filePath).toLowerCase();
+    const mime = MIME_BY_EXT[ext] || 'application/octet-stream';
+    const base64 = fs.readFileSync(filePath).toString('base64');
+    return { success: true, dataUri: `data:${mime};base64,${base64}` };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('hermes:write-file', async (_event, { slug, relativePath, content }) => {
   try {
     const filePath = resolveProjectPath(slug, relativePath);
@@ -1601,6 +1787,22 @@ ipcMain.handle('hermes:prototype-url', async (_event, { slug, file }) => {
     }
     // Point the static server at this project's prototype directory
     prototypeServingDir = protoDir;
+
+    // 确保静态服务已启动并拿到端口(冷启动/异常时兜底)
+    if (!prototypeServer) startPrototypeServer();
+    if (!prototypeServerPort) {
+      await new Promise((resolve) => {
+        let waited = 0;
+        const timer = setInterval(() => {
+          waited += 50;
+          if (prototypeServerPort || waited >= 3000) { clearInterval(timer); resolve(); }
+        }, 50);
+      });
+    }
+    if (!prototypeServerPort) {
+      return { success: false, error: '本地预览服务未就绪，请重启应用后重试' };
+    }
+
     const fileName = file || 'index.html';
     const url = `http://127.0.0.1:${prototypeServerPort}/${fileName}`;
     return { success: true, url };
@@ -1613,7 +1815,11 @@ ipcMain.handle('hermes:export-zip', async (_event, slug) => {
   try {
     const JSZip = require('jszip');
     const zip = new JSZip();
-    const projectDir = resolveProjectPath(slug);
+    // 只打包 prototype/ 目录（纯原型页面+数据），发出去即可直接查看
+    const protoDir = resolveProjectPath(slug, 'prototype');
+    if (!fs.existsSync(protoDir)) {
+      return { success: false, error: 'prototype directory not found' };
+    }
 
     function addDirToZip(dirPath, zipFolder) {
       const entries = fs.readdirSync(dirPath, { withFileTypes: true });
@@ -1627,11 +1833,11 @@ ipcMain.handle('hermes:export-zip', async (_event, slug) => {
       }
     }
 
-    addDirToZip(projectDir, zip);
+    addDirToZip(protoDir, zip);
 
     const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: 'Export Project',
-      defaultPath: `${slug}.zip`,
+      title: 'Export Prototype',
+      defaultPath: `${slug}-prototype.zip`,
       filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
     });
 

@@ -70,7 +70,7 @@
           <h3 class="text-base font-semibold text-slate-800 mb-1 truncate">{{ project.name }}</h3>
           <p class="text-xs text-slate-400 mb-3">{{ formatDate(project.createdAt) }}</p>
           <!-- FDE five-stage progress dots -->
-          <div class="flex items-center gap-1.5 mb-4" :title="`FDE 五阶段作战链 · 当前第 ${toCn(stageOf(project))} 阶段`">
+          <div class="flex items-center gap-1.5 mb-2" :title="`FDE 五阶段作战链 · 当前第 ${toCn(stageOf(project))} 阶段`">
             <span
               v-for="n in 5"
               :key="n"
@@ -82,28 +82,36 @@
               }"
             ></span>
           </div>
-          <!-- Status badges -->
-          <div class="flex items-center gap-2 flex-wrap">
+          <!-- 当前阶段一句话说明(在做什么) -->
+          <p class="text-xs text-slate-500 mb-4 line-clamp-2 leading-relaxed" :title="stageGoal(project)">
+            <i class="fa-solid fa-location-arrow text-[9px] text-blue-500 mr-1"></i>{{ stageDesc(project) }}
+          </p>
+          <!-- 交付物徽章:展示项目已产出的全部交付物(按阶段扫描) + 原型 -->
+          <div class="flex items-center gap-1.5 flex-wrap">
+            <template v-if="deliverableChips(project).length">
+              <span
+                v-for="chip in visibleChips(project)"
+                :key="chip.key"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-[11px] font-medium"
+                :title="`${chip.name}（阶段${toCn(chip.stage)}）`"
+              >
+                <i :class="chip.icon" class="text-[10px]"></i>
+                {{ chip.short }}
+              </span>
+              <span
+                v-if="hiddenChipCount(project) > 0"
+                class="inline-flex items-center px-2 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-medium"
+                :title="hiddenChipNames(project)"
+              >
+                +{{ hiddenChipCount(project) }}
+              </span>
+            </template>
             <span
-              v-if="project.hasSpec"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-[11px] font-medium"
-            >
-              <i class="fa-solid fa-list-check text-[10px]"></i>
-              有功能清单
-            </span>
-            <span
-              v-if="project.hasPrototype"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-[11px] font-medium"
-            >
-              <i class="fa-solid fa-palette text-[10px]"></i>
-              有原型
-            </span>
-            <span
-              v-if="!project.hasSpec && !project.hasPrototype"
+              v-else
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 text-[11px] font-medium"
             >
               <i class="fa-solid fa-clock text-[10px]"></i>
-              刚创建
+              暂无交付物
             </span>
           </div>
         </div>
@@ -147,7 +155,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { getStage, DEFAULT_STAGE } from '@/data/fde-stages';
+import { getStage, getDeliverableMeta, DEFAULT_STAGE } from '@/data/fde-stages';
 
 const router = useRouter();
 const projects = ref([]);
@@ -213,8 +221,46 @@ const dotState = (project, n) => {
 // 阶段简称(如"沟通·原型"),取自 fde-stages 单一数据源
 const stageShort = (project) => getStage(stageOf(project))?.short || '';
 
+// 每阶段一句话说明(卡片里精炼版,点明"在做什么")
+const STAGE_DESC = {
+  1: '进场前备弹:行业政策/术语/痛点/话术练到条件反射',
+  2: '结构化挖需求、当场确认,喂智能体出可交互原型',
+  3: '需求签字定死,拆智能体矩阵逐个设计过 Eval',
+  4: '建模+搭前后端+部署,做成能访问的行业工作台',
+  5: '代理商试跑、三轮定稿、客户交付签字',
+};
+const stageDesc = (project) => STAGE_DESC[stageOf(project)] || '';
+
+// 完整阶段目标(悬停 tooltip),取自 fde-stages 的 goal
+const stageGoal = (project) => getStage(stageOf(project))?.goal || stageDesc(project);
+
 // 阿拉伯数字转中文(1~5)
 const toCn = (n) => CN_NUM[n] || String(n);
+
+// 卡片最多平铺展示的交付物徽章数,超出折叠为 "+N"
+const MAX_CHIPS = 4;
+
+// 项目的全部交付物徽章:后端扫描 stageN/ 得到的文件 + 原型(prototype 目录)。
+// 每个 chip 带 short(简称)/name(全名)/icon/stage,按阶段升序排列。
+const deliverableChips = (project) => {
+  const chips = [];
+  const list = Array.isArray(project?.deliverables) ? project.deliverables : [];
+  for (const d of list) {
+    const meta = getDeliverableMeta(d.base);
+    chips.push({ key: `${d.stage}:${d.base}`, stage: d.stage, short: meta.short, name: meta.name, icon: meta.icon });
+  }
+  // 原型不落在 stageN/ 目录,单独作为一枚 chip(归到阶段②——原型产出阶段)
+  if (project?.hasPrototype) {
+    chips.push({ key: 'prototype', stage: 2, short: '可交互原型', name: '可交互原型', icon: 'fa-solid fa-palette' });
+  }
+  chips.sort((a, b) => a.stage - b.stage);
+  return chips;
+};
+
+const visibleChips = (project) => deliverableChips(project).slice(0, MAX_CHIPS);
+const hiddenChipCount = (project) => Math.max(0, deliverableChips(project).length - MAX_CHIPS);
+const hiddenChipNames = (project) =>
+  deliverableChips(project).slice(MAX_CHIPS).map((c) => c.name).join('、');
 
 const formatDate = (dateStr) => {
   if (!dateStr) return '';

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-01T10:46:07.566Z",
+  "generatedAt": "2026-09-02T08:01:11.587Z",
   "source": "product-lobster-desktop/skills",
   "groups": [
     {
@@ -13,35 +13,35 @@
       "id": "prototype",
       "name": "原型设计",
       "icon": "window-maximize",
-      "color": "#7c3aed",
+      "color": "#1d4ed8",
       "count": 2
     },
     {
       "id": "report-image",
       "name": "汇报出图",
       "icon": "image",
-      "color": "#d97706",
+      "color": "#3b82f6",
       "count": 4
     },
     {
       "id": "dataviz",
       "name": "数据可视化",
       "icon": "chart-column",
-      "color": "#0891b2",
+      "color": "#0ea5e9",
       "count": 1
     },
     {
       "id": "coach",
       "name": "教练陪练",
       "icon": "headset",
-      "color": "#059669",
+      "color": "#1e40af",
       "count": 1
     },
     {
       "id": "thinking",
       "name": "思考协作",
       "icon": "lightbulb",
-      "color": "#ca8a04",
+      "color": "#0369a1",
       "count": 3
     }
   ],
@@ -52,7 +52,7 @@
       "file": "SKILL.md",
       "group": "coach",
       "icon": "headset",
-      "color": "#059669",
+      "color": "#1e40af",
       "version": "",
       "summary": "FDE 教练陪练。扮演甲方客户,陪 FDE 项目经理演练\"聊需求\"——用 SPIN + 七维丝滑串挖需求;用户说\"复盘\"时切教练视角,按六维打分表评分并给改进建议。",
       "description": "FDE 教练陪练。扮演甲方客户,陪 FDE 项目经理演练\"聊需求\"——用 SPIN + 七维丝滑串挖需求;用户说\"复盘\"时切教练视角,按六维打分表评分并给改进建议。"
@@ -63,7 +63,7 @@
       "file": "SKILL.md",
       "group": "dataviz",
       "icon": "chart-line",
-      "color": "#0891b2",
+      "color": "#0ea5e9",
       "version": "",
       "summary": "Generate cyber/tech style business analysis dashboards using React, ECharts and Ant Desi…",
       "description": "Generate cyber/tech style business analysis dashboards using React, ECharts and Ant Design. Use this when the user asks to generate, build, or create a data dashboard, analysis screen, large screen display (大屏), or data visualization panel based on business requirements."
@@ -118,7 +118,7 @@
       "file": "SKILL.md",
       "group": "prototype",
       "icon": "wand-magic-sparkles",
-      "color": "#7c3aed",
+      "color": "#1d4ed8",
       "version": "",
       "summary": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/做个demo/做个页面/prototype/做系统原型.",
       "description": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/做个demo/做个页面/prototype/做系统原型. Accepts ANY input (sentence, doc, image, requirements). Generates high-fidelity interactive HTML prototypes with real mock data, following the unified design specification. Output: multi-page HTML + JS + data/ directory, ready to open in browser or package with Electron."
@@ -129,7 +129,7 @@
       "file": "SKILL.md",
       "group": "prototype",
       "icon": "pen-ruler",
-      "color": "#7c3aed",
+      "color": "#1d4ed8",
       "version": "1.0.0",
       "summary": "Use when the user wants to modify an existing HTML prototype with natural language.",
       "description": "Use when the user wants to modify an existing HTML prototype with natural language. Reads current prototype files, applies precise targeted edits, preserves the design system. Trigger phrases include \"改一下原型\", \"调整页面\", \"把首页改成\", \"修改原型\"."
@@ -140,7 +140,7 @@
       "file": "SKILL.md",
       "group": "report-image",
       "icon": "file-powerpoint",
-      "color": "#d97706",
+      "color": "#3b82f6",
       "version": "",
       "summary": "Generates 360-branded PPT presentations in text mode, poster mode, hybrid mode, or backg…",
       "description": "Generates 360-branded PPT presentations in text mode, poster mode, hybrid mode, or background-image-with-text mode. Supports blue and green color themes."
@@ -151,7 +151,7 @@
       "file": "SKILL.md",
       "group": "report-image",
       "icon": "sitemap",
-      "color": "#d97706",
+      "color": "#3b82f6",
       "version": "",
       "summary": "Use when generating a formal business architecture diagram image for hospitals, informat…",
       "description": "Use when generating a formal business architecture diagram image for hospitals, information systems, AI platforms, security solutions, executive reports, or serious presentation settings, especially when the brief requires white background, dark blue corporate styling, balanced layered layout, and no red/yellow/warm colors."
@@ -162,7 +162,7 @@
       "file": "SKILL.md",
       "group": "report-image",
       "icon": "diagram-project",
-      "color": "#d97706",
+      "color": "#3b82f6",
       "version": "",
       "summary": "Use when the user wants to create any technical diagram - architecture, data flow, flowc…",
       "description": "Use when the user wants to create any technical diagram - architecture, data flow, flowchart, sequence, agent/memory, or concept map - and export as SVG+PNG. Trigger on: \"画图\" \"帮我画\" \"生成图\" \"做个图\" \"架构图\" \"流程图\" \"可视化一下\" \"出图\" \"generate diagram\" \"draw diagram\" \"visualize\" or any system/flow description the user wants illustrated."
@@ -173,7 +173,7 @@
       "file": "SKILL.md",
       "group": "report-image",
       "icon": "palette",
-      "color": "#d97706",
+      "color": "#3b82f6",
       "version": "",
       "summary": "Use when the user wants to generate an image, create a picture, make an illustration, de…",
       "description": "Use when the user wants to generate an image, create a picture, make an illustration, design a cover, or do image-to-image editing."
@@ -184,7 +184,7 @@
       "file": "SKILL.md",
       "group": "thinking",
       "icon": "lightbulb",
-      "color": "#ca8a04",
+      "color": "#0369a1",
       "version": "1.0.0",
       "summary": "Use when the user wants to brainstorm, explore ideas, think through a product concept, c…",
       "description": "Use when the user wants to brainstorm, explore ideas, think through a product concept, compare approaches, or needs creative divergent thinking before committing to a direction. Trigger phrases include \"头脑风暴\", \"想想\", \"探索一下\", \"有什么方案\", \"怎么设计\", \"brainstorm\", \"帮我想想\"."
@@ -195,7 +195,7 @@
       "file": "SKILL.md",
       "group": "thinking",
       "icon": "chalkboard-user",
-      "color": "#ca8a04",
+      "color": "#0369a1",
       "version": "",
       "summary": "Use when the user wants to collaboratively design, plan, or think through a topic using …",
       "description": "Use when the user wants to collaboratively design, plan, or think through a topic using a visual interactive board. Triggers on \"协作面板\", \"规划面板\", \"一起设计\", \"做个面板讨论\", \"planning board\", \"collaborative board\", or when the user says they want to think through / plan something together in a structured visual way (not just text)."
@@ -206,7 +206,7 @@
       "file": "SKILL.md",
       "group": "thinking",
       "icon": "scale-balanced",
-      "color": "#ca8a04",
+      "color": "#0369a1",
       "version": "",
       "summary": "第一性原理批判性分析智能体。",
       "description": "第一性原理批判性分析智能体。接收任何方案/计划/设计文档，\n用第一性原理五阶段工作流进行深度解构和批判：定义现状→解构假设→识别公理→零基重构→总结行动。\n不做表面赞美，准确、不留情面地指出隐藏假设、类比陷阱和逻辑漏洞。\n当用户提到「第一性原理分析」「帮我批判」「找出问题」「客观分析不足」「挑毛病」「从底层拆解」时触发。\n也可用于产品方案评审、技术架构挑战、商业模式验证、战略方向质疑。"

@@ -1,10 +1,12 @@
 <template>
-  <div class="flex h-full min-h-0 bg-[#f5f7fa]">
+  <div class="flex h-full min-h-0 sk-bg">
     <!-- ── 左侧:技能分组树 ────────────────────────── -->
-    <aside class="sk-tree shrink-0 flex flex-col bg-white border-r border-slate-200/70">
+    <aside class="sk-tree shrink-0 flex flex-col bg-white/95 backdrop-blur border-r border-slate-200/70">
       <div class="px-4 pt-4 pb-3 border-b border-slate-100">
-        <div class="flex items-center gap-2 mb-3">
-          <i class="fa-solid fa-brain text-blue-600"></i>
+        <div class="flex items-center gap-2.5 mb-3">
+          <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-sm shadow-blue-500/30">
+            <i class="fa-solid fa-brain text-white text-[12px]"></i>
+          </span>
           <span class="text-[13px] font-bold text-slate-800">技能体系</span>
         </div>
         <div class="relative">
@@ -37,7 +39,7 @@
           @click="active = g.id"
         >
           <span class="tree-badge" :style="{ background: g.color || groupColor(g.id) }">
-            <i :class="'fa-solid ' + g.icon + ' text-[10px]'"></i>
+            <i :class="faIcon(g.icon, 'toolbox') + ' text-[10px]'"></i>
           </span>
           <span class="flex-1 text-left truncate">{{ g.name }}</span>
           <span class="tree-count">{{ g.count }}</span>
@@ -74,13 +76,13 @@
         </div>
 
         <div class="grid grid-cols-4 gap-4 mb-5">
-          <div v-for="s in statCards" :key="s.label" class="bg-white rounded-xl border border-slate-200/70 p-4 flex items-center gap-3">
-            <div class="w-11 h-11 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: s.bg }">
+          <div v-for="s in statCards" :key="s.label" class="stat-card">
+            <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px ${s.bg}55` }">
               <i :class="'fa-solid ' + s.icon"></i>
             </div>
             <div>
-              <div class="text-xl font-bold text-slate-800 leading-none">{{ s.value }}</div>
-              <div class="text-[11px] text-slate-400 mt-1">{{ s.label }}</div>
+              <div class="text-[22px] font-bold text-slate-800 leading-none tracking-tight">{{ s.value }}</div>
+              <div class="text-[11px] text-slate-400 mt-1.5">{{ s.label }}</div>
             </div>
           </div>
         </div>
@@ -89,15 +91,16 @@
           <button
             v-for="sk in filtered"
             :key="sk.id"
-            class="sk-card text-left"
+            class="sk-card text-left group"
             @click="openSkill(sk)"
           >
+            <div class="sk-card__accent" :style="{ background: sk.color }"></div>
             <div class="flex items-start gap-3">
-              <span class="w-11 h-11 rounded-xl flex items-center justify-center text-white text-lg shrink-0" :style="{ background: sk.color }">
-                <i :class="'fa-solid ' + sk.icon"></i>
+              <span class="sk-icon" :style="{ background: sk.color, boxShadow: `0 6px 16px ${sk.color}55` }">
+                <i :class="faIcon(sk.icon, 'cube')"></i>
               </span>
               <div class="flex-1 min-w-0">
-                <h3 class="text-[13.5px] font-semibold text-slate-800 truncate">{{ sk.name }}</h3>
+                <h3 class="text-[13.5px] font-semibold text-slate-800 truncate group-hover:text-blue-700 transition-colors">{{ sk.name }}</h3>
                 <div class="flex items-center gap-1.5 mt-1">
                   <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{{ groupName(sk.group) }}</span>
                   <span v-if="sk.version" class="text-[10px] text-slate-400">v{{ sk.version }}</span>
@@ -126,7 +129,7 @@
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
-                <i :class="'fa-solid ' + selected.icon"></i>
+                <i :class="faIcon(selected.icon, 'cube')"></i>
               </span>
               <div class="min-w-0">
                 <div class="text-[13px] font-semibold text-slate-800 truncate">{{ selected.name }}</div>
@@ -174,9 +177,9 @@
               <span class="font-mono text-slate-400">{{ progressPct }}%</span>
             </div>
             <div class="h-2 rounded-full bg-slate-100 overflow-hidden">
-              <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-300" :style="{ width: progressPct + '%' }"></div>
+              <div class="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300" :style="{ width: progressPct + '%' }"></div>
             </div>
-            <div v-if="importResult && !importError" class="mt-5 flex items-center gap-2 text-[13px] text-emerald-600">
+            <div v-if="importResult && !importError" class="mt-5 flex items-center gap-2 text-[13px] text-blue-600">
               <i class="fa-solid fa-circle-check"></i>技能「{{ importResult.skillId }}」导入成功
             </div>
           </template>
@@ -300,16 +303,21 @@ const filtered = computed(() => {
 
 const statCards = computed(() => [
   { label: '技能总数', value: skills.value.length, icon: 'fa-cubes', bg: '#2563eb' },
-  { label: '能力分组', value: groups.value.length, icon: 'fa-layer-group', bg: '#7c3aed' },
-  { label: '产文档类', value: skills.value.filter((s) => s.group === 'product-doc').length, icon: 'fa-file-lines', bg: '#059669' },
-  { label: '出图/可视化', value: skills.value.filter((s) => ['report-image', 'dataviz'].includes(s.group)).length, icon: 'fa-images', bg: '#d97706' },
+  { label: '能力分组', value: groups.value.length, icon: 'fa-layer-group', bg: '#1d4ed8' },
+  { label: '产文档类', value: skills.value.filter((s) => s.group === 'product-doc').length, icon: 'fa-file-lines', bg: '#0ea5e9' },
+  { label: '出图/可视化', value: skills.value.filter((s) => ['report-image', 'dataviz'].includes(s.group)).length, icon: 'fa-images', bg: '#3b82f6' },
 ]);
 
 function groupName(id) {
   return groups.value.find((g) => g.id === id)?.name || id;
 }
 function groupColor(id) {
-  return { 'product-doc': '#2563eb', prototype: '#7c3aed', dataviz: '#0891b2', 'report-image': '#d97706', coach: '#059669', thinking: '#ca8a04', general: '#64748b' }[id] || '#64748b';
+  return { 'product-doc': '#2563eb', prototype: '#1d4ed8', dataviz: '#0ea5e9', 'report-image': '#3b82f6', coach: '#1e40af', thinking: '#0369a1', general: '#64748b' }[id] || '#64748b';
+}
+// manifest 里的 icon 是不带 fa- 前缀的图标名(如 headset),这里补全 Font Awesome class
+function faIcon(name, fallback) {
+  const n = (name || fallback || 'cube').trim();
+  return n.startsWith('fa-') ? `fa-solid ${n}` : `fa-solid fa-${n}`;
 }
 
 async function openSkill(sk) {
@@ -343,6 +351,12 @@ async function openDir(sk) {
 </script>
 
 <style scoped>
+.sk-bg {
+  background:
+    radial-gradient(900px 500px at 100% 0%, rgba(37, 99, 235, 0.06), transparent 60%),
+    radial-gradient(700px 400px at 0% 100%, rgba(14, 165, 233, 0.05), transparent 55%),
+    #f4f7fb;
+}
 .sk-tree { width: 272px; }
 
 .tree-node {
@@ -355,11 +369,12 @@ async function openDir(sk) {
   font-size: 12.5px;
   color: #475569;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.15s, color 0.15s, transform 0.15s;
 }
-.tree-node:hover { background: #f5f7fa; }
+.tree-node:hover { background: #f0f5ff; color: #2563eb; }
+.tree-node:hover .tree-badge { transform: scale(1.06); }
 .tree-node--active {
-  background: linear-gradient(90deg, #eff6ff, #f5f9ff);
+  background: linear-gradient(90deg, #e8f1ff, #f3f8ff);
   color: #1d4ed8;
   font-weight: 600;
   box-shadow: inset 3px 0 0 #2563eb;
@@ -373,6 +388,8 @@ async function openDir(sk) {
   justify-content: center;
   color: #fff;
   flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(15, 23, 42, 0.14);
+  transition: transform 0.15s;
 }
 .tree-count {
   font-size: 10.5px;
@@ -384,20 +401,73 @@ async function openDir(sk) {
 }
 .tree-node--active .tree-count { color: #2563eb; background: #dbeafe; }
 
+/* 统计卡片 */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px solid #e8ecf3;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+}
+.stat-card:hover {
+  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.10);
+  transform: translateY(-2px);
+  border-color: #d4e2fb;
+}
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
 .sk-card {
+  position: relative;
   display: block;
   width: 100%;
   background: #fff;
   border: 1px solid #e8ecf0;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
+  overflow: hidden;
   cursor: pointer;
-  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+  transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
+}
+.sk-card__accent {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  opacity: 0;
+  transition: opacity 0.22s ease;
 }
 .sk-card:hover {
-  box-shadow: 0 8px 24px rgba(30, 58, 138, 0.1);
-  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(30, 58, 138, 0.13);
+  transform: translateY(-3px);
   border-color: #c7d7f5;
+}
+.sk-card:hover .sk-card__accent { opacity: 1; }
+
+.sk-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 18px;
+  flex-shrink: 0;
 }
 
 .line-clamp-2 {

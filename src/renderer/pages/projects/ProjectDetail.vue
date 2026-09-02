@@ -263,6 +263,24 @@
               <i class="fa-solid fa-rotate text-[10px]"></i>
               重新生成
             </button>
+            <button
+              @click="publishLocal"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              :disabled="prototypeFiles.length === 0"
+              title="启动本地服务并在浏览器打开（数据可正常加载）"
+            >
+              <i class="fa-solid fa-globe text-[10px]"></i>
+              发布本地服务
+            </button>
+            <button
+              @click="exportZip"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              :disabled="prototypeFiles.length === 0"
+              title="把原型打包为 ZIP 下载"
+            >
+              <i class="fa-solid fa-file-zipper text-[10px]"></i>
+              导出 ZIP
+            </button>
           </div>
           <div class="flex-1 min-h-0">
             <!-- AI 工作进度：生成 / 迭代原型时实时展示推理步骤、工具调用与输出 -->
@@ -583,6 +601,7 @@
         :selected="deliverableSelected"
         :status-map="deliverableStatus"
         :content="activeDeliverableContent"
+        :preview-content="activeDeliverablePreview"
         :busy="deliverableBusy"
         :editing="deliverableEditing"
         @select="deliverableSelected = $event"
@@ -595,6 +614,21 @@
 
     </div><!-- end tab content body -->
   </div>
+
+  <!-- 轻量提示 -->
+  <transition name="fade">
+    <div
+      v-if="toast.show"
+      class="fixed top-4 right-4 z-[9999] max-w-md px-4 py-2.5 rounded-lg shadow-lg text-sm border"
+      :class="toast.type === 'success' ? 'bg-white border-emerald-300 text-emerald-700'
+        : toast.type === 'error' ? 'bg-white border-red-300 text-red-700'
+        : 'bg-white border-blue-200 text-blue-700'"
+    >
+      <i class="fa-solid mr-1.5" :class="toast.type === 'success' ? 'fa-circle-check'
+        : toast.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'"></i>
+      {{ toast.text }}
+    </div>
+  </transition>
 </template>
 
 <script setup>
@@ -809,6 +843,15 @@ const specEditing = ref(false);
 // Prototype state
 const prototypeFiles = ref([]);
 const selectedFile = ref('');
+
+// 轻量提示（导出 / 发布本地服务的成功或失败反馈）
+const toast = ref({ show: false, type: 'info', text: '' });
+let toastTimer = null;
+function showToast(text, type = 'info') {
+  toast.value = { show: true, type, text };
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.value.show = false; }, 3200);
+}
 const iframeKey = ref(0);
 const iframeSrc = ref('');
 
@@ -843,7 +886,8 @@ const stage3Composer = useChatComposer({
 // —— 通用交付物状态（阶段②③共用，按 currentStage 键控）——
 const deliverableStage = ref(3);              // 当前打开交付物的阶段
 const deliverableSelected = ref('');          // 当前选中的交付物 key
-const deliverableContents = ref({});          // { 'stage:key': markdown }
+const deliverableContents = ref({});          // { 'stage:key': markdown } —— 原文，供编辑/导出/保存
+const deliverablePreviews = ref({});           // { 'stage:key': markdown } —— 相对图片已内联为 data URI，供预览
 const deliverableEditing = ref(false);
 const deliverableBusy = ref(false);
 
@@ -854,6 +898,11 @@ const selectedDeliverable = computed(() =>
 );
 const activeDeliverableContent = computed(() =>
   deliverableContents.value[`${currentStage.value}:${deliverableSelected.value}`] || ''
+);
+// 预览用内容：优先用图片已内联的版本，回退到原文（编辑中的实时内容也会回退到原文）
+const activeDeliverablePreview = computed(() =>
+  deliverablePreviews.value[`${currentStage.value}:${deliverableSelected.value}`] ||
+  activeDeliverableContent.value
 );
 const deliverableStatus = computed(() => {
   const m = {};
@@ -1480,12 +1529,46 @@ const sendStage3 = async () => {
 
 const dkey = (stageId, key) => `${stageId}:${key}`;
 
-// 读取某份交付物文件到 deliverableContents
+// 把交付物 md 里的相对图片路径转成 data URI（Electron renderer 无法按项目目录解析相对路径）。
+// 相对路径以该 md 文件所在目录为基准解析；data:/http(s): 等绝对地址原样保留。
+// 只用于「预览」渲染，不写回磁盘，保持 md 里干净的相对路径。
+const inlineRelativeImages = async (md, mdRelPath) => {
+  if (!md || !/!\[[^\]]*\]\(/.test(md)) return md;
+  const baseDir = mdRelPath.includes('/') ? mdRelPath.slice(0, mdRelPath.lastIndexOf('/')) : '';
+  const imgRe = /(!\[[^\]]*\]\()([^)\s]+)(\s+"[^"]*")?(\))/g;
+  const tasks = [];
+  md.replace(imgRe, (m, _pre, src) => {
+    if (!/^(data:|https?:|file:|\/\/)/i.test(src) && !tasks.some((t) => t.src === src)) {
+      const rel = (baseDir ? baseDir + '/' : '') + src;
+      tasks.push({ src, promise: window.api.hermes.readFileDataUri(props.slug, rel) });
+    }
+    return m;
+  });
+  if (!tasks.length) return md;
+  const uriBySrc = {};
+  await Promise.all(
+    tasks.map(async (t) => {
+      try {
+        const r = await t.promise;
+        if (r && r.success && r.dataUri) uriBySrc[t.src] = r.dataUri;
+      } catch (_) { /* 图片缺失：保留原路径 */ }
+    })
+  );
+  return md.replace(imgRe, (m, pre, src, title, post) =>
+    uriBySrc[src] ? `${pre}${uriBySrc[src]}${title || ''}${post}` : m
+  );
+};
+
+// 读取某份交付物文件到 deliverableContents（原文，供编辑/导出/保存），
+// 同时生成一份图片内联版本供预览渲染。
 const loadDeliverable = async (stageId, d) => {
   try {
     const result = await window.api.hermes.readFile(props.slug, d.file);
     if (result && result.success && result.content) {
-      deliverableContents.value = { ...deliverableContents.value, [dkey(stageId, d.key)]: result.content };
+      const k = dkey(stageId, d.key);
+      deliverableContents.value = { ...deliverableContents.value, [k]: result.content };
+      const preview = await inlineRelativeImages(result.content, d.file);
+      deliverablePreviews.value = { ...deliverablePreviews.value, [k]: preview };
     }
   } catch (e) { /* 未生成，忽略 */ }
 };
@@ -1584,7 +1667,11 @@ const saveDeliverable = async (key) => {
   const d = deliverablesForStage(stageId).find((x) => x.key === key);
   if (!d) return;
   try {
-    await window.api.hermes.writeFile(props.slug, d.file, deliverableContents.value[dkey(stageId, key)] || '');
+    const raw = deliverableContents.value[dkey(stageId, key)] || '';
+    await window.api.hermes.writeFile(props.slug, d.file, raw);
+    // 刷新预览：编辑后可能新增/改动图片引用，重新内联相对图片
+    const preview = await inlineRelativeImages(raw, d.file);
+    deliverablePreviews.value = { ...deliverablePreviews.value, [dkey(stageId, key)]: preview };
     deliverableEditing.value = false;
   } catch (e) { console.error('Save deliverable failed:', e); }
 };
@@ -1747,13 +1834,37 @@ const selectPrototypeFile = async (fileName) => {
 };
 
 const openInBrowser = async () => {
+  // 走本地静态服务而非 file://，否则原型页 fetch('data/*.json') 会被浏览器拦截、数据空白
   try {
     const file = selectedFile.value || (prototypeFiles.value[0]?.name);
-    if (file) {
+    if (!file) return;
+    const result = await window.api.hermes.prototypeUrl(props.slug, file);
+    if (result && result.success) {
+      await window.api.shell.openExternal(result.url);
+    } else {
+      // 本地服务不可用时退回 file://
       await window.api.hermes.openInBrowser(props.slug, `prototype/${file}`);
     }
   } catch (e) {
     console.error('Open in browser failed:', e);
+  }
+};
+
+// 发布本地服务：把本地 http 服务指向本项目原型目录，并用默认浏览器打开
+const publishLocal = async () => {
+  try {
+    const file = selectedFile.value || (prototypeFiles.value[0]?.name) || 'index.html';
+    const result = await window.api.hermes.prototypeUrl(props.slug, file);
+    if (result && result.success) {
+      await window.api.shell.openExternal(result.url);
+      showToast(`已发布并在浏览器打开：${result.url}`, 'success');
+    } else {
+      showToast(`发布失败：${(result && result.error) || '未知错误'}`, 'error');
+      console.error('Publish local failed:', result && result.error);
+    }
+  } catch (e) {
+    showToast(`发布失败：${e.message || e}`, 'error');
+    console.error('Publish local failed:', e);
   }
 };
 
@@ -1816,8 +1927,16 @@ const regeneratePrototype = async () => {
 // --- Export functions ---
 const exportZip = async () => {
   try {
-    await window.api.hermes.exportZip(props.slug);
+    const result = await window.api.hermes.exportZip(props.slug);
+    if (result && result.success) {
+      showToast(`已导出：${result.path}`, 'success');
+    } else if (result && result.canceled) {
+      // 用户取消，不提示
+    } else {
+      showToast(`导出失败：${(result && result.error) || '未知错误'}`, 'error');
+    }
   } catch (e) {
+    showToast(`导出失败：${e.message || e}`, 'error');
     console.error('Export zip failed:', e);
   }
 };

@@ -26,7 +26,23 @@
             :class="isHomeRoute ? 'nav-link--active' : ''"
           >
             <i class="fa-solid fa-table-columns text-[11px]"></i>
-            <span>工作台</span>
+            <span>FDE 工作台</span>
+          </RouterLink>
+          <RouterLink
+            to="/project-spec"
+            class="nav-link"
+            :class="isProjectSpecRoute ? 'nav-link--active' : ''"
+          >
+            <i class="fa-solid fa-clipboard-list text-[11px]"></i>
+            <span>FDE 项目规范</span>
+          </RouterLink>
+          <RouterLink
+            to="/training"
+            class="nav-link"
+            :class="isTrainingRoute ? 'nav-link--active' : ''"
+          >
+            <i class="fa-solid fa-graduation-cap text-[11px]"></i>
+            <span>FDE 培训教程</span>
           </RouterLink>
           <RouterLink
             to="/chat"
@@ -153,6 +169,8 @@ const engineTitle = computed(() =>
 );
 
 const isHomeRoute = computed(() => route.path === '/');
+const isProjectSpecRoute = computed(() => route.path === '/project-spec');
+const isTrainingRoute = computed(() => route.path === '/training');
 const isChatRoute = computed(() => route.path === '/chat');
 const isProjectsRoute = computed(() => route.path.startsWith('/projects'));
 const isKnowledgeRoute = computed(() => route.path === '/knowledge');

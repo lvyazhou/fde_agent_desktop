@@ -135,7 +135,8 @@ const props = defineProps({
   deliverables: { type: Array, required: true },   // [{ key, name, short, icon, hint }]
   selected: { type: String, required: true },
   statusMap: { type: Object, default: () => ({}) }, // { key: 'ready' | 'empty' }
-  content: { type: String, default: '' },           // 当前选中交付物的 markdown
+  content: { type: String, default: '' },           // 当前选中交付物的 markdown（原文，供编辑/保存）
+  previewContent: { type: String, default: '' },     // 预览用 markdown（相对图片已内联为 data URI）
   busy: { type: Boolean, default: false },
   editing: { type: Boolean, default: false },
 });
@@ -143,7 +144,10 @@ const props = defineProps({
 defineEmits(['select', 'generate', 'toggle-edit', 'export-md', 'update-content', 'save']);
 
 const activeDeliverable = computed(() => props.deliverables.find((d) => d.key === props.selected) || null);
-const rendered = computed(() => (props.content ? marked(props.content, { breaks: true, gfm: true }) : ''));
+const rendered = computed(() => {
+  const md = props.previewContent || props.content;
+  return md ? marked(md, { breaks: true, gfm: true }) : '';
+});
 </script>
 
 <style scoped>

@@ -34,6 +34,8 @@ const validInvokeChannels = new Set([
   // New: 12 features
   'hermes:list-models',
   'hermes:set-model',
+  'hermes:read-config-model',
+  'hermes:set-config-model',
   'hermes:list-sessions',
   'hermes:fork-session',
   'hermes:permission-respond',
@@ -133,6 +135,7 @@ contextBridge.exposeInMainWorld('api', {
     saveRecording(slug, audioBase64, ext) { return invoke('hermes:save-recording', { slug, audioBase64, ext }); },
     cancel(slug) { return invoke('hermes:cancel', slug); },
     readFile(slug, relativePath) { return invoke('hermes:read-file', { slug, relativePath }); },
+    readFileDataUri(slug, relativePath) { return invoke('hermes:read-file-data-uri', { slug, relativePath }); },
     writeFile(slug, relativePath, content) { return invoke('hermes:write-file', { slug, relativePath, content }); },
     listFiles(slug, dir) { return invoke('hermes:list-files', { slug, dir }); },
     prototypeUrl(slug, file) { return invoke('hermes:prototype-url', { slug, file }); },
@@ -148,6 +151,8 @@ contextBridge.exposeInMainWorld('api', {
     // New: 12 features
     listModels() { return invoke('hermes:list-models'); },
     setModel(slug, modelId) { return invoke('hermes:set-model', { slug, modelId }); },
+    readConfigModel() { return invoke('hermes:read-config-model'); },
+    setConfigModel(modelId) { return invoke('hermes:set-config-model', { modelId }); },
     listSessions(cursor, cwd) { return invoke('hermes:list-sessions', { cursor, cwd }); },
     forkSession(slug) { return invoke('hermes:fork-session', { slug }); },
     respondPermission(requestId, result) { return invoke('hermes:permission-respond', { requestId, result }); },
