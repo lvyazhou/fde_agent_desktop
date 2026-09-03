@@ -1,6 +1,10 @@
 # Hermes ACP 默认配置
 # 该文件会在首次启动时自动复制到 ~/.product-lobster/config.yaml
 # 修改后需要重启应用生效
+#
+# 首启向导 / 设置页保存 API Key 时,会自动改写下面的 api_key、base_url、
+# model.default 和 custom_providers[].models —— 换任意 OpenAI 兼容网关(360 /
+# OpenAI 官方 / DeepSeek 官方 / 自建代理)都由向导填写,无需手动改本文件。
 
 model:
   provider: custom
@@ -10,8 +14,10 @@ model:
 custom_providers:
   - name: "360ai"
     base_url: https://api.360.cn/v1
+    # key_env: 兜底 —— 即便向导没能改写下面的 api_key,也会从 .env 的 OPENAI_API_KEY 读。
+    key_env: OPENAI_API_KEY
     api_key: your-api-key-here
-    # 顶栏下拉框可选模型。想加/删直接改这里。
+    # 顶栏下拉框可选模型(向导保存时会按所选网关收敛为实际填写的模型)。
     models:
       - anthropic/claude-opus-4.8
       - anthropic/claude-opus-5

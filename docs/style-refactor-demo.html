@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>样式重构预览 · FDE产品设计</title>
+<style>
+/* ============================================================
+   重构后主题 Token —— 统一蓝色体系（映射到 tailwind.config.js）
+   ============================================================ */
+:root{
+  /* 品牌蓝：主色 / 深色 / 浅底 */
+  --primary:        #2563eb;   /* blue-600  主操作/激活 */
+  --primary-dark:   #1d4ed8;   /* blue-700  hover/按下 */
+  --primary-soft:   #eff4ff;   /* 极浅蓝    激活底/标签底 */
+  --primary-ring:   rgba(37,99,235,.18);
+
+  /* 中性层 */
+  --bg:             #f4f7fb;   /* 页面底：冷调浅灰蓝 */
+  --surface:        #ffffff;   /* 卡片实底 */
+  --panel:          #eef2f8;   /* 次级面板 */
+  --border:         #e4e9f2;   /* 统一边框 */
+  --text:           #0f172a;   /* 主文字 */
+  --text-soft:      #64748b;   /* 辅助文字 */
+  --text-faint:     #94a3b8;   /* 更弱 */
+
+  /* 语义状态色（蓝为主，绿只做“成功/在线”语义） */
+  --success:#059669; --success-soft:#e7f6f0;
+  --warning:#d97706; --warning-soft:#fdf3e7;
+  --danger: #dc2626; --danger-soft:#fdeaea;
+  --info:   #2563eb; --info-soft:#eff4ff;
+
+  /* 尺寸系统 */
+  --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px;
+  --shadow-card: 0 8px 24px rgba(15,23,42,.06);
+  --shadow-float:0 12px 32px rgba(37,99,235,.14);
+  --space:8px;                 /* 8px 网格基准 */
+  --font: Inter,'PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+}
+
+/* ===== 现状主题（对照用，绿配置+蓝手写混乱） ===== */
+.legacy{
+  --l-primary:#059669; --l-primary-dark:#047857;
+  --l-blue:#3b82f6;                 /* 页面里手写的蓝 */
+  --l-bg:#f4f7f6; --l-surface:#fff; --l-border:#eef2f1;
+  --l-text:#0f172a; --l-soft:#7b8b85;
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:#e8edf5;font-family:var(--font);color:var(--text);
+  padding:28px;line-height:1.5;-webkit-font-smoothing:antialiased}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--text-soft);font-size:13px;margin:0 0 22px}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+@media (max-width:1080px){.split{grid-template-columns:1fr}}
+
+.col-head{display:flex;align-items:center;gap:8px;margin:0 0 12px;font-size:13px;font-weight:600}
+.tag-old{background:#fde7e7;color:#c0392b;border-radius:999px;padding:2px 10px;font-size:11px}
+.tag-new{background:var(--primary-soft);color:var(--primary-dark);border-radius:999px;padding:2px 10px;font-size:11px}
+
+.frame{border:1px solid var(--border);border-radius:var(--r-xl);overflow:hidden;background:var(--surface);box-shadow:var(--shadow-card)}
+.legacy .frame{border-color:var(--l-border)}
+.frame-body{padding:16px}
+
+/* ---------- 顶栏（保留状态胶囊） ---------- */
+.topbar{height:52px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;border-bottom:1px solid var(--border);
+  background:linear-gradient(90deg,#fff, #fbfcfe)}
+.legacy .topbar{background:#fff;border-color:var(--l-border)}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;color:#fff;font-size:13px}
+.new .logo{background:linear-gradient(135deg,var(--primary),var(--primary-dark))}
+.legacy .logo{background:var(--l-primary)}
+.brand b{font-size:13px}
+.brand small{display:block;font-size:10px;color:var(--text-faint);margin-top:1px}
+.legacy .brand small{color:#a9b6b1}
+.nav{display:flex;gap:2px;margin-left:14px}
+.nav a{font-size:12px;padding:6px 11px;border-radius:8px;color:var(--text-soft);text-decoration:none;display:flex;align-items:center;gap:5px;transition:.15s}
+.new .nav a.active{color:var(--primary);background:var(--primary-soft);font-weight:600}
+.new .nav a:not(.active):hover{background:#f1f5fb;color:var(--text)}
+.legacy .nav a{color:#7b8b85}
+.legacy .nav a.active{color:var(--l-blue);border-bottom:2px solid var(--l-blue);border-radius:0} /* 现状：蓝下划线，跟绿logo打架 */
+
+/* 状态胶囊（保留） */
+.strip{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-soft)}
+.new .strip{background:#f5f8fd;border:1px solid var(--border);border-radius:999px;padding:4px 12px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot.g{background:var(--success)} .dot.b{background:var(--primary)}
+.legacy .dot.b{background:var(--l-primary)}
+.sep{width:1px;height:11px;background:var(--border)}
+.clock{font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace}
+.ver{font-family:ui-monospace,monospace;font-size:10px;background:var(--primary-soft);color:var(--primary-dark);padding:1px 7px;border-radius:6px}
+.legacy .ver{background:#eef2f1;color:#7b8b85}
+
+/* ---------- 色板 ---------- */
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.sw{width:56px}
+.sw i{display:block;height:40px;border-radius:8px;border:1px solid rgba(0,0,0,.05)}
+.sw span{display:block;font-size:9px;color:var(--text-soft);margin-top:4px;text-align:center;font-family:ui-monospace,monospace}
+
+/* ---------- 卡片 ---------- */
+.card{border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;background:var(--surface);transition:.18s}
+.new .biz-card{background:linear-gradient(120deg,#fbfdff, #fff);}
+.new .biz-card:hover{transform:translateY(-3px);border-color:var(--primary);box-shadow:var(--shadow-float)}
+.legacy .card{border-color:var(--l-border)}
+.card h4{margin:0 0 6px;font-size:14px}
+.card p{margin:0;font-size:12px;color:var(--text-soft)}
+.card-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+
+/* ---------- 按钮 ---------- */
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{font-size:12px;padding:7px 14px;border-radius:8px;border:1px solid transparent;cursor:pointer;font-family:inherit;transition:.15s}
+.new .btn-primary{background:var(--primary);color:#fff}
+.new .btn-primary:hover{background:var(--primary-dark)}
+.new .btn-ghost{background:#fff;border-color:var(--border);color:var(--text)}
+.new .btn-ghost:hover{border-color:var(--primary);color:var(--primary)}
+.new .btn-danger{background:var(--danger-soft);color:var(--danger);border-color:transparent}
+.legacy .btn-primary{background:var(--l-primary);color:#fff}       /* 绿按钮 */
+.legacy .btn-blue{background:var(--l-blue);color:#fff}             /* 又有蓝按钮 → 主色不统一 */
+.legacy .btn-ghost{background:#fff;border:1px solid var(--l-border);color:#334}
+
+/* ---------- 标签 ---------- */
+.chip{font-size:11px;padding:3px 10px;border-radius:6px;display:inline-flex;align-items:center;gap:5px}
+.chip.ok{background:var(--success-soft);color:var(--success)}
+.chip.warn{background:var(--warning-soft);color:var(--warning)}
+.chip.err{background:var(--danger-soft);color:var(--danger)}
+.chip.info{background:var(--info-soft);color:var(--info)}
+.legacy .chip.info{background:#e7f6ef;color:var(--l-primary)} /* 现状：info也用绿，与danger无层次 */
+
+/* ---------- 表格 ---------- */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-weight:600;color:var(--text-soft);padding:9px 10px;border-bottom:1px solid var(--border);background:#f7f9fc}
+.legacy th{background:#f4f7f6;color:#7b8b85;border-color:var(--l-border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border)}
+.legacy td{border-color:var(--l-border)}
+.new tbody tr:hover{background:var(--primary-soft)}
+.num{font-variant-numeric:tabular-nums;font-family:ui-monospace,monospace}
+
+.note{font-size:11px;color:var(--text-faint);margin-top:8px;padding-left:14px;position:relative}
+.note::before{content:'';position:absolute;left:0;top:6px;width:6px;height:6px;border-radius:50%;background:var(--text-faint)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-size:12px;color:var(--text-soft);margin:20px 0 4px}
+.legend b{color:var(--text)}
+.section-t{font-size:12px;font-weight:600;color:var(--text-soft);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<h1>样式重构预览 · 统一蓝色主题</h1>
+<p class="sub">左「现状」= 配置绿 + 页面手写蓝的混乱状态；右「重构后」= 统一蓝色 token 体系（保留顶栏状态胶囊）。同一批组件左右对照。</p>
+
+<div class="legend">
+  <span><b>重构 3 件事：</b></span>
+  <span>① 主色统一 <b>#2563eb 蓝</b>，清掉散落的 bg-blue-500 / 绿按钮混用</span>
+  <span>② 语义色分层：绿=成功、橙=警告、红=危险、蓝=进行中/主操作</span>
+  <span>③ 卡片/圆角/间距/表头统一 token，8px 网格</span>
+</div>
+
+<div class="split">
+  <!-- ============ 现状 ============ -->
+  <div class="legacy">
+    <div class="col-head"><span class="tag-old">现状 BEFORE</span> 绿配置 · 蓝手写 · 语义色混用</div>
+
+    <div class="frame">
+      <div class="topbar">
+        <div style="display:flex;align-items:center">
+          <div class="brand"><div class="logo">✦</div><b>FDE产品设计<small>五阶段作战工作台</small></b></div>
+          <nav class="nav"><a class="active">工作台</a><a>项目</a><a>知识库</a><a>技能</a></nav>
+        </div>
+        <div class="strip">
+          <span class="dot g"></span>系统运行中<span class="sep"></span>
+          <span class="dot b"></span>AI 引擎<span class="sep"></span>
+          <span class="clock">14:32:07</span><span class="ver">v1.2.0</span>
+        </div>
+      </div>
+      <div class="frame-body">
+        <div class="section-t">配色（绿 logo，蓝激活，主色打架）</div>
+        <div class="swatches">
+          <div class="sw"><i style="background:#059669"></i><span>#059669</span></div>
+          <div class="sw"><i style="background:#3b82f6"></i><span>#3b82f6</span></div>
+          <div class="sw"><i style="background:#f4f7f6"></i><span>#f4f7f6</span></div>
+          <div class="sw"><i style="background:#7b8b85"></i><span>#7b8b85</span></div>
+        </div>
+
+        <div class="section-t">按钮（绿蓝混用）</div>
+        <div class="btns">
+          <button class="btn btn-primary">主操作(绿)</button>
+          <button class="btn btn-blue">又一个主操作(蓝)</button>
+          <button class="btn btn-ghost">次操作</button>
+        </div>
+
+        <div class="section-t">卡片</div>
+        <div class="card">
+          <h4>阶段一 · 需求洞察</h4>
+          <p>3 个任务进行中 · 负责人 张工</p>
+          <div class="card-row"><span class="chip info">进行中</span><button class="btn btn-primary" style="padding:5px 12px">查看</button></div>
+        </div>
+
+        <div class="section-t">状态标签（info 也用绿，跟成功撞色）</div>
+        <div class="btns">
+          <span class="chip info">进行中</span><span class="chip ok">已完成</span>
+          <span class="chip warn">待处理</span><span class="chip err">异常</span>
+        </div>
+
+        <div class="section-t">表格</div>
+        <table><thead><tr><th>项目</th><th>阶段</th><th class="num">进度</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td>某三甲医院 AI 平台</td><td>阶段三</td><td class="num">62%</td><td><span class="chip info">进行中</span></td></tr>
+          <tr><td>县域医共体项目</td><td>阶段一</td><td class="num">18%</td><td><span class="chip warn">待处理</span></td></tr>
+        </tbody></table>
+      </div>
+    </div>
+    <div class="note">主色配的是绿，实际界面在用蓝，logo 绿、激活蓝、按钮两种色，视觉不统一。</div>
+    <div class="note">info 状态复用了品牌绿，和“已完成”的绿分不出层次。</div>
+  </div>
+
+  <!-- ============ 重构后 ============ -->
+  <div class="new">
+    <div class="col-head"><span class="tag-new">重构后 AFTER</span> 统一蓝 · 语义分层 · token 化</div>
+
+    <div class="frame">
+      <div class="topbar">
+        <div style="display:flex;align-items:center">
+          <div class="brand"><div class="logo">✦</div><b>FDE产品设计<small>五阶段作战工作台</small></b></div>
+          <nav class="nav"><a class="active">工作台</a><a>项目</a><a>知识库</a><a>技能</a></nav>
+        </div>
+        <div class="strip">
+          <span class="dot g"></span>系统运行中<span class="sep"></span>
+          <span class="dot b"></span>AI 引擎<span class="sep"></span>
+          <span class="clock">14:32:07</span><span class="ver">v1.2.0</span>
+        </div>
+      </div>
+      <div class="frame-body">
+        <div class="section-t">配色（一套蓝品牌 + 中性 + 语义）</div>
+        <div class="swatches">
+          <div class="sw"><i style="background:var(--primary)"></i><span>primary</span></div>
+          <div class="sw"><i style="background:var(--primary-dark)"></i><span>dark</span></div>
+          <div class="sw"><i style="background:var(--primary-soft)"></i><span>soft</span></div>
+          <div class="sw"><i style="background:var(--bg)"></i><span>bg</span></div>
+          <div class="sw"><i style="background:var(--success)"></i><span>success</span></div>
+          <div class="sw"><i style="background:var(--warning)"></i><span>warning</span></div>
+          <div class="sw"><i style="background:var(--danger)"></i><span>danger</span></div>
+        </div>
+
+        <div class="section-t">按钮（一页一个 Primary）</div>
+        <div class="btns">
+          <button class="btn btn-primary">主操作</button>
+          <button class="btn btn-ghost">次操作</button>
+          <button class="btn btn-danger">删除</button>
+        </div>
+
+        <div class="section-t">卡片（可点击卡片 hover 上浮 + 蓝边）</div>
+        <div class="card biz-card">
+          <h4>阶段一 · 需求洞察</h4>
+          <p>3 个任务进行中 · 负责人 张工</p>
+          <div class="card-row"><span class="chip info">进行中</span><button class="btn btn-primary" style="padding:5px 12px">查看</button></div>
+        </div>
+
+        <div class="section-t">状态标签（蓝/绿/橙/红各司其职）</div>
+        <div class="btns">
+          <span class="chip info">进行中</span><span class="chip ok">已完成</span>
+          <span class="chip warn">待处理</span><span class="chip err">异常</span>
+        </div>
+
+        <div class="section-t">表格（统一表头 + hover 蓝底 + tabular-nums）</div>
+        <table><thead><tr><th>项目</th><th>阶段</th><th class="num">进度</th><th>状态</th></tr></thead>
+        <tbody>
+          <tr><td>某三甲医院 AI 平台</td><td>阶段三</td><td class="num">62%</td><td><span class="chip info">进行中</span></td></tr>
+          <tr><td>县域医共体项目</td><td>阶段一</td><td class="num">18%</td><td><span class="chip warn">待处理</span></td></tr>
+        </tbody></table>
+      </div>
+    </div>
+    <div class="note">logo、激活态、主按钮、表格 hover 全部落在同一支蓝色上。</div>
+    <div class="note">状态胶囊保留，只是纳入统一 token（边框/圆角/字号），不再是孤立样式。</div>
+  </div>
+</div>
+
+</body>
+</html>

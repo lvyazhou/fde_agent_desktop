@@ -41,6 +41,14 @@
               class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
             />
           </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">模型 <span class="text-slate-400 font-normal">(可选)</span></label>
+            <input
+              v-model="model"
+              placeholder="deepseek/deepseek-v4-pro 或 gpt-4o（按网关支持的名称填写）"
+              class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+            />
+          </div>
           <div class="flex items-center gap-3 pt-2">
             <button
               @click="saveEnv"
@@ -133,6 +141,7 @@ import { ref, onMounted } from 'vue';
 
 const apiKey = ref('');
 const baseUrl = ref('');
+const model = ref('');
 const showApiKey = ref(false);
 const hermesHome = ref('~/.product-lobster');
 const projectCount = ref(0);
@@ -184,6 +193,8 @@ function parseEnv(content) {
       apiKey.value = val;
     } else if (key === 'OPENAI_BASE_URL' || key === 'BASE_URL' || key === 'API_BASE_URL') {
       baseUrl.value = val;
+    } else if (key === 'HERMES_MODEL' || key === 'MODEL' || key === 'OPENAI_MODEL') {
+      model.value = val;
     }
   }
 }
@@ -200,6 +211,9 @@ function buildEnv() {
   }
   if (baseUrl.value.trim()) {
     lines.push(`OPENAI_BASE_URL=${baseUrl.value.trim()}`);
+  }
+  if (model.value.trim()) {
+    lines.push(`HERMES_MODEL=${model.value.trim()}`);
   }
   return lines.join('\n') + '\n';
 }
@@ -220,6 +234,8 @@ async function saveEnv() {
     const content = buildEnv();
     const result = await window.api.hermes.writeEnv(content);
     if (result && result.success) {
+      // 同步进 config.yaml 的 custom_providers[].api_key / base_url / 默认模型（hermes 选模型凭据与清单的事实来源）
+      await window.api.hermes.syncProviderKey(apiKey.value.trim(), baseUrl.value.trim(), model.value.trim());
       // Restart hermes to pick up new key
       await window.api.hermes.restart();
       saveStatus.value = 'success';

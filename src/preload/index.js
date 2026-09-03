@@ -30,6 +30,7 @@ const validInvokeChannels = new Set([
   'hermes:open-in-browser',
   'hermes:read-env',
   'hermes:write-env',
+  'hermes:sync-provider-key',
   'hermes:restart',
   // New: 12 features
   'hermes:list-models',
@@ -147,6 +148,7 @@ contextBridge.exposeInMainWorld('api', {
     openInBrowser(slug, file) { return invoke('hermes:open-in-browser', { slug, file }); },
     readEnv() { return invoke('hermes:read-env'); },
     writeEnv(content) { return invoke('hermes:write-env', { content }); },
+    syncProviderKey(apiKey, baseUrl, model) { return invoke('hermes:sync-provider-key', { apiKey, baseUrl, model }); },
     restart() { return invoke('hermes:restart'); },
     // New: 12 features
     listModels() { return invoke('hermes:list-models'); },

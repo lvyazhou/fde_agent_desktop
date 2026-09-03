@@ -11,7 +11,7 @@
           </div>
           <div class="flex flex-col leading-none">
             <span class="font-semibold text-slate-800 text-[13px] tracking-tight">FDE产品设计</span>
-            <span class="text-[10px] text-slate-400 mt-0.5 hidden sm:inline tracking-wide">五阶段作战工作台</span>
+            <span class="brand-subtitle text-[10px] text-slate-400 mt-0.5 tracking-wide">五阶段作战工作台</span>
           </div>
         </div>
 

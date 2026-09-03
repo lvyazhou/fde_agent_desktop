@@ -140,6 +140,15 @@
             />
             <p class="text-[11px] text-slate-400 mb-4">兼容 OpenAI 格式的接口地址。以 <code class="bg-slate-100 px-1 rounded">sk-ant-</code> 开头会按 Anthropic 处理。</p>
 
+            <label class="block text-[12px] font-medium text-slate-600 mb-1.5">模型</label>
+            <input
+              v-model="model"
+              type="text"
+              placeholder="deepseek/deepseek-v4-pro 或 gpt-4o"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 mb-2"
+            />
+            <p class="text-[11px] text-slate-400 mb-4">测试连接和默认对话使用的模型名,按你所选网关支持的名称填写。</p>
+
             <!-- 测试结果 -->
             <div v-if="testResult" class="mb-4 p-3 rounded-xl text-[12px] flex items-start gap-2"
                  :class="testResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
@@ -155,7 +164,7 @@
               <div class="flex items-center gap-2">
                 <button
                   @click="testConn"
-                  :disabled="!apiKey.trim() || testing"
+                  :disabled="!apiKey.trim() || !model.trim() || testing"
                   class="text-[13px] px-4 py-2.5 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40"
                 >
                   <i class="fa-solid" :class="testing ? 'fa-spinner fa-spin' : 'fa-plug'"></i>
@@ -309,6 +318,7 @@ const goNextFromCheck = () => {
 // --- 配置 Key ---
 const apiKey = ref('');
 const baseUrl = ref('https://api.360.cn/v1');
+const model = ref('');
 const testing = ref(false);
 const saving = ref(false);
 const testResult = ref(null);
@@ -317,7 +327,7 @@ const testConn = async () => {
   testing.value = true;
   testResult.value = null;
   try {
-    testResult.value = await window.api.env.testConnection({ apiKey: apiKey.value.trim(), baseUrl: baseUrl.value.trim() });
+    testResult.value = await window.api.env.testConnection({ apiKey: apiKey.value.trim(), baseUrl: baseUrl.value.trim(), model: model.value.trim() });
   } catch (e) {
     testResult.value = { ok: false, error: e.message || '测试失败' };
   } finally {
@@ -334,7 +344,12 @@ const saveAndFinish = async () => {
     if (key.startsWith('sk-ant-')) lines.push(`ANTHROPIC_API_KEY=${key}`);
     else lines.push(`OPENAI_API_KEY=${key}`);
     if (baseUrl.value.trim()) lines.push(`OPENAI_BASE_URL=${baseUrl.value.trim()}`);
+    if (model.value.trim()) lines.push(`HERMES_MODEL=${model.value.trim()}`);
     await window.api.hermes.writeEnv(lines.join('\n') + '\n');
+    // 同步写进 config.yaml 的 custom_providers[].api_key / base_url / 默认模型 ——
+    // hermes 选模型的事实来源是 config.yaml,只写 .env 不生效(占位符会一直被用),
+    // 且模型清单要跟着网关走,否则顶栏下拉列的是别的网关不认的模型名。
+    await window.api.hermes.syncProviderKey(key, baseUrl.value.trim(), model.value.trim());
     await window.api.hermes.restart();
     finishToApp();
   } catch (e) {

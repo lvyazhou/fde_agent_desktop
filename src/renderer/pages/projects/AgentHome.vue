@@ -586,6 +586,10 @@ const handleChangeModel = async (modelId) => {
     const result = await window.api.hermes.setModel(currentSlug.value, modelId);
     if (!result?.success) {
       console.warn('Set model returned:', result);
+    } else if (result.restarted) {
+      // 引擎已重启、旧 sessionId 已清空：重新加载当前项目，用新模型重建会话
+      const slug = currentSlug.value;
+      try { await window.api.hermes.loadProject(slug); } catch (_) { /* 下次发消息也会自动重建 */ }
     }
   } catch (e) {
     console.error('Set model failed:', e);

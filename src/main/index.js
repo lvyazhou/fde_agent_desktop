@@ -100,6 +100,66 @@ function writeConfigModel(modelId) {
   }
 }
 
+// 把向导/设置里填的 API Key 同步写进 config.yaml 的 custom_providers[].api_key。
+// 背景：hermes 选模型的事实来源是 config.yaml；custom_providers 条目的凭据取自
+// 该条目内联的 api_key（或它 key_env 指向的环境变量）。向导只写 .env 的
+// OPENAI_API_KEY,不会更新 config.yaml,于是别人机器上首装的占位符
+// your-api-key-here 一直生效 → 填了 key 也不生效。这里在保存时把 key 同步进去。
+// 用行级正则替换,保留注释/格式,不引入 YAML 库。
+function writeConfigProviderKey(apiKey, baseUrl, model) {
+  try {
+    const key = String(apiKey || '').trim();
+    if (!key) return false;
+    ensureDirs();
+    if (!fs.existsSync(CONFIG_YAML_PATH)) return false;
+    let content = fs.readFileSync(CONFIG_YAML_PATH, 'utf-8');
+
+    // 替换 custom_providers 里每个条目的 api_key: <任意值>（含占位符）。
+    if (/^[ \t]+api_key:[ \t]*.+$/m.test(content)) {
+      content = content.replace(
+        /^([ \t]+)api_key:[ \t]*.+$/gm,
+        (_full, indent) => `${indent}api_key: ${key}`
+      );
+    }
+
+    // base_url 同步(可选):替换 model.base_url 与 custom_providers[].base_url。
+    const url = String(baseUrl || '').trim();
+    if (url && /^[ \t]+base_url:[ \t]*.+$/m.test(content)) {
+      content = content.replace(
+        /^([ \t]+)base_url:[ \t]*.+$/gm,
+        (_full, indent) => `${indent}base_url: ${url}`
+      );
+    }
+
+    // model 同步(可选):换网关后 360 专用模型名不再适用,用用户填的模型统一:
+    //   ① model.default 改成该模型;② custom_providers[].models 列表收敛为仅此一项,
+    //   保证顶栏下拉框至少列出这个网关能用的模型。
+    const mdl = String(model || '').trim();
+    if (mdl) {
+      // ① model 块内的 default:
+      if (/^[ \t]+default:[ \t]*.+$/m.test(content)) {
+        content = content.replace(
+          /^([ \t]+)default:[ \t]*.+$/m,
+          (_full, indent) => `${indent}default: ${mdl}`
+        );
+      }
+      // ② custom_providers[].models: 列表 —— 定位 "models:" 行,把其后连续的
+      //    "- xxx" 缩进列表项整体替换为单行 "- <model>"(保留 models: 的缩进层级)。
+      //    注意 config.yaml 可能是 CRLF,故用 \r?\n 兼容 Windows 换行。
+      content = content.replace(
+        /^([ \t]+)models:[ \t]*\r?\n(?:[ \t]+-[ \t]*.+\r?\n?)+/m,
+        (_full, indent) => `${indent}models:\n${indent}  - ${mdl}\n`
+      );
+    }
+
+    fs.writeFileSync(CONFIG_YAML_PATH, content, 'utf-8');
+    return true;
+  } catch (e) {
+    console.warn('[main] writeConfigProviderKey failed:', e.message);
+    return false;
+  }
+}
+
 // 从 session/new 的响应里抓模型列表 + 当前模型。
 // ACP 的 SessionModelState 结构：{ available_models: [{model_id,name,description}], current_model_id }
 // 注意：字段可能是 snake_case（availableModels/available_models、currentModelId/current_model_id 两种都兼容）。
@@ -380,6 +440,16 @@ function startHermes() {
 async function initializeHermes() {
   updateSplash(30, '正在初始化设计引擎...');
 
+  // acp 可能在进程刚 spawn 后、或异常 exit 后为 null；等待最多 ~3s 让它就绪
+  for (let i = 0; i < 30 && !acp; i++) {
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  if (!acp) {
+    hermesReady = false;
+    console.error('[main] initializeHermes: acp 未就绪，跳过 initialize');
+    return null;
+  }
+
   try {
     const result = await acp.request('initialize', {
       protocolVersion: 1,
@@ -393,9 +463,11 @@ async function initializeHermes() {
 
     // Warmup：模型列表来自 session/new（initialize 不含），这里建一个临时会话把列表抓下来，
     // 让欢迎页（尚未选项目、无活动会话）也能立即拿到可选模型。fire-and-forget，不阻塞。
-    acp.request('session/new', { cwd: PRODUCT_LOBSTER_HOME, mcpServers: [] })
-      .then((s) => { captureModelsFromSession(s); })
-      .catch(() => { /* ignore warmup failure */ });
+    if (acp) {
+      acp.request('session/new', { cwd: PRODUCT_LOBSTER_HOME, mcpServers: [] })
+        .then((s) => { captureModelsFromSession(s); })
+        .catch(() => { /* ignore warmup failure */ });
+    }
     return result;
   } catch (err) {
     console.error('[main] hermes-acp initialize failed:', err.message);
@@ -406,12 +478,17 @@ async function initializeHermes() {
 }
 
 async function stopHermes() {
-  if (!acp) return;
   console.log('[main] Stopping hermes-acp...');
-  try {
-    await acp.shutdown();
-  } catch (err) {
-    console.error('[main] Error shutting down hermes-acp:', err.message);
+  if (acp) {
+    try {
+      await acp.shutdown();
+    } catch (err) {
+      console.error('[main] Error shutting down hermes-acp:', err.message);
+    }
+  }
+  // 兜底：即使 acp 为 null，也确保子进程被杀掉，避免残留僵尸进程与新进程抢 stdio
+  if (hermesProcess) {
+    try { hermesProcess.kill('SIGKILL'); } catch (_) { /* ignore */ }
   }
   acp = null;
   hermesProcess = null;
@@ -653,6 +730,15 @@ ipcMain.handle('hermes:write-env', async (_event, { content }) => {
     ensureDirs();
     fs.writeFileSync(ENV_FILE_PATH, content, 'utf-8');
     return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('hermes:sync-provider-key', async (_event, { apiKey, baseUrl, model } = {}) => {
+  try {
+    const ok = writeConfigProviderKey(apiKey, baseUrl, model);
+    return { success: ok };
   } catch (e) {
     return { success: false, error: e.message };
   }
@@ -1297,6 +1383,7 @@ ipcMain.handle('hermes:set-model', async (_event, { slug, modelId }) => {
     // 重启 hermes 让新模型生效（provider=custom 路由到 360）
     await stopHermes();
     startHermes();
+    await new Promise((r) => setTimeout(r, 300)); // 给新进程一点启动时间
     await initializeHermes();
     // 重启后所有旧 sessionId 在新进程里已失效：清掉每个项目的 sessionId，
     // 下次发消息时 hermes:prompt 会自动 session/new 重建（带项目上下文恢复）。
@@ -1665,6 +1752,7 @@ ipcMain.handle('env:test-connection', async (_event, params) => {
   const baseUrl = (params && params.baseUrl) || cfg.baseUrl;
   const model = (params && params.model) || cfg.model;
   if (!apiKey) return { ok: false, error: '未填写 API Key' };
+  if (!model) return { ok: false, error: '未指定测试模型(请填写该网关支持的模型名)' };
   const r = await postChatCompletion({
     apiKey, baseUrl, model,
     messages: [{ role: 'user', content: 'ping' }],
