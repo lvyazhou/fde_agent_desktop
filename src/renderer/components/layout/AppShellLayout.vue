@@ -3,7 +3,7 @@
     <!-- Top nav bar (52px, draggable) -->
     <header class="app-header h-[52px] flex items-center justify-between pl-4 pr-2 shrink-0 select-none drag-region relative z-20">
       <!-- Left: Logo + brand + nav links -->
-      <div class="flex items-center gap-6 min-w-0">
+      <div class="flex items-center gap-4 min-w-0 lg:gap-6">
         <!-- Logo + brand -->
         <div class="flex items-center gap-3 shrink-0">
           <div class="brand-logo w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
@@ -18,89 +18,97 @@
         <!-- Divider -->
         <div class="h-5 w-px bg-slate-200/70 shrink-0 hidden md:block"></div>
 
-        <!-- Nav links -->
-        <nav class="flex items-center gap-1 no-drag">
+        <!-- Nav links —— 优先级分层:窄屏按 p2 → p1 顺序收起文字,仅留图标+tooltip,永不换行 -->
+        <nav class="nav-bar no-drag">
           <RouterLink
             to="/"
             class="nav-link"
             :class="isHomeRoute ? 'nav-link--active' : ''"
+            title="FDE 工作台"
           >
             <i class="fa-solid fa-table-columns text-[11px]"></i>
-            <span>FDE 工作台</span>
+            <span class="nav-label nav-p0">FDE 工作台</span>
           </RouterLink>
           <RouterLink
             to="/project-spec"
             class="nav-link"
             :class="isProjectSpecRoute ? 'nav-link--active' : ''"
+            title="FDE 项目规范"
           >
             <i class="fa-solid fa-clipboard-list text-[11px]"></i>
-            <span>FDE 项目规范</span>
+            <span class="nav-label nav-p2">FDE 项目规范</span>
           </RouterLink>
           <RouterLink
             to="/training"
             class="nav-link"
             :class="isTrainingRoute ? 'nav-link--active' : ''"
+            title="FDE 培训教程"
           >
             <i class="fa-solid fa-graduation-cap text-[11px]"></i>
-            <span>FDE 培训教程</span>
+            <span class="nav-label nav-p2">FDE 培训教程</span>
           </RouterLink>
           <RouterLink
             to="/chat"
             class="nav-link"
             :class="isChatRoute ? 'nav-link--active' : ''"
+            title="智能对话"
           >
             <i class="fa-solid fa-comments text-[11px]"></i>
-            <span>智能对话</span>
+            <span class="nav-label nav-p1">智能对话</span>
           </RouterLink>
           <RouterLink
             to="/projects"
             class="nav-link"
             :class="isProjectsRoute ? 'nav-link--active' : ''"
+            title="项目列表"
           >
             <i class="fa-solid fa-folder-open text-[11px]"></i>
-            <span>项目列表</span>
+            <span class="nav-label nav-p1">项目列表</span>
           </RouterLink>
           <RouterLink
             to="/knowledge"
             class="nav-link"
             :class="isKnowledgeRoute ? 'nav-link--active' : ''"
+            title="知识库"
           >
             <i class="fa-solid fa-book-open text-[11px]"></i>
-            <span>知识库</span>
+            <span class="nav-label nav-p2">知识库</span>
           </RouterLink>
           <RouterLink
             to="/skills"
             class="nav-link"
             :class="isSkillsRoute ? 'nav-link--active' : ''"
+            title="技能"
           >
             <i class="fa-solid fa-brain text-[11px]"></i>
-            <span>技能</span>
+            <span class="nav-label nav-p2">技能</span>
           </RouterLink>
           <RouterLink
             to="/settings"
             class="nav-link"
             :class="isSettingsRoute ? 'nav-link--active' : ''"
+            title="设置"
           >
             <i class="fa-solid fa-gear text-[11px]"></i>
-            <span>设置</span>
+            <span class="nav-label nav-p1">设置</span>
           </RouterLink>
         </nav>
       </div>
 
-      <!-- Right: status strip + license + window controls -->
-      <div class="flex items-center no-drag text-slate-600">
+      <!-- Right: status strip + license + window controls (fixed, never shrinks) -->
+      <div class="flex items-center no-drag text-slate-600 shrink-0">
         <!-- 状态指示条:系统运行 · AI 引擎 · 时钟 · 版本 -->
         <div class="status-strip">
-          <span class="status-item" title="系统运行中">
+          <span class="status-item status-sys" title="系统运行中">
             <span class="status-dot dot-green"></span>
             <span class="status-text">系统运行中</span>
           </span>
-          <span class="status-sep"></span>
+          <span class="status-sep status-sys-sep"></span>
           <span class="status-item" :title="engineTitle">
             <span class="status-dot" :class="engineDotCls"></span>
             <span class="status-text">{{ engineText }}</span>
           </span>
-          <span class="status-sep"></span>
+          <span class="status-sep status-clock-sep"></span>
           <span class="status-clock font-mono">{{ clock }}</span>
           <span class="version-pill font-mono">{{ appVersionShort }}</span>
         </div>
@@ -305,6 +313,15 @@ const closeWindow = () => {
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
+/* Nav bar: 单一容器,永不换行;弹性吸收,右侧固定 */
+.nav-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
 /* Nav links */
 .nav-link {
   display: inline-flex;
@@ -316,6 +333,8 @@ const closeWindow = () => {
   color: #64748b;
   position: relative;
   transition: color 0.2s ease, background 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .nav-link :deep(i),
 .nav-link i {
@@ -469,5 +488,37 @@ const closeWindow = () => {
 .win-btn--close:hover {
   background: #ef4444;
   color: #ffffff;
+}
+
+/* =====================================================================
+   Responsive topbar —— 分层降级,杜绝换行:
+   导航文字按 p0(核心) → p1 → p2(次要) 顺序,在窗口变窄时渐次收起为
+   纯图标(悬停 tooltip 的 title 已在模板里),状态条与品牌副标题同步精简。
+   ===================================================================== */
+@media (max-width: 1520px) {
+  /* 品牌副标题收起 */
+  .brand-subtitle { display: none; }
+  /* 状态条:"系统运行中 + 时钟" 收起,仅留 AI 引擎 + 版本 */
+  .status-sys, .status-sys-sep, .status-clock, .status-clock-sep { display: none; }
+  /* 次要导航(p2)收起文字 → 纯图标 */
+  .nav-p2 { display: none; }
+}
+
+@media (max-width: 1380px) {
+  /* 次级导航(p1)收起文字 → 纯图标 */
+  .nav-p1 { display: none; }
+}
+
+@media (max-width: 1180px) {
+  /* 授权徽章收窄 */
+  .license-chip { max-width: 110px; }
+}
+
+@media (max-width: 1080px) {
+  /* 核心(p0)也收起文字 → 全图标导航,单行稳定 */
+  .nav-p0 { display: none; }
+  .brand-logo { width: 30px; height: 30px; }
+  /* 状态条进一步紧凑:版本胶囊去掉 */
+  .version-pill { display: none; }
 }
 </style>

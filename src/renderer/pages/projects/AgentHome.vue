@@ -74,6 +74,7 @@ import { useRouter, useRoute } from 'vue-router';
 import SessionList from '@/components/agent/SessionList.vue';
 import ChatPanel from '@/components/agent/ChatPanel.vue';
 import InfoSidebar from '@/components/agent/InfoSidebar.vue';
+import { isMultimodalModel } from '@/composables/useChatComposer';
 
 const router = useRouter();
 const route = useRoute();
@@ -466,6 +467,15 @@ const handleSendWithAttachments = async (text, attachments) => {
   if (!text.trim() && (!attachments || attachments.length === 0)) return;
   if (isStreaming.value) return;
 
+  // 当前模型不支持多模态时，拦截带附件的发送并引导切换（避免卡死）。
+  if (attachments && attachments.length > 0 && !isMultimodalModel(currentModel.value)) {
+    const bare = String(currentModel.value || '').includes('/')
+      ? currentModel.value.split('/').pop()
+      : currentModel.value;
+    alert(`当前模型「${bare || '未知'}」不支持图片/文件解读。\n\n请点顶部模型下拉框切换到 Claude 等多模态模型后再发送。`);
+    return;
+  }
+
   // Immediately show UI feedback
   messages.value.push(createMessage('user', text, { attachments }));
   isStreaming.value = true;
@@ -499,7 +509,19 @@ const handleSendWithAttachments = async (text, attachments) => {
   window.api.hermes.saveMessage(currentSlug.value, { role: 'user', content: text, tab: 'requirement', timestamp: new Date().toISOString() });
 
   try {
-    await window.api.hermes.prompt(currentSlug.value, text, attachments);
+    // 附件对象来自 Vue reactive，元素是 Proxy，直接过 IPC 会报
+    // "An object could not be cloned"（structured clone 无法序列化 Proxy）。
+    // 先摊平成纯对象，只保留可序列化的原始字段。
+    const plainAttachments = Array.isArray(attachments)
+      ? attachments.map((a) => ({
+          type: a.type,
+          name: a.name,
+          media_type: a.media_type,
+          ...(typeof a.text === 'string' ? { text: a.text } : {}),
+          ...(a.data ? { data: a.data } : {}),
+        }))
+      : attachments;
+    await window.api.hermes.prompt(currentSlug.value, text, plainAttachments);
     // 延迟兜底：正常情况由 agent_message_end 事件结束
     setTimeout(() => {
       if (isStreaming.value) {

@@ -47,6 +47,22 @@ function blobToBase64(blob) {
   });
 }
 
+// 判断某个模型是否支持多模态（能读图片/文件）。360 网关模型无能力元数据，
+// 只能按型号名判断：claude 全系、gpt-4o/4.1/5、gemini、qwen-vl、内含 vision/vl 的都算。
+// 判不准时宁可放行（返回 true），避免误拦真能用的模型。
+const MULTIMODAL_RE = /claude|gpt-4o|gpt-4\.1|gpt-5|o[134]\b|gemini|vision|(^|[/\-])vl(-|$)|qwen-?vl|llava|pixtral|grok-.*vision/i;
+export function isMultimodalModel(modelId) {
+  const id = String(modelId || '').toLowerCase();
+  if (!id) return true; // 未知当前模型时不拦
+  // 已知的纯文本家族：明确判定不支持
+  if (/deepseek|minimax|(^|[/\-])glm|moonshot|kimi|qwen(?!-?vl)|yi-|abab/i.test(id)) {
+    // 但 deepseek/qwen 里若明确带 vl/vision 仍算多模态（上面的 RE 已覆盖）
+    return MULTIMODAL_RE.test(id);
+  }
+  return MULTIMODAL_RE.test(id);
+}
+
+
 export function useChatComposer(options = {}) {
   const onTranscribe = options.onTranscribe; // (text) => void, fills the input box
   const getSlug = options.getSlug; // () => string | undefined, current project slug (optional)
@@ -103,6 +119,23 @@ export function useChatComposer(options = {}) {
 
   const removeAttachment = (idx) => { attachments.value.splice(idx, 1); };
   const clearAttachments = () => { attachments.value = []; };
+
+  // 发送前校验：有附件但当前模型不支持多模态时，提示并阻止发送（返回 false）。
+  // 没有附件、或模型支持多模态、或查不到当前模型时，放行（返回 true）。
+  const checkModelForAttachments = async () => {
+    if (attachments.value.length === 0) return true;
+    let current = '';
+    try {
+      const res = await window.api?.hermes?.listModels?.();
+      current = res?.current || '';
+    } catch { /* 查不到就放行，不阻断 */ }
+    if (current && !isMultimodalModel(current)) {
+      const bare = current.includes('/') ? current.split('/').pop() : current;
+      alert(`当前模型「${bare}」不支持图片/文件解读。\n\n请点顶部模型下拉框切换到 Claude 等多模态模型后再发送。`);
+      return false;
+    }
+    return true;
+  };
 
   // ===== Voice input: record → 360 ASR → onTranscribe(text) =====
   const recordingSupported = typeof window !== 'undefined'
@@ -203,6 +236,7 @@ export function useChatComposer(options = {}) {
     pickFile,
     removeAttachment,
     clearAttachments,
+    checkModelForAttachments,
     recordingSupported,
     isRecording,
     isTranscribing,

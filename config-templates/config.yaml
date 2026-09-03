@@ -8,8 +8,18 @@
 
 model:
   provider: custom
-  default: minimax/MiniMax-M2.7-highspeed
+  default: anthropic/claude-sonnet-5
   base_url: https://api.360.cn/v1
+
+# 图片理解走的辅助 vision 模型。默认 provider:auto 会在 360 custom provider 下
+# 解析出 360 不认识的 vision 模型名 → model_not_found → 图片请求失败。
+# 显式钉死为 360 上真实存在的多模态模型（claude 自带 vision），走同一套鉴权。
+auxiliary:
+  vision:
+    provider: custom
+    model: anthropic/claude-sonnet-5
+    timeout: 120
+    download_timeout: 60
 
 custom_providers:
   - name: "360ai"

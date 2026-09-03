@@ -131,7 +131,21 @@ contextBridge.exposeInMainWorld('api', {
     createProject(params) { return invoke('hermes:create-project', params); },
     loadProject(slug) { return invoke('hermes:load-project', slug); },
     deleteProject(slug) { return invoke('hermes:delete-project', slug); },
-    prompt(slug, text, attachments) { return invoke('hermes:prompt', { slug, text, attachments }); },
+    prompt(slug, text, attachments) {
+      // 附件常来自 Vue reactive（元素是 Proxy），structured clone 无法序列化 →
+      // ipcRenderer.invoke 抛 "An object could not be cloned"。这里统一摊平成
+      // 纯对象，只保留可序列化字段，覆盖所有调用方（各聊天窗口）。
+      const clean = Array.isArray(attachments)
+        ? attachments.map((a) => ({
+            type: a && a.type,
+            name: a && a.name,
+            media_type: a && a.media_type,
+            ...(a && typeof a.text === 'string' ? { text: a.text } : {}),
+            ...(a && a.data ? { data: a.data } : {}),
+          }))
+        : attachments;
+      return invoke('hermes:prompt', { slug, text, attachments: clean });
+    },
     transcribe(audioBase64, mimeType) { return invoke('hermes:transcribe', { audioBase64, mimeType }); },
     saveRecording(slug, audioBase64, ext) { return invoke('hermes:save-recording', { slug, audioBase64, ext }); },
     cancel(slug) { return invoke('hermes:cancel', slug); },

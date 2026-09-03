@@ -1514,28 +1514,55 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
     if (attachments && Array.isArray(attachments)) {
       for (const att of attachments) {
         if (att.type === 'image' && att.data) {
+          // Images go through as inline base64 → the ACP server emits an
+          // image_url part so vision models can see them directly.
           const mime = att.media_type || 'image/png';
           promptBlocks.push({ type: 'image', data: att.data, mimeType: mime, media_type: mime });
         } else if (att.type === 'file') {
-          // Files are inlined as ACP embedded-resource blocks. Text files carry
-          // their decoded text; binary files carry base64 in `blob`. The Hermes
-          // ACP server inlines text resources into the prompt and decodes/omits
-          // binaries as appropriate.
-          const uri = `file:///${encodeURIComponent(att.name || 'attachment')}`;
           const mimeType = att.media_type || 'application/octet-stream';
           if (typeof att.text === 'string') {
+            // Plain-text files: inline the decoded text directly as an
+            // embedded resource (the server splices it into the prompt).
+            const uri = `file:///${encodeURIComponent(att.name || 'attachment')}`;
             promptBlocks.push({ type: 'resource', resource: { uri, mimeType, text: att.text } });
           } else if (att.data) {
-            promptBlocks.push({ type: 'resource', resource: { uri, mimeType, blob: att.data } });
+            // Binary documents (docx/pdf/xlsx/…): DO NOT inline the base64 blob.
+            // The agent would try to Read the fake URI path and hang. Instead we
+            // write the bytes to the project's uploads/ dir and send a
+            // resource_link to the REAL on-disk path — the ACP server then reads
+            // and extracts the document's text server-side.
+            try {
+              const safeName = (att.name || `attachment-${Date.now()}`).replace(/[/\\]/g, '_');
+              const uploadsDir = resolveProjectPath(slug, 'uploads');
+              if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+              const diskPath = path.join(uploadsDir, safeName);
+              fs.writeFileSync(diskPath, Buffer.from(att.data, 'base64'));
+              const fileUri = `file://${diskPath}`;
+              promptBlocks.push({ type: 'resource_link', uri: fileUri, name: safeName, mimeType });
+            } catch (e) {
+              console.error(`[main] failed to persist binary attachment ${att.name}: ${e.message}`);
+              // Fall back to a text note so the user's turn still goes through.
+              promptBlocks.push({ type: 'text', text: `（附件「${att.name}」处理失败，未能读取：${e.message}）` });
+            }
           }
         }
       }
+    }
+
+    // [debug] 多模态附件排查：打印附件概况与 block 详情
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      console.log(`[main] prompt: ${attachments.length} attachment(s) received`);
+      attachments.forEach((a, i) => {
+        console.log(`[main]   in[${i}] type=${a && a.type} media=${a && a.media_type} hasData=${!!(a && a.data)} dataLen=${a && a.data ? a.data.length : 0} hasText=${typeof (a && a.text) === 'string'}`);
+      });
+      console.log(`[main]   → blocks=${JSON.stringify(promptBlocks.map(b => b.type))}  imageBlocks=${promptBlocks.filter(b => b.type === 'image').length}`);
     }
 
     const result = await acp.request('session/prompt', {
       sessionId: meta.sessionId,
       prompt: promptBlocks,
     }, 600_000); // 10 min timeout
+
 
     // Refresh outputs after AI may have written files
     const outputs = computeProjectOutputs(slug);
@@ -1544,6 +1571,7 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
 
     return result;
   } catch (err) {
+    console.error(`[main] prompt FAILED: ${err && err.message}`, err && err.stack ? err.stack.split('\n').slice(0, 4).join('\n') : '');
     throw new Error(`Prompt failed: ${err.message}`);
   }
 });

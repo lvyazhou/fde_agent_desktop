@@ -1398,6 +1398,7 @@ const sendMessage = async () => {
   const text = chatInput.value.trim();
   const atts = reqComposer.attachments.value;
   if ((!text && atts.length === 0) || isStreaming.value) return;
+  if (!(await reqComposer.checkModelForAttachments())) return;
 
   messages.value.push(createMessage('user', text, atts.length ? { attachments: [...atts] } : {}));
   chatInput.value = '';
@@ -1443,6 +1444,7 @@ const sendIterate = async () => {
   const text = iterateInput.value.trim();
   const atts = iterateComposer.attachments.value;
   if ((!text && atts.length === 0) || isStreaming.value) return;
+  if (!(await iterateComposer.checkModelForAttachments())) return;
 
   streamTargetTab.value = 'iterate';   // 原型页迭代：内容归到 iterate 流，不污染需求对话
   iterateMessages.value.push(createMessage('user', text, atts.length ? { attachments: [...atts] } : {}));
@@ -1493,6 +1495,7 @@ const sendStage3 = async () => {
   const text = stage3Input.value.trim();
   const atts = stage3Composer.attachments.value;
   if ((!text && atts.length === 0) || isStreaming.value) return;
+  if (!(await stage3Composer.checkModelForAttachments())) return;
 
   stage3Messages.value.push(createMessage('user', text, atts.length ? { attachments: [...atts] } : {}));
   stage3Input.value = '';

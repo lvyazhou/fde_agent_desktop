@@ -22,6 +22,7 @@
         :available-models="availableModels"
         :current-model="currentModel"
         @send-quick="(text) => $emit('send-quick', text)"
+        @send-with-attachments="(text, atts) => $emit('send-with-attachments', text, atts)"
         @navigate="(tab) => $emit('navigate', tab)"
         @change-model="(id) => $emit('change-model', id)"
       />
