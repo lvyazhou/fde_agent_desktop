@@ -36,7 +36,7 @@ function fail(status, payload, sn) {
     customer: payload?.customer || null,
     licenseType: payload?.license_type || null,
     expireAt: payload?.expire_at || null,
-    graceDays: payload ? Number(payload.grace_days ?? 7) : 7,
+    graceDays: payload ? Number(payload.grace_days ?? 0) : 0,
     features: payload?.features || [],
     sn: sn || null,
   };
@@ -48,7 +48,7 @@ function build(status, ok, payload, sn) {
     customer: payload.customer || null,
     licenseType: payload.license_type || null,
     expireAt: payload.expire_at || null,
-    graceDays: Number(payload.grace_days ?? 7),
+    graceDays: Number(payload.grace_days ?? 0),
     features: payload.features || [],
     sn,
   };
@@ -82,7 +82,7 @@ function loadAndVerify(licBytes) {
   const today = todayStr();
   const exp = payload.expire_at; // 'YYYY-MM-DD'
   if (!exp) return build('ACTIVE_PERMANENT', true, payload, sn); // 无到期视为永久
-  const grace = Number(payload.grace_days ?? 7);
+  const grace = Number(payload.grace_days ?? 0);
   const expDate = new Date(exp + 'T23:59:59');
   const graceEnd = new Date(expDate.getTime() + grace * 86400000);
   const now = new Date(today + 'T00:00:00');

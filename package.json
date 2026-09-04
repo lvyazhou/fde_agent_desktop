@@ -1,6 +1,6 @@
 {
   "name": "fde-prodesigner",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "FDE产设大师 — FDE 项目经理五阶段作战工作台:调研备弹→需求原型→智能体设计→工作台上线→试用定稿",
   "main": "src/main/index.js",
   "scripts": {

@@ -32,6 +32,17 @@
           <span class="tree-count">{{ allItems.length }}</span>
         </button>
 
+        <!-- 本项目产物(扫描各项目目录里 agent 生成的文档,可一键归档) -->
+        <button
+          class="tree-node"
+          :class="active === 'projects' ? 'tree-node--active' : ''"
+          @click="selectProjects"
+        >
+          <span class="tree-badge" style="background:#0ea5e9"><i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i></span>
+          <span class="flex-1 text-left truncate">本项目产物</span>
+          <span class="tree-count">{{ projectItemCount }}</span>
+        </button>
+
         <!-- 五阶段 -->
         <button
           v-for="(st, i) in stages"
@@ -63,20 +74,32 @@
               <span class="text-slate-600">{{ activeName }}</span>
             </div>
             <h1 class="text-xl font-bold text-slate-800">{{ activeName }}</h1>
-            <p class="text-[13px] text-slate-400 mt-0.5">
+            <p v-if="active !== 'projects'" class="text-[13px] text-slate-400 mt-0.5">
               按 FDE 五阶段作战链沉淀的真实交付物与知识模板 · 共 {{ filtered.length }} 份
+            </p>
+            <p v-else class="text-[13px] text-slate-400 mt-0.5">
+              各项目里 AI 生成的交付物与文档 · 可一键归档到作战阶段知识库 · 共 {{ projectItemCount }} 份
             </p>
           </div>
           <button
+            v-if="active !== 'projects'"
             @click="openUpload"
             class="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm"
           >
             <i class="fa-solid fa-cloud-arrow-up text-[12px]"></i>上传归档
           </button>
+          <button
+            v-else
+            @click="loadProjects"
+            :disabled="scanningProjects"
+            class="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition"
+          >
+            <i class="fa-solid fa-rotate text-[12px]" :class="scanningProjects ? 'fa-spin' : ''"></i>重新扫描
+          </button>
         </div>
 
-        <!-- 统计条 -->
-        <div class="grid grid-cols-4 gap-4 mb-5">
+        <!-- 统计条(仅阶段视图) -->
+        <div v-if="active !== 'projects'" class="grid grid-cols-4 gap-4 mb-5">
           <div v-for="s in statCards" :key="s.label" class="stat-card">
             <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px ${s.bg}55` }">
               <i :class="'fa-solid ' + s.icon"></i>
@@ -88,8 +111,8 @@
           </div>
         </div>
 
-        <!-- 筛选 chips -->
-        <div class="flex items-center gap-2 mb-4">
+        <!-- 筛选 chips(仅阶段视图) -->
+        <div v-if="active !== 'projects'" class="flex items-center gap-2 mb-4">
           <button
             v-for="c in categories"
             :key="c.key"
@@ -101,35 +124,87 @@
           >{{ c.label }}</button>
         </div>
 
-        <!-- 卡片网格 -->
-        <div v-if="filtered.length" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-          <button
-            v-for="item in filtered"
-            :key="item.stageDir + '/' + item.file"
-            class="kb-card text-left group"
-            @click="openDoc(item)"
-          >
-            <div class="kb-card__accent" :style="{ background: fmtColor(item.type) }"></div>
-            <div class="flex items-start gap-3">
-              <span class="fmt-badge" :style="{ background: fmtColor(item.type) }">{{ item.type.toUpperCase() }}</span>
-              <div class="flex-1 min-w-0">
-                <h3 class="text-[13.5px] font-semibold text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">{{ item.title }}</h3>
-                <div class="flex items-center gap-1.5 mt-1.5">
-                  <span class="cat-chip" :class="catChipCls(item.category)">{{ catLabel(item.category) }}</span>
-                  <span class="text-[11px] text-slate-400">阶段{{ CN_NUM[item.stageIndex] }}</span>
+        <!-- ═══ 本项目产物视图 ═══ -->
+        <template v-if="active === 'projects'">
+          <div v-if="scanningProjects" class="text-center py-20 text-slate-300">
+            <div class="w-8 h-8 rounded-full border-2 border-blue-100 border-t-blue-500 animate-spin mx-auto mb-3"></div>
+            <p class="text-[13px]">正在扫描项目产物…</p>
+          </div>
+          <div v-else-if="!projects.length" class="text-center py-20 text-slate-300">
+            <i class="fa-solid fa-folder-open text-5xl mb-3"></i>
+            <p class="text-[13px]">各项目里还没有可归档的产物文档</p>
+          </div>
+          <div v-else class="space-y-6">
+            <div v-for="pj in projects" :key="pj.slug">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-6 h-6 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-sm">
+                  <i class="fa-solid fa-diagram-project text-white text-[10px]"></i>
+                </span>
+                <span class="text-[13.5px] font-semibold text-slate-700">{{ pj.name }}</span>
+                <span class="text-[11px] text-slate-400 bg-slate-100 rounded-full px-2 py-0.5">{{ pj.items.length }} 份</span>
+              </div>
+              <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div v-for="item in pj.items" :key="item.relPath" class="kb-card text-left">
+                  <div class="kb-card__accent" :style="{ background: fmtColor(item.type) }"></div>
+                  <div class="flex items-start gap-3">
+                    <span class="fmt-badge" :style="{ background: fmtColor(item.type) }">{{ item.type.toUpperCase() }}</span>
+                    <div class="flex-1 min-w-0">
+                      <h3 class="text-[13.5px] font-semibold text-slate-800 leading-snug line-clamp-2">{{ item.title }}</h3>
+                      <div class="flex items-center gap-1.5 mt-1.5">
+                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono truncate">{{ item.dir }}/{{ item.file }}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end">
+                    <button
+                      @click="openArchive(pj, item)"
+                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium text-blue-600 hover:bg-blue-50 transition"
+                    >
+                      <i class="fa-solid fa-inbox text-[11px]"></i>归档到知识库
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+          </div>
+        </template>
+
+        <!-- ═══ 阶段/全部视图卡片网格 ═══ -->
+        <template v-else>
+        <div v-if="filtered.length" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+          <div
+            v-for="item in filtered"
+            :key="item.stageDir + '/' + item.file"
+            class="kb-card text-left group"
+          >
+            <div class="kb-card__accent" :style="{ background: fmtColor(item.type) }"></div>
+            <button class="block w-full text-left" @click="openDoc(item)">
+              <div class="flex items-start gap-3">
+                <span class="fmt-badge" :style="{ background: fmtColor(item.type) }">{{ item.type.toUpperCase() }}</span>
+                <div class="flex-1 min-w-0">
+                  <h3 class="text-[13.5px] font-semibold text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">{{ item.title }}</h3>
+                  <div class="flex items-center gap-1.5 mt-1.5">
+                    <span class="cat-chip" :class="catChipCls(item.category)">{{ catLabel(item.category) }}</span>
+                    <span class="text-[11px] text-slate-400">阶段{{ CN_NUM[item.stageIndex] }}</span>
+                    <span v-if="item.uploaded" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">已归档</span>
+                  </div>
+                </div>
+              </div>
+            </button>
             <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
               <span class="truncate">{{ stageShort(item.stageIndex) }}</span>
-              <span class="text-blue-500 font-medium shrink-0"><i class="fa-solid fa-eye mr-1"></i>预览</span>
+              <div class="flex items-center gap-2 shrink-0">
+                <button @click.stop="openDoc(item)" class="text-blue-500 font-medium hover:text-blue-700"><i class="fa-solid fa-eye mr-1"></i>预览</button>
+                <button @click.stop="deleteDoc(item)" class="text-rose-400 font-medium hover:text-rose-600"><i class="fa-solid fa-trash mr-1"></i>删除</button>
+              </div>
             </div>
-          </button>
+          </div>
         </div>
         <div v-else class="text-center py-20 text-slate-300">
           <i class="fa-solid fa-box-open text-5xl mb-3"></i>
           <p class="text-[13px]">该分类下暂无文档</p>
         </div>
+        </template>
       </div>
     </div>
 
@@ -181,6 +256,45 @@
       </div>
     </transition>
 
+    <!-- ── 项目产物归档弹框 ────────────────────────── -->
+    <transition name="fade">
+      <div v-if="showArchive" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-slate-900/40" @click="showArchive = false"></div>
+        <div class="relative w-[440px] max-w-[92vw] bg-white rounded-2xl shadow-2xl p-6">
+          <div class="flex items-center gap-2 mb-4">
+            <i class="fa-solid fa-inbox text-blue-600"></i>
+            <span class="text-[15px] font-bold text-slate-800">归档到知识库</span>
+            <button @click="showArchive = false" class="ml-auto w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+          <p class="text-[12px] text-slate-400 mb-4 leading-relaxed">
+            将 <b class="text-slate-600">{{ archiveTarget?.item?.file }}</b>
+            (来自项目「{{ archiveTarget?.pj?.name }}」)复制归档到指定作战阶段的知识库。
+          </p>
+          <label class="block text-[12.5px] font-medium text-slate-600 mb-1.5">归档到阶段</label>
+          <select v-model="archiveStage" class="w-full mb-4 border border-slate-200 rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:border-blue-400">
+            <option v-for="(st, i) in stages" :key="st.dir" :value="st.dir">阶段{{ CN_NUM[i] }} · {{ st.name }}</option>
+          </select>
+          <label class="block text-[12.5px] font-medium text-slate-600 mb-1.5">文档类型</label>
+          <div class="flex gap-2 mb-6">
+            <button
+              v-for="c in [{k:'deliverable',l:'交付物'},{k:'knowledge',l:'知识'}]" :key="c.k"
+              @click="archiveCat = c.k"
+              class="flex-1 py-2 rounded-lg text-[13px] border transition"
+              :class="archiveCat === c.k ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'"
+            >{{ c.l }}</button>
+          </div>
+          <button
+            @click="doArchive"
+            :disabled="archiving || !archiveStage"
+            class="w-full py-2.5 rounded-lg text-[13px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i :class="archiving ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-inbox'" class="mr-1.5 text-[12px]"></i>
+            {{ archiving ? '归档中…' : '确认归档' }}
+          </button>
+        </div>
+      </div>
+    </transition>
+
     <!-- Toast -->
     <transition name="fade">
       <div v-if="toast" class="fixed top-4 right-4 z-[60] bg-slate-800 text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2">
@@ -208,6 +322,17 @@ const uploadStage = ref('');
 const uploadCat = ref('deliverable');
 const uploading = ref(false);
 const toast = ref('');
+
+// 本项目产物视图
+const projects = ref([]);            // [{slug, name, items:[{file, relPath, title, type, dir, mtime}]}]
+const scanningProjects = ref(false);
+const projectsLoaded = ref(false);
+// 归档弹框
+const showArchive = ref(false);
+const archiveTarget = ref(null);     // {pj, item}
+const archiveStage = ref('');
+const archiveCat = ref('deliverable');
+const archiving = ref(false);
 
 const categories = [
   { key: 'all', label: '全部' },
@@ -260,6 +385,83 @@ async function doUpload() {
     showToast('上传失败:' + (e.message || e));
   } finally {
     uploading.value = false;
+  }
+}
+
+// ── 本项目产物:扫描 / 归档 / 删除 ──
+const projectItemCount = computed(() => projects.value.reduce((n, p) => n + p.items.length, 0));
+
+async function loadProjects() {
+  if (scanningProjects.value) return;
+  scanningProjects.value = true;
+  try {
+    const res = await window.api.handbook.scanProjects();
+    projects.value = (res && res.success && res.projects) ? res.projects : [];
+    projectsLoaded.value = true;
+  } catch (e) {
+    console.error('[knowledge] scan projects failed', e);
+    projects.value = [];
+  } finally {
+    scanningProjects.value = false;
+  }
+}
+
+function selectProjects() {
+  active.value = 'projects';
+  if (!projectsLoaded.value) loadProjects();
+}
+
+function openArchive(pj, item) {
+  archiveTarget.value = { pj, item };
+  archiveStage.value = stages.value[0]?.dir || '';
+  archiveCat.value = 'deliverable';
+  showArchive.value = true;
+}
+
+async function doArchive() {
+  if (!archiveTarget.value || !archiveStage.value || archiving.value) return;
+  archiving.value = true;
+  try {
+    const { pj, item } = archiveTarget.value;
+    const res = await window.api.handbook.archiveFromProject({
+      slug: pj.slug,
+      relPath: item.relPath,
+      stage: archiveStage.value,
+      category: archiveCat.value,
+    });
+    if (res && res.success) {
+      await loadManifest();
+      showArchive.value = false;
+      showToast(`已归档「${item.title}」到阶段${CN_NUM[Number(res.stage) - 1] || ''}`);
+    } else {
+      showToast('归档失败:' + (res?.error || '未知错误'));
+    }
+  } catch (e) {
+    showToast('归档失败:' + (e.message || e));
+  } finally {
+    archiving.value = false;
+  }
+}
+
+async function deleteDoc(item) {
+  const builtin = !item.uploaded;
+  const tip = builtin
+    ? `「${item.title}」是内置知识文档,删除后下次启动会自动恢复。确认删除?`
+    : `确认删除「${item.title}」?此操作会移除该文档,不可撤销。`;
+  if (!window.confirm(tip)) return;
+  try {
+    const res = await window.api.handbook.delete(item.stageDir, item.file);
+    if (res && res.success) {
+      if (selected.value && selected.value.file === item.file && selected.value.stageDir === item.stageDir) {
+        selected.value = null;
+      }
+      await loadManifest();
+      showToast(`已删除「${item.title}」`);
+    } else {
+      showToast('删除失败:' + (res?.error || '未知错误'));
+    }
+  } catch (e) {
+    showToast('删除失败:' + (e.message || e));
   }
 }
 

@@ -54,6 +54,7 @@ export const FDE_STAGES = [
       { key: 'final-req', name: '需求最终确认表', form: 'docx', sign: '客户签字定死' },
       { key: 'task-plan', name: '项目任务计划表', form: 'docx' },
       { key: 'acceptance', name: '项目验收标准表', form: 'docx' },
+      { key: 'data-metric', name: '业务数据口径模版', form: 'md', note: '每个指标的计数/去重/过滤/优先级口径定死,阶段④建模阶段⑤验收对账依据' },
       { key: 'agent-matrix', name: '智能体矩阵 + 各智能体设计表', form: 'doc', note: '身份卡/五层拆解/六组件' },
       { key: 'prd-final', name: '定稿版 PRD', form: 'md', note: '需求签字后升级' },
       { key: 'prototype-final', name: '最终产品原型(定稿)', form: 'html', note: '需求签字后升级' },
@@ -153,6 +154,7 @@ export const DELIVERABLE_META = {
   'agent-matrix':   { name: '智能体矩阵',            short: '智能体矩阵', icon: 'fa-solid fa-table-cells' },
   'task-plan':      { name: '项目任务计划表',        short: '任务计划',   icon: 'fa-solid fa-list-ol' },
   'acceptance':     { name: '项目验收标准表',        short: '验收标准',   icon: 'fa-solid fa-clipboard-check' },
+  'data-metric':    { name: '业务数据口径模版',      short: '数据口径',   icon: 'fa-solid fa-ruler-combined' },
   // 阶段④
   'er-model':       { name: 'ER 数据模型图',         short: 'ER模型',    icon: 'fa-solid fa-sitemap' },
   'deploy-doc':     { name: '部署文档',              short: '部署文档',   icon: 'fa-solid fa-server' },

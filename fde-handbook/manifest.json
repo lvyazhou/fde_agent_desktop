@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-31T11:54:58.880Z",
+  "generatedAt": "2026-09-04T05:16:07.441Z",
   "source": "100 FDE作战手册(核心文档快照)",
   "stages": [
     {
@@ -132,6 +132,13 @@
           "previewable": true
         },
         {
+          "file": "11-业务数据口径模版【交付】.md",
+          "title": "业务数据口径模版",
+          "type": "md",
+          "category": "deliverable",
+          "previewable": true
+        },
+        {
           "file": "2-需求最终确认表【交付】.docx",
           "title": "需求最终确认表",
           "type": "docx",
@@ -207,7 +214,7 @@
       ],
       "counts": {
         "knowledge": 6,
-        "deliverable": 6
+        "deliverable": 7
       }
     },
     {

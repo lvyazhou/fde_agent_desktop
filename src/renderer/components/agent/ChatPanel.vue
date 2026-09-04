@@ -46,15 +46,10 @@
                 <img
                   v-if="att.type === 'image' || (!att.type && att.data)"
                   :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data"
-                  class="max-w-[200px] max-h-[150px] object-cover rounded-xl border border-slate-200 shadow-sm"
+                  class="max-w-[200px] max-h-[150px] object-cover rounded-xl border border-slate-200 shadow-sm cursor-zoom-in hover:brightness-95 transition"
+                  @click="openLightbox('data:' + (att.media_type || 'image/png') + ';base64,' + att.data)"
                 />
-                <div
-                  v-else
-                  class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-sm max-w-[220px]"
-                >
-                  <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
-                  <span class="text-[12px] text-slate-600 truncate">{{ att.name || '附件' }}</span>
-                </div>
+                <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
               </template>
             </div>
             <div class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words inline-block text-left">
@@ -80,13 +75,14 @@
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
                     <span class="text-[13px] font-semibold tracking-tight transition-colors" :class="msg.thinkingDone ? 'text-slate-500' : 'text-blue-700'">
-                      {{ msg.thinkingDone ? '推理完成' : '深度推理中' }}
+                      {{ msg.thinkingDone ? '推理完成' : liveStatusText }}
                     </span>
                     <span v-if="!msg.thinkingDone" class="flex gap-[3px]">
                       <span class="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 0ms"></span>
                       <span class="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 150ms"></span>
                       <span class="w-1 h-1 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 300ms"></span>
                     </span>
+                    <span v-if="!msg.thinkingDone && elapsedSec > 0" class="text-[11px] text-slate-400 tabular-nums font-medium">已用时 {{ elapsedSec }}s</span>
                     <i v-if="msg.thinkingDone" class="fa-solid fa-chevron-down text-[9px] text-slate-400 transition-transform duration-300" :class="msg.expanded ? 'rotate-180' : ''"></i>
                   </div>
                   <div class="text-[11px] text-slate-400 mt-0.5 font-medium">
@@ -113,12 +109,18 @@
               </div>
             </div>
 
+            <!-- System notice: 引擎回执(如已并入/已排队)，非 AI 回答，浅灰提示条 -->
+            <div v-if="msg.systemNotice && (msg.displayContent || msg.content)" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-[13px] text-slate-500">
+              <i class="fa-solid fa-circle-info text-slate-400 text-[12px] shrink-0"></i>
+              <span>{{ msg.displayContent || msg.content }}</span>
+            </div>
+
             <!-- Message content: Doubao-style, no bubble, plain text on background -->
-            <div v-if="msg.content" class="w-full leading-[1.75] text-[15px] text-slate-800 prose prose-slate max-w-none" v-html="renderAssistantContent(msg.content)">
+            <div v-if="msg.content && !msg.systemNotice" class="w-full leading-[1.75] text-[15px] text-slate-800 prose prose-slate max-w-none" v-html="renderAssistantContent(msg.content)">
             </div>
 
             <!-- Action bar (always visible) -->
-            <div v-if="msg.content" class="flex items-center gap-0.5 mt-2">
+            <div v-if="msg.content && !msg.systemNotice" class="flex items-center gap-0.5 mt-2">
               <button @click="copyMessage(msg.content, idx)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer" :title="copiedIdx === idx ? '已复制' : '复制'">
                 <i class="text-[13px]" :class="copiedIdx === idx ? 'fa-solid fa-check text-emerald-500' : 'fa-regular fa-copy'"></i>
               </button>
@@ -258,7 +260,8 @@
             </div>
 
             <div class="flex items-center gap-2.5">
-              <span class="hidden sm:inline text-[11px] text-slate-400 select-none">Ctrl + Enter 发送</span>
+              <span v-if="isStreaming && elapsedSec >= 25" class="text-[11px] text-amber-600 select-none">响应较慢？可点右侧停止，换个模型或稍后重试</span>
+              <span v-else class="hidden sm:inline text-[11px] text-slate-400 select-none">Ctrl + Enter 发送</span>
               <button
                 v-if="isStreaming"
                 @click="$emit('cancel')"
@@ -281,6 +284,8 @@
         </div>
       </div>
     </div>
+
+    <ImageLightbox :src="lightboxSrc" :visible="lightboxVisible" @close="lightboxVisible = false" />
   </div>
 </template>
 
@@ -289,6 +294,8 @@ import { ref, nextTick, watch, computed, onMounted, onBeforeUnmount } from 'vue'
 import { marked } from 'marked';
 import WelcomeHero from './WelcomeHero.vue';
 import ModelSelector from './ModelSelector.vue';
+import ImageLightbox from '@/components/common/ImageLightbox.vue';
+import AttachmentChip from '@/components/common/AttachmentChip.vue';
 import { prepareImage } from '@/composables/imagePrep';
 
 const props = defineProps({
@@ -296,6 +303,7 @@ const props = defineProps({
   projectName: { type: String, default: '' },
   messages: { type: Array, default: () => [] },
   isStreaming: { type: Boolean, default: false },
+  elapsedSec: { type: Number, default: 0 },
   isLoading: { type: Boolean, default: false },
   availableCommands: { type: Array, default: () => [] },
   availableModels: { type: Array, default: () => [] },
@@ -304,6 +312,16 @@ const props = defineProps({
 
 const emit = defineEmits(['send', 'send-quick', 'send-with-attachments', 'cancel', 'navigate', 'fork', 'regenerate', 'feedback', 'delete', 'change-model']);
 
+// 等待"活着感"：随等待时长升级的安心文案，把"慢"归因到网关而非软件卡死。
+// 只在"进行中"的思考头部使用（thinkingDone 时仍显示"推理完成"）。
+const liveStatusText = computed(() => {
+  const s = props.elapsedSec;
+  if (s >= 60) return '已等待较久 — 网关可能拥塞';
+  if (s >= 25) return '模型网关响应较慢，仍在等待…';
+  if (s >= 8) return '正在处理，请稍候…';
+  return '深度推理中';
+});
+
 const inputText = ref('');
 const inputRef = ref(null);
 const chatContainerRef = ref(null);
@@ -311,6 +329,14 @@ const chatAttachments = ref([]);
 const isFocused = ref(false);
 const copiedIdx = ref(null);
 const menuIdx = ref(null);
+
+// 图片放大预览
+const lightboxSrc = ref('');
+const lightboxVisible = ref(false);
+const openLightbox = (src) => {
+  lightboxSrc.value = src;
+  lightboxVisible.value = true;
+};
 
 // Auto-grow textarea like Doubao (single line -> expands up to max-h)
 const autoGrow = () => {

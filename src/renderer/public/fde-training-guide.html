@@ -321,25 +321,33 @@
         <div class="card"><div class="ch">EMR <span class="en">电子病历</span></div><p>病人诊疗档案。质控、DRG 入组、病历分析靠它。</p></div>
         <div class="card"><div class="ch">LIS <span class="en">检验系统</span></div><p>化验数据:血常规、生化。危急值、指标趋势用它。</p></div>
         <div class="card"><div class="ch">PACS <span class="en">影像系统</span></div><p>CT/MRI/X 光片子和诊断报告。</p></div>
-        <div class="card"><div class="ch">CDR <span class="en">临床数据中心</span></div><p>把上面几个系统汇到一起的中央仓库。没有 CDR 取数就难——正是下一课 SDR 要解决的。</p></div>
+        <div class="card"><div class="ch">CDR <span class="en">临床数据中心</span></div><p>把上面几个系统汇到一起的中央仓库。<b>关键认知:CDR 要医院过到较高的互联互通等级才建得起来,很多医院压根没有</b>,数据还散在各系统里——这就是我们要做 SDR 的原因(下一课讲)。</p></div>
         <div class="card"><div class="ch">怎么用</div><p>对着五个系统问:数据在哪个系统?接口啥类型?系统之间通不通?问完就有草图了。</p></div>
       </div>
       <div class="diagram">
-        <svg viewBox="0 0 720 250" role="img" aria-label="医院五大系统数据流图">
+        <svg viewBox="0 0 840 250" role="img" aria-label="医院五大系统数据流图">
           <defs><marker id="m2a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
-          <rect x="20" y="100" width="130" height="56" rx="8" fill="#0f1729"/><text x="85" y="124" text-anchor="middle" fill="#e3a94a" font-size="13" font-weight="700">HIS</text><text x="85" y="143" text-anchor="middle" fill="#9aa6bd" font-size="10">挂号收费 · 数据源头</text>
-          <rect x="220" y="20" width="130" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="285" y="40" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">EMR</text><text x="285" y="57" text-anchor="middle" fill="#5a6270" font-size="10">电子病历</text>
-          <rect x="220" y="104" width="130" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="285" y="124" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">LIS</text><text x="285" y="141" text-anchor="middle" fill="#5a6270" font-size="10">检验化验</text>
-          <rect x="220" y="188" width="130" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="285" y="208" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">PACS</text><text x="285" y="225" text-anchor="middle" fill="#5a6270" font-size="10">影像片子</text>
-          <rect x="430" y="104" width="140" height="48" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="500" y="124" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">CDR</text><text x="500" y="141" text-anchor="middle" fill="#5a6270" font-size="10">临床数据中心 · 汇总</text>
-          <rect x="620" y="104" width="80" height="48" rx="8" fill="#2f7d54"/><text x="660" y="125" text-anchor="middle" fill="#fff" font-size="11.5" font-weight="700">智能体</text><text x="660" y="142" text-anchor="middle" fill="#cfe8da" font-size="9.5">取数</text>
+          <rect x="20" y="100" width="120" height="56" rx="8" fill="#0f1729"/><text x="80" y="124" text-anchor="middle" fill="#e3a94a" font-size="13" font-weight="700">HIS</text><text x="80" y="143" text-anchor="middle" fill="#9aa6bd" font-size="9.5">挂号收费 · 源头</text>
+          <rect x="200" y="20" width="120" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="260" y="40" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">EMR</text><text x="260" y="57" text-anchor="middle" fill="#5a6270" font-size="10">电子病历</text>
+          <rect x="200" y="104" width="120" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="260" y="124" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">LIS</text><text x="260" y="141" text-anchor="middle" fill="#5a6270" font-size="10">检验化验</text>
+          <rect x="200" y="188" width="120" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="260" y="208" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">PACS</text><text x="260" y="225" text-anchor="middle" fill="#5a6270" font-size="10">影像片子</text>
+          <!-- CDR 可能有 -->
+          <rect x="390" y="100" width="120" height="56" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5" stroke-dasharray="5 3"/><text x="450" y="122" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">CDR</text><text x="450" y="139" text-anchor="middle" fill="#5a6270" font-size="9">汇总 · 可能没有</text>
+          <!-- SDR 必经 -->
+          <rect x="560" y="100" width="120" height="56" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="620" y="122" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">SDR</text><text x="620" y="139" text-anchor="middle" fill="#5a6270" font-size="9">取数唯一入口</text>
+          <!-- 智能体 -->
+          <rect x="730" y="100" width="90" height="56" rx="8" fill="#0f1729"/><text x="775" y="128" text-anchor="middle" fill="#e3a94a" font-size="11.5" font-weight="700">智能体</text><text x="775" y="144" text-anchor="middle" fill="#9aa6bd" font-size="9">走 SDR 取数</text>
           <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m2a)">
-            <line x1="150" y1="118" x2="216" y2="46"/><line x1="150" y1="128" x2="216" y2="128"/><line x1="150" y1="138" x2="216" y2="210"/>
-            <line x1="350" y1="46" x2="426" y2="118"/><line x1="350" y1="128" x2="426" y2="128"/><line x1="350" y1="210" x2="426" y2="138"/>
-            <line x1="570" y1="128" x2="616" y2="128"/>
+            <line x1="140" y1="118" x2="196" y2="46"/><line x1="140" y1="128" x2="196" y2="128"/><line x1="140" y1="138" x2="196" y2="210"/>
+            <line x1="320" y1="46" x2="386" y2="116"/><line x1="320" y1="128" x2="386" y2="128"/><line x1="320" y1="210" x2="386" y2="140"/>
+            <line x1="510" y1="128" x2="556" y2="128"/>
+            <line x1="680" y1="128" x2="726" y2="128"/>
           </g>
+          <!-- 没CDR时SDR直连的虚线旁路 -->
+          <path d="M320 224 Q 540 250 618 158" fill="none" stroke="#94a0a8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#m2a)"/>
+          <text x="500" y="243" text-anchor="middle" fill="#94a0a8" font-size="9.5">没 CDR 时 SDR 直接接各系统</text>
         </svg>
-        <p class="cap">数据流向:HIS 是源头 → 分流到 EMR/LIS/PACS → 全汇到 CDR 中央仓库 → 智能体从 CDR 取数。没 CDR 就得一个个系统接(这就是 SDR 要解决的)</p>
+        <p class="cap">数据流向:HIS 源头 → EMR/LIS/PACS →(有则汇到 CDR)→ <b>SDR</b> → 智能体。智能体永远走 SDR:有 CDR 就抽 CDR,没 CDR(多数医院)SDR 就直接接各系统(灰色虚线)</p>
       </div>
       <h3 class="sub">必须听懂的术语(带人话翻译)</h3>
       <div class="tbl-wrap"><table>
@@ -426,6 +434,58 @@
           <tr><td><span class="k">云端进不了内网</span></td><td>SDR <b>主动出站</b>连云端,客户不用开端口</td></tr>
         </tbody>
       </table></div>
+
+      <h3 class="sub">SDR 和 CDR 有啥区别(新人最容易搞混)</h3>
+      <p class="body">很多新人一听"数据仓库"就把 SDR 和 CDR 弄混。记住一个铁律:<b>智能体取数永远走 SDR,从不直连医院数据库。</b>SDR 是取数的唯一入口——区别只在 SDR 从哪抽:有 CDR 就抽 CDR(一个源、省事),没 CDR 就直接对接各业务系统(逐个接、累点)。现实是大多数医院没建成 CDR,所以 SDR 更得自己扛。</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:90px">对比</th><th>CDR 临床数据中心</th><th>SDR 我们的数据仓库</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">谁建的</span></td><td>医院自己建(要过较高互联互通等级)</td><td>我们 FDE 带着进场建</td></tr>
+          <tr><td><span class="k">有没有</span></td><td>大多数医院<b>没有</b>(等级不够)</td><td>不管有没有 CDR,我们都上 SDR</td></tr>
+          <tr><td><span class="k">在链路哪</span></td><td>医院内部各系统的汇总层(可能没有)</td><td><b>智能体取数的唯一入口</b>,永远在中间</td></tr>
+          <tr><td><span class="k">SDR 从哪抽</span></td><td>有 CDR → SDR 抽 CDR(省事)</td><td>没 CDR → SDR 逐个接业务系统(累点)</td></tr>
+        </tbody>
+      </table></div>
+      <div class="metaphor"><p class="mt">一句话记住</p><b>智能体从不直连医院数据库,一律走 SDR。</b>有 CDR 的医院,SDR 抽 CDR 就行(一个源);没 CDR 的(大多数),SDR 直接对接 HIS/EMR/LIS/PACS 各系统、清洗成标准字段。不管哪种,智能体面对的都只是 SDR。</div>
+      <div class="diagram">
+        <svg viewBox="0 0 720 320" role="img" aria-label="SDR 和 CDR 区别对照图">
+          <defs><marker id="cda" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2f7d54"/></marker>
+          <marker id="cdb" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <line x1="360" y1="10" x2="360" y2="280" stroke="#dfdbd1" stroke-width="1" stroke-dasharray="4 4"/>
+          <!-- 左:有CDR -->
+          <text x="175" y="28" text-anchor="middle" fill="#2f7d54" font-size="13" font-weight="700">情况 A · 有 CDR 的医院(少数)</text>
+          <text x="175" y="46" text-anchor="middle" fill="#5a6270" font-size="10.5">SDR 抽 CDR 就行,一个源,省事</text>
+          <rect x="30" y="70" width="70" height="24" rx="5" fill="#ece8de"/><text x="65" y="87" text-anchor="middle" fill="#232937" font-size="9.5">HIS</text>
+          <rect x="30" y="100" width="70" height="24" rx="5" fill="#ece8de"/><text x="65" y="117" text-anchor="middle" fill="#232937" font-size="9.5">EMR</text>
+          <rect x="30" y="130" width="70" height="24" rx="5" fill="#ece8de"/><text x="65" y="147" text-anchor="middle" fill="#232937" font-size="9.5">LIS/PACS</text>
+          <!-- CDR -->
+          <rect x="130" y="96" width="70" height="60" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="165" y="120" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">CDR</text><text x="165" y="137" text-anchor="middle" fill="#5a6270" font-size="8.5">医院已汇好</text>
+          <!-- SDR -->
+          <rect x="228" y="96" width="66" height="60" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="261" y="120" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">SDR</text><text x="261" y="137" text-anchor="middle" fill="#5a6270" font-size="8.5">抽 CDR</text>
+          <!-- 智能体 -->
+          <rect x="110" y="182" width="180" height="40" rx="8" fill="#0f1729"/><text x="200" y="207" text-anchor="middle" fill="#e3a94a" font-size="11" font-weight="700">智能体(走 SDR 取数)</text>
+          <g stroke="#94a0a8" stroke-width="1.2" marker-end="url(#cda)"><line x1="100" y1="82" x2="126" y2="112"/><line x1="100" y1="112" x2="126" y2="122"/><line x1="100" y1="142" x2="126" y2="134"/></g>
+          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#cdb)"><line x1="200" y1="126" x2="224" y2="126"/><line x1="261" y1="156" x2="230" y2="180"/></g>
+          <text x="175" y="248" text-anchor="middle" fill="#2f7d54" font-size="10.5" font-weight="700">✓ SDR 只抽 CDR 一个源,轻松</text>
+          <!-- 右:没CDR -->
+          <text x="545" y="28" text-anchor="middle" fill="#c8862a" font-size="13" font-weight="700">情况 B · 没 CDR 的医院(多数)</text>
+          <text x="545" y="46" text-anchor="middle" fill="#5a6270" font-size="10.5">SDR 直接对接各系统,累但能兜住</text>
+          <rect x="410" y="70" width="70" height="24" rx="5" fill="#ece8de"/><text x="445" y="87" text-anchor="middle" fill="#232937" font-size="9.5">HIS</text>
+          <rect x="410" y="100" width="70" height="24" rx="5" fill="#ece8de"/><text x="445" y="117" text-anchor="middle" fill="#232937" font-size="9.5">EMR</text>
+          <rect x="410" y="130" width="70" height="24" rx="5" fill="#ece8de"/><text x="445" y="147" text-anchor="middle" fill="#232937" font-size="9.5">LIS/PACS</text>
+          <!-- SDR -->
+          <rect x="520" y="96" width="80" height="60" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="560" y="118" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">SDR</text><text x="560" y="134" text-anchor="middle" fill="#5a6270" font-size="8.5">逐个接+清洗</text>
+          <rect x="500" y="182" width="120" height="40" rx="8" fill="#0f1729"/><text x="560" y="207" text-anchor="middle" fill="#e3a94a" font-size="11" font-weight="700">智能体(走 SDR)</text>
+          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#cdb)"><line x1="480" y1="82" x2="516" y2="112"/><line x1="480" y1="112" x2="516" y2="122"/><line x1="480" y1="142" x2="516" y2="134"/><line x1="560" y1="156" x2="560" y2="178"/></g>
+          <text x="545" y="248" text-anchor="middle" fill="#c8862a" font-size="10.5" font-weight="700">✓ SDR 对接多个系统,活多点</text>
+          <!-- 底部小结 -->
+          <rect x="30" y="270" width="660" height="40" rx="8" fill="#0f1729"/>
+          <text x="360" y="288" text-anchor="middle" fill="#e3a94a" font-size="11.5" font-weight="700">关键:智能体永远走 SDR 取数,从不直连医院数据库</text>
+          <text x="360" y="303" text-anchor="middle" fill="#9aa6bd" font-size="10">区别只在 SDR 抽哪:有 CDR 就抽 CDR(省事) · 没 CDR 就逐个接业务系统(费点劲)</text>
+        </svg>
+        <p class="cap">SDR 是智能体取数的唯一入口:有 CDR 时 SDR 抽 CDR(左),没 CDR 时 SDR 直接接各业务系统(右)。智能体从不直连医院数据库</p>
+      </div>
+
       <div class="creed"><p class="ct">底座铁律</p>
         <p><span class="lead">SDR 不是锦上添花,是智能体商业化的地基</span> —— 数据这关过不去,后面所有项目都推不动。</p>
         <p><span class="lead">对客户只有一个纳米Work</span> —— SEAF 藏底层供能,别在客户面前拆开讲。</p>

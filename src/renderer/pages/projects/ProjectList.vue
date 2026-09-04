@@ -47,14 +47,23 @@
         class="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all cursor-pointer"
         @click="openProject(project.slug)"
       >
-        <!-- Delete button (visible on hover) -->
-        <button
-          @click.stop="confirmDeleteProject(project)"
-          class="absolute top-3 right-3 z-10 w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all"
-          title="删除项目"
-        >
-          <i class="fa-solid fa-trash-can text-xs"></i>
-        </button>
+        <!-- Action buttons (visible on hover) -->
+        <div class="absolute top-3 right-3 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+          <button
+            @click.stop="openRename(project)"
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition-all"
+            title="重命名项目"
+          >
+            <i class="fa-solid fa-pen text-xs"></i>
+          </button>
+          <button
+            @click.stop="confirmDeleteProject(project)"
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+            title="删除项目"
+          >
+            <i class="fa-solid fa-trash-can text-xs"></i>
+          </button>
+        </div>
         <!-- Card content -->
         <div class="p-5">
           <div class="flex items-center gap-3 mb-3">
@@ -149,11 +158,51 @@
         </div>
       </div>
     </div>
+
+    <!-- Rename dialog -->
+    <div v-if="showRename" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="showRename = false">
+      <div class="bg-white rounded-2xl shadow-xl p-6 w-[400px]">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+            <i class="fa-solid fa-pen text-blue-600"></i>
+          </div>
+          <div>
+            <h4 class="font-semibold text-slate-800">重命名项目</h4>
+            <p class="text-sm text-slate-500">仅修改显示名称，不影响项目文件</p>
+          </div>
+        </div>
+        <input
+          ref="renameInput"
+          v-model="renameValue"
+          type="text"
+          placeholder="请输入项目名称"
+          maxlength="60"
+          class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition mb-6"
+          @keyup.enter="doRename"
+          @keyup.esc="showRename = false"
+        />
+        <div class="flex items-center justify-end gap-3">
+          <button
+            @click="showRename = false"
+            class="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          >
+            取消
+          </button>
+          <button
+            @click="doRename"
+            :disabled="!renameValue.trim() || renameSaving"
+            class="px-4 py-2 text-sm bg-blue-700 hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+          >
+            {{ renameSaving ? '保存中...' : '保存' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { getStage, getDeliverableMeta, DEFAULT_STAGE } from '@/data/fde-stages';
 
@@ -162,6 +211,11 @@ const projects = ref([]);
 const loading = ref(true);
 const showDeleteConfirm = ref(false);
 const deleteTarget = ref(null);
+const showRename = ref(false);
+const renameTarget = ref(null);
+const renameValue = ref('');
+const renameSaving = ref(false);
+const renameInput = ref(null);
 
 const loadProjects = async () => {
   loading.value = true;
@@ -183,6 +237,39 @@ const openProject = (slug) => {
 const confirmDeleteProject = (project) => {
   deleteTarget.value = project;
   showDeleteConfirm.value = true;
+};
+
+const openRename = async (project) => {
+  renameTarget.value = project;
+  renameValue.value = project.name || '';
+  showRename.value = true;
+  await nextTick();
+  renameInput.value?.focus();
+  renameInput.value?.select();
+};
+
+const doRename = async () => {
+  if (!renameTarget.value || renameSaving.value) return;
+  const name = renameValue.value.trim();
+  if (!name || name === renameTarget.value.name) {
+    showRename.value = false;
+    return;
+  }
+  renameSaving.value = true;
+  try {
+    const res = await window.api.hermes.updateProjectMeta(renameTarget.value.slug, { name });
+    if (res?.success) {
+      const p = projects.value.find((x) => x.slug === renameTarget.value.slug);
+      if (p) p.name = name;
+      showRename.value = false;
+    } else {
+      console.error('Failed to rename project:', res?.error);
+    }
+  } catch (e) {
+    console.error('Failed to rename project:', e);
+  } finally {
+    renameSaving.value = false;
+  }
 };
 
 const doDelete = async () => {

@@ -17,6 +17,7 @@
       :project-name="currentProjectName"
       :messages="messages"
       :is-streaming="isStreaming"
+      :elapsed-sec="elapsedSec"
       :is-loading="messagesLoading"
       :available-commands="availableCommands"
       :available-models="availableModels"
@@ -104,6 +105,19 @@ let unsubscribe = null;
 const isToolRunning = ref(false);
 let streamEndTimer = null;
 let currentStreamId = null;
+
+// 等待"活着感"：流式期间跑一个本地秒表，头部据此显示耗时 + 递进安心文案。
+// 引擎无 heartbeat，只能客户端计时。正常快速返回时秒表短暂出现即停，不打扰。
+const elapsedSec = ref(0);
+let elapsedTimer = null;
+const startElapsed = () => {
+  elapsedSec.value = 0;
+  if (elapsedTimer) clearInterval(elapsedTimer);
+  elapsedTimer = setInterval(() => { elapsedSec.value += 1; }, 1000);
+};
+const stopElapsed = () => {
+  if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+};
 
 // --- Message helpers ---
 function createMessage(role, content, extra = {}) {
@@ -203,6 +217,7 @@ const getOrCreateAssistantMsg = () => {
 };
 
 const finalizeLastAssistantMessage = () => {
+  stopElapsed();
   const lastMsg = messages.value[messages.value.length - 1];
   if (lastMsg && lastMsg.role === 'assistant') {
     lastMsg.thinkingDone = true;
@@ -328,6 +343,12 @@ const handleSessionUpdate = (data) => {
       text = content.text;
     }
     if (text) msg.content += text;
+    // ⟦系统通知⟧ 前缀 = 引擎回执(如"已并入进行中的回答""已排队")，不是 AI 的真实回答。
+    // 标记成系统提示，模板据此渲染成浅灰提示条而非 AI 气泡。
+    if (typeof msg.content === 'string' && msg.content.startsWith('⟦系统通知⟧')) {
+      msg.systemNotice = true;
+      msg.displayContent = msg.content.replace(/^⟦系统通知⟧\s*/, '');
+    }
     scheduleStreamEnd();
   } else if (type === 'agent_thought_chunk') {
     const msg = getOrCreateAssistantMsg();
@@ -409,6 +430,7 @@ const handleSend = async (text) => {
   // Immediately show user message + AI thinking animation (before any async work)
   messages.value.push(createMessage('user', text));
   isStreaming.value = true;
+  startElapsed();
   currentStreamId = Date.now().toString();
 
   messages.value.push(createMessage('assistant', '', {
@@ -435,6 +457,7 @@ const handleSend = async (text) => {
     } catch (e) {
       console.error('Auto-create chat failed:', e);
       isStreaming.value = false;
+      stopElapsed();
       messages.value.pop(); // 移除 AI 占位消息
       return;
     }
@@ -456,6 +479,7 @@ const handleSend = async (text) => {
   } catch (e) {
     console.error('Prompt failed:', e);
     isStreaming.value = false;
+    stopElapsed();
   }
 };
 
@@ -479,6 +503,7 @@ const handleSendWithAttachments = async (text, attachments) => {
   // Immediately show UI feedback
   messages.value.push(createMessage('user', text, { attachments }));
   isStreaming.value = true;
+  startElapsed();
   currentStreamId = Date.now().toString();
 
   messages.value.push(createMessage('assistant', '', {
@@ -501,6 +526,7 @@ const handleSendWithAttachments = async (text, attachments) => {
     } catch (e) {
       console.error('Auto-create chat failed:', e);
       isStreaming.value = false;
+      stopElapsed();
       messages.value.pop();
       return;
     }
@@ -533,6 +559,7 @@ const handleSendWithAttachments = async (text, attachments) => {
   } catch (e) {
     console.error('Prompt with attachments failed:', e);
     isStreaming.value = false;
+    stopElapsed();
   }
 };
 
@@ -758,5 +785,6 @@ onMounted(async () => {
 onUnmounted(() => {
   if (unsubscribe) unsubscribe();
   if (streamEndTimer) clearTimeout(streamEndTimer);
+  stopElapsed();
 });
 </script>

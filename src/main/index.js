@@ -453,7 +453,7 @@ async function initializeHermes() {
   try {
     const result = await acp.request('initialize', {
       protocolVersion: 1,
-      clientInfo: { name: 'prodesigner', version: '1.0.0' },
+      clientInfo: { name: 'prodesigner', version: '1.1.0' },
     });
     console.log('[main] hermes-acp initialized:', JSON.stringify(result).slice(0, 300));
     cachedCapabilities = result || {};
@@ -900,11 +900,151 @@ function resolveSkillPath(skillId, file) {
   return resolved;
 }
 
+// --- 实时扫描技能库,生成与 build-skills-manifest.js 同构的 manifest -----------
+// 与 scripts/build-skills-manifest.js 的分组/图标/frontmatter 解析保持一致。
+// agent 主动生成、未被 SKILLS_GROUPS 收录的技能归入 general 组并标 generated:true,
+// 这样"约定目录里新出现的技能"打开技能页即可见,无需重生静态 manifest.json。
+const SKILLS_GROUPS = [
+  { id: 'product-doc',   name: '产品文档',   icon: 'file-lines',      color: '#2563eb',
+    members: ['product-prd-allinone', 'product-feature-spec', 'product-doc-to-word', 'md-export'] },
+  { id: 'prototype',     name: '原型设计',   icon: 'window-maximize', color: '#1d4ed8',
+    members: ['prototype-generator', 'prototype-iterate'] },
+  { id: 'report-image',  name: '汇报出图',   icon: 'image',           color: '#3b82f6',
+    members: ['360-ppt-generator', 'business-architecture-image', 'fireworks-tech-graph', 'image-generator'] },
+  { id: 'dataviz',       name: '数据可视化', icon: 'chart-column',    color: '#0ea5e9',
+    members: ['dashboard-generator'] },
+  { id: 'coach',         name: '教练陪练',   icon: 'headset',         color: '#1e40af',
+    members: ['fde-coach'] },
+  { id: 'thinking',      name: '思考协作',   icon: 'lightbulb',       color: '#0369a1',
+    members: ['brainstorming', 'collaborative-planning-board', 'first-principles-critic'] },
+  { id: 'general',       name: '通用工具',   icon: 'toolbox',         color: '#64748b', members: [] },
+];
+const SKILL_ICONS = {
+  'product-prd-allinone': 'file-contract', 'product-feature-spec': 'list-check',
+  'product-doc-to-word': 'file-word', 'md-export': 'file-export',
+  'prototype-generator': 'wand-magic-sparkles', 'prototype-iterate': 'pen-ruler',
+  '360-ppt-generator': 'file-powerpoint', 'business-architecture-image': 'sitemap',
+  'fireworks-tech-graph': 'diagram-project', 'image-generator': 'palette',
+  'dashboard-generator': 'chart-line', 'fde-coach': 'headset',
+  'brainstorming': 'lightbulb', 'collaborative-planning-board': 'chalkboard-user',
+  'first-principles-critic': 'scale-balanced',
+};
+
+function parseSkillFrontmatter(rawText) {
+  const text = rawText.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const m = text.match(/^---\s*\n([\s\S]*?)\n---/);
+  if (!m) return {};
+  const lines = m[1].split('\n');
+  const out = {};
+  for (let i = 0; i < lines.length; i++) {
+    const kv = lines[i].match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+    if (!kv) continue;
+    const key = kv[1];
+    let val = kv[2];
+    if (val === '|' || val === '>' || val === '|-' || val === '>-' || val === '') {
+      const collected = [];
+      for (let j = i + 1; j < lines.length; j++) {
+        if (/^\s+\S/.test(lines[j])) { collected.push(lines[j].replace(/^\s+/, '')); i = j; }
+        else if (lines[j].trim() === '') { collected.push(''); i = j; }
+        else break;
+      }
+      if (collected.length) val = collected.join(val === '>' || val === '>-' ? ' ' : '\n').trim();
+    }
+    val = val.replace(/^["']|["']$/g, '').trim();
+    if (val !== '') out[key] = val;
+  }
+  return out;
+}
+
+function skillSummary(desc) {
+  if (!desc) return '';
+  let s = desc.replace(/\s+/g, ' ').trim();
+  const cut = s.search(/[。.]/);
+  if (cut > 8) s = s.slice(0, cut + 1);
+  if (s.length > 90) s = s.slice(0, 88) + '…';
+  return s;
+}
+
+function skillGroupOf(id) {
+  for (const g of SKILLS_GROUPS) if (g.members.includes(id)) return g.id;
+  return 'general';
+}
+
+// 内置技能 id 集合:用于区分"内置(重启会恢复)"与"生成/导入"
+function bundledSkillIds() {
+  const bundledDir = app.isPackaged
+    ? path.join(process.resourcesPath, 'skills')
+    : path.join(app.getAppPath(), 'skills');
+  try {
+    return new Set(fs.readdirSync(bundledDir, { withFileTypes: true })
+      .filter((d) => d.isDirectory()).map((d) => d.name));
+  } catch (e) {
+    return new Set();
+  }
+}
+
+// 实时扫描 SKILLS_DIR,返回 {groups, skills} —— 结构与 manifest.json 完全同构,前端零改动
+function scanSkillsManifest(dir) {
+  const builtin = bundledSkillIds();
+  let entries = [];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true })
+      .filter((d) => d.isDirectory()).map((d) => d.name);
+  } catch (e) {
+    return { groups: [], skills: [] };
+  }
+
+  const skills = [];
+  for (const id of entries) {
+    const candidate = ['SKILL.md', 'skill.md']
+      .map((f) => path.join(dir, id, f))
+      .find((p) => fs.existsSync(p));
+    if (!candidate) continue;
+    let fm = {};
+    try { fm = parseSkillFrontmatter(fs.readFileSync(candidate, 'utf-8')); } catch (e) {}
+    const description = fm.description || '';
+    const group = skillGroupOf(id);
+    const meta = SKILLS_GROUPS.find((g) => g.id === group) || SKILLS_GROUPS[SKILLS_GROUPS.length - 1];
+    const generated = !builtin.has(id) && group === 'general';
+    skills.push({
+      id,
+      name: fm.name || id,
+      file: path.basename(candidate),
+      group,
+      icon: SKILL_ICONS[id] || meta.icon,
+      color: meta.color,
+      version: fm.version || '',
+      summary: skillSummary(description),
+      description,
+      builtin: builtin.has(id),
+      generated,
+    });
+  }
+
+  skills.sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name));
+
+  const groups = SKILLS_GROUPS
+    .map((g) => ({ id: g.id, name: g.name, icon: g.icon, color: g.color,
+      count: skills.filter((s) => s.group === g.id).length }))
+    .filter((g) => g.count > 0);
+
+  return {
+    generatedAt: new Date().toISOString(),
+    source: 'scan:~/.product-lobster/skills',
+    groups,
+    skills,
+  };
+}
+
 ipcMain.handle('skills:get-manifest', async () => {
   try {
-    const manifestPath = path.join(SKILLS_DIR, 'manifest.json');
-    if (!fs.existsSync(manifestPath)) return { success: false, error: 'skills manifest not found' };
-    return { success: true, data: JSON.parse(fs.readFileSync(manifestPath, 'utf-8')) };
+    // 实时扫描 SKILLS_DIR:agent 主动生成/用户导入的技能只要落在此目录即刻可见。
+    const data = scanSkillsManifest(SKILLS_DIR);
+    // 顺带把扫描结果写回 manifest.json,兼容仍读静态文件的旧路径(失败不阻断)。
+    try {
+      fs.writeFileSync(path.join(SKILLS_DIR, 'manifest.json'), JSON.stringify(data, null, 2) + '\n', 'utf-8');
+    } catch (e) {}
+    return { success: true, data };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -932,12 +1072,71 @@ ipcMain.handle('skills:open', async (_event, { skill }) => {
   }
 });
 
+// 删除技能:移除 SKILLS_DIR/<id> 整个目录,并刷新 manifest。
+// 内置技能(bundledSkillIds)删除后会在下次启动被 ensureDirs 从内置目录恢复,
+// 前端会对内置技能给出"重启恢复"提示——这里不阻断,由前端把关。
+ipcMain.handle('skills:delete', async (_event, { skill }) => {
+  try {
+    const id = String(skill || '').trim();
+    if (!id || id.includes('/') || id.includes('\\') || id.includes('..')) {
+      return { success: false, error: '无效技能 id' };
+    }
+    const dirPath = path.join(SKILLS_DIR, id);
+    if (!dirPath.startsWith(SKILLS_DIR + path.sep)) return { success: false, error: '路径越界' };
+    if (!fs.existsSync(dirPath)) return { success: false, error: '技能不存在' };
+    fs.rmSync(dirPath, { recursive: true, force: true });
+    // 重生 manifest.json,保持与实时扫描一致
+    try {
+      const data = scanSkillsManifest(SKILLS_DIR);
+      fs.writeFileSync(path.join(SKILLS_DIR, 'manifest.json'), JSON.stringify(data, null, 2) + '\n', 'utf-8');
+    } catch (e) {}
+    return { success: true, skillId: id };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 把一个源文件复制进 HANDBOOK_DIR/<stageDir> 并登记 manifest,返回最终文件名。
+// 供 handbook:upload(本地选文件)与 handbook:archive-from-project(项目产物归档)共用。
+// 调用方负责已读入并最终写回 manifest 对象;此函数只处理单个 stage 的一次拷贝+登记。
+function registerHandbookFile(manifest, stageDir, srcPath, category) {
+  const cat = ['knowledge', 'deliverable'].includes(category) ? category : 'knowledge';
+  const st = (manifest.stages || []).find((s) => s.dir === stageDir);
+  if (!st) throw new Error('阶段不存在');
+  st.items = st.items || [];
+
+  const targetDir = path.join(HANDBOOK_DIR, stageDir);
+  if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+  let fileName = path.basename(srcPath);
+  let destPath = path.join(targetDir, fileName);
+  if (fs.existsSync(destPath)) {
+    const ext = path.extname(fileName);
+    const base = path.basename(fileName, ext);
+    let n = 2;
+    while (fs.existsSync(path.join(targetDir, `${base}(${n})${ext}`))) n++;
+    fileName = `${base}(${n})${ext}`;
+    destPath = path.join(targetDir, fileName);
+  }
+  fs.copyFileSync(srcPath, destPath);
+
+  const type = (path.extname(fileName).slice(1) || 'txt').toLowerCase();
+  const title = path.basename(fileName, path.extname(fileName)).replace(/【(知识|交付)】/g, '').trim();
+  const previewable = type === 'md' || type === 'html';
+  st.items.push({ file: fileName, title, type, category: cat, previewable, uploaded: true });
+
+  st.counts = {
+    knowledge: st.items.filter((it) => it.category === 'knowledge').length,
+    deliverable: st.items.filter((it) => it.category === 'deliverable').length,
+  };
+  return fileName;
+}
+
 // 上传文档归档到知识库(FDE 手册某阶段目录),并登记 manifest.json
 ipcMain.handle('handbook:upload', async (_event, { stage, category }) => {
   try {
     const stageDir = String(stage || '').replace(/[^0-9]/g, '');
     if (!stageDir) return { success: false, error: '无效阶段' };
-    const cat = ['knowledge', 'deliverable'].includes(category) ? category : 'knowledge';
 
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
       title: '选择要归档的文档',
@@ -949,48 +1148,126 @@ ipcMain.handle('handbook:upload', async (_event, { stage, category }) => {
     });
     if (canceled || !filePaths || filePaths.length === 0) return { success: false, canceled: true };
 
-    const targetDir = path.join(HANDBOOK_DIR, stageDir);
-    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
-
-    // 读 manifest
     const manifestPath = path.join(HANDBOOK_DIR, 'manifest.json');
     if (!fs.existsSync(manifestPath)) return { success: false, error: 'manifest 缺失' };
     const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-    const st = (manifest.stages || []).find((s) => s.dir === stageDir);
-    if (!st) return { success: false, error: '阶段不存在' };
-    st.items = st.items || [];
 
     const added = [];
     for (const srcPath of filePaths) {
-      let fileName = path.basename(srcPath);
-      let destPath = path.join(targetDir, fileName);
-      // 重名冲突:自动加序号保留两份
-      if (fs.existsSync(destPath)) {
-        const ext = path.extname(fileName);
-        const base = path.basename(fileName, ext);
-        let n = 2;
-        while (fs.existsSync(path.join(targetDir, `${base}(${n})${ext}`))) n++;
-        fileName = `${base}(${n})${ext}`;
-        destPath = path.join(targetDir, fileName);
-      }
-      fs.copyFileSync(srcPath, destPath);
-
-      const type = (path.extname(fileName).slice(1) || 'txt').toLowerCase();
-      const title = path.basename(fileName, path.extname(fileName)).replace(/【(知识|交付)】/g, '').trim();
-      // md/html 可内嵌预览;docx 无快照(上传件无 previewHtml),其余走「打开/下载」
-      const previewable = type === 'md' || type === 'html';
-      st.items.push({ file: fileName, title, type, category: cat, previewable, uploaded: true });
-      added.push(fileName);
+      added.push(registerHandbookFile(manifest, stageDir, srcPath, category));
     }
-
-    // 重算 counts
-    st.counts = {
-      knowledge: st.items.filter((it) => it.category === 'knowledge').length,
-      deliverable: st.items.filter((it) => it.category === 'deliverable').length,
-    };
     fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
 
     return { success: true, files: added, stage: stageDir };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 扫描各项目目录里的产物文档,供知识库"本项目产物"视图列出/一键归档。
+// 扫描 knowledge/ stage2/ stage3/ + 项目根的文档文件;跳过 prototype/uploads/recordings/meta.json 等。
+ipcMain.handle('handbook:scan-projects', async () => {
+  try {
+    const DOC_EXTS = new Set(['md', 'docx', 'doc', 'pdf', 'pptx', 'ppt', 'xlsx', 'html', 'txt']);
+    const SCAN_SUBDIRS = ['knowledge', 'stage2', 'stage3'];
+    const SKIP_ROOT = new Set(['meta.json']);
+    let slugs = [];
+    try {
+      slugs = fs.readdirSync(PROJECTS_DIR, { withFileTypes: true })
+        .filter((d) => d.isDirectory()).map((d) => d.name);
+    } catch (e) { slugs = []; }
+
+    const projects = [];
+    for (const slug of slugs) {
+      const meta = readProjectMeta(slug);
+      const projectDir = resolveProjectPath(slug);
+      const items = [];
+
+      const collect = (absPath, relDir) => {
+        let entries = [];
+        try { entries = fs.readdirSync(absPath, { withFileTypes: true }); } catch (e) { return; }
+        for (const ent of entries) {
+          if (!ent.isFile()) continue;
+          if (relDir === '' && SKIP_ROOT.has(ent.name)) continue;
+          const ext = (path.extname(ent.name).slice(1) || '').toLowerCase();
+          if (!DOC_EXTS.has(ext)) continue;
+          let mtime = 0;
+          try { mtime = fs.statSync(path.join(absPath, ent.name)).mtimeMs; } catch (e) {}
+          const relPath = (relDir ? relDir + '/' : '') + ent.name;
+          items.push({
+            file: ent.name,
+            relPath,
+            title: path.basename(ent.name, path.extname(ent.name)),
+            type: ext,
+            dir: relDir || '.',
+            mtime,
+          });
+        }
+      };
+
+      collect(projectDir, '');
+      for (const sub of SCAN_SUBDIRS) collect(path.join(projectDir, sub), sub);
+
+      if (items.length) {
+        items.sort((a, b) => b.mtime - a.mtime);
+        projects.push({ slug, name: (meta && meta.name) || slug, items });
+      }
+    }
+    // 有产物的项目按名称排序
+    projects.sort((a, b) => a.name.localeCompare(b.name));
+    return { success: true, projects };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 把某项目产物文件归档到知识库某阶段,并登记 manifest。
+ipcMain.handle('handbook:archive-from-project', async (_event, { slug, relPath, stage, category }) => {
+  try {
+    const stageDir = String(stage || '').replace(/[^0-9]/g, '');
+    if (!stageDir) return { success: false, error: '无效阶段' };
+    if (!slug || !relPath) return { success: false, error: '缺少项目/文件' };
+
+    // resolveProjectPath 已含路径穿越防护
+    const srcPath = resolveProjectPath(slug, ...relPath.split('/'));
+    if (!fs.existsSync(srcPath)) return { success: false, error: '源文件不存在' };
+
+    const manifestPath = path.join(HANDBOOK_DIR, 'manifest.json');
+    if (!fs.existsSync(manifestPath)) return { success: false, error: 'manifest 缺失' };
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+
+    const fileName = registerHandbookFile(manifest, stageDir, srcPath, category);
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+
+    return { success: true, file: fileName, stage: stageDir };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 删除知识库文档:删磁盘文件并从 manifest 对应 stage.items 摘除、重算 counts。
+// 内置文档删除后会在下次启动被 ensureDirs 的 copyDirSync 从内置目录恢复(前端给出提示)。
+ipcMain.handle('handbook:delete', async (_event, { stage, file }) => {
+  try {
+    const stageDir = String(stage || '').replace(/[^0-9]/g, '');
+    if (!stageDir || !file) return { success: false, error: '缺少阶段/文件' };
+    const filePath = resolveHandbookPath(stageDir, file); // 越界防护
+    if (fs.existsSync(filePath)) fs.rmSync(filePath, { force: true });
+
+    const manifestPath = path.join(HANDBOOK_DIR, 'manifest.json');
+    if (fs.existsSync(manifestPath)) {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+      const st = (manifest.stages || []).find((s) => s.dir === stageDir);
+      if (st && Array.isArray(st.items)) {
+        st.items = st.items.filter((it) => it.file !== file);
+        st.counts = {
+          knowledge: st.items.filter((it) => it.category === 'knowledge').length,
+          deliverable: st.items.filter((it) => it.category === 'deliverable').length,
+        };
+        fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2) + '\n', 'utf-8');
+      }
+    }
+    return { success: true, stage: stageDir, file };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -1683,6 +1960,34 @@ ipcMain.handle('hermes:save-recording', async (_event, { slug, audioBase64, ext 
   }
 });
 
+// 保存/预览聊天附件。toTemp=true → 写系统临时目录返回路径（供 shell.openPath 预览）;
+// 否则弹「另存为」让用户选路径下载。内容优先 base64 data，否则按 utf-8 写 text。
+ipcMain.handle('hermes:save-attachment', async (_event, { name, data, text, toTemp } = {}) => {
+  try {
+    if (!data && typeof text !== 'string') return { success: false, error: '没有可保存的内容' };
+    const safeName = (name || 'attachment').replace(/[/\\:*?"<>|]/g, '_').slice(0, 200) || 'attachment';
+    const buffer = data ? Buffer.from(data, 'base64') : Buffer.from(text, 'utf-8');
+
+    if (toTemp) {
+      const dirPath = path.join(os.tmpdir(), 'product-lobster-preview');
+      if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
+      const filePath = path.join(dirPath, safeName);
+      fs.writeFileSync(filePath, buffer);
+      return { success: true, filePath, dirPath };
+    }
+
+    const { canceled, filePath: dest } = await dialog.showSaveDialog(mainWindow, {
+      title: '下载附件',
+      defaultPath: safeName,
+    });
+    if (canceled || !dest) return { success: false, canceled: true };
+    fs.writeFileSync(dest, buffer);
+    return { success: true, path: dest };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 // ---------------------------------------------------------------------------
 // 环境自检 + LLM 连通性(首次启动向导用)
 // ---------------------------------------------------------------------------
@@ -1873,22 +2178,42 @@ ipcMain.handle('hermes:write-file', async (_event, { slug, relativePath, content
   }
 });
 
-ipcMain.handle('hermes:list-files', async (_event, { slug, dir }) => {
+ipcMain.handle('hermes:list-files', async (_event, { slug, dir, recursive }) => {
   try {
-    const targetDir = resolveProjectPath(slug, dir || '.');
+    const baseDir = dir || '.';
+    const targetDir = resolveProjectPath(slug, baseDir);
     if (!fs.existsSync(targetDir)) return { success: true, files: [] };
 
-    const items = fs.readdirSync(targetDir, { withFileTypes: true });
-    const files = items.map((item) => ({
-      name: item.name,
-      isDirectory: item.isDirectory(),
-      path: path.join(dir || '.', item.name).replace(/\\/g, '/'),
+    // 递归列出目录下所有文件（含 data/ 等子目录），relPath 相对于 targetDir，
+    // 供原型文件树展示 html / js / json 等全部产物，而不仅是顶层 html。
+    const walk = (absDir, relPrefix) => {
+      const out = [];
+      const items = fs.readdirSync(absDir, { withFileTypes: true });
+      for (const item of items) {
+        const rel = relPrefix ? `${relPrefix}/${item.name}` : item.name;
+        if (item.isDirectory()) {
+          out.push({ name: item.name, isDirectory: true, relPath: rel, depth: relPrefix ? relPrefix.split('/').length : 0 });
+          if (recursive) out.push(...walk(path.join(absDir, item.name), rel));
+        } else {
+          out.push({ name: item.name, isDirectory: false, relPath: rel, depth: relPrefix ? relPrefix.split('/').length : 0 });
+        }
+      }
+      return out;
+    };
+
+    const files = walk(targetDir, '').map((f) => ({
+      ...f,
+      // path 保持相对项目根，兼容既有调用（如 prototype/xxx）
+      path: path.join(baseDir, f.relPath).replace(/\\/g, '/'),
     }));
-    files.sort((a, b) => {
-      if (a.isDirectory && !b.isDirectory) return -1;
-      if (!a.isDirectory && b.isDirectory) return 1;
-      return a.name.localeCompare(b.name);
-    });
+    // 目录在前、同级按名排序（递归时子项已紧随其父目录，故仅做稳定的浅层排序）
+    if (!recursive) {
+      files.sort((a, b) => {
+        if (a.isDirectory && !b.isDirectory) return -1;
+        if (!a.isDirectory && b.isDirectory) return 1;
+        return a.name.localeCompare(b.name);
+      });
+    }
     return { success: true, files };
   } catch (err) {
     return { success: false, error: err.message };

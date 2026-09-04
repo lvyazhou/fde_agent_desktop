@@ -66,6 +66,15 @@
               AI 内置的真实技能包 · 覆盖产品文档 / 原型 / 出图 / 陪练全链路 · 共 {{ filtered.length }} 项
             </p>
           </div>
+          <div class="shrink-0 flex items-center gap-2">
+          <button
+            @click="refresh"
+            :disabled="importing"
+            class="shrink-0 inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition"
+            title="重新扫描技能库"
+          >
+            <i class="fa-solid fa-rotate text-[12px]" :class="refreshing ? 'fa-spin' : ''"></i>刷新
+          </button>
           <button
             @click="startImport"
             :disabled="importing"
@@ -73,6 +82,7 @@
           >
             <i class="fa-solid fa-file-zipper text-[12px]"></i>导入技能包
           </button>
+          </div>
         </div>
 
         <div class="grid grid-cols-4 gap-4 mb-5">
@@ -103,6 +113,7 @@
                 <h3 class="text-[13.5px] font-semibold text-slate-800 truncate group-hover:text-blue-700 transition-colors">{{ sk.name }}</h3>
                 <div class="flex items-center gap-1.5 mt-1">
                   <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{{ groupName(sk.group) }}</span>
+                  <span v-if="sk.generated" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-medium"><i class="fa-solid fa-wand-magic-sparkles mr-0.5"></i>自动生成</span>
                   <span v-if="sk.version" class="text-[10px] text-slate-400">v{{ sk.version }}</span>
                 </div>
               </div>
@@ -139,6 +150,9 @@
             <div class="flex items-center gap-1.5 shrink-0">
               <button @click="openDir(selected)" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-slate-600 hover:bg-slate-100 transition" title="打开技能目录">
                 <i class="fa-solid fa-folder-open text-[11px]"></i><span>打开目录</span>
+              </button>
+              <button @click="deleteSkill(selected)" :disabled="deleting" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-rose-500 hover:bg-rose-50 transition disabled:opacity-50" title="删除技能">
+                <i class="fa-solid fa-trash text-[11px]"></i><span>删除</span>
               </button>
               <button @click="selected = null" class="w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 transition"><i class="fa-solid fa-xmark"></i></button>
             </div>
@@ -199,6 +213,13 @@
         </div>
       </div>
     </transition>
+
+    <!-- Toast -->
+    <transition name="fade">
+      <div v-if="toast" class="fixed top-4 right-4 z-[60] bg-slate-800 text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-blue-400"></i>{{ toast }}
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -214,6 +235,14 @@ const selected = ref(null);
 const loading = ref(false);
 const error = ref('');
 const rendered = ref('');
+const refreshing = ref(false);
+const deleting = ref(false);
+const toast = ref('');
+
+function showToast(msg) {
+  toast.value = msg;
+  setTimeout(() => { toast.value = ''; }, 2600);
+}
 
 // 导入技能包状态
 const importing = ref(false);
@@ -346,6 +375,40 @@ async function openDir(sk) {
     await window.api.skills.open(sk.id);
   } catch (e) {
     console.error('[skills] open dir failed', e);
+  }
+}
+
+async function refresh() {
+  if (refreshing.value) return;
+  refreshing.value = true;
+  try {
+    await loadManifest();
+    showToast('技能库已刷新');
+  } finally {
+    setTimeout(() => { refreshing.value = false; }, 300);
+  }
+}
+
+async function deleteSkill(sk) {
+  if (!sk || deleting.value) return;
+  const tip = sk.builtin
+    ? `「${sk.name}」是内置技能,删除后下次启动会自动恢复。确认删除?`
+    : `确认删除技能「${sk.name}」?此操作会移除该技能目录,不可撤销。`;
+  if (!window.confirm(tip)) return;
+  deleting.value = true;
+  try {
+    const res = await window.api.skills.delete(sk.id);
+    if (res && res.success) {
+      selected.value = null;
+      await loadManifest();
+      showToast(`已删除技能「${sk.name}」`);
+    } else {
+      showToast('删除失败:' + (res?.error || '未知错误'));
+    }
+  } catch (e) {
+    showToast('删除失败:' + (e.message || e));
+  } finally {
+    deleting.value = false;
   }
 }
 </script>

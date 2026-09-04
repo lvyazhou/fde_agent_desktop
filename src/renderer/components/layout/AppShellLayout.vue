@@ -1,5 +1,24 @@
 <template>
   <div class="min-h-screen h-screen flex flex-col bg-[#f5f7fa] font-sans text-slate-800 antialiased overflow-hidden">
+    <!-- 授权到期遮罩:过了 expire_at(缓冲期/硬过期)或授权异常 → 全屏阻断,必须导入新授权 -->
+    <div v-if="licenseBlock" class="license-overlay">
+      <div class="license-overlay-drag"></div>
+      <div class="license-card no-drag">
+        <div class="license-card-icon">
+          <i class="fa-solid fa-shield-halved"></i>
+        </div>
+        <h2 class="license-card-title">{{ licenseBlock.title }}</h2>
+        <p class="license-card-desc">{{ licenseBlock.desc }}</p>
+        <div v-if="licenseBlock.detail" class="license-card-detail">{{ licenseBlock.detail }}</div>
+        <button class="license-card-btn" :disabled="importing" @click="importLicense">
+          <i class="fa-solid fa-file-import"></i>
+          {{ importing ? '正在导入…' : '导入授权文件' }}
+        </button>
+        <p v-if="importError" class="license-card-err">{{ importError }}</p>
+        <p class="license-card-sn" v-if="licenseInfo && licenseInfo.sn">机器码:{{ licenseInfo.sn }}</p>
+      </div>
+    </div>
+
     <!-- Top nav bar (52px, draggable) -->
     <header class="app-header h-[52px] flex items-center justify-between pl-4 pr-2 shrink-0 select-none drag-region relative z-20">
       <!-- Left: Logo + brand + nav links -->
@@ -149,13 +168,16 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const isMaximized = ref(false);
-const appVersion = ref('v1.0.0');
+const appVersion = ref('v1.1.0');
 const licenseInfo = ref(null);
+const importing = ref(false);
+const importError = ref('');
 
 // 顶栏状态条:实时时钟 + AI 引擎就绪状态
 const clock = ref('--:--:--');
 const engineReady = ref(null); // null=检测中, true=就绪, false=未就绪
 let clockTimer = null;
+let licenseTimer = null;
 
 // 版本号去掉前缀 v,状态条里用 5.7.0 这样的纯数字胶囊
 const appVersionShort = computed(() => String(appVersion.value).replace(/^v/i, ''));
@@ -207,6 +229,37 @@ const licenseChip = computed(() => {
   return null;
 });
 
+// 授权阻断遮罩:任何“过了到期日”或授权异常的状态都要挡住使用。
+// 覆盖:GRACE_PERIOD(缓冲期,已过 expire)/ HARD_EXPIRED / NO_LICENSE / SN_MISMATCH / TAMPERED / CLOCK_ROLLBACK / FINGERPRINT_FAIL
+const licenseBlock = computed(() => {
+  const l = licenseInfo.value;
+  if (!l) return null; // 尚未取到状态,先不阻断,避免误挡
+  const customer = l.customer || '';
+  const who = customer ? `${customer} 的` : '';
+  switch (l.status) {
+    case 'GRACE_PERIOD': {
+      // 已到期,处于缓冲期——按你的要求同样弹窗阻断
+      const detail = l.expireAt ? `授权已于 ${l.expireAt} 到期` : '';
+      return { title: '授权已到期', desc: `${who}授权已到期,请导入新的授权文件后继续使用。`, detail };
+    }
+    case 'HARD_EXPIRED':
+      return { title: '授权已过期', desc: `${who}授权已过期,请导入新的授权文件后继续使用。`, detail: l.expireAt ? `到期日:${l.expireAt}` : '' };
+    case 'NO_LICENSE':
+      return { title: '未授权', desc: '本机尚未导入授权文件,请导入授权文件以激活软件。', detail: '' };
+    case 'SN_MISMATCH':
+      return { title: '授权与本机不匹配', desc: '当前授权文件绑定的机器码与本机不一致,请使用为本机签发的授权文件。', detail: '' };
+    case 'CLOCK_ROLLBACK':
+      return { title: '检测到系统时间异常', desc: '系统时间被回拨,授权校验无法通过。请将系统时间调整正确后重试。', detail: '' };
+    case 'TAMPERED':
+      return { title: '授权文件无效', desc: '授权文件已损坏或被篡改,请重新导入有效的授权文件。', detail: '' };
+    case 'FINGERPRINT_FAIL':
+      return { title: '无法读取机器码', desc: '无法获取本机机器码,授权校验失败,请联系技术支持。', detail: '' };
+    default:
+      // ACTIVE_PERMANENT / ACTIVE_TEMPORARY 或未知的 ok:true 状态 → 不阻断
+      return l.ok ? null : { title: '授权校验未通过', desc: '授权状态异常,请导入有效的授权文件。', detail: l.status ? `状态:${l.status}` : '' };
+  }
+});
+
 const loadLicense = async () => {
   try {
     if (window.api?.license?.status) {
@@ -214,6 +267,44 @@ const loadLicense = async () => {
       if (r && r.success !== false) licenseInfo.value = r;
     }
   } catch (e) { /* ignore */ }
+};
+
+// 导入授权文件:调主进程弹文件选择器 → 校验落盘 → 重新拉状态。成功即撤下遮罩。
+const importLicense = async () => {
+  if (importing.value) return;
+  importError.value = '';
+  importing.value = true;
+  try {
+    if (!window.api?.license?.import) { importError.value = '当前环境不支持导入,请联系技术支持。'; return; }
+    const res = await window.api.license.import();
+    if (res && res.canceled) { return; } // 用户取消,静默
+    if (res && res.success) {
+      // 主进程仅在校验通过(ok)时才返回 success:true 并落盘
+      await loadLicense(); // 刷新状态,licenseBlock 会随之消失
+      importError.value = '';
+    } else {
+      const reason = res && (res.reason || res.status || res.error);
+      importError.value = reasonText(reason);
+    }
+  } catch (e) {
+    importError.value = '导入失败:' + (e && e.message ? e.message : '未知错误');
+  } finally {
+    importing.value = false;
+  }
+};
+
+// 把校验状态码翻译成给用户看的话
+const reasonText = (r) => {
+  switch (r) {
+    case 'SN_MISMATCH': return '该授权文件不是为本机签发的(机器码不匹配)。';
+    case 'HARD_EXPIRED': return '该授权文件已过期。';
+    case 'GRACE_PERIOD': return '该授权文件已到期(处于缓冲期),请使用有效授权。';
+    case 'TAMPERED': return '授权文件已损坏或被篡改。';
+    case 'CLOCK_ROLLBACK': return '检测到系统时间被回拨,请校正系统时间后重试。';
+    case 'FINGERPRINT_FAIL': return '无法读取本机机器码。';
+    case 'NO_LICENSE': return '未选择有效的授权文件。';
+    default: return r ? ('导入失败:' + r) : '导入失败,请确认授权文件是否有效。';
+  }
 };
 
 // 实时时钟(HH:MM:SS)
@@ -248,6 +339,8 @@ onMounted(async () => {
     } catch (e) {}
   }
   loadLicense();
+  // 每 60s 复查一次授权,修掉“开着不动就永不复查”的问题:缓冲期跨进硬过期、时钟异常等都能及时挡住
+  licenseTimer = setInterval(loadLicense, 60000);
 
   tickClock();
   clockTimer = setInterval(tickClock, 1000);
@@ -256,6 +349,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (clockTimer) clearInterval(clockTimer);
+  if (licenseTimer) clearInterval(licenseTimer);
 });
 
 const minimizeWindow = () => {
@@ -272,6 +366,92 @@ const closeWindow = () => {
 </script>
 
 <style scoped>
+/* 授权到期遮罩:全屏、最高层级、阻断一切交互 */
+.license-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+/* 顶部一条可拖拽区,遮罩下仍能移动/关闭窗口 */
+.license-overlay-drag {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  -webkit-app-region: drag;
+}
+.license-card {
+  position: relative;
+  width: 420px;
+  max-width: calc(100vw - 48px);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px 32px 28px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  text-align: center;
+}
+.license-card-icon {
+  width: 56px; height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 24px;
+}
+.license-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 8px;
+}
+.license-card-desc {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0 0 6px;
+}
+.license-card-detail {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0 0 20px;
+}
+.license-card-btn {
+  -webkit-app-region: no-drag;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.license-card-btn:hover:not(:disabled) { background: #1d4ed8; }
+.license-card-btn:disabled { opacity: 0.6; cursor: default; }
+.license-card-err {
+  font-size: 12px;
+  color: #dc2626;
+  margin: 12px 0 0;
+}
+.license-card-sn {
+  font-size: 11px;
+  color: #cbd5e1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  margin: 16px 0 0;
+  word-break: break-all;
+}
+
 .drag-region {
   -webkit-app-region: drag;
 }

@@ -87,11 +87,8 @@
                 <div v-if="msg.role === 'user'" class="max-w-[80%] flex flex-col items-end">
                   <div v-if="msg.attachments && msg.attachments.length" class="flex flex-wrap gap-2 mb-1.5 justify-end">
                     <template v-for="(att, ai) in msg.attachments" :key="ai">
-                      <img v-if="att.type === 'image'" :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data" class="max-w-[160px] max-h-[120px] object-cover rounded-xl border border-slate-200" />
-                      <div v-else class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 max-w-[180px]">
-                        <i class="fa-solid fa-file-lines text-blue-500 text-xs shrink-0"></i>
-                        <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
-                      </div>
+                      <img v-if="att.type === 'image'" :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data" class="max-w-[160px] max-h-[120px] object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:brightness-95 transition" @click="openLightbox('data:' + (att.media_type || 'image/png') + ';base64,' + att.data)" />
+                      <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
                     </template>
                   </div>
                   <div v-if="msg.content" class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
@@ -221,27 +218,44 @@
       <!-- Prototype Tab — full width -->
       <div v-else-if="activeTab === 'prototype'" class="flex h-full w-full">
         <!-- File tree -->
-        <div class="w-[220px] shrink-0 bg-white border-r border-slate-100 flex flex-col overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-600">文件列表</span>
+        <div class="w-[212px] shrink-0 bg-slate-50/60 border-r border-slate-100 flex flex-col overflow-hidden">
+          <div class="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
+            <span class="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">文件列表</span>
             <button @click="refreshPrototypeFiles" class="text-slate-400 hover:text-blue-600 transition-colors" title="刷新">
-              <i class="fa-solid fa-arrows-rotate text-xs"></i>
+              <i class="fa-solid fa-arrows-rotate text-[11px]"></i>
             </button>
           </div>
-          <div class="flex-1 overflow-y-auto p-2">
-            <div v-if="prototypeFiles.length === 0" class="px-3 py-4 text-xs text-slate-400 text-center">
+          <div class="flex-1 overflow-y-auto py-1.5 px-1.5">
+            <div v-if="prototypeFiles.length === 0" class="px-3 py-4 text-[11px] text-slate-400 text-center">
               暂无文件
             </div>
-            <button
-              v-for="file in prototypeFiles"
-              :key="file.name"
-              @click="selectPrototypeFile(file.name)"
-              class="w-full text-left px-3 py-2 rounded-lg text-xs transition-colors truncate flex items-center gap-2"
-              :class="selectedFile === file.name ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-50'"
-            >
-              <i class="fa-solid fa-file-code text-[10px]" :class="selectedFile === file.name ? 'text-blue-500' : 'text-slate-400'"></i>
-              {{ file.name }}
-            </button>
+            <template v-for="row in fileTreeRows" :key="row.type + ':' + (row.path || row.rel)">
+              <!-- 文件夹行：可折叠 -->
+              <button
+                v-if="row.type === 'dir'"
+                @click="toggleDir(row.path)"
+                class="w-full text-left pr-2 py-1.5 rounded-md text-[12px] leading-tight text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-1"
+                :style="{ paddingLeft: (8 + row.depth * 14) + 'px' }"
+              >
+                <i class="fa-solid text-[9px] text-slate-400 w-2.5 shrink-0" :class="row.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
+                <i class="fa-solid text-[11px] shrink-0" :class="row.collapsed ? 'fa-folder text-amber-400' : 'fa-folder-open text-amber-400'"></i>
+                <span class="truncate font-medium">{{ row.name }}</span>
+              </button>
+              <!-- 文件行 -->
+              <button
+                v-else
+                @click="selectPrototypeFile(row.rel)"
+                class="w-full text-left pr-2 py-1.5 rounded-md text-[12px] leading-tight transition-colors flex items-center gap-1.5"
+                :style="{ paddingLeft: (8 + row.depth * 14 + 15) + 'px' }"
+                :class="selectedFile === row.rel ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-100'"
+              >
+                <i
+                  class="text-[11px] shrink-0"
+                  :class="[fileIcon(row.rel).icon, selectedFile === row.rel ? 'text-blue-500' : fileIcon(row.rel).color]"
+                ></i>
+                <span class="truncate">{{ row.base }}</span>
+              </button>
+            </template>
           </div>
         </div>
         <!-- Preview pane -->
@@ -281,6 +295,18 @@
               <i class="fa-solid fa-file-zipper text-[10px]"></i>
               导出 ZIP
             </button>
+            <!-- 预览缩放：仅缩放 iframe 视觉，不改原型文件 -->
+            <div v-if="selectedFile && isHtmlSelected" class="ml-auto flex items-center gap-1 rounded-lg bg-slate-100 px-1 py-0.5">
+              <button @click="zoomStep(-0.1)" class="w-6 h-6 flex items-center justify-center rounded text-slate-500 hover:bg-white hover:text-blue-600 transition-colors" title="缩小">
+                <i class="fa-solid fa-minus text-[10px]"></i>
+              </button>
+              <button @click="setZoom(1)" class="min-w-[42px] text-center text-[11px] tabular-nums text-slate-600 hover:text-blue-600 transition-colors" title="重置为 100%">
+                {{ Math.round(previewZoom * 100) }}%
+              </button>
+              <button @click="zoomStep(0.1)" class="w-6 h-6 flex items-center justify-center rounded text-slate-500 hover:bg-white hover:text-blue-600 transition-colors" title="放大">
+                <i class="fa-solid fa-plus text-[10px]"></i>
+              </button>
+            </div>
           </div>
           <div class="flex-1 min-h-0">
             <!-- AI 工作进度：生成 / 迭代原型时实时展示推理步骤、工具调用与输出 -->
@@ -356,13 +382,24 @@
             <div v-else-if="!selectedFile" class="flex items-center justify-center h-full text-sm text-slate-400">
               选择左侧文件进行预览
             </div>
-            <iframe
-              v-else
-              :key="iframeKey"
-              :src="iframeSrc"
-              class="w-full h-full border-0"
-              sandbox="allow-scripts allow-same-origin"
-            ></iframe>
+            <div v-else-if="isHtmlSelected" class="w-full h-full overflow-hidden bg-white">
+              <iframe
+                :key="iframeKey"
+                :src="iframeSrc"
+                class="border-0 origin-top-left"
+                :style="{ width: (100 / previewZoom) + '%', height: (100 / previewZoom) + '%', transform: 'scale(' + previewZoom + ')' }"
+                sandbox="allow-scripts allow-same-origin"
+              ></iframe>
+            </div>
+            <!-- 非 HTML 文件：源码预览 -->
+            <div v-else class="h-full flex flex-col bg-[#1e293b] min-h-0">
+              <div class="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-white/10">
+                <i class="text-[11px]" :class="[fileIcon(selectedFile).icon, fileIcon(selectedFile).color]"></i>
+                <span class="text-[12px] text-slate-300 font-mono">{{ selectedFile }}</span>
+                <span class="ml-auto text-[10px] text-slate-500">只读预览</span>
+              </div>
+              <pre class="flex-1 overflow-auto p-4 text-[12px] leading-relaxed text-slate-200 font-mono whitespace-pre"><code>{{ fileSource || '（空文件）' }}</code></pre>
+            </div>
           </div>
 
           <!-- 迭代对话条（就地改原型，原「迭代修改」tab 并入这里）-->
@@ -461,11 +498,8 @@
                 <div v-if="msg.role === 'user'" class="max-w-[80%] flex flex-col items-end">
                   <div v-if="msg.attachments && msg.attachments.length" class="flex flex-wrap gap-2 mb-1.5 justify-end">
                     <template v-for="(att, ai) in msg.attachments" :key="ai">
-                      <img v-if="att.type === 'image'" :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data" class="max-w-[160px] max-h-[120px] object-cover rounded-xl border border-slate-200" />
-                      <div v-else class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 max-w-[180px]">
-                        <i class="fa-solid fa-file-lines text-blue-500 text-xs shrink-0"></i>
-                        <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
-                      </div>
+                      <img v-if="att.type === 'image'" :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data" class="max-w-[160px] max-h-[120px] object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:brightness-95 transition" @click="openLightbox('data:' + (att.media_type || 'image/png') + ';base64,' + att.data)" />
+                      <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
                     </template>
                   </div>
                   <div v-if="msg.content" class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
@@ -629,6 +663,8 @@
       {{ toast.text }}
     </div>
   </transition>
+
+  <ImageLightbox :src="lightboxSrc" :visible="lightboxVisible" @close="lightboxVisible = false" />
 </template>
 
 <script setup>
@@ -638,6 +674,8 @@ import { marked } from 'marked';
 import StageTimeline from '@/components/workbench/StageTimeline.vue';
 import StagePanel from '@/components/workbench/StagePanel.vue';
 import Stage3Deliverables from '@/components/workbench/StageDeliverables.vue';
+import ImageLightbox from '@/components/common/ImageLightbox.vue';
+import AttachmentChip from '@/components/common/AttachmentChip.vue';
 import { FDE_STAGES, getStage, DEFAULT_STAGE } from '@/data/fde-stages';
 import { useChatComposer } from '@/composables/useChatComposer';
 
@@ -651,6 +689,14 @@ const route = useRoute();
 const projectName = ref('');
 const projectMeta = ref(null);
 const activeTab = ref('requirement');
+
+// 图片放大预览（三个对话 tab 共用）
+const lightboxSrc = ref('');
+const lightboxVisible = ref(false);
+const openLightbox = (src) => {
+  lightboxSrc.value = src;
+  lightboxVisible.value = true;
+};
 
 // --- FDE 五阶段工作台状态 ---
 const WORKSPACE_STAGES = [2, 3]; // 阶段②③承载真实工作区;①④⑤仍走 StagePanel 展示
@@ -772,6 +818,34 @@ function tabsForStage(id) {
 }
 const tabs = computed(() => tabsForStage(currentStage.value));
 
+// 生成 PRD / 功能清单时自动配图的指令片段。
+// {mdDir} 会被替换为该交付物 md 文件所在目录（根目录交付物为空串）。
+// 图必须写到「与 md 同级的 assets/ 目录」，并在正文用相对路径 ![](assets/xxx.svg) 引用，
+// 这样展示端 inlineRelativeImages 才能按 md 所在目录解析并内联渲染。
+const diagramInstruction = (mdDir) => {
+  const assetsAbs = mdDir ? `${mdDir}assets/` : 'assets/';
+  return `
+
+【自动配图（重要）】在写文档正文前，先根据需求上下文生成 3 类图并存为 SVG，供页面直接展示：
+1) 架构图（系统分层/模块关系）→ 文件 \`${assetsAbs}architecture.svg\`
+2) 业务流程图（用户操作流程/关键判断分支）→ 文件 \`${assetsAbs}flow.svg\`
+3) 智能体能力图（AI/agent 推理、工具、知识库分布）→ 文件 \`${assetsAbs}agent-capability.svg\`
+
+生成方式（优先复用绘图脚本，不可用则退化）：
+- 优先：\`python3 ~/.claude/skills/fireworks-tech-graph/scripts/generate-from-template.py architecture 项目绝对路径/${assetsAbs}architecture.svg '{"title":"系统架构","nodes":[...],"arrows":[...]}'\`（flowchart / agent 类型同理，见该脚本用法）。
+- 退化：脚本不存在时，直接用 python 写出合法 SVG 文本，再用 \`rsvg-convert 文件.svg -o /tmp/_diagcheck.png\` 校验语法（无 rsvg-convert 则跳过校验，SVG 仍可展示）。
+- 每张图先 \`mkdir -p 项目绝对路径/${assetsAbs}\` 确保目录存在。
+
+在文档正文对应章节用【相对路径】插入图片（不要写绝对路径、不要 data URI，展示端会自动内联）：
+- 「产品架构总览」章节：\`![架构图](assets/architecture.svg)\`
+- 核心业务流程 / 交互流程章节：\`![业务流程图](assets/flow.svg)\`
+- AI 能力分布 / 智能体章节：\`![智能体能力图](assets/agent-capability.svg)\`
+若某类图与本产品无关可省略对应一张，但架构图与流程图应尽量都有。`;
+};
+
+// 需要自动配图的交付物 key（PRD + 功能清单）
+const DIAGRAM_KEYS = ['feature-spec', 'prd2', 'prd'];
+
 // 阶段②交付物定义（4 件都接 AI；功能清单走 product-feature-spec skill）
 const STAGE2_DELIVERABLES = [
   {
@@ -815,6 +889,12 @@ const STAGE3_DELIVERABLES = [
     hint: '一个环节一个智能体：身份卡→五层拆解→六组件→提示词→知识库→技能→A/B→验收上线。',
   },
   {
+    key: 'data-metric', name: '业务数据口径模版', short: '数据口径',
+    icon: 'fa-solid fa-ruler-combined', file: 'stage3/data-metric.md',
+    tpl: { stage: '03', md: '11-业务数据口径模版【交付】.md' },
+    hint: '按 章/节/指标/指标类型/指标口径/逻辑/示例 把每个指标的计数·去重·过滤·优先级口径定死，作为阶段④建模、阶段⑤验收的对账依据。',
+  },
+  {
     key: 'prd', name: '产品需求文档 PRD（定稿）', short: 'PRD',
     icon: 'fa-solid fa-file-lines', file: 'stage3/prd.md',
     tpl: { stage: '03', md: '2.4-产品需求文档PRD(模板)【交付】.md' },
@@ -843,6 +923,46 @@ const specEditing = ref(false);
 // Prototype state
 const prototypeFiles = ref([]);
 const selectedFile = ref('');
+// 折叠的文件夹路径集合（默认全部展开）
+const collapsedDirs = ref(new Set());
+function toggleDir(dirPath) {
+  const s = new Set(collapsedDirs.value);
+  if (s.has(dirPath)) s.delete(dirPath); else s.add(dirPath);
+  collapsedDirs.value = s;
+}
+// 由扁平文件列表构建嵌套树，再按折叠状态摊平成「可见行」供 v-for 渲染
+const fileTreeRows = computed(() => {
+  const root = { dirs: new Map(), files: [] };
+  for (const f of prototypeFiles.value) {
+    const rel = f.rel || f.name;
+    const parts = rel.split('/');
+    let node = root;
+    // 逐级建目录
+    for (let i = 0; i < parts.length - 1; i++) {
+      const seg = parts[i];
+      if (!node.dirs.has(seg)) node.dirs.set(seg, { name: seg, dirs: new Map(), files: [] });
+      node = node.dirs.get(seg);
+    }
+    node.files.push({ ...f, rel, base: parts[parts.length - 1] });
+  }
+  const rows = [];
+  const walk = (node, prefix, depth) => {
+    // 目录在前，按名排序
+    const dirNames = [...node.dirs.keys()].sort((a, b) => a.localeCompare(b));
+    for (const name of dirNames) {
+      const dirPath = prefix ? `${prefix}/${name}` : name;
+      const collapsed = collapsedDirs.value.has(dirPath);
+      rows.push({ type: 'dir', name, path: dirPath, depth, collapsed });
+      if (!collapsed) walk(node.dirs.get(name), dirPath, depth + 1);
+    }
+    // 文件按名排序
+    for (const file of node.files.slice().sort((a, b) => a.base.localeCompare(b.base))) {
+      rows.push({ type: 'file', ...file, depth });
+    }
+  };
+  walk(root, '', 0);
+  return rows;
+});
 
 // 轻量提示（导出 / 发布本地服务的成功或失败反馈）
 const toast = ref({ show: false, type: 'info', text: '' });
@@ -854,6 +974,31 @@ function showToast(text, type = 'info') {
 }
 const iframeKey = ref(0);
 const iframeSrc = ref('');
+// 非 HTML 文件的源码预览
+const fileSource = ref('');
+const isHtmlSelected = ref(true);
+// 原型预览缩放（仅缩放 iframe 视觉，不改原型文件）
+const previewZoom = ref(1);
+function setZoom(z) {
+  previewZoom.value = Math.min(1.5, Math.max(0.5, Math.round(z * 100) / 100));
+}
+function zoomStep(delta) { setZoom(previewZoom.value + delta); }
+
+// 按扩展名给文件树选图标 / 颜色
+function fileIcon(rel) {
+  const n = (rel || '').toLowerCase();
+  if (/\.html?$/.test(n)) return { icon: 'fa-solid fa-file-code', color: 'text-orange-500' };
+  if (/\.jsx?$|\.mjs$/.test(n)) return { icon: 'fa-brands fa-js', color: 'text-yellow-500' };
+  if (/\.css$/.test(n)) return { icon: 'fa-brands fa-css3-alt', color: 'text-sky-500' };
+  if (/\.json$/.test(n)) return { icon: 'fa-solid fa-database', color: 'text-emerald-500' };
+  if (/\.(png|jpe?g|gif|svg|webp)$/.test(n)) return { icon: 'fa-solid fa-image', color: 'text-purple-500' };
+  if (/\.md$/.test(n)) return { icon: 'fa-solid fa-file-lines', color: 'text-slate-500' };
+  return { icon: 'fa-solid fa-file', color: 'text-slate-400' };
+}
+// 文件树展示名：子目录文件带上父目录前缀，避免同名混淆
+function fileLabel(f) {
+  return f.rel || f.name;
+}
 
 // Iterate state
 const iterateMessages = ref([]);
@@ -1602,12 +1747,16 @@ const generateDeliverable = async (key) => {
   }));
 
   const reqName = projectMeta.value?.name || props.slug;
+  // md 文件所在目录（根目录交付物为空串），供画图指令定位 assets/
+  const mdDir = d.file.includes('/') ? d.file.slice(0, d.file.lastIndexOf('/') + 1) : '';
+  const diagramPart = DIAGRAM_KEYS.includes(d.key) ? diagramInstruction(mdDir) : '';
   let prompt = '';
 
   if (d.skill) {
     // 走现成 skill（如 product-feature-spec），不塞模板
     prompt = `/${d.skill} 根据本项目"${reqName}"之前的需求对话上下文，生成《${d.name}》。\n\n`
-      + `【重要】把生成的完整内容用 write_file 工具写入当前项目目录下的 \`${d.file}\` 文件（Markdown 格式）。`;
+      + `【重要】把生成的完整内容用 write_file 工具写入当前项目目录下的 \`${d.file}\` 文件（Markdown 格式）。`
+      + diagramPart;
   } else {
     // 读手册模板（md 优先，否则 html 当结构参考）
     let tplText = '';
@@ -1625,7 +1774,8 @@ const generateDeliverable = async (key) => {
       + (tplText
         ? `严格参照以下 FDE 手册模板的结构与字段（这是标准格式，不要照抄示例内容，要结合本项目实际填写）：\n\n----- 模板开始 -----\n${tplText.slice(0, 6000)}\n----- 模板结束 -----\n\n`
         : `请按该交付物的行业标准结构组织内容。\n\n`)
-      + `【重要】把生成的完整内容用 write_file 工具写入当前项目目录下的 \`${d.file}\` 文件（Markdown 格式，若目录不存在请一并创建）。`;
+      + `【重要】把生成的完整内容用 write_file 工具写入当前项目目录下的 \`${d.file}\` 文件（Markdown 格式，若目录不存在请一并创建）。`
+      + diagramPart;
   }
 
   try {
@@ -1756,7 +1906,7 @@ const generateSpec = async () => {
   scrollToBottom();
 
   try {
-    await window.api.hermes.prompt(props.slug, `/product-feature-spec 根据之前的对话讨论，为"${requirement}"生成完整的产品功能清单。\n\n【重要】请将生成的功能清单用 write_file 工具写入当前目录的 spec.md 文件中。`);
+    await window.api.hermes.prompt(props.slug, `/product-feature-spec 根据之前的对话讨论，为"${requirement}"生成完整的产品功能清单。\n\n【重要】请将生成的功能清单用 write_file 工具写入当前目录的 spec.md 文件中。` + diagramInstruction(''));
     finalizeLastAssistantMessage();
     isStreaming.value = false;
     loadSpec();
@@ -1807,11 +1957,27 @@ const exportWord = async () => {
 // --- Prototype functions ---
 const refreshPrototypeFiles = async () => {
   try {
-    const result = await window.api.hermes.listFiles(props.slug, 'prototype');
+    const result = await window.api.hermes.listFiles(props.slug, 'prototype', true);
     const files = (result && result.success) ? (result.files || []) : (Array.isArray(result) ? result : []);
-    prototypeFiles.value = files.filter(f => !f.isDirectory && f.name.endsWith('.html'));
-    if (prototypeFiles.value.length > 0 && !selectedFile.value) {
-      selectPrototypeFile(prototypeFiles.value[0].name);
+    // 展示全部产物（html / js / json / data 等）。排序与目录分组交给 fileTreeRows。
+    const kept = files
+      .filter(f => !f.isDirectory)
+      .map(f => ({ ...f, rel: f.relPath || f.name }));
+    prototypeFiles.value = kept;
+    // 默认折叠所有文件夹：收集每个文件路径里出现的目录前缀
+    const dirs = new Set();
+    for (const f of kept) {
+      const parts = f.rel.split('/');
+      for (let i = 0; i < parts.length - 1; i++) {
+        dirs.add(parts.slice(0, i + 1).join('/'));
+      }
+    }
+    collapsedDirs.value = dirs;
+    if (kept.length > 0 && !selectedFile.value) {
+      // 默认选顶层第一个 html，没有则选第一个文件
+      const firstHtml = kept.find(f => /\.html?$/i.test(f.rel) && !f.rel.includes('/'))
+        || kept.find(f => /\.html?$/i.test(f.rel));
+      selectPrototypeFile((firstHtml || kept[0]).rel);
     }
   } catch (e) {
     prototypeFiles.value = [];
@@ -1820,17 +1986,26 @@ const refreshPrototypeFiles = async () => {
 
 const selectPrototypeFile = async (fileName) => {
   selectedFile.value = fileName;
+  fileSource.value = '';
+  const isHtml = /\.html?$/i.test(fileName);
+  isHtmlSelected.value = isHtml;
   try {
-    const result = await window.api.hermes.prototypeUrl(props.slug, fileName);
-    if (result && result.success) {
-      iframeSrc.value = result.url;
+    if (isHtml) {
+      // HTML 走本地静态服务在 iframe 内渲染（data/*.json 等可正常加载）
+      const result = await window.api.hermes.prototypeUrl(props.slug, fileName);
+      if (result && result.success) {
+        iframeSrc.value = result.url;
+      } else {
+        const content = await window.api.hermes.readFile(props.slug, `prototype/${fileName}`);
+        const blob = new Blob([content], { type: 'text/html' });
+        iframeSrc.value = URL.createObjectURL(blob);
+      }
+      iframeKey.value++;
     } else {
-      // Fallback to blob if server not available
+      // 非 HTML（js / json / css / 数据文件）直接展示源码
       const content = await window.api.hermes.readFile(props.slug, `prototype/${fileName}`);
-      const blob = new Blob([content], { type: 'text/html' });
-      iframeSrc.value = URL.createObjectURL(blob);
+      fileSource.value = typeof content === 'string' ? content : String(content ?? '');
     }
-    iframeKey.value++;
   } catch (e) {
     console.error('Failed to load prototype file:', e);
   }
