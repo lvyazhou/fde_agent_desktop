@@ -20,6 +20,11 @@ build/
 # public_key.pem is safe to distribute and is tracked on purpose.
 src/main/license/keys/aes.key
 
+# Android release signing — keystore + passwords never go in the repo.
+android/release.keystore
+android/keystore.properties
+android/local.properties
+
 # Logs
 *.log
 npm-debug.log*

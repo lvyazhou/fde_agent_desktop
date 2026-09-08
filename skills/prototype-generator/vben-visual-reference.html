@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>医院智能体安全协作平台 · 当前前端样式视觉参考</title>
+<style>
+/* ============================================================
+   Token 层 —— 唯一色值来源（对齐 preferences.ts / app.vue）
+   业务组件禁止硬编码品牌色，一律 hsl(var(--primary) / x%) 或 color-mix 派生
+   ============================================================ */
+:root{
+  --primary: 214 95% 44%;              /* hsl(214 95% 44%) —— preferences.theme.colorPrimary */
+  --background: 0 0% 100%;
+  --foreground: 222 47% 14%;
+  --muted-foreground: 215 18% 45%;
+  --border: 213 34% 88%;
+
+  /* 状态语义（core-rules/status-color-system.md）*/
+  --success: 160 84% 33%;              /* 成功/启用/健康/完成 */
+  --warning: 32 88% 40%;               /* 临界/待审核/暂停/超时 */
+  --danger:  352 68% 48%;              /* 失败/停用/过期/高危 */
+  --info:    214 15% 50%;              /* 草稿/未开始/归档/中性 */
+
+  /* 派生层 */
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 70%, hsl(var(--primary)) 6%);
+  --card-bg: linear-gradient(110deg,
+      color-mix(in srgb, hsl(var(--primary)) 9%, hsl(var(--background))) 0%,
+      hsl(var(--background)) 56%,
+      color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --card-border: hsl(var(--border));
+  --shadow: 0 10px 28px hsl(var(--primary) / 10%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+  color-scheme: light dark;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;
+  color:hsl(var(--foreground));
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+/* ── 第 1 层 Body：主色驱动的左深右浅横向渐变，固定页面底层 ── */
+body{margin:0;background:
+    linear-gradient(100deg, hsl(var(--primary) / 13%) 0%, hsl(var(--primary) / 5%) 36%, transparent 60%, hsl(var(--primary) / 4%) 100%)
+    fixed hsl(var(--background));
+}
+button{font:inherit}
+a{color:inherit;text-decoration:none}
+.num{font-variant-numeric:tabular-nums}
+
+.wrap{max-width:1500px;margin:auto;padding:32px 28px 70px}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;margin-bottom:24px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:hsl(var(--primary))}
+h1{margin:8px 0 8px;font-size:32px;line-height:1.15;font-weight:700}
+h2{margin:0;font-size:20px;line-height:1.2;font-weight:700}
+h3{margin:0;font-size:16px;line-height:1.25;font-weight:600}
+p{margin:0;color:hsl(var(--muted-foreground));font-size:14px;line-height:1.55}
+.stamp{font-size:12px;color:hsl(var(--muted-foreground));white-space:nowrap}
+
+/* 页内导航（演示页自身 chrome，轻玻璃）*/
+.tabs{position:sticky;top:0;z-index:10;display:flex;gap:6px;flex-wrap:wrap;padding:8px;margin-bottom:24px;
+  background:color-mix(in srgb, hsl(var(--background)) 82%, transparent);
+  border:1px solid hsl(var(--border) / 80%);border-radius:12px;
+  box-shadow:0 8px 24px hsl(var(--primary) / 8%);backdrop-filter:blur(12px) saturate(1.3)}
+.tabs button{border:0;border-radius:8px;padding:9px 14px;background:transparent;color:hsl(var(--muted-foreground));font-size:14px;cursor:pointer}
+.tabs button:hover,.tabs button.active{background:hsl(var(--primary));color:hsl(var(--background))}
+.panel{display:none}
+.panel.active{display:block}
+
+.intro{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;margin-bottom:16px}
+.callout{padding:16px 20px;background:color-mix(in srgb, hsl(var(--background)) 80%, transparent);
+  border:1px solid var(--card-border);border-radius:12px;box-shadow:var(--shadow)}
+.callout strong{display:block;margin-bottom:8px;font-size:16px;font-weight:600}
+.callout .rule{color:hsl(var(--primary));font-weight:600}
+
+/* 浏览器画框（演示装置，非业务卡片）*/
+.browser{overflow:hidden;border:1px solid hsl(var(--border));border-radius:16px;background:transparent;box-shadow:0 18px 42px hsl(var(--primary) / 16%)}
+.browser-top{display:flex;align-items:center;gap:8px;height:34px;padding:0 14px;background:hsl(var(--primary) / 5%);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:5px}
+.traffic i{width:8px;height:8px;border-radius:50%;background:hsl(var(--border))}
+.browser-label{margin-left:5px;color:hsl(var(--muted-foreground));font-size:12px}
+
+/* ── 第 2 层 Chrome：顶栏/侧栏轻玻璃，混入 --primary，低透明度边界 ── */
+/* ⚠️ .app-shell 故意不再绘制背景：内容区透明，让 Body 渐变连续透出 */
+.app-shell{min-height:600px}
+.app-header{display:flex;align-items:center;gap:20px;height:64px;padding:0 16px;
+  background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.4);
+  box-shadow:inset 0 -1px 0 hsl(var(--border) / 60%)}
+.logo{display:flex;align-items:center;gap:9px;min-width:152px;font-size:16px;font-weight:700;color:hsl(var(--primary))}
+.logo-mark{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;color:hsl(var(--background));background:linear-gradient(135deg, hsl(var(--primary)), color-mix(in srgb, hsl(var(--primary)) 62%, white));box-shadow:0 5px 12px hsl(var(--primary) / 25%)}
+/* 一级菜单：直接可见，active = 主色文字 + 2px 底线，不用胶囊/浮岛 */
+.main-menu{display:flex;align-items:stretch;align-self:stretch;gap:2px;flex:1}
+.main-menu a{display:flex;align-items:center;padding:0 14px;color:hsl(var(--muted-foreground));font-size:14px;font-weight:500;border-bottom:2px solid transparent}
+.main-menu a:hover{color:hsl(var(--primary))}
+.main-menu a.active{color:hsl(var(--primary));border-bottom-color:hsl(var(--primary))}
+.tools{display:flex;align-items:center;gap:8px;color:hsl(var(--muted-foreground));font-size:14px}
+.tool{display:grid;place-items:center;width:32px;height:32px;border-radius:8px;color:hsl(var(--muted-foreground));background:hsl(var(--primary) / 6%);border:1px solid hsl(var(--border) / 80%)}
+.user{display:flex;align-items:center;gap:8px;padding-left:8px;border-left:1px solid hsl(var(--border) / 80%)}
+.avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;color:hsl(var(--background));background:hsl(var(--primary));font-size:12px;font-weight:700}
+.shell-body{display:grid;grid-template-columns:76px 1fr;min-height:532px}
+/* 侧栏：同一块玻璃，active = 主色文字 + --primary 低透明度背景 */
+.side{padding:16px 8px;background:hsl(var(--primary) / 5%);box-shadow:inset -1px 0 0 hsl(var(--border) / 60%)}
+.side-item{display:grid;place-items:center;gap:4px;padding:8px 2px;margin-bottom:8px;border-radius:8px;color:hsl(var(--muted-foreground));font-size:12px}
+.side-item.active{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.side-icon{font-size:18px}
+
+/* ── 第 3 层 Content：透明连续；第 4 层 Cards：近实底横向浅蓝渐变 ── */
+.content{padding:16px;background:transparent}
+.content-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.content-head p{margin-top:4px}
+/* 每屏只保留一个 Primary 操作 */
+.primary{border:0;border-radius:8px;height:32px;padding:0 16px;color:hsl(var(--background));cursor:pointer;
+  background:linear-gradient(135deg, color-mix(in srgb, hsl(var(--primary)) 88%, black), hsl(var(--primary)));
+  box-shadow:0 5px 12px hsl(var(--primary) / 18%);font-size:14px;font-weight:500}
+.ghost{height:32px;padding:0 14px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background));color:hsl(var(--muted-foreground));font-size:14px;cursor:pointer}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card{padding:16px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;box-shadow:var(--shadow-card)}
+.card .label{color:hsl(var(--muted-foreground));font-size:12px}
+.big-number{margin-top:8px;color:hsl(var(--foreground));font-size:24px;font-weight:700;font-variant-numeric:tabular-nums}
+.mini-line{height:4px;margin-top:16px;border-radius:99px;background:linear-gradient(90deg,hsl(var(--primary)) 0 72%,hsl(var(--border)) 72%)}
+.mini-line.is-success{background:linear-gradient(90deg,hsl(var(--success)) 0 86%,hsl(var(--border)) 86%)}
+.legend{display:flex;align-items:center;gap:8px;margin-top:16px;color:hsl(var(--muted-foreground));font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:hsl(var(--primary))}
+.dot.is-success{background:hsl(var(--success))}
+.dot.is-warning{background:hsl(var(--warning))}
+.note{display:inline-flex;align-items:center;gap:5px;padding:5px 8px;border-radius:6px;color:hsl(var(--primary));background:hsl(var(--primary) / 10%);font-size:12px;font-weight:600}
+.flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:16px}
+.flow div{padding:8px;text-align:center;border:1px dashed hsl(var(--border));border-radius:8px;color:hsl(var(--muted-foreground));font-size:12px}
+.flow div strong{display:block;margin-bottom:4px;color:hsl(var(--primary));font-size:14px}
+
+.section-intro{display:flex;justify-content:space-between;align-items:end;margin-bottom:16px}
+.section-intro p{max-width:780px}
+
+.management{display:grid;grid-template-columns:1fr 312px;gap:16px}
+/* 查询区 */
+.query{display:flex;gap:8px;align-items:center;margin-bottom:16px;padding:16px;background:color-mix(in srgb, hsl(var(--background)) 80%, transparent);border:1px solid var(--card-border);border-radius:12px}
+.input{height:32px;min-width:160px;padding:0 12px;border:1px solid hsl(var(--border));border-radius:6px;background:hsl(var(--background));color:hsl(var(--muted-foreground));font-size:14px;display:flex;align-items:center}
+.select{position:relative;padding-right:24px}
+.select:after{content:"⌄";position:absolute;right:8px;top:4px;color:hsl(var(--muted-foreground))}
+
+.table-card{padding:0;overflow:hidden}
+.toolbar{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--card-border)}
+.toolbar-actions{display:flex;gap:8px}
+.table{width:100%;border-collapse:collapse;font-size:14px}
+.table th{padding:12px 16px;text-align:left;color:hsl(var(--muted-foreground));background:hsl(var(--primary) / 4%);font-size:12px;font-weight:600}
+.table td{padding:12px 16px;border-top:1px solid hsl(var(--border) / 70%);color:hsl(var(--foreground));font-variant-numeric:tabular-nums}
+.table tr:hover td{background:hsl(var(--primary) / 4%)}
+
+.tag{display:inline-block;padding:4px 8px;border-radius:6px;font-size:12px;font-weight:600}
+.tag.success{color:hsl(var(--success));background:color-mix(in srgb, hsl(var(--success)) 12%, hsl(var(--background)))}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.tag.warning{color:hsl(var(--warning));background:color-mix(in srgb, hsl(var(--warning)) 14%, hsl(var(--background)))}
+.tag.danger{color:hsl(var(--danger));background:color-mix(in srgb, hsl(var(--danger)) 10%, hsl(var(--background)))}
+.tag.info{color:hsl(var(--info));background:color-mix(in srgb, hsl(var(--info)) 12%, hsl(var(--background)))}
+
+.pagination{display:flex;justify-content:flex-end;gap:8px;padding:16px;color:hsl(var(--muted-foreground));font-size:12px}
+.page-no{padding:4px 8px;border-radius:6px;background:hsl(var(--primary) / 8%)}
+.page-no.current{color:hsl(var(--background));background:hsl(var(--primary))}
+
+.drawer{position:relative;min-height:432px;padding:24px;background:color-mix(in srgb, hsl(var(--background)) 88%, transparent);border:1px solid var(--card-border);border-radius:12px;box-shadow:var(--shadow)}
+.drawer:before{content:"编辑抽屉";display:block;padding-bottom:16px;margin-bottom:16px;border-bottom:1px solid var(--card-border);font-size:16px;font-weight:600}
+.field{margin-bottom:16px}
+.field label{display:block;margin-bottom:8px;color:hsl(var(--muted-foreground));font-size:12px;font-weight:500}
+.field .input{width:100%}
+.drawer-footer{display:flex;justify-content:flex-end;gap:8px;padding-top:8px}
+
+.cards-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.data-card{display:flex;min-height:256px;flex-direction:column;overflow:hidden;padding:0;background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;box-shadow:var(--shadow-card);transition:.2s}
+/* 可点击卡片 Hover：最多上移 4px + 增强主色边框 */
+.data-card:hover{transform:translateY(-4px);border-color:hsl(var(--primary) / 55%);box-shadow:0 12px 24px hsl(var(--primary) / 14%)}
+.dc-head{display:flex;align-items:center;gap:8px;padding:16px 16px 12px;border-bottom:1px solid hsl(var(--border) / 80%)}
+.dc-avatar{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;color:hsl(var(--background));background:linear-gradient(135deg,hsl(var(--primary)),color-mix(in srgb, hsl(var(--primary)) 55%, white));font-size:14px}
+.dc-title{min-width:0;flex:1}
+.dc-title b{display:block;overflow:hidden;color:hsl(var(--foreground));font-size:14px;font-weight:600;text-overflow:ellipsis;white-space:nowrap}
+.dc-title span{display:block;margin-top:4px;color:hsl(var(--muted-foreground));font-size:12px}
+.dc-body{flex:1;padding:16px}
+.dc-body p{display:-webkit-box;overflow:hidden;color:hsl(var(--muted-foreground));font-size:12px;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+.metrics{display:flex;gap:24px;margin-top:16px}
+.metric b{display:block;color:hsl(var(--primary));font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.metric span{color:hsl(var(--muted-foreground));font-size:12px}
+.dc-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;color:hsl(var(--muted-foreground));border-top:1px solid hsl(var(--border) / 70%);font-size:12px}
+.link{color:hsl(var(--primary));font-size:12px;font-weight:600}
+
+.dashboard-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+.dash-main{display:grid;grid-template-columns:1.5fr 1fr;gap:16px;margin-bottom:16px}
+.dash-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px}
+.chart-card{padding:16px;min-height:208px;background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px}
+.chart-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.chart-head span{color:hsl(var(--muted-foreground));font-size:12px}
+.chart{position:relative;height:136px;overflow:hidden;border-bottom:1px solid hsl(var(--border) / 70%);background:repeating-linear-gradient(to bottom,transparent 0 32px,hsl(var(--border) / 40%) 33px 34px)}
+.chart svg{width:100%;height:100%}
+.rank-row{display:grid;grid-template-columns:22px 1fr 48px;gap:8px;align-items:center;margin:12px 0;color:hsl(var(--muted-foreground));font-size:12px}
+.rank-row i{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;color:hsl(var(--background));background:hsl(var(--primary) / 55%);font-size:12px;font-style:normal}
+.rank-row:first-of-type i{background:hsl(var(--primary))}
+.bar{height:5px;margin-top:4px;border-radius:99px;background:hsl(var(--primary) / 12%)}
+.bar:before{display:block;width:var(--w,72%);height:100%;border-radius:inherit;background:hsl(var(--primary));content:""}
+.event{display:flex;gap:8px;padding:8px 0;border-bottom:1px solid hsl(var(--border) / 60%);color:hsl(var(--muted-foreground));font-size:12px}
+.event:last-child{border-bottom:0}
+.event i{width:8px;height:8px;flex-shrink:0;margin-top:5px;border-radius:50%;background:hsl(var(--primary))}
+.event i.is-warning{background:hsl(var(--warning))}
+.event i.is-success{background:hsl(var(--success))}
+
+/* ── 大屏：独立深蓝主题，仅显式大屏上下文成立（BIGSCREEN_COLORS）── */
+.bigscreen-wrap{padding:24px;border-radius:14px;background:#030a12}
+.bigscreen{position:relative;overflow:hidden;min-height:540px;padding:24px;color:var(--dark-text);border:1px solid #183653;background:radial-gradient(ellipse at 20% 0%,#123b66 0%,#081c2e 44%,#06131f 100%);box-shadow:inset 0 0 80px hsl(214 95% 44% / 10%)}
+.bigscreen:before{position:absolute;inset:0;background-image:linear-gradient(hsl(214 95% 44% / 7.5%) 1px,transparent 1px),linear-gradient(90deg,hsl(214 95% 44% / 7.5%) 1px,transparent 1px);background-size:32px 32px;mask-image:radial-gradient(ellipse at center,#000 20%,transparent 90%);content:""}
+.bs-content{position:relative;z-index:1}
+.bs-header{display:flex;align-items:center;justify-content:space-between;padding-bottom:16px;border-bottom:1px solid hsl(214 95% 44% / 30%)}
+.bs-header h2{color:#fff;text-shadow:0 0 15px hsl(214 95% 44% / 60%)}
+.bs-header span{color:#76c9ff;font-size:12px}
+.bs-grid{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:12px;margin-top:16px}
+.bs-col{display:flex;flex-direction:column;gap:12px}
+.glass{padding:16px;background:linear-gradient(180deg,hsl(210 65% 11% / 88%),hsl(210 60% 16% / 60%));border:1px solid hsl(214 95% 44% / 28%);border-radius:10px;box-shadow:inset 0 0 22px hsl(0 0% 0% / 28%),0 4px 15px hsl(0 0% 0% / 20%)}
+.glass h3{margin-bottom:12px;color:#fff}
+.bs-stat{font-size:24px;font-weight:700;color:#fff;text-shadow:0 0 12px hsl(214 95% 44% / 70%);font-variant-numeric:tabular-nums}
+.bs-stat small{margin-left:4px;color:#7da5c4;font-size:12px;font-weight:400}
+.bs-lines{height:88px;background:repeating-linear-gradient(to bottom,transparent 0 28px,hsl(205 77% 60% / 15%) 29px 30px)}
+.bs-pill{display:inline-block;padding:4px 8px;border-radius:4px;color:#68dfb1;background:hsl(160 84% 40% / 12%);font-size:12px}
+.boundary{display:flex;align-items:center;gap:8px;margin-top:16px;padding:12px 16px;color:#74a2c4;border:1px dashed #2a557b;border-radius:8px;font-size:12px}
+.boundary b{color:#62b1ff}
+
+.tokens{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.token-card{padding:16px;background:color-mix(in srgb, hsl(var(--background)) 84%, transparent);border:1px solid var(--card-border);border-radius:12px;box-shadow:var(--shadow)}
+.swatches{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:16px}
+.swatch{overflow:hidden;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background))}
+.swatch i{display:block;height:44px}
+.swatch span{display:block;padding:8px 6px;color:hsl(var(--muted-foreground));font-size:12px}
+.scale{display:flex;align-items:end;gap:12px;height:96px;margin-top:16px}
+.scale div{width:40px;text-align:center;color:hsl(var(--muted-foreground));font-size:12px}
+.scale b{display:block;margin-bottom:8px;color:hsl(var(--primary));font-weight:600}
+.scale i{display:block;border-radius:6px 6px 0 0;background:hsl(var(--primary) / 55%)}
+.rule-list{display:grid;gap:8px;margin-top:16px}
+.rule-list div{display:flex;justify-content:space-between;padding:8px 12px;border-radius:8px;background:hsl(var(--primary) / 5%);color:hsl(var(--muted-foreground));font-size:12px}
+.rule-list strong{color:hsl(var(--primary))}
+.dont strong{color:hsl(var(--danger))}
+.do strong{color:hsl(var(--success))}
+.footer-note{margin-top:24px;text-align:center;color:hsl(var(--muted-foreground));font-size:12px}
+
+/* ── 深色模式：全部由 token 派生，零组件改动 ── */
+@media (prefers-color-scheme: dark){
+  :root{
+    --background: 214 45% 11%;
+    --foreground: 210 40% 94%;
+    --muted-foreground: 213 22% 68%;
+    --border: 213 32% 27%;
+    --success: 158 60% 45%;
+    --warning: 36 90% 55%;
+    --danger: 352 75% 62%;
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 72%, hsl(var(--primary)) 8%);
+    --card-bg: linear-gradient(110deg,
+        color-mix(in srgb, hsl(var(--primary)) 14%, hsl(var(--background))) 0%,
+        hsl(var(--background)) 56%,
+        color-mix(in srgb, hsl(var(--primary)) 6%, hsl(var(--background))) 100%);
+    --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%);
+  }
+  body{background:linear-gradient(100deg, hsl(var(--primary) / 16%) 0%, hsl(var(--primary) / 6%) 36%, transparent 60%, hsl(var(--primary) / 5%) 100%) fixed hsl(var(--background))}
+}
+/* reduced-motion：关闭位移动效（交付检查项）*/
+@media (prefers-reduced-motion: reduce){
+  html{scroll-behavior:auto}
+  *{transition:none!important;animation:none!important}
+  .data-card:hover{transform:none}
+}
+@media(max-width:1000px){.intro,.management,.dash-main{grid-template-columns:1fr}.cards-grid{grid-template-columns:repeat(2,1fr)}.main-menu a{padding:0 8px}.logo{min-width:auto}.tools .user span{display:none}}
+@media(max-width:650px){.wrap{padding:20px 16px 50px}.masthead{display:block}.stamp{display:block;margin-top:8px}.intro,.tokens,.dashboard-grid,.dash-bottom{grid-template-columns:1fr}.browser{border-radius:12px}.app-header{gap:8px;padding:0 12px}.logo{font-size:14px}.logo-mark{width:24px;height:24px}.main-menu{overflow:auto}.main-menu a{padding:0 8px;font-size:12px;white-space:nowrap}.tools{display:none}.shell-body{grid-template-columns:56px 1fr}.side{padding:12px 8px}.content{padding:16px}.content-head{display:block}.content-head .primary{margin-top:16px}.cards,.cards-grid{grid-template-columns:1fr}.query{align-items:stretch;flex-direction:column}.input{width:100%}.bs-grid{grid-template-columns:1fr}.bigscreen{min-height:848px}.swatches{grid-template-columns:repeat(2,1fr)}}
+@media print{.tabs{display:none}.panel{display:block!important;break-inside:avoid}.panel+.panel{margin-top:24px}.wrap{max-width:none;padding:16px}.browser{box-shadow:none}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="masthead"><div><div class="eyebrow">Vben Admin 5 · SaaS Lobster</div><h1>Vben Admin 5 前端视觉参考</h1><p>基于企业级后台框架的页面布局、组件层级和主题边界示意。</p></div><div class="stamp">视觉基线 · 2026-09-08 · Token 对齐版</div></header>
+<nav class="tabs" aria-label="视觉参考画板"><button class="active" data-target="shell">01 常规壳层</button><button data-target="management">02 管理页</button><button data-target="cards">03 DataCard</button><button data-target="dashboard">04 Dashboard</button><button data-target="bigscreen">05 Bigscreen</button><button data-target="tokens">06 Token 速查</button></nav>
+<section id="shell" class="panel active"><div class="intro"><div class="callout"><strong>Vben Admin 5 的统一后台底座</strong><p>Vben 提供顶部导航、侧边菜单、内容区、主题和用户工具的统一结构；业务页面在这个底座上扩展医疗、安全和智能体功能。</p></div><div class="callout"><strong>当前导航原则</strong><p class="rule">一级菜单直接展示；不使用状态、时间、版本号胶囊</p></div></div><div class="browser"><div class="browser-top"><span class="traffic"><i></i><i></i><i></i></span><span class="browser-label">视觉示意 · 常规业务壳层 / 1440 × 900</span></div><div class="app-shell"><header class="app-header"><div class="logo"><span class="logo-mark">✦</span><span>医院智能体平台</span></div><nav class="main-menu"><a class="active" href="#shell">首页</a><a href="#management">AI 对话</a><a href="#cards">资产中心</a><a href="#dashboard">数据分析</a><a href="#tokens">审计中心</a></nav><div class="tools"><span class="tool">◐</span><span class="tool">♧</span><span class="user"><b class="avatar">医</b><span>平台管理员</span></span></div></header><div class="shell-body"><aside class="side"><div class="side-item active"><span class="side-icon">⌂</span>总览</div><div class="side-item"><span class="side-icon">✦</span>工作台</div><div class="side-item"><span class="side-icon">▦</span>指标</div><div class="side-item"><span class="side-icon">◈</span>设置</div></aside><section class="content"><div class="content-head"><div><h2>运营总览</h2><p>查看平台运行情况与近期业务变化</p></div><button class="primary">进入 AI 工作台</button></div><div class="cards"><div class="card"><span class="label">本月智能体调用</span><div class="big-number num">12,580</div><div class="mini-line"></div><div class="legend"><i class="dot"></i>较上月增长 12.5%</div></div><div class="card"><span class="label">知识库健康度</span><div class="big-number num">98.6<span style="font-size:14px">%</span></div><div class="mini-line is-success"></div><div class="legend"><i class="dot is-success"></i>数据同步正常</div></div><div class="card"><span class="label">待处理安全事件</span><div class="big-number num">08</div><div class="note">需要关注</div></div></div><div class="flow"><div><strong>Body</strong>主色渐变</div><div><strong>Chrome</strong>轻玻璃框架</div><div><strong>Content</strong>透明连续</div><div><strong>Cards</strong>近实底</div><div><strong>Menu</strong>直接可见</div></div></section></div></div></div></section>
+<section id="management" class="panel"><div class="section-intro"><div><h2>标准管理页 · 查询 → 工具栏 → 表格 → 分页 → 抽屉</h2><p>适用于用户、医院、智能体、知识库、菜单等管理场景。默认服务端排序/过滤，每页 20 行。</p></div><span class="note">常规业务主题</span></div><div class="management"><div><div class="query"><div class="input">搜索名称 / 负责人</div><div class="input select">全部状态</div><button class="primary">查询</button><button class="ghost">重置</button></div><div class="card table-card"><div class="toolbar"><h3>智能体列表 <span style="color:hsl(var(--muted-foreground));font-size:12px;font-weight:400">共 128 条</span></h3><div class="toolbar-actions"><button class="primary">+ 新建智能体</button><button class="ghost">更多 ▾</button></div></div><table class="table"><thead><tr><th>名称</th><th>所属科室</th><th>状态</th><th>最近更新</th><th>操作</th></tr></thead><tbody><tr><td>运营分析助手</td><td>运营管理部</td><td><span class="tag success">已启用</span></td><td>今天 15:20</td><td><span class="link">查看　编辑</span></td></tr><tr><td>安全审计助手</td><td>信息中心</td><td><span class="tag primary">运行中</span></td><td>今天 14:08</td><td><span class="link">查看　编辑</span></td></tr><tr><td>知识库整理助手</td><td>医务处</td><td><span class="tag warning">待审核</span></td><td>昨天 18:42</td><td><span class="link">查看　编辑</span></td></tr><tr><td>患者服务助手</td><td>门诊部</td><td><span class="tag danger">已停用</span></td><td>08-30 11:06</td><td><span class="link">查看　编辑</span></td></tr></tbody></table><div class="pagination"><span class="page-no">‹</span><span class="page-no current">1</span><span class="page-no">2</span><span class="page-no">3</span><span class="page-no">›</span><span>20 / 页</span></div></div></div><aside class="drawer"><h3 style="margin-bottom:16px;color:hsl(var(--primary))">编辑智能体</h3><div class="field"><label>智能体名称</label><div class="input">运营分析助手</div></div><div class="field"><label>所属科室</label><div class="input">运营管理部</div></div><div class="field"><label>工作状态</label><div class="input">已启用</div></div><div class="field"><label>描述</label><div class="input" style="height:72px;color:hsl(var(--muted-foreground))">辅助运营人员分析业务指标</div></div><div class="drawer-footer"><button class="ghost">取消</button><button class="primary">保存修改</button></div></aside></div></section>
+<section id="cards" class="panel"><div class="section-intro"><div><h2>DataCard 列表 · 4 列响应式网格</h2><p>卡片适用于智能体、知识库、模板和插件等视觉对象；Header 56px、Body 自适应、Footer 48px。</p></div><span class="note">默认 24 张 / 页</span></div><div class="cards-grid"><article class="data-card"><div class="dc-head"><div class="dc-avatar">✦</div><div class="dc-title"><b>运营分析助手</b><span>业务智能体</span></div><span class="tag success">已启用</span></div><div class="dc-body"><p>聚合门诊、住院和资源使用数据，帮助管理者快速定位业务变化。</p><div class="metrics"><div class="metric"><b class="num">2,847</b><span>本月调用</span></div><div class="metric"><b class="num">98.2%</b><span>成功率</span></div></div></div><div class="dc-foot"><span>更新于今天</span><span class="link">查看详情 →</span></div></article><article class="data-card"><div class="dc-head"><div class="dc-avatar">◈</div><div class="dc-title"><b>安全审计助手</b><span>安全智能体</span></div><span class="tag primary">运行中</span></div><div class="dc-body"><p>持续检查高风险操作，保留完整证据链和可追溯的审计记录。</p><div class="metrics"><div class="metric"><b class="num">486</b><span>已检查</span></div><div class="metric"><b class="num">12</b><span>待关注</span></div></div></div><div class="dc-foot"><span>更新于 8 分钟前</span><span class="link">查看详情 →</span></div></article><article class="data-card"><div class="dc-head"><div class="dc-avatar">▤</div><div class="dc-title"><b>临床知识库</b><span>知识库</span></div><span class="tag warning">待审核</span></div><div class="dc-body"><p>面向临床团队的标准知识资产，支持文档解析、向量化和版本追踪。</p><div class="metrics"><div class="metric"><b class="num">1,208</b><span>份文档</span></div><div class="metric"><b class="num">96.8%</b><span>解析率</span></div></div></div><div class="dc-foot"><span>更新于昨天</span><span class="link">查看详情 →</span></div></article><article class="data-card"><div class="dc-head"><div class="dc-avatar">◎</div><div class="dc-title"><b>患者服务助手</b><span>服务智能体</span></div><span class="tag danger">已停用</span></div><div class="dc-body"><p>为患者提供就诊前后的信息查询与流程引导，支持多渠道接入。</p><div class="metrics"><div class="metric"><b class="num">—</b><span>本月调用</span></div><div class="metric"><b class="num">—</b><span>成功率</span></div></div></div><div class="dc-foot"><span>更新于 08-30</span><span class="link">查看详情 →</span></div></article></div><div class="callout" style="margin-top:16px"><strong>卡片交互</strong><p>可点击卡片 Hover 最多上移 4px 并增强主色边框；直接操作不超过 2 个，删除/高危操作进入更多菜单并二次确认。</p></div></section>
+<section id="dashboard" class="panel"><div class="section-intro"><div><h2>Dashboard · 常规业务页，不是大屏</h2><p>五段式信息结构：KPI → 主趋势 + 排行 → 分布分析 → 事件/待办。</p></div><span class="note">浅色主色渐变</span></div><div class="dashboard-grid"><div class="card"><span class="label">平台活跃用户</span><div class="big-number num">8,426</div><div class="legend"><i class="dot"></i>较上期 +8.4%</div></div><div class="card"><span class="label">AI 对话量</span><div class="big-number num">24,680</div><div class="legend"><i class="dot"></i>较上期 +16.2%</div></div><div class="card"><span class="label">知识库调用成功率</span><div class="big-number num">98.6%</div><div class="legend"><i class="dot is-success"></i>运行健康</div></div><div class="card"><span class="label">本周安全事件</span><div class="big-number num">36</div><div class="legend"><i class="dot is-warning"></i>3 条待处理</div></div></div><div class="dash-main"><div class="chart-card"><div class="chart-head"><h3>AI 调用趋势</h3><span>近 30 天　⌄</span></div><div class="chart"><svg viewBox="0 0 600 136" preserveAspectRatio="none"><defs><linearGradient id="area" x1="0" x2="0" y1="0" y2="1"><stop offset="0" style="stop-color:hsl(var(--primary));stop-opacity:.34"/><stop offset="1" style="stop-color:hsl(var(--primary));stop-opacity:0"/></linearGradient></defs><path d="M0 110 C45 98 63 108 90 83 S140 96 170 72 S215 86 248 57 S290 72 320 48 S360 65 400 30 S438 52 470 38 S530 40 600 12 L600 136 L0 136Z" fill="url(#area)"/><path d="M0 110 C45 98 63 108 90 83 S140 96 170 72 S215 86 248 57 S290 72 320 48 S360 65 400 30 S438 52 470 38 S530 40 600 12" fill="none" style="stroke:hsl(var(--primary))" stroke-width="3"/></svg></div></div><div class="chart-card"><div class="chart-head"><h3>活跃智能体排行</h3><span>Top 5</span></div><div class="rank-row"><i>1</i><div>运营分析助手<div class="bar" style="--w:100%"></div></div><b class="num">2,847</b></div><div class="rank-row"><i>2</i><div>安全审计助手<div class="bar" style="--w:69%"></div></div><b class="num">1,968</b></div><div class="rank-row"><i>3</i><div>患者服务助手<div class="bar" style="--w:50%"></div></div><b class="num">1,426</b></div><div class="rank-row"><i>4</i><div>知识库助手<div class="bar" style="--w:35%"></div></div><b class="num">986</b></div></div></div><div class="dash-bottom"><div class="chart-card"><div class="chart-head"><h3>按科室分布</h3><span>占比</span></div><div style="display:grid;place-items:center;height:136px"><div style="width:104px;height:104px;border-radius:50%;background:conic-gradient(hsl(var(--primary)) 0 42%,hsl(var(--primary) / 70%) 42% 69%,hsl(var(--primary) / 45%) 69% 88%,hsl(var(--border)) 88%);position:relative"><div style="position:absolute;inset:24px;border-radius:50%;background:hsl(var(--background))"></div></div></div></div><div class="chart-card"><div class="chart-head"><h3>调用来源对比</h3><span>本月</span></div><div style="display:flex;align-items:end;gap:16px;height:136px;padding:16px 24px;border-bottom:1px solid hsl(var(--border) / 70%)"><i style="height:54%;flex:1;background:hsl(var(--primary) / 30%);border-radius:6px 6px 0 0"></i><i style="height:82%;flex:1;background:hsl(var(--primary) / 55%);border-radius:6px 6px 0 0"></i><i style="height:67%;flex:1;background:hsl(var(--primary));border-radius:6px 6px 0 0"></i><i style="height:42%;flex:1;background:hsl(var(--primary) / 45%);border-radius:6px 6px 0 0"></i></div></div><div class="chart-card"><div class="chart-head"><h3>近期事件</h3><span>全部</span></div><div class="event"><i></i><span>安全策略完成一次检查</span><small style="margin-left:auto;color:hsl(var(--muted-foreground))">刚刚</small></div><div class="event"><i class="is-warning"></i><span>知识库有 3 份文档待审核</span></div><div class="event"><i class="is-success"></i><span>运营分析助手发布新版本</span></div></div></div></section>
+<section id="bigscreen" class="panel"><div class="section-intro"><div><h2>Bigscreen · 独立深蓝科技主题</h2><p>仅适用于 1920×1080 投屏、指挥中心和安全态势大屏，不能复制到常规管理页。</p></div><span class="note" style="color:#65b9ff;background:#092743">显式大屏上下文</span></div><div class="bigscreen-wrap"><div class="bigscreen"><div class="bs-content"><header class="bs-header"><h2>医院智能体安全态势中心</h2><span>REAL-TIME SECURITY MONITORING · 16:40:16</span></header><div class="bs-grid"><div class="bs-col"><div class="glass"><h3>平台运行状态</h3><div class="bs-stat">98.6% <small>健康度</small></div><div class="bs-pill">● 系统稳定</div></div><div class="glass"><h3>安全事件趋势</h3><div class="bs-lines"></div></div></div><div class="bs-col"><div class="glass" style="min-height:224px"><h3>全域智能体调用流</h3><div class="bs-lines" style="height:144px;background:linear-gradient(145deg,transparent 45%,hsl(214 95% 44% / 80%) 46% 47%,transparent 48%),linear-gradient(28deg,transparent 53%,hsl(180 65% 42% / 75%) 54% 55%,transparent 56%),repeating-linear-gradient(to bottom,transparent 0 32px,hsl(205 77% 60% / 13%) 33px 34px)"></div></div><div class="glass"><h3>实时处理</h3><div class="bs-stat">24,680 <small>次 / 月</small></div></div></div><div class="bs-col"><div class="glass"><h3>风险分布</h3><div class="bs-stat">03 <small>高风险</small></div><div class="bs-pill" style="color:#ffd27a;background:hsl(38 92% 50% / 13%)">● 需要关注</div></div><div class="glass"><h3>事件流</h3><div class="event" style="color:#a8c9e3;border-color:#1d3c59"><i></i><span>策略检查完成</span></div><div class="event" style="color:#a8c9e3;border-color:#1d3c59"><i style="background:#eab308"></i><span>发现待审核项</span></div></div></div></div><div class="boundary"><b>主题边界</b><span>深蓝背景、玻璃卡片、网格、扫描线和发光数字只在此画板成立；常规业务页继续使用浅色内容区和近实底卡片。</span></div></div></div></div></section>
+<section id="tokens" class="panel"><div class="section-intro"><div><h2>Token 与组件速查</h2><p>把“样式感觉”落成可以执行、可以验收的参数。</p></div></div><div class="tokens"><div class="token-card"><h3>常规页色彩</h3><div class="swatches"><div class="swatch"><i style="background:hsl(214 95% 44%)"></i><span>Primary<br>hsl(214 95% 44%)</span></div><div class="swatch"><i style="background:hsl(214 60% 96%)"></i><span>Surface<br>浅蓝卡片</span></div><div class="swatch"><i style="background:hsl(222 47% 14%)"></i><span>Foreground<br>主文字</span></div><div class="swatch"><i style="background:hsl(213 34% 88%)"></i><span>Border<br>边框</span></div><div class="swatch"><i style="background:hsl(160 84% 33%)"></i><span>Success<br>成功</span></div></div></div><div class="token-card"><h3>大屏专用色彩</h3><div class="swatches"><div class="swatch"><i style="background:#06131f"></i><span>Body<br>#06131F</span></div><div class="swatch"><i style="background:#081c2e"></i><span>Layout<br>#081C2E</span></div><div class="swatch"><i style="background:#0b2239"></i><span>Glass<br>82% 透明</span></div><div class="swatch"><i style="background:#1e3a5f"></i><span>Border<br>#1E3A5F</span></div><div class="swatch"><i style="background:#13c2c2"></i><span>Cyan<br>图表辅助</span></div></div></div><div class="token-card"><h3>字号阶</h3><div class="scale"><div><b style="font-size:12px">12</b><i style="height:28px"></i></div><div><b style="font-size:14px">14</b><i style="height:36px"></i></div><div><b style="font-size:16px">16</b><i style="height:48px"></i></div><div><b style="font-size:20px">20</b><i style="height:64px"></i></div><div><b style="font-size:24px">24</b><i style="height:76px"></i></div><div><b style="font-size:32px">32</b><i style="height:88px"></i></div></div></div><div class="token-card"><h3>间距与圆角</h3><div class="rule-list"><div><span>行内 gap</span><strong>8px</strong></div><div><span>页面 padding</span><strong>16px</strong></div><div><span>卡片 / 表单项间距</span><strong>16px</strong></div><div><span>大区块间距</span><strong>24px</strong></div><div><span>卡片 / Drawer 圆角</span><strong>12px</strong></div></div></div><div class="token-card do"><h3>Do · 应该这样</h3><div class="rule-list"><div><span>顶部一级菜单</span><strong>直接展示</strong></div><div><span>常规卡片</span><strong>近实底渐变</strong></div><div><span>状态表达</span><strong>语义色 Tag</strong></div><div><span>高危操作</span><strong>More + 二次确认</strong></div></div></div><div class="token-card dont"><h3>Don't · 不应该这样</h3><div class="rule-list"><div><span>顶部状态胶囊</span><strong>不要恢复</strong></div><div><span>常规页暗底</span><strong>不要套大屏主题</strong></div><div><span>导航白色浮岛</span><strong>不要胶囊化</strong></div><div><span>业务组件硬编码色值</span><strong>使用主题 token</strong></div></div></div></div></section>
+<p class="footer-note">视觉参考快照 · 可脱离源码打开 · 以当前前端实现与 current-style-summary.md 为准</p>
+</main>
+<script>
+const buttons=[...document.querySelectorAll('.tabs button')];const panels=[...document.querySelectorAll('.panel')];function show(id){buttons.forEach(b=>b.classList.toggle('active',b.dataset.target===id));panels.forEach(p=>p.classList.toggle('active',p.id===id));history.replaceState(null,'','#'+id)}buttons.forEach(b=>b.addEventListener('click',()=>show(b.dataset.target)));if(location.hash&&document.getElementById(location.hash.slice(1)))show(location.hash.slice(1));document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{const id=a.getAttribute('href').slice(1);if(document.getElementById(id)){e.preventDefault();show(id)}}));
+</script>
+</body>
+</html>

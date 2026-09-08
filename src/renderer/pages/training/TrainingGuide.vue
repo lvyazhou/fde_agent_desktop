@@ -28,6 +28,7 @@
         <div class="w-8 h-8 rounded-full border-2 border-blue-100 border-t-blue-500 animate-spin"></div>
       </div>
       <iframe
+        ref="iframeEl"
         :src="guideUrl"
         class="w-full h-full border-0 block"
         title="FDE 新任项目经理培训教程"
@@ -38,11 +39,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { useRouter } from 'vue-router';
 
 // public 目录下的静态资源,dev 由 vite 提供、打包后与 index.html 同级
 const guideUrl = `${import.meta.env.BASE_URL}fde-training-guide.html`;
 const loaded = ref(false);
+const router = useRouter();
 
 const openExternal = async () => {
   try {
@@ -51,4 +54,17 @@ const openExternal = async () => {
     await window.api.shell.openExternal(abs);
   } catch { /* ignore */ }
 };
+
+// 教程页 iframe 内的「应用内延伸链接」→ 路由跳转(回工作台看五阶段手册)
+const onGuideNav = (e) => {
+  if (e.source !== iframeEl.value?.contentWindow) return;
+  const path = e.data?.path;
+  if (e.data?.type === 'fde-training-nav' && typeof path === 'string' && path.startsWith('/')) {
+    router.push(path);
+  }
+};
+
+const iframeEl = ref(null);
+onMounted(() => window.addEventListener('message', onGuideNav));
+onBeforeUnmount(() => window.removeEventListener('message', onGuideNav));
 </script>

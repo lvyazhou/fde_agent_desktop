@@ -15,14 +15,32 @@
 ============================================================================
 -->
 <style>
-  .lt-mask { position:fixed; inset:0; z-index:9998; background:rgba(0,0,0,.4); }
-  .lt-wrap { position:fixed; right:0; top:0; bottom:0; z-index:9999; width:520px; max-width:94vw; background:#fff; box-shadow:-6px 0 24px rgba(0,0,0,.12); display:flex; flex-direction:column; }
-  .lt-head { height:52px; padding:0 18px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #e8ecf0; flex-shrink:0; }
-  .lt-body { flex:1; overflow-y:auto; padding:18px; }
-  .lt-body::-webkit-scrollbar { width:6px; } .lt-body::-webkit-scrollbar-thumb { background:#e0e5eb; border-radius:3px; }
-  .lt-cursor::after { content:'▋'; animation:lt-blink 1s step-end infinite; color:#2563eb; margin-left:1px; }
+  :root{
+    --primary: 214 95% 44%;
+    --background: 0 0% 100%;
+    --foreground: 218 45% 14%;
+    --muted-foreground: 215 18% 45%;
+    --border: 213 32% 88%;
+    --success: 160 84% 33%;
+    --info: 214 15% 50%;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --background: 214 40% 11%;
+      --foreground: 210 40% 94%;
+      --muted-foreground: 213 22% 68%;
+      --border: 213 28% 26%;
+    }
+  }
+  .lt-mask { position:fixed; inset:0; z-index:9998; background:hsl(0 0% 0% / 40%); }
+  .lt-wrap { position:fixed; right:0; top:0; bottom:0; z-index:9999; width:520px; max-width:94vw; background:hsl(var(--background)); box-shadow:-6px 0 24px hsl(0 0% 0% / 12%); display:flex; flex-direction:column; }
+  .lt-head { height:52px; padding:0 18px; display:flex; align-items:center; gap:10px; box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%); flex-shrink:0; }
+  .lt-body { flex:1; overflow-y:auto; padding:16px; }
+  .lt-body::-webkit-scrollbar { width:6px; } .lt-body::-webkit-scrollbar-thumb { background:hsl(var(--border)); border-radius:3px; }
+  .lt-cursor::after { content:'▋'; animation:lt-blink 1s step-end infinite; color:hsl(var(--primary)); margin-left:1px; }
   @keyframes lt-blink { 50%{opacity:0;} }
-  .lt-tool { background:#1e3a8a; color:#fff; border-radius:6px; padding:5px 9px; font-size:11.5px; font-family:ui-monospace,monospace; margin-top:6px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .lt-tool { background:hsl(var(--primary) / 90%); color:hsl(0 0% 100%); border-radius:6px; padding:6px 9px; font-size:12px; font-family:ui-monospace,monospace; margin-top:8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
 </style>
 
 <div x-data="loopTray()" x-init="init()">
@@ -31,49 +49,49 @@
       <div class="lt-mask" @click="open=false"></div>
       <aside class="lt-wrap" x-transition:enter="transition transform duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
         <div class="lt-head">
-          <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white flex-shrink-0" style="background:linear-gradient(135deg,#1e3a8a,#2563eb);"><i class="fa fa-robot"></i></span>
+          <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white flex-shrink-0" style="background:linear-gradient(135deg,hsl(var(--primary) / 78%),hsl(var(--primary)));"><i class="fa fa-robot"></i></span>
           <div class="flex-1 min-w-0">
-            <div class="text-[14px] font-semibold text-[#1e3a8a] truncate" x-text="cfg.title"></div>
-            <div class="text-[11.5px] flex items-center gap-1" :class="playing?'text-[#2563eb]':'text-[#059669]'"><span class="w-1.5 h-1.5 rounded-full" :class="playing?'bg-[#2563eb]':'bg-[#059669]'"></span><span x-text="cfg.engine"></span> · <span x-text="playing?'执行中':'已完成'"></span></div>
+            <div class="text-[14px] font-semibold" style="color:hsl(var(--foreground))" x-text="cfg.title"></div>
+            <div class="text-[11.5px] flex items-center gap-1" :style="playing ? 'color:hsl(var(--primary))' : 'color:hsl(var(--success))'"><span class="w-1.5 h-1.5 rounded-full" :style="playing ? 'background:hsl(var(--primary))' : 'background:hsl(var(--success))'"></span><span x-text="cfg.engine"></span> · <span x-text="playing?'执行中':'已完成'"></span></div>
           </div>
-          <button class="w-7 h-7 rounded flex items-center justify-center hover:bg-[#f5f7fa] text-[#999]" @click="open=false"><i class="fa fa-times"></i></button>
+          <button class="w-7 h-7 rounded flex items-center justify-center text-[12px]" style="color:hsl(var(--muted-foreground))" @click="open=false"><i class="fa fa-times"></i></button>
         </div>
         <div class="lt-body" x-ref="body">
-          <div class="text-[12px] text-[#1e40af] font-medium flex items-center gap-1.5 mb-3">
+          <div class="text-[12px] font-medium flex items-center gap-1.5 mb-3" style="color:hsl(var(--primary))">
             <i class="fa fa-diagram-project"></i>智能体正按 LOOP 干活：感知 → 判断 → 调工具 → 产出
           </div>
           <div class="relative pl-6">
-            <div class="absolute left-[9px] top-1 bottom-1 w-px bg-[#e8ecf0]"></div>
+            <div class="absolute left-[9px] top-1 bottom-1 w-px" style="background:hsl(var(--border))"></div>
             <template x-for="(s,si) in cfg.steps" :key="cfg._id+'-'+si">
               <div class="relative mb-3.5" x-show="si <= curIdx" x-transition:enter="transition duration-300" x-transition:enter-start="opacity-0 translate-y-1" x-transition:enter-end="opacity-100 translate-y-0">
-                <div class="absolute -left-6 top-0 w-[19px] h-[19px] rounded-full text-white text-[11px] flex items-center justify-center font-semibold" :class="si < done ? 'bg-[#059669]' : 'bg-[#2563eb]'">
+                <div class="absolute -left-6 top-0 w-[19px] h-[19px] rounded-full text-white text-[11px] flex items-center justify-center font-semibold" :style="si < done ? 'background:hsl(var(--success))' : 'background:hsl(var(--primary))'">
                   <i class="fa fa-check" x-show="si < done"></i><span x-show="si >= done" x-text="si+1"></span>
                 </div>
-                <div class="rounded-lg border px-3.5 py-2.5 transition-colors" :class="si===curIdx && si>=done ? 'border-[#bfdbfe] bg-[#f8fbff]' : 'border-[#e8ecf0]'">
-                  <div class="flex items-center gap-1.5 mb-1"><span class="text-[10.5px] px-1.5 py-0.5 rounded bg-[#eff6ff] text-[#1e40af]" x-text="s.phase || (['感知','判断','调工具','产出'][si] || '执行')"></span></div>
-                  <div class="text-[13.5px] font-medium text-[#333]"><span x-text="si===curIdx ? typing : s.act"></span><span x-show="si===curIdx && si>=done" class="lt-cursor"></span></div>
+                <div class="rounded-lg border px-3.5 py-2.5 transition-colors" style="border-color:hsl(var(--border));background:transparent" :style="si===curIdx && si>=done ? 'border-color:hsl(var(--primary) / 40%);background:hsl(var(--primary) / 4%)' : 'border-color:hsl(var(--border));background:transparent'">
+                  <div class="flex items-center gap-1.5 mb-1"><span class="text-[12px] px-1.5 py-0.5 rounded" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))" x-text="s.phase || (['感知','判断','调工具','产出'][si] || '执行')"></span></div>
+                  <div class="text-[14px] font-medium" style="color:hsl(var(--foreground))"><span x-text="si===curIdx ? typing : s.act"></span><span x-show="si===curIdx && si>=done" class="lt-cursor"></span></div>
                   <div x-show="si < done" x-transition:enter="transition duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
                     <div x-show="s.in || s.out" class="flex items-center gap-1.5 text-[12px] flex-wrap mt-1.5">
-                      <span x-show="s.in" class="px-2 py-0.5 rounded bg-[#f5f7fa] text-[#475569]"><i class="fa fa-arrow-right-to-bracket text-[#2563eb] mr-1"></i><span x-text="s.in"></span></span>
-                      <i x-show="s.in && s.out" class="fa fa-angle-right text-[#cbd5e1]"></i>
-                      <span x-show="s.out" class="px-2 py-0.5 rounded bg-[#eff6ff] text-[#1e40af] font-medium"><i class="fa fa-arrow-right-from-bracket mr-1"></i><span x-text="s.out"></span></span>
+                      <span x-show="s.in" class="px-2 py-0.5 rounded text-[12px]" style="background:hsl(var(--primary) / 5%);color:hsl(var(--muted-foreground))"><i class="fa fa-arrow-right-to-bracket mr-1" style="color:hsl(var(--primary))"></i><span x-text="s.in"></span></span>
+                      <i x-show="s.in && s.out" class="fa fa-angle-right" style="color:hsl(var(--muted-foreground))"></i>
+                      <span x-show="s.out" class="px-2 py-0.5 rounded font-medium" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))"><i class="fa fa-arrow-right-from-bracket mr-1"></i><span x-text="s.out"></span></span>
                     </div>
                     <div x-show="s.tool" class="lt-tool"><i class="fa fa-screwdriver-wrench text-[11px]"></i><code x-text="s.tool"></code><i class="fa fa-angle-right text-white/50"></i><span class="text-white/90" x-text="s.ret"></span></div>
-                    <div x-show="s.note" class="text-[12px] text-[#999] mt-1.5 leading-relaxed" x-text="s.note"></div>
+                    <div x-show="s.note" class="text-[12px] mt-1.5 leading-relaxed" style="color:hsl(var(--muted-foreground))" x-text="s.note"></div>
                   </div>
                 </div>
               </div>
             </template>
           </div>
-          <div x-show="!playing && cfg.result" x-transition class="mt-2 rounded-lg bg-[#eff6ff] border border-[#bfdbfe] px-4 py-3">
-            <div class="text-[12px] text-[#1e40af] font-medium mb-1"><i class="fa fa-circle-check mr-1"></i>产出结论</div>
-            <div class="text-[13px] text-[#333] leading-relaxed" x-html="cfg.result"></div>
+          <div x-show="!playing && cfg.result" x-transition class="mt-2 rounded-lg px-4 py-3" style="background:hsl(var(--primary) / 8%);border:1px solid hsl(var(--primary) / 30%)">
+            <div class="text-[12px] font-medium mb-1" style="color:hsl(var(--primary))"><i class="fa fa-circle-check mr-1"></i>产出结论</div>
+            <div class="text-[14px] leading-relaxed" style="color:hsl(var(--foreground))" x-html="cfg.result"></div>
           </div>
         </div>
-        <div class="p-4 border-t border-[#e8ecf0] flex-shrink-0">
+        <div class="p-4 flex-shrink-0" style="box-shadow:inset 0 1px 0 hsl(var(--border) / 70%)">
           <div class="flex gap-3">
-            <button class="flex-1 py-2.5 rounded-lg border border-[#e8ecf0] text-[#475569] text-sm font-medium hover:bg-[#f5f7fa]" @click="open=false"><i class="fa fa-times mr-1.5 text-xs"></i>关闭</button>
-            <button x-show="!playing && cfg.confirm" class="flex-1 py-2.5 rounded-lg bg-[#2563eb] text-white text-sm font-medium hover:bg-[#1d4ed8]" @click="open=false"><i class="fa fa-check mr-1.5 text-xs"></i><span x-text="cfg.confirm"></span></button>
+            <button class="flex-1 py-2.5 rounded-lg text-sm font-medium" style="border:1px solid hsl(var(--border));color:hsl(var(--muted-foreground));background:hsl(var(--background))" @click="open=false"><i class="fa fa-times mr-1.5 text-xs"></i>关闭</button>
+            <button x-show="!playing && cfg.confirm" class="flex-1 py-2.5 rounded-lg text-white text-sm font-medium" style="background:hsl(var(--primary))" @click="open=false"><i class="fa fa-check mr-1.5 text-xs"></i><span x-text="cfg.confirm"></span></button>
           </div>
         </div>
       </aside>

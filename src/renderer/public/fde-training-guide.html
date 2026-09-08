@@ -121,6 +121,8 @@
   hr.div{border:0;border-top:1px solid var(--neutral-line);margin:0 0 50px}
   .reading{font-size:12.5px;color:var(--text-dim);margin:10px 0 0}
   .reading .wl{color:var(--brass);font-family:ui-monospace,monospace}
+  .reading .wl-link{color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass);font-family:ui-monospace,monospace;cursor:pointer}
+  .reading .wl-link:hover{border-bottom-style:solid}
   footer{background:var(--ink);color:var(--text-oninK-dim);padding:40px 0;font-size:13px}
   footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:center}
   footer b{color:var(--accent-on-ink);font-family:"Noto Serif SC",serif}
@@ -220,16 +222,16 @@
     </div>
 
     <div class="intro-head" style="margin-top:34px"><h2>练到什么份上算过</h2>
-      <p>给一条最直白的判断线,和一条从课堂到独立扛活的成长路径。</p>
+      <p>给一条最直白的判断线,和一条从课堂到独立扛活的上手路径。</p>
     </div>
     <div class="baseline">
       客户随口说"你从 HIS 里把这个月数据拉一下",你脑子里立刻反应过来——HIS 是挂号收费系统、数据在哪张表、跟 EMR/LIS 怎么打通,而不是站那儿问"HIS 是啥"。<b>到这份上才算基础过关。</b>
     </div>
     <div class="path">
       <div class="step"><div class="sn">第 1 步</div><div class="sh">拿证</div><p>过入职培训认证——会用平台、会拆场景、能接术语。无证不上岗。</p></div>
-      <div class="step"><div class="sn">第 2 步</div><div class="sh">跟岗 4–6 周</div><p>跟一位 Senior FDE 进真实项目当副手,看+打下手+复盘,跟满一个完整交付周期。</p></div>
-      <div class="step"><div class="sn">第 3 步</div><div class="sh">独立交付</div><p>带一个小场景独立交付,Senior 兜底不插手。验收过、30 天使用率达标,才算能打。</p></div>
-      <div class="step"><div class="sn">第 4 步</div><div class="sh">带人</div><p>交付过几单、有沉淀,反过来带新人。带徒弟算进晋升分。</p></div>
+      <div class="step"><div class="sn">第 2 步</div><div class="sh">跟岗 4–6 周</div><p>跟一个真实项目当副手,看+打下手+复盘,跟满一个完整交付周期。</p></div>
+      <div class="step"><div class="sn">第 3 步</div><div class="sh">独立交付</div><p>带一个小场景独立交付,老手兜底不插手。验收过、30 天使用率达标,才算能打。</p></div>
+      <div class="step"><div class="sn">第 4 步</div><div class="sh">认定角色</div><p>上手后按人定岗:擅长排兵布阵、盯进度、对外拍板的走<b>项目经理</b>;擅长拆场景、搭系统、上线的走<b>交付工程师</b>。</p></div>
     </div>
   </div>
 </section>
@@ -360,7 +362,7 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
         <ol><li>合上教程,白板画出五阶段一条链,每阶段标一个核心交付物。</li><li>判断三个场景各属于 2+1 / 3/7/14 / Sprint S1–S4 哪套节奏。</li><li>说出三处签字分别卡在哪个节点、漏了哪处会怎么返工。</li></ol>
         <p class="chk"><b>过关:</b> 五阶段无遗漏无颠倒;三套节奏分得清;三处签字说全。</p>
       </div>
-      <p class="reading">延伸:<span class="wl">[[99 FDE模式/100 FDE作战手册/_md源/FDE五阶段作战总览.md]]</span></p>
+      <p class="reading">延伸:<a href="#" class="wl wl-link" data-nav="/">五阶段作战总览 + 各阶段完整规范</a>(应用内:FDE 工作台 · 五阶段卡片 · 各阶段手册)</p>
     </section>
     <hr class="div">
 
@@ -433,7 +435,7 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
         <ol><li>盲画五大系统 + 数据流向,标出源头和中央仓库。</li><li>老师报术语,你立刻用"也就是说……"翻人话。</li></ol>
         <p class="chk"><b>过关:</b> 系统草图五个齐、源头标对;术语翻译不愣三秒。</p>
       </div>
-      <p class="reading">延伸:<span class="wl">[[99 FDE模式/01 正式文档/FDE备弹知识体系-三段话.md]]</span></p>
+      <p class="reading">延伸:<a href="#" class="wl wl-link" data-nav="/">备弹知识库 + 调研框架 SOP + 话术卡</a>(应用内:FDE 工作台 · 阶段一手册,话术卡含破冰/SPIN/七维丝滑串全套)</p>
     </section>
     <hr class="div">
 
@@ -561,14 +563,14 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
         <ol><li>用发电厂的比喻,给同伴讲清 SEAF 和纳米Work 的关系。</li><li>说出 SDR 解决的四个卡点各对应哪个解法。</li><li>同伴扮信息科问三个数据安全问题,你按口径接住。</li></ol>
         <p class="chk"><b>过关:</b> 能讲清"客户只面对一个产品";四个卡点对应无错;安全三问答不卡壳。</p>
       </div>
-      <p class="reading">延伸:<span class="wl">[[98 FDE项目管理/00 SEAF底座跟进/SEAF问题跟进.md]]</span> · <span class="wl">[[98 FDE项目管理/02 上海四院/SDR数据仓库/为什么必须做SDR.md]]</span></p>
+      <p class="reading">延伸:<a href="#" class="wl wl-link" data-nav="/">智能体设计表 + 提示词/知识库/Skill/连接器/A-B/Eval 六模板</a>(应用内:FDE 工作台 · 阶段三手册)· <a href="#" class="wl wl-link" data-nav="/">调研话术卡全文</a>(同页 · 阶段一手册,破冰/SPIN/七维丝滑串)</p>
     </section>
     <hr class="div">
 
     <!-- 04 需求与智能体设计 -->
     <section class="mod" id="m4">
       <div class="mod-head"><div class="mod-num">04</div><div><div class="short">阶段一二三 · 最核心技术阶段</div><h2>需求与智能体设计</h2></div></div>
-      <div class="goal"><b>学完能:</b> 用六项框架挖需求、四把钥匙撬隐性经验、五层拆解法把业务拆成可执行的智能体。</div>
+      <div class="goal"><b>学完能:</b> 用六项框架挖需求、七种咨询方法接住任何一张嘴(显性靠前三种、隐性靠四把钥匙)、五层拆解法把业务拆成可执行的智能体。</div>
       <h3 class="sub">阶段一:备弹进场(纯知识)</h3>
       <p class="body">进场前把弹备足:行业政策、术语、痛点、组织关系摸清,练调研话术。<b>这阶段没有交付物</b>,练的是"怎么聊"的内功。<b>先问后讲、让客户自己说</b>——痛点从甲方嘴里出来他才认账。</p>
       <div class="flow">
@@ -654,7 +656,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <ol><li>拿一个假场景("科室想看月度运营"),用六项框架列出该问哪些问题。</li><li>把这个场景用五层拆解法拆一遍,标出边界和异常。</li><li>同伴扮科室主任,你前 5 分钟只用 STAR/5W1H/量化锚定摸基线,再换吐槽法撬一个隐性痛点出来。</li></ol>
         <p class="chk"><b>过关:</b> 六项框架不漏项;五层里边界、异常都写到了;七种方法用对场合。</p>
       </div>
-      <p class="reading">延伸:阶段一/二/三规范说明(<span class="wl">99 FDE模式/100 FDE作战手册</span> 各阶段文件夹)</p>
+      <p class="reading">延伸:<a href="#" class="wl wl-link" data-nav="/">各阶段规范说明 + 工作台开发/实现/接入规范</a>(应用内:FDE 工作台 · 阶段二至四手册)</p>
     </section>
     <hr class="div">
 
@@ -698,7 +700,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <ol><li>背出五步流程和每步对应的 skill。</li><li>说清为什么技术栈必须锁死、多租户为什么强制 hospital_id。</li></ol>
         <p class="chk"><b>过关:</b> 五步顺序对;能讲清锁死和隔离的理由。</p>
       </div>
-      <p class="reading">延伸:阶段四规范说明、工作台开发标准(<span class="wl">99 FDE模式/100 FDE作战手册/04 纳米Work行业工作台</span>)</p>
+      <p class="reading">延伸:<a href="#" class="wl wl-link" data-nav="/">工作台实现/开发/智能体接入规范 + 项目进度表</a>(应用内:FDE 工作台 · 阶段四手册)</p>
     </section>
     <hr class="div">
 
@@ -711,6 +713,15 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <div class="card"><div class="ch">代码托管 + 版本管理</div><p>代码放极库云,统一托管、版本可追溯。一体一个 prompt.md,用 Git 管版本。</p></div>
         <div class="card"><div class="ch">知识库中心</div><p>行业知识库统一在极库云管理,不散落在各处。</p></div>
         <div class="card"><div class="ch">CI 流水线</div><p>代码提交后走流水线,构建、检查、部署到容器云。</p></div>
+      </div>
+      <h3 class="sub">统一工具链五件套(工具统一 = 能复制)</h3>
+      <p class="body">别小看"工具统一"这四个字——<b>一个 FDE 做的东西另一个能无痛接手,行业之间才能直接复制</b>。五件套全部 Ready,记住它们各管什么:</p>
+      <div class="cards">
+        <div class="card"><div class="ch">统一代码服务器 <span class="en">极库云</span></div><p>代码托管、版本管理、团队协作。</p></div>
+        <div class="card"><div class="ch">统一容器服务器 <span class="en">360智汇云容器云</span></div><p>系统部署上线、跑通数据、提供可访问 URL。</p></div>
+        <div class="card"><div class="ch">统一知识库中心 <span class="en">极库云</span></div><p>行业知识库统一管理、统一沉淀。</p></div>
+        <div class="card"><div class="ch">统一智能体工具 <span class="en">纳米Work</span></div><p>搭 DEMO、设计 Agent、编排 Skill 和 Workflow。</p></div>
+        <div class="card"><div class="ch">统一 AI 编程工具 <span class="en">Claude Code 等</span></div><p>开发工作台前后端,照 64 个标准 skill 写,不从零手写。</p></div>
       </div>
       <div class="flow">
 上线链路
@@ -740,7 +751,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <ol><li>画出从写代码到给客户 URL 的完整上线链路。</li><li>说清极库云的三重身份分别是什么。</li></ol>
         <p class="chk"><b>过关:</b> 链路完整(极库云→容器云→URL);三重身份说全。</p>
       </div>
-      <p class="reading">延伸:<span class="wl">[[99 FDE模式/101 FDE项目管理/商业化FDE规范要求.md]]</span> 四、工具规范</p>
+      <p class="reading">延伸:<a href="https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=4632&docId=442814" target="_blank" style="color:var(--brass)">极库云工作模式文档</a> · 商业化FDE规范要求 · 四、工具规范(统一工具链五件套出处)</p>
     </section>
     <hr class="div">
 
@@ -779,7 +790,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <ol><li>把三个假反馈各归到"功能缺失/逻辑不通/体验"三类里。</li><li>说清 30/60/90 天各盯什么。</li></ol>
         <p class="chk"><b>过关:</b> 三分类归对;30/60/90 说清。</p>
       </div>
-      <p class="reading">延伸:阶段五规范说明(<span class="wl">99 FDE模式/100 FDE作战手册/05 客户试用-智能体优化</span>)</p>
+      <p class="reading">延伸:<a href="#" class="wl wl-link" data-nav="/">客户反馈跟踪/三轮迭代/使用率盯防/交付签字四张表</a>(应用内:FDE 工作台 · 阶段五手册)</p>
     </section>
     <hr class="div">
 
@@ -820,9 +831,10 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
 
       <h3 class="sub">二、角色分工 + 五阶段在极库云怎么落</h3>
       <div class="cards">
-        <div class="card"><div class="ch">FDE 项目经理 <span class="tag">规划</span></div><p>负责迭代版本的规划、需求和任务的创建。把用户需求拆条、排优先级、规划进哪个版本。</p></div>
-        <div class="card"><div class="ch">FDE 交付 <span class="tag">执行</span></div><p>根据产品需求做任务拆解,在迭代版本的时间范围内完成。<b>每天定期更新需求任务。</b></p></div>
+        <div class="card"><div class="ch">FDE 项目经理 <span class="tag">大脑</span><span class="tag">规划</span></div><p>项目的中枢——指挥干活、盯进度、为整个项目结果负责,<b>不下场干活</b>。负责迭代版本的规划、需求和任务的创建,把用户需求拆条、排优先级、规划进哪个版本;需求变更、边界扯皮就地拍板。</p></div>
+        <div class="card"><div class="ch">FDE 交付 <span class="tag">手脚</span><span class="tag">执行</span></div><p>真正下场干的人,把客户一句话干成线上真能用的系统。根据产品需求做任务拆解,在迭代版本的时间范围内完成。<b>每天定期更新需求任务。</b></p></div>
       </div>
+      <div class="metaphor"><p class="mt">一句话记住</p><b>项目经理指挥、交付干活。</b>项目经理为项目结果负责,交付为"能不能真跑通、真上线"负责。分工混了,两头都乱。</div>
       <p class="body">五阶段项目管理落到极库云,一共六项要管起来。前两项照五阶段走(需求沟通+原型、需求确认+智能体设计),后面四项是极库云上要额外产出/维护的:</p>
       <div class="flow">
 五阶段项目管理 · 极库云上要管的六项
@@ -948,7 +960,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <ol><li>背出五类规范和验收的三条硬标准,说清三个人工确认节点卡在什么时候。</li><li>给一个假项目("某院要 8 个需求"),拆条并规划进 2–3 个版本、标 P0/P1/P2。</li><li>判断三个新客户场景各该走标品、新增需求、还是完全定制。</li></ol>
         <p class="chk"><b>过关:</b> 五类规范说全、验收三条不漏;需求拆条清晰、优先级合理;三个复制场景判断对。</p>
       </div>
-      <p class="reading">延伸:<span class="wl">[[99 FDE模式/101 FDE项目管理/商业化FDE规范要求.md]]</span> · <a href="https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=4632&docId=442814" target="_blank" style="color:var(--brass)">极库云工作模式文档</a></p>
+      <p class="reading">延伸:<a href="https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=4632&docId=442814" target="_blank" style="color:var(--brass)">极库云工作模式文档</a>(项管/需求管理完整规范)</p>
     </section>
     <hr class="div">
 
@@ -958,7 +970,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       <div class="goal"><b>学完能:</b> 分组接一个陌生医疗场景,从阶段一走到阶段四出 demo,答辩过五维评分。</div>
       <p class="body">前面八块学完,最后用实战串一遍。3–4 人一组,接一个<b>陌生但真实</b>的医疗场景(比如"某院想要个能看科室运营的东西"),从头走到底。</p>
       <h3 class="sub">场景剧本:教练智能体扮客户</h3>
-      <p class="body">教练智能体扮三种人设,脾气各不同:<b>科室主任</b>(要结果、没耐心)、<b>信息科</b>(担心数据安全、给数据抠)、<b>临床医生</b>(嫌麻烦、说不清需求)。学员用四把钥匙一点点撬需求。</p>
+      <p class="body">教练智能体扮三种人设,脾气各不同:<b>科室主任</b>(要结果、没耐心)、<b>信息科</b>(担心数据安全、给数据抠)、<b>临床医生</b>(嫌麻烦、说不清需求)。学员先用 STAR/5W1H/量化锚定摸基线,再换四把钥匙撬隐性经验。</p>
       <h3 class="sub">分组任务:每阶段有明确产出物</h3>
       <div class="tbl-wrap"><table>
         <thead><tr><th style="width:130px">阶段</th><th>要干的事</th><th>产出物</th></tr></thead>
@@ -984,14 +996,14 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       <h3 class="sub">质量三道防线</h3>
       <div class="cards c3">
         <div class="card"><div class="ch">① 准入防线</div><p>入职认证,不过关进不了场。<b>无证不上岗。</b></p></div>
-        <div class="card"><div class="ch">② 过程防线</div><p>S1–S4 每个节点检查:发现完对场景确认单和边界、构建完看能不能跑、调优看指标、上线看部署。哪节卡住不许往下走。</p></div>
+        <div class="card"><div class="ch">② 过程防线</div><p>Sprint 每节结束做节点检查:S1 发现完对场景确认单和边界、S2 构建完看能不能跑、S3 调优看指标、S4 上线看部署。哪节卡住不许往下走。</p></div>
         <div class="card"><div class="ch">③ 结果防线</div><p>30/60/90 天三个时间点回看使用率,客户真在用才算真交付。掉了得回去补。</p></div>
       </div>
       <div class="creed"><p class="ct">实战铁律</p>
         <p><span class="lead">陌生场景才验真本事</span> —— 用没练过的场景,考的是方法迁移,不是背答案。</p>
         <p><span class="lead">答辩过五维评分卡才算出师。</span></p>
       </div>
-      <p class="reading">延伸:<span class="wl">[[99 FDE模式/04 培训体系/00 培训总纲——10天集训作战方案.md]]</span> · 上海四院实战样板</p>
+      <p class="reading">延伸:10 天集训作战方案(总纲:五维计分卡、讲师/分组/节奏)· 上海四院实战样板</p>
     </section>
 
   </main>
@@ -1022,6 +1034,17 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
     ev.preventDefault();
     document.getElementById(a.getAttribute('href').slice(1))
       .scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+  }));
+
+  // 应用内延伸链接:发给宿主(Electron 渲染层监听后路由跳转);浏览器直接打开时提示不可跳
+  document.querySelectorAll('.wl-link').forEach(el => el.addEventListener('click', ev => {
+    ev.preventDefault();
+    const nav = el.getAttribute('data-nav');
+    if (!nav) return;
+    try { parent.postMessage({ type: 'fde-training-nav', path: nav }, '*'); } catch (e) { /* ignore */ }
+    if (parent === window) {
+      alert('此链接在应用内有效:请回到 FDE 产设大师 的「FDE 工作台」页面查看对应手册。');
+    }
   }));
 </script>
 </body>

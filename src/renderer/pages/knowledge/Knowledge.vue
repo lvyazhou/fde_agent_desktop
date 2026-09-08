@@ -144,20 +144,23 @@
                 <span class="text-[11px] text-slate-400 bg-slate-100 rounded-full px-2 py-0.5">{{ pj.items.length }} 份</span>
               </div>
               <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                <div v-for="item in pj.items" :key="item.relPath" class="kb-card text-left">
+                <div v-for="item in pj.items" :key="item.relPath" class="kb-card text-left group">
                   <div class="kb-card__accent" :style="{ background: fmtColor(item.type) }"></div>
-                  <div class="flex items-start gap-3">
-                    <span class="fmt-badge" :style="{ background: fmtColor(item.type) }">{{ item.type.toUpperCase() }}</span>
-                    <div class="flex-1 min-w-0">
-                      <h3 class="text-[13.5px] font-semibold text-slate-800 leading-snug line-clamp-2">{{ item.title }}</h3>
-                      <div class="flex items-center gap-1.5 mt-1.5">
-                        <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono truncate">{{ item.dir }}/{{ item.file }}</span>
+                  <button class="block w-full text-left" @click="openProjectDoc(pj, item)">
+                    <div class="flex items-start gap-3">
+                      <span class="fmt-badge" :style="{ background: fmtColor(item.type) }">{{ item.type.toUpperCase() }}</span>
+                      <div class="flex-1 min-w-0">
+                        <h3 class="text-[13.5px] font-semibold text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">{{ item.title }}</h3>
+                        <div class="flex items-center gap-1.5 mt-1.5">
+                          <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-mono truncate">{{ item.dir }}/{{ item.file }}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-end">
+                  </button>
+                  <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                    <button @click.stop="openProjectDoc(pj, item)" class="text-blue-500 font-medium hover:text-blue-700"><i class="fa-solid fa-eye mr-1"></i>预览</button>
                     <button
-                      @click="openArchive(pj, item)"
+                      @click.stop="openArchive(pj, item)"
                       class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium text-blue-600 hover:bg-blue-50 transition"
                     >
                       <i class="fa-solid fa-inbox text-[11px]"></i>归档到知识库
@@ -213,7 +216,7 @@
       <div v-if="selected" class="fixed inset-0 z-50" @keydown.esc="selected = null">
         <div class="absolute inset-0 bg-slate-900/40" @click="selected = null"></div>
         <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] bg-white shadow-2xl flex flex-col">
-          <DocViewer :stage="selected.stageDir" :item="selected" />
+          <DocViewer :stage="selected.stageDir || ''" :item="selected" :project-slug="selectedProjectSlug" />
         </aside>
       </div>
     </transition>
@@ -316,6 +319,7 @@ const active = ref('all');    // 'all' | stage.dir
 const keyword = ref('');
 const catFilter = ref('all'); // all | deliverable | knowledge | spec
 const selected = ref(null);   // 当前预览的 item(含 stageDir)
+const selectedProjectSlug = ref(''); // 非空=预览的是「本项目产物」,DocViewer 走项目文件读取
 
 const showUpload = ref(false);
 const uploadStage = ref('');
@@ -510,7 +514,18 @@ function fmtColor(t) {
   return { md: '#0ea5e9', docx: '#2563eb', doc: '#2563eb', html: '#3b82f6', pdf: '#1e40af', pptx: '#1d4ed8' }[t] || '#64748b';
 }
 function openDoc(item) {
+  selectedProjectSlug.value = '';   // handbook 模式
   selected.value = item;
+}
+// 「本项目产物」预览:复用同一抽屉,但走项目目录读取(relPath 相对项目根)
+function openProjectDoc(pj, item) {
+  selectedProjectSlug.value = pj.slug;
+  selected.value = {
+    ...item,
+    // DocViewer 需要:relPath(相对项目根)+ title + type + category
+    relPath: item.relPath,
+    category: item.category || 'deliverable',
+  };
 }
 </script>
 

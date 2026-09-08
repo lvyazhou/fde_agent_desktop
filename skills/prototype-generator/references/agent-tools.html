@@ -2,18 +2,21 @@
 <!--
 ============================================================================
  智能体工具页模板 agent-tools.html （★铁律必带页 — 做 AI 产品原型必生成）
+ 样式基线：saas-lobster-vben current-style-summary.md（Vben5 · 2026-09）
+  · 颜色一律从 :root token 派生（hsl(var(--primary) / x%)），不硬编码品牌蓝
+  · 字号只用 12/14/16/20/24；字重只用 400/500/600/700；数字 tabular-nums
+  · 间距 8/16/24 网格；卡片圆角 12px；页面 padding 16px
+  · 顶栏/侧栏轻玻璃混入 --primary；一级菜单直接可见，active = 主色文字 + 2px 底线
+  · 不放"运行状态/时间/版本"胶囊；支持暗色 token 切换与 prefers-reduced-motion
 ============================================================================
  三栏智能体工作台：左=智能体列表(按能力分组) / 中=对话区 / 右=知识库+技能。
  用法：复制此文件到原型根目录改名 agent-tools.html，然后只改两处业务数据——
    ① <nav> 里的顶部导航链接（改成本产品的页面）
    ② <script> 里的 groups 数组（换成本产品该有的 8-12 个智能体）
- ★★ groups 里现在这组（线索研判/话术生成/健康分析…）是"代理商运营"产品的
-    占位样例，务必删掉重写！按【本产品的系统功能】倒推智能体：先列产品有哪些
-    功能模块，每个核心功能配一个替用户动脑子的智能体，knowledge/skills 也要贴
-    本产品。检验：智能体名字换个产品还成立=太通用没设计；还带"代理商/线索"=没改干净。
- 骨架/CSS/交互逻辑照搬不动。头像统一用 image/bot.png（已按铁律固定）。
+ ★★ groups 里现在这组是占位样例，务必删掉重写！按【本产品的系统功能】倒推。
+ 骨架/CSS/交互逻辑照搬不动。头像统一用 image/bot.png（图片缺失时自动降级为
+ token 色占位头像，不再出现裂图）。
  依赖：Tailwind CDN + Alpine 3.13 + Font Awesome 6.4（页面已引）。
- 记得：把技能 images/ 下的 icon.png、bot.png 复制到原型 image/ 目录。
 ============================================================================
 -->
 <html lang="zh-CN">
@@ -25,60 +28,120 @@
 <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-body { font-family: 'PingFang SC', -apple-system, sans-serif; background: #f5f7fa; color: #333; margin: 0; }
-.top-nav { background: #fff; height: 48px; border-bottom: 1px solid #e8ecf0; display: flex; align-items: center; padding: 0 16px; flex-shrink: 0; position: sticky; top: 0; z-index: 30; }
-.top-nav .logo { display: flex; align-items: center; gap: 8px; margin-right: 32px; font-size: 15px; font-weight: 600; color: #1e3a8a; white-space: nowrap; }
-.top-nav .logo img { width: 24px; height: 24px; border-radius: 4px; }
-.top-nav-item { color: #666; font-size: 13px; padding: 0 16px; height: 48px; display: flex; align-items: center; gap: 6px; white-space: nowrap; text-decoration: none; border-bottom: 2px solid transparent; transition: all .2s; }
-.top-nav-item:hover { color: #2563eb; }
-.top-nav-item.active { color: #2563eb; font-weight: 500; border-bottom-color: #2563eb; }
-.ag-list { width:260px; background:#fff; border-right:1px solid #e8ecf0; display:flex; flex-direction:column; flex-shrink:0; }
-.ag-item { padding:9px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:9px; transition:all .15s; }
-.ag-item:hover { background:#f5f7fa; }
-.ag-item.active { background:#eff6ff; }
-.ag-ctx { width:300px; background:#fff; border-left:1px solid #e8ecf0; flex-shrink:0; overflow-y:auto; }
-.q-card { background:#fff; border:1px solid #e8ecf0; border-radius:12px; cursor:pointer; transition:all .18s; }
-.q-card:hover { border-color:#bfdbfe; box-shadow:0 4px 16px rgba(37,99,235,.08); }
-.msc::-webkit-scrollbar{width:6px;} .msc::-webkit-scrollbar-thumb{background:#e0e5eb;border-radius:3px;}
+/* ===== Token 基线（唯一色值来源，业务样式从这里派生）===== */
+:root{
+  --primary: 214 95% 44%;            /* hsl(214 95% 44%) —— preferences.theme.colorPrimary */
+  --background: 0 0% 100%;
+  --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%;
+  --border: 213 32% 88%;
+  --success: 160 84% 33%;            /* 成功/启用/健康 */
+  --warning: 32 88% 40%;             /* 临界/待审核 */
+  --danger:  352 68% 48%;            /* 失败/停用/高危 */
+  --card-bg: linear-gradient(110deg,
+      color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%,
+      hsl(var(--background)) 58%,
+      color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --background: 214 40% 11%;
+    --foreground: 210 40% 94%;
+    --muted-foreground: 213 22% 68%;
+    --border: 213 28% 26%;
+    --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg,
+        color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%,
+        hsl(var(--background)) 58%,
+        color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%);
+    --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%);
+  }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground));
+  /* Body 层：主色驱动的左深右浅横向渐变，全页唯一背景 */
+  background: linear-gradient(100deg,
+      hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%,
+      transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.t-strong{color:hsl(var(--foreground))}
+.t-sub{color:hsl(var(--muted-foreground))}
+.t-pri{color:hsl(var(--primary))}
+.t-ok{color:hsl(var(--success))}
+/* 低透明度边界：用内阴影代替粗分割线 */
+.bb{box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.bt{box-shadow:inset 0 1px 0 hsl(var(--border) / 70%)}
+.bl{box-shadow:inset 1px 0 0 hsl(var(--border) / 70%)}
+.br{box-shadow:inset -1px 0 0 hsl(var(--border) / 70%)}
+.bd{border-color:hsl(var(--border))}
+
+/* 顶栏：轻玻璃（blur + saturate），一级菜单直接可见，无状态胶囊 */
+.top-nav { background:var(--chrome-bg); backdrop-filter:blur(14px) saturate(1.35); height:48px; display:flex; align-items:center; padding:0 16px; flex-shrink:0; position:sticky; top:0; z-index:30; box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%); }
+.top-nav .logo { display:flex; align-items:center; gap:8px; margin-right:32px; font-size:16px; font-weight:600; color:hsl(var(--foreground)); white-space:nowrap; }
+.top-nav .logo img { width:24px; height:24px; border-radius:6px; }
+.top-nav-item { color:hsl(var(--muted-foreground)); font-size:14px; padding:0 16px; height:48px; display:flex; align-items:center; gap:6px; white-space:nowrap; text-decoration:none; border-bottom:2px solid transparent; transition:color .2s; }
+.top-nav-item:hover { color:hsl(var(--primary)); }
+.top-nav-item.active { color:hsl(var(--primary)); font-weight:500; border-bottom-color:hsl(var(--primary)); }
+
+/* 侧栏：同一块轻玻璃，active = 主色文字 + --primary 低透明度背景 */
+.ag-list { width:260px; background:var(--chrome-bg); backdrop-filter:blur(12px) saturate(1.3); box-shadow:inset -1px 0 0 hsl(var(--border) / 70%); display:flex; flex-direction:column; flex-shrink:0; }
+.ag-item { padding:8px 12px; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:8px; transition:background .15s; }
+.ag-item:hover { background:hsl(var(--primary) / 6%); }
+.ag-item.active { background:hsl(var(--primary) / 10%); }
+.ag-item.active .ag-name { color:hsl(var(--primary)); }
+.ag-name{color:hsl(var(--foreground))}
+.ag-ctx { width:300px; background:var(--chrome-bg); backdrop-filter:blur(12px) saturate(1.3); box-shadow:inset 1px 0 0 hsl(var(--border) / 70%); flex-shrink:0; overflow-y:auto; }
+
+/* 业务卡片：近实底、无重磨砂、12px 圆角 */
+.q-card { background:var(--card-bg); border:1px solid hsl(var(--border)); border-radius:12px; cursor:pointer; transition:transform .18s, box-shadow .18s, border-color .18s; box-shadow:var(--shadow-card); }
+.q-card:hover { transform:translateY(-2px); border-color:hsl(var(--primary) / 50%); box-shadow:0 10px 22px hsl(var(--primary) / 13%); }
+.panel-soft { background:hsl(var(--primary) / 5%); border:1px solid hsl(var(--border) / 80%); border-radius:8px; }
+.msc::-webkit-scrollbar{width:6px;} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px;}
+/* 图片缺失兜底：占位头像，不再裂图 */
+img[data-fallback]{visibility:hidden}
+.bot-slot{display:grid;place-items:center;border-radius:10px;background:linear-gradient(135deg,hsl(var(--primary)),hsl(var(--primary) / 65%));color:hsl(var(--background));flex-shrink:0}
 </style>
 </head>
 <body x-data="agentTools()" x-init="init()">
 
 <!-- ① 顶部导航：改成本产品的页面链接，agent-tools 这条保持 active -->
 <nav class="top-nav">
-  <div class="logo"><img src="image/icon.png" alt="">{产品名}</div>
+  <div class="logo"><img src="image/icon.png" alt="" onerror="botFallback(this)">{产品名}</div>
   <a href="index.html" class="top-nav-item"><i class="fa fa-bolt"></i>模块一</a>
   <a href="module2.html" class="top-nav-item"><i class="fa fa-heart-pulse"></i>模块二</a>
   <a href="chat.html" class="top-nav-item"><i class="fa fa-comments"></i>问参谋</a>
   <a href="agent-tools.html" class="top-nav-item active"><i class="fa fa-toolbox"></i>智能体工具</a>
-  <div class="ml-auto flex items-center gap-4 text-[13px] text-[#475569]">
-    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-[#059669]"></span>智能体在线</span>
-    <span>{日期}</span>
-    <span><i class="fa fa-user-circle mr-1"></i>{用户名}</span>
+  <div class="ml-auto flex items-center gap-4 text-[14px] t-sub">
+    <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+    <span class="flex items-center gap-1.5"><i class="fa fa-user-circle"></i>{用户名}</span>
   </div>
 </nav>
 
 <div class="flex" style="height: calc(100vh - 48px);">
   <!-- 左栏：智能体列表（按能力分组） -->
   <aside class="ag-list">
-    <div class="px-4 py-3.5 border-b border-[#e8ecf0] flex items-center gap-2.5 flex-shrink-0">
-      <span class="w-9 h-9 rounded-lg bg-[#eff6ff] text-[#2563eb] flex items-center justify-center"><i class="fa fa-toolbox"></i></span>
-      <div><div class="text-[14px] font-semibold text-[#1e3a8a]">智能体工具</div><div class="text-[12px] text-[#999]">共 <span x-text="total"></span> 个智能体</div></div>
+    <div class="px-4 py-4 bb flex items-center gap-2.5 flex-shrink-0">
+      <span class="w-9 h-9 rounded-lg flex items-center justify-center" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))"><i class="fa fa-toolbox"></i></span>
+      <div><div class="text-[14px] font-semibold t-strong">智能体工具</div><div class="text-[12px] t-sub">共 <span class="num" x-text="total"></span> 个智能体</div></div>
     </div>
     <div class="flex-1 overflow-y-auto p-3 space-y-3 msc">
       <template x-for="g in groups" :key="g.name">
         <div>
           <div class="flex items-center gap-2 px-2 mb-1.5">
-            <i class="fa text-[#2563eb] text-xs" :class="g.icon"></i>
-            <span class="text-[12.5px] font-medium text-[#475569]" x-text="g.name"></span>
-            <span class="ml-auto text-[11px] text-[#999]" x-text="g.agents.length"></span>
+            <i class="fa t-pri text-xs" :class="g.icon"></i>
+            <span class="text-[12px] font-medium t-sub" x-text="g.name"></span>
+            <span class="ml-auto text-[12px] t-sub num" x-text="g.agents.length"></span>
           </div>
           <div class="space-y-0.5">
             <template x-for="a in g.agents" :key="a.name">
               <div class="ag-item" :class="cur && cur.name===a.name ? 'active':''" @click="select(a)">
-                <img src="image/bot.png" class="w-8 h-8 rounded-lg object-cover flex-shrink-0" alt="">
-                <div class="min-w-0"><div class="text-[13px] font-medium text-[#333] truncate" x-text="a.name"></div><div class="text-[11.5px] text-[#999] truncate" x-text="a.tag"></div></div>
-                <span class="ml-auto w-1.5 h-1.5 rounded-full bg-[#059669] flex-shrink-0"></span>
+                <span class="bot-slot w-8 h-8"><img src="image/bot.png" class="w-8 h-8 rounded-lg object-cover" alt="" onerror="botFallback(this)"></span>
+                <div class="min-w-0"><div class="text-[14px] font-medium ag-name truncate" x-text="a.name"></div><div class="text-[12px] t-sub truncate" x-text="a.tag"></div></div>
+                <span class="ml-auto w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:hsl(var(--success))"></span>
               </div>
             </template>
           </div>
@@ -89,21 +152,21 @@ body { font-family: 'PingFang SC', -apple-system, sans-serif; background: #f5f7f
 
   <!-- 中栏：对话区 -->
   <div class="flex-1 flex flex-col min-w-0" x-show="cur">
-    <div class="px-6 py-3 border-b border-[#e8ecf0] bg-white flex items-center gap-3 flex-shrink-0">
-      <img src="image/bot.png" class="w-10 h-10 rounded-xl object-cover flex-shrink-0" alt="">
-      <div><div class="flex items-center gap-2"><span class="text-[15px] font-semibold text-[#1e3a8a]" x-text="cur?cur.name:''"></span><span class="text-[11px] px-2 py-0.5 rounded bg-[#eff6ff] text-[#1e40af]" x-text="cur?cur.tag:''"></span></div><div class="text-[12px] text-[#999]" x-text="cur?cur.role:''"></div></div>
+    <div class="px-6 py-3 bb flex items-center gap-3 flex-shrink-0" style="background:var(--chrome-bg);backdrop-filter:blur(12px) saturate(1.3)">
+      <span class="bot-slot w-10 h-10 rounded-xl"><img src="image/bot.png" class="w-10 h-10 rounded-xl object-cover" alt="" onerror="botFallback(this)"></span>
+      <div><div class="flex items-center gap-2"><span class="text-[16px] font-semibold t-strong" x-text="cur?cur.name:''"></span><span class="text-[12px] px-2 py-0.5 rounded" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))" x-text="cur?cur.tag:''"></span></div><div class="text-[12px] t-sub" x-text="cur?cur.role:''"></div></div>
     </div>
     <div class="flex-1 overflow-y-auto msc px-6 py-6" x-ref="msgs">
       <div x-show="msgs.length>0" class="max-w-[760px] mx-auto space-y-4">
         <template x-for="(m,mi) in msgs" :key="mi">
           <div>
-            <div x-show="m.role==='user'" class="flex justify-end"><div class="rounded-xl rounded-br-sm bg-[#2563eb] text-white px-4 py-2.5 text-[14px] max-w-[80%]" x-text="m.text"></div></div>
+            <div x-show="m.role==='user'" class="flex justify-end"><div class="rounded-xl rounded-br-sm px-4 py-2.5 text-[14px] max-w-[80%]" style="background:hsl(var(--primary));color:hsl(var(--background))" x-text="m.text"></div></div>
             <div x-show="m.role==='ai'" class="flex gap-2.5">
-              <img src="image/bot.png" class="w-8 h-8 rounded-lg object-cover flex-shrink-0 mt-0.5" alt="">
-              <div class="rounded-xl rounded-bl-sm bg-white border border-[#e8ecf0] px-4 py-3 text-[14px] leading-relaxed flex-1 min-w-0">
-                <div x-html="m.html"></div><span x-show="m.typing" class="inline-block w-0.5 h-4 bg-[#2563eb] animate-pulse ml-0.5 align-middle"></span>
+              <span class="bot-slot w-8 h-8 rounded-lg mt-0.5"><img src="image/bot.png" class="w-8 h-8 rounded-lg object-cover" alt="" onerror="botFallback(this)"></span>
+              <div class="rounded-xl rounded-bl-sm px-4 py-3 text-[14px] leading-relaxed flex-1 min-w-0" style="background:hsl(var(--background));border:1px solid hsl(var(--border))">
+                <div x-html="m.html"></div><span x-show="m.typing" class="inline-block w-0.5 h-4 animate-pulse ml-0.5 align-middle" style="background:hsl(var(--primary))"></span>
                 <div x-show="!m.typing && m.follows && m.follows.length" class="flex flex-wrap gap-2 mt-3">
-                  <template x-for="ff in m.follows" :key="ff"><span class="text-[12.5px] px-3 py-1.5 rounded-full border border-[#bfdbfe] text-[#1e40af] bg-[#eff6ff] cursor-pointer hover:bg-[#dbeafe]" @click="ask(ff)" x-text="ff"></span></template>
+                  <template x-for="ff in m.follows" :key="ff"><span class="text-[12px] px-3 py-1.5 rounded-full cursor-pointer" style="border:1px solid hsl(var(--primary) / 35%);color:hsl(var(--primary));background:hsl(var(--primary) / 8%)" @click="ask(ff)" x-text="ff"></span></template>
                 </div>
               </div>
             </div>
@@ -111,59 +174,59 @@ body { font-family: 'PingFang SC', -apple-system, sans-serif; background: #f5f7f
         </template>
       </div>
       <div x-show="msgs.length===0" class="max-w-[720px] mx-auto text-center">
-        <img src="image/bot.png" class="w-16 h-16 rounded-2xl object-cover mx-auto mb-4" alt="">
-        <div class="text-[18px] font-semibold text-[#1e3a8a] mb-1.5" x-text="cur?cur.name:''"></div>
-        <div class="text-[13px] text-[#475569] mb-7" x-text="cur?cur.role:''"></div>
+        <span class="bot-slot w-16 h-16 rounded-2xl mx-auto mb-4" style="width:64px;height:64px"><img src="image/bot.png" class="w-16 h-16 rounded-2xl object-cover" alt="" onerror="botFallback(this)"></span>
+        <div class="text-[20px] font-semibold t-strong mb-1.5" x-text="cur?cur.name:''"></div>
+        <div class="text-[14px] t-sub mb-7" x-text="cur?cur.role:''"></div>
         <div class="grid grid-cols-2 gap-3 text-left">
           <template x-for="q in (cur?cur.quick:[])" :key="q">
             <div class="q-card p-4 flex items-center gap-3" @click="ask(q)">
-              <span class="w-8 h-8 rounded-lg bg-[#eff6ff] text-[#2563eb] flex items-center justify-center flex-shrink-0"><i class="fa fa-wand-magic-sparkles"></i></span>
-              <span class="text-[13.5px] text-[#333]" x-text="q"></span>
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))"><i class="fa fa-wand-magic-sparkles"></i></span>
+              <span class="text-[14px] t-strong" x-text="q"></span>
             </div>
           </template>
         </div>
-        <div class="text-[12px] text-[#999] mt-8"><i class="fa fa-circle-info mr-1"></i>智能体生成内容均为草稿态，人工拥有最终决定权</div>
+        <div class="text-[12px] t-sub mt-8"><i class="fa fa-circle-info mr-1"></i>智能体生成内容均为草稿态，人工拥有最终决定权</div>
       </div>
     </div>
-    <div class="px-6 py-4 border-t border-[#e8ecf0] bg-white flex-shrink-0">
-      <div class="max-w-[720px] mx-auto flex items-end gap-3 rounded-xl border border-[#e8ecf0] px-4 py-2.5 focus-within:border-[#2563eb]">
+    <div class="px-6 py-4 bt flex-shrink-0" style="background:var(--chrome-bg);backdrop-filter:blur(12px) saturate(1.3)">
+      <div class="max-w-[720px] mx-auto flex items-end gap-3 rounded-xl px-4 py-2.5 focus-within:border-[hsl(var(--primary))]" style="background:hsl(var(--background));border:1px solid hsl(var(--border))">
         <textarea x-model="input" @keydown.enter.prevent="ask(input)" rows="1" placeholder="向智能体提问… (Enter 发送 / Shift+Enter 换行)" class="flex-1 resize-none outline-none text-[14px] bg-transparent max-h-24"></textarea>
-        <button @click="ask(input)" class="w-9 h-9 rounded-lg bg-[#2563eb] text-white flex items-center justify-center hover:bg-[#1d4ed8]"><i class="fa fa-paper-plane"></i></button>
+        <button @click="ask(input)" class="w-9 h-9 rounded-lg text-white flex items-center justify-center" style="background:hsl(var(--primary))"><i class="fa fa-paper-plane"></i></button>
       </div>
-      <div class="text-[11px] text-[#999] mt-2 text-center max-w-[720px] mx-auto"><i class="fa fa-shield-halved mr-1"></i>内容脱敏 · 人机协助 · 由 360 安全大脑驱动</div>
+      <div class="text-[12px] t-sub mt-2 text-center max-w-[720px] mx-auto"><i class="fa fa-shield-halved mr-1"></i>内容脱敏 · 人机协助 · 由 360 安全大脑驱动</div>
     </div>
   </div>
 
   <!-- 右栏：智能体详情（知识库 + 技能 + 建议追问） -->
   <aside class="ag-ctx" x-show="cur">
     <div class="p-4 space-y-5">
-      <div class="text-[13px] font-semibold text-[#1e3a8a] flex items-center gap-1.5"><i class="fa fa-circle-info text-[#2563eb]"></i>智能体详情</div>
+      <div class="text-[14px] font-semibold t-strong flex items-center gap-1.5"><i class="fa fa-circle-info t-pri"></i>智能体详情</div>
       <div>
-        <div class="text-[12px] text-[#1e40af] font-medium mb-2 flex items-center gap-1.5"><i class="fa fa-wave-square"></i>运行状态</div>
-        <div class="rounded-lg bg-[#f8fafc] border border-[#e8ecf0] p-3 text-[12.5px] space-y-1.5">
-          <div class="flex justify-between"><span class="text-[#475569]" x-text="cur?cur.name:''"></span><span class="text-[#059669]">● 在线</span></div>
-          <div class="flex justify-between"><span class="text-[#999]">当前阶段</span><span class="text-[#475569]">就绪</span></div>
+        <div class="text-[12px] font-medium mb-2 flex items-center gap-1.5 t-pri"><i class="fa fa-wave-square"></i>运行状态</div>
+        <div class="rounded-lg p-3 text-[12px] space-y-1.5" style="background:hsl(var(--primary) / 5%);border:1px solid hsl(var(--border) / 80%)">
+          <div class="flex justify-between"><span class="t-sub" x-text="cur?cur.name:''"></span><span class="t-ok">● 在线</span></div>
+          <div class="flex justify-between"><span class="t-sub">当前阶段</span><span class="t-sub">就绪</span></div>
         </div>
       </div>
       <div>
-        <div class="text-[12px] text-[#1e40af] font-medium mb-2 flex items-center gap-1.5"><i class="fa fa-book"></i>知识库</div>
+        <div class="text-[12px] font-medium mb-2 flex items-center gap-1.5 t-pri"><i class="fa fa-book"></i>知识库</div>
         <div class="space-y-1.5">
           <template x-for="k in (cur?cur.knowledge:[])" :key="k">
-            <div class="rounded-lg bg-[#f8fafc] border border-[#e8ecf0] px-3 py-1.5 text-[12px] text-[#475569] flex items-center gap-2"><i class="fa fa-database text-[#2563eb] text-[11px]"></i><span x-text="k"></span></div>
+            <div class="rounded-lg px-3 py-1.5 text-[12px] t-sub flex items-center gap-2" style="background:hsl(var(--primary) / 5%);border:1px solid hsl(var(--border) / 80%)"><i class="fa fa-database t-pri text-[12px]"></i><span x-text="k"></span></div>
           </template>
         </div>
       </div>
       <div>
-        <div class="text-[12px] text-[#1e40af] font-medium mb-2 flex items-center gap-1.5"><i class="fa fa-bolt"></i>技能</div>
+        <div class="text-[12px] font-medium mb-2 flex items-center gap-1.5 t-pri"><i class="fa fa-bolt"></i>技能</div>
         <div class="flex flex-wrap gap-1.5">
-          <template x-for="s in (cur?cur.skills:[])" :key="s"><span class="text-[11.5px] px-2.5 py-1 rounded-full bg-[#eff6ff] text-[#1e40af]" x-text="s"></span></template>
+          <template x-for="s in (cur?cur.skills:[])" :key="s"><span class="text-[12px] px-2.5 py-1 rounded-full" style="background:hsl(var(--primary) / 8%);color:hsl(var(--primary))" x-text="s"></span></template>
         </div>
       </div>
       <div>
-        <div class="text-[12px] text-[#1e40af] font-medium mb-2 flex items-center gap-1.5"><i class="fa fa-lightbulb"></i>建议追问</div>
+        <div class="text-[12px] font-medium mb-2 flex items-center gap-1.5 t-pri"><i class="fa fa-lightbulb"></i>建议追问</div>
         <div class="space-y-1.5">
           <template x-for="q in (cur?cur.quick:[])" :key="'sug'+q">
-            <div class="rounded-lg bg-[#f8fafc] border border-[#e8ecf0] px-3 py-1.5 text-[12px] text-[#475569] cursor-pointer hover:border-[#bfdbfe] hover:text-[#1e40af] flex items-center gap-2" @click="ask(q)"><i class="fa fa-angle-right text-[#2563eb]"></i><span x-text="q"></span></div>
+            <div class="rounded-lg px-3 py-1.5 text-[12px] t-sub cursor-pointer flex items-center gap-2" style="background:hsl(var(--primary) / 5%);border:1px solid hsl(var(--border) / 80%)" @click="ask(q)"><i class="fa fa-angle-right t-pri"></i><span x-text="q"></span></div>
           </template>
         </div>
       </div>
@@ -172,11 +235,16 @@ body { font-family: 'PingFang SC', -apple-system, sans-serif; background: #f5f7f
 </div>
 
 <script>
+/* 图片缺失兜底：bot.png / icon.png 缺失时用 token 色占位头像，不再裂图 */
+function botFallback(img){
+  const svg = "data:image/svg+xml;utf8," + encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='hsl(214,95%,44%)'/><text x='32' y='43' font-size='30' text-anchor='middle' fill='white'>✦</text></svg>");
+  img.src = svg;
+}
 function agentTools() {
   return {
     input:'', cur:null, msgs:[], replying:false,
     // ② 【改这里】把 groups 换成本产品该有的智能体（8-12 个，按能力分 2-3 组）
-    //    每个智能体 = { name, tag, icon(仅右栏详情/分组用), role, quick[], knowledge[], skills[] }
     //    用产品专家视角拆全：这个产品域里，用户会需要哪些智能体替他研判/生成/分析/编排。
     //    下面是"代理商运营"示例，照葫芦画瓢换成你的领域。
     groups:[
@@ -203,7 +271,7 @@ function agentTools() {
       this.msgs.push({role:'user',text:q}); this.scrollB();
       const a=this.cur;
       // 回答格式铁律：先结论、再依据
-      const ans='<b class="text-[#1e3a8a]">'+a.name+'已完成研判，先给结论。</b><br>这个问题涉及'+(a.knowledge[0]||'相关数据')+'，我检索了知识库并跑了模型，调用【'+a.skills[0]+'】能力生成结果。<br><br>依据：结合规则与历史样本，结论可直接落地。要更细的可以让我出一份专项分析。';
+      const ans='<b class="t-strong">'+a.name+'已完成研判，先给结论。</b><br>这个问题涉及'+(a.knowledge[0]||'相关数据')+'，我检索了知识库并跑了模型，调用【'+a.skills[0]+'】能力生成结果。<br><br>依据：结合规则与历史样本，结论可直接落地。要更细的可以让我出一份专项分析。';
       const follows=a.quick.slice(0,2);
       this.msgs.push({role:'ai',html:'',full:ans,typing:true,follows});
       this.replying=true; this.scrollB();
