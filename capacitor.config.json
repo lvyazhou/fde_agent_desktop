@@ -1,0 +1,13 @@
+{
+  "appId": "com.prodesigner.android",
+  "appName": "FDE产设大师",
+  "webDir": "dist/renderer",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true,
+    "allowNavigation": ["127.0.0.1", "localhost"]
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}

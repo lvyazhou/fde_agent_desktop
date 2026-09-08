@@ -5,9 +5,7 @@
       <div class="flex flex-col items-center px-6 py-6 max-w-4xl mx-auto">
         <!-- Header: avatar + title -->
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-11 h-11 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
-            <i class="fa-solid fa-robot text-blue-600 text-lg"></i>
-          </div>
+          <img src="../../assets/logo.png" alt="Logo" class="w-11 h-11 rounded-full object-cover border border-blue-100" />
           <h2 class="text-lg font-bold text-slate-800">你好，我是 FDE产品设计</h2>
         </div>
 

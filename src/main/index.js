@@ -453,7 +453,7 @@ async function initializeHermes() {
   try {
     const result = await acp.request('initialize', {
       protocolVersion: 1,
-      clientInfo: { name: 'prodesigner', version: '1.1.0' },
+      clientInfo: { name: 'prodesigner', version: '2.0.0' },
     });
     console.log('[main] hermes-acp initialized:', JSON.stringify(result).slice(0, 300));
     cachedCapabilities = result || {};

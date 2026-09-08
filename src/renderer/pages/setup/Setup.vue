@@ -3,9 +3,7 @@
     <!-- 顶部可拖拽条 -->
     <div class="h-10 shrink-0 drag-region flex items-center px-5">
       <div class="flex items-center gap-2 no-drag">
-        <div class="w-6 h-6 rounded-lg bg-blue-700 flex items-center justify-center shadow-sm">
-          <i class="fa-solid fa-wand-magic-sparkles text-white text-[10px]"></i>
-        </div>
+        <img src="../../assets/logo.png" alt="Logo" class="w-6 h-6 rounded-lg object-cover shadow-sm" />
         <span class="font-semibold text-slate-700 text-[13px]">FDE产品设计 · 初始化</span>
       </div>
     </div>

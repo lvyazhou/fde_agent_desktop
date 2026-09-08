@@ -1,6 +1,6 @@
 {
   "name": "fde-prodesigner",
-  "version": "1.1.0",
+  "version": "2.1.0",
   "description": "FDE产设大师 — FDE 项目经理五阶段作战工作台:调研备弹→需求原型→智能体设计→工作台上线→试用定稿",
   "main": "src/main/index.js",
   "scripts": {
@@ -16,7 +16,10 @@
     "build:hermes": "node scripts/build-hermes.js",
     "build:full": "npm run build:hermes && npm run build:win",
     "build:mac-full": "npm run build:hermes && npm run build:mac",
-    "build": "npm run build:win"
+    "build": "npm run build:win",
+    "android:sync": "npm run build:renderer && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:apk": "npm run build:renderer && npx cap sync android && cd android && ./gradlew assembleDebug"
   },
   "keywords": [
     "ai",
@@ -28,6 +31,7 @@
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
+    "@capacitor/cli": "^6.2.2",
     "@tailwindcss/postcss": "^4.2.2",
     "@vitejs/plugin-vue": "^6.0.5",
     "autoprefixer": "^10.4.27",
@@ -101,6 +105,8 @@
     }
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/core": "^6.2.2",
     "@fortawesome/fontawesome-free": "^7.2.0",
     "docx": "^9.7.1",
     "jszip": "^3.10.1",

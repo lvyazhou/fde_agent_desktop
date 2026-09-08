@@ -25,9 +25,7 @@
       <div class="flex items-center gap-4 min-w-0 lg:gap-6">
         <!-- Logo + brand -->
         <div class="flex items-center gap-3 shrink-0">
-          <div class="brand-logo w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
-            <i class="fa-solid fa-wand-magic-sparkles text-white text-[13px]"></i>
-          </div>
+          <img src="../../assets/logo.png" alt="Logo" class="brand-logo-img w-8 h-8 rounded-xl object-cover shrink-0" />
           <div class="flex flex-col leading-none">
             <span class="font-semibold text-slate-800 text-[13px] tracking-tight">FDE产品设计</span>
             <span class="brand-subtitle text-[10px] text-slate-400 mt-0.5 tracking-wide">五阶段作战工作台</span>
@@ -168,7 +166,7 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const isMaximized = ref(false);
-const appVersion = ref('v1.1.0');
+const appVersion = ref('v2.1.0');
 const licenseInfo = ref(null);
 const importing = ref(false);
 const importError = ref('');
@@ -478,19 +476,13 @@ const closeWindow = () => {
   opacity: 0.9;
 }
 
-/* Brand logo: gradient badge with glow */
-.brand-logo {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 55%, #1d4ed8 100%);
-  box-shadow:
-    0 2px 6px rgba(37, 99, 235, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+/* Brand logo: 真实 logo 图片,hover 轻微放大 */
+.brand-logo-img {
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+  transition: transform 0.25s ease;
 }
-.brand-logo:hover {
+.brand-logo-img:hover {
   transform: translateY(-1px) scale(1.03);
-  box-shadow:
-    0 4px 12px rgba(37, 99, 235, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 /* Nav bar: 单一容器,永不换行;弹性吸收,右侧固定 */
@@ -697,7 +689,7 @@ const closeWindow = () => {
 @media (max-width: 1080px) {
   /* 核心(p0)也收起文字 → 全图标导航,单行稳定 */
   .nav-p0 { display: none; }
-  .brand-logo { width: 30px; height: 30px; }
+  .brand-logo-img { width: 30px; height: 30px; }
   /* 状态条进一步紧凑:版本胶囊去掉 */
   .version-pill { display: none; }
 }

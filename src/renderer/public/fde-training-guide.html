@@ -137,8 +137,9 @@
     <p class="eyebrow">FDE 新任项目经理 · 从 0 到上手 · 完整培训教程</p>
     <h1>行业和 AI 都从零讲起,<br>练到<span class="amber">能独立接一个医疗项目</span>。</h1>
     <p class="hero-lead">
-      这一份从头读到尾,就是新任 FDE 项目经理该会的全部:岗位是干嘛、五阶段怎么走、医院有哪些系统、
-      SEAF 和 SDR 是啥、工作台怎么搭、极库云怎么上线、项管有什么规矩、日常在极库云怎么协作干活,最后一个实战串起来。一份读完。
+      这一份从头读到尾,新任 FDE 项目经理该懂的方法论就齐了:岗位是干嘛、五阶段和 Sprint 怎么走、医院有哪些系统、
+      SEAF 和 SDR 是啥、信息科问数据安全怎么接、工作台怎么搭、极库云怎么上线、项管有什么规矩、日常在极库云怎么协作干活,最后一个实战串起来。
+      一份读完;平台实操(纳米Work 搭建、排错)另在集训和跟岗里手上练。
     </p>
     <div class="thesis">
       <b>懂岗位</b><span class="arrow">→</span><b>补医疗底</b><span class="arrow">→</span><b>吃透底座</b><span class="arrow">→</span><b>走五阶段</b><span class="arrow">→</span><b>实战出师</b>
@@ -161,6 +162,9 @@
 
     <div class="intro-head"><h2>八大块怎么挂在五阶段上</h2>
       <p>用户列的八块不是并列的,有层次。五阶段是主干,其他都挂上去——这就是这份教程的编排逻辑。先看这张全景图,再往下读细节。</p>
+    </div>
+    <div class="baseline" style="margin-top:0">
+      <b>本册的边界先说清:</b>方法论、行业知识、项管规矩——本册全讲;平台实操(纳米Work 上搭 Agent、接 Connector、用 Trace 排错)是 10 天集训里整整 3 天的 <b>M1 平台精通</b>课 + 4–6 周跟岗手上练出来的,本册只给一张「实操自查清单」(见 03)帮你自检缺哪块,不在册内展开。
     </div>
     <div class="diagram">
       <svg viewBox="0 0 960 340" role="img" aria-label="培训全景总图">
@@ -266,7 +270,7 @@
     <!-- 01 五阶段 -->
     <section class="mod" id="m1">
       <div class="mod-head"><div class="mod-num">01</div><div><div class="short">骨架课 · 后面全挂在这</div><h2>FDE 五阶段总览</h2></div></div>
-      <div class="goal"><b>学完能:</b> 复述五阶段一条链,说清每阶段产出什么,分清 2+1 和 3/7/14 两套节奏。</div>
+      <div class="goal"><b>学完能:</b> 复述五阶段一条链,说清每阶段产出什么,分清 2+1、3/7/14、Sprint S1–S4 三套节奏和三处签字。</div>
       <p class="body">先记一条<b>主线</b>:客户一句话 → 调研备弹 → 沟通挖需求出原型 → 需求确认+智能体设计 → 工作台上线 → 客户试用定稿 → 复制到下个行业。再记一条<b>并行线</b>:进院必备的网络、VPN、部署基础服务(对信息科走)。两条线各走各的,互不等,<b>两线都齐了才交付版本</b>。</p>
       <div class="metaphor"><p class="mt">打个比方</p>五阶段像盖楼:阶段一<b>备料进场</b>、阶段二<b>跟业主确认效果图</b>、阶段三<b>把图纸拆成施工方案签字定死</b>、阶段四<b>真盖起来能住人</b>、阶段五<b>业主住进去挑毛病验收</b>。哪步跳过,后面都返工。</div>
       <div class="flow">
@@ -301,10 +305,60 @@
         <div class="card"><div class="ch">2+1 = 需求侧节奏(数"次")</div><p>一轮 = 3 次 = 2 次需求对接 + 1 次签字出原型,落在阶段二三。按次数算,不按天卡;需求大就多跑几轮。</p></div>
         <div class="card"><div class="ch">3/7/14 = 签字后开发(算"天")</div><p>需求签字 + 环境就绪(两线齐)后进开发,按需求大小 小3 / 中7 / 大14 天,主要在阶段四。</p></div>
       </div>
+      <h3 class="sub">第三套节奏:Sprint 制 S1–S4(交付管理的推进骨架)</h3>
+      <p class="body">除了上面两套,还有一套<b>贯穿全程的推进节奏</b>——Sprint 制。它和五阶段不冲突,是一件事的两个视角:<b>五阶段是"业务阶段"(客户视角,走到哪一步了),Sprint 是"交付节奏"(团队视角,这周干什么)</b>。一个 Sprint 把"发现问题→做出来→调准→上线"跑完一圈,全程 2–4 周;阶段四五的工作就装在这个圈里。</p>
+      <div class="flow">
+Sprint 一圈(预估全程 2–4 周,以实际排期为准)
+<span class="amber">S1 发现</span>(3–5天 · 调研挖需求+场景确认单+边界签字) → <span class="amber">S2 构建</span>(5–7天 · 拆智能体+搭系统,数据治理最容易超时)
+→ <span class="amber">S3 调优</span>(3–5天 · A/B 调 Prompt+过 Eval ≥90%) → <span class="amber">S4 上线</span>(3–5天 · 部署+鉴权+多租户,交可访问 URL)
+每节结束有<b>节点检查</b>:S1 对场景确认单和边界、S2 看能不能跑、S3 看指标、S4 看部署。<span class="hl">哪节卡住,不许往下走。</span>
+      </div>
+      <div class="diagram">
+        <svg viewBox="0 0 760 300" role="img" aria-label="五阶段与Sprint关系图">
+          <defs><marker id="s1a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <text x="20" y="26" fill="#0f1729" font-size="12.5" font-weight="700">客户视角 · 五阶段(业务走到哪一步了)</text>
+          <g font-size="11" font-weight="700">
+            <rect x="20" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="84" y="65" text-anchor="middle" fill="#eef1f7">① 调研备弹</text>
+            <rect x="168" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="232" y="65" text-anchor="middle" fill="#eef1f7">② 沟通出原型</text>
+            <rect x="316" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="380" y="65" text-anchor="middle" fill="#eef1f7">③ 智能体设计</text>
+            <rect x="464" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="528" y="65" text-anchor="middle" fill="#eef1f7">④ 工作台上线</text>
+            <rect x="612" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="676" y="65" text-anchor="middle" fill="#eef1f7">⑤ 试用定稿</text>
+          </g>
+          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#s1a)"><line x1="148" y1="60" x2="164" y2="60"/><line x1="296" y1="60" x2="312" y2="60"/><line x1="444" y1="60" x2="460" y2="60"/><line x1="592" y1="60" x2="608" y2="60"/></g>
+          <!-- 对应连线 -->
+          <g stroke="#94a0a8" stroke-width="1.2" stroke-dasharray="4 3">
+            <line x1="380" y1="82" x2="140" y2="128"/>
+            <line x1="500" y1="82" x2="420" y2="128"/>
+            <line x1="560" y1="82" x2="620" y2="128"/>
+          </g>
+          <text x="20" y="118" fill="#c8862a" font-size="12.5" font-weight="700">团队视角 · Sprint 制(这两周干什么活)</text>
+          <g font-size="11" font-weight="700">
+            <rect x="20" y="130" width="180" height="58" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="110" y="152" text-anchor="middle" fill="#232937">S1 发现</text><text x="110" y="168" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">装阶段一+二的活</text><text x="110" y="180" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">场景确认单·边界签字</text>
+            <rect x="220" y="130" width="180" height="58" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="310" y="152" text-anchor="middle" fill="#232937">S2 构建</text><text x="310" y="168" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">装阶段三+四的活</text><text x="310" y="180" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">数据治理最易超时</text>
+            <rect x="420" y="130" width="180" height="58" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="510" y="152" text-anchor="middle" fill="#232937">S3 调优</text><text x="510" y="168" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">A/B + Eval ≥90%</text><text x="510" y="180" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">调到指标达标</text>
+            <rect x="620" y="130" width="120" height="58" rx="8" fill="#2f7d54"/><text x="680" y="152" text-anchor="middle" fill="#fff">S4 上线</text><text x="680" y="168" text-anchor="middle" fill="#cfe8da" font-size="9.5" font-weight="400">部署·鉴权</text><text x="680" y="180" text-anchor="middle" fill="#cfe8da" font-size="9.5" font-weight="400">交 URL</text>
+          </g>
+          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#s1a)"><line x1="200" y1="159" x2="216" y2="159"/><line x1="400" y1="159" x2="416" y2="159"/><line x1="600" y1="159" x2="616" y2="159"/></g>
+          <!-- 三处签字 -->
+          <text x="20" y="220" fill="#b5433a" font-size="12.5" font-weight="700">三处签字(客户画押,一处都不能省)</text>
+          <g font-size="10.5">
+            <rect x="20" y="232" width="230" height="48" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="135" y="252" text-anchor="middle" fill="#232937" font-weight="700">S1 末 · 阶段二对接确认表</text><text x="135" y="268" text-anchor="middle" fill="#5a6270">发客户群确认(群确认=签字)</text>
+            <rect x="265" y="232" width="230" height="48" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="380" y="252" text-anchor="middle" fill="#232937" font-weight="700">S2 初 · 阶段三需求最终确认表</text><text x="380" y="268" text-anchor="middle" fill="#5a6270">客户正式签字,不签不开工</text>
+            <rect x="510" y="232" width="230" height="48" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="625" y="252" text-anchor="middle" fill="#232937" font-weight="700">S4 末 · 阶段五交付签字表</text><text x="625" y="268" text-anchor="middle" fill="#5a6270">三轮定稿后画押,才算交付</text>
+          </g>
+        </svg>
+        <p class="cap">两套视角一条线:五阶段(客户视角)从上走,Sprint(团队视角)从下推——阶段四五的活装在 S2–S4 里;三处签字卡在 S1 末 / S2 初 / S4 末</p>
+      </div>
+      <div class="cards">
+        <div class="card"><div class="ch">S1 发现 · 3–5 天</div><p>调研挖需求 + 出<b>场景确认单</b> + 边界签字。装的是阶段一、二的活。产出没定死就动手,后面全返工。</p></div>
+        <div class="card"><div class="ch">S2 构建 · 5–7 天</div><p>五层拆解、映射六组件、搭工作台。装的是阶段三、四的活。<b>数据治理最容易被低估</b>,联调超时多半超在这。</p></div>
+        <div class="card"><div class="ch">S3 调优 · 3–5 天</div><p>A/B 测试调 Prompt、跑评测集,过 Eval 门禁(准确率≥90%)才放行。</p></div>
+        <div class="card"><div class="ch">S4 上线 · 3–5 天</div><p>部署到容器云、鉴权走通、多租户隔离,交可访问 URL。对应阶段四的"上线"和阶段五的启动。</p></div>
+      </div>
       <p class="body"><b>加时赛(外部项目尤其医院):</b>甲方卡住(不签字、不开 VPN、不给接口)就进加时——第一动作发邮件告知甲方留痕,加时时间单独记、不算进版本时间。</p>
       <div class="drill"><p class="dt">当堂练习 + 检查点</p>
-        <ol><li>合上教程,白板画出五阶段一条链,每阶段标一个核心交付物。</li><li>判断三个场景各属于 2+1 / 3/7/14 / 加时周期。</li></ol>
-        <p class="chk"><b>过关:</b> 五阶段无遗漏无颠倒,节奏判断全对。</p>
+        <ol><li>合上教程,白板画出五阶段一条链,每阶段标一个核心交付物。</li><li>判断三个场景各属于 2+1 / 3/7/14 / Sprint S1–S4 哪套节奏。</li><li>说出三处签字分别卡在哪个节点、漏了哪处会怎么返工。</li></ol>
+        <p class="chk"><b>过关:</b> 五阶段无遗漏无颠倒;三套节奏分得清;三处签字说全。</p>
       </div>
       <p class="reading">延伸:<span class="wl">[[99 FDE模式/100 FDE作战手册/_md源/FDE五阶段作战总览.md]]</span></p>
     </section>
@@ -357,7 +411,9 @@
           <tr><td><span class="k">DRG/DIP</span></td><td>按疾病诊断相关分组付费</td><td>医保按"病种打包"付钱,入组准不准直接影响收入</td></tr>
           <tr><td><span class="k">CMI</span></td><td>病例组合指数</td><td>科室收的病"难不难",CMI 高=大病多、技术含量高</td></tr>
           <tr><td><span class="k">药占比</span></td><td>药品收入占总收入比</td><td>药费占比,国家要压,太高被考核</td></tr>
+          <tr><td><span class="k">耗占比</span></td><td>耗材收入占总收入比</td><td>和药占比一对,高值耗材也是国考盯着压的,别只记药占比</td></tr>
           <tr><td><span class="k">平均住院日</span></td><td>病人平均住多少天</td><td>周转效率,住越久床位越紧,医院想压短</td></tr>
+          <tr><td><span class="k">互联互通测评</span></td><td>国家医院信息互联互通标准化成熟度测评(四级乙等到五级乙等)</td><td>医院信息化"考级"。CDR 要较高等级才建得起来——大多数医院没过,所以没 CDR</td></tr>
         </tbody>
       </table></div>
       <h3 class="sub">现有医疗智能体矩阵</h3>
@@ -423,6 +479,17 @@
         <div class="card"><div class="ch">SEAF 供什么能力</div><ul><li>智能体引擎、工作流编排</li><li>长期记忆(让智能体"越用越聪明")</li><li>分科室/分角色权限</li><li>离线大模型(数据不出院)</li><li>L2/L4 分层调用能力</li></ul></div>
         <div class="card"><div class="ch">为什么不露面</div><p>客户只面对纳米Work 一个入口,体验统一、好复制。SEAF 的欠账(长期记忆、分权、审计埋点)由平台统一跟进,别分散在各项目重复提。</p></div>
       </div>
+      <h3 class="sub">去医院必被问:数据安全三问答(合规口径)</h3>
+      <p class="body">信息科第一次会必问数据安全。别现编,照四院定稿的口径答——这三问答不利索,技术信任当场塌掉,后面免谈。</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:170px">信息科会问</th><th>照这个口径答</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">"数据能不能不出院?"</span></td><td>能——走 <b>360 私有云专属医疗智能体实例</b>,模型和智能体日志都留在安全域内不出域,这是合规硬约束,不是可选项。</td></tr>
+          <tr><td><span class="k">"模型是不是拿我们数据训练?"</span></td><td>不——私有化部署<b>离线模型</b>,向医院承诺"不存储、不联网、不训练"三不。</td></tr>
+          <tr><td><span class="k">"出了事怎么追溯?"</span></td><td>日志全程留痕,<b>可配 180 天审计</b>;要更短也能配(如 7 天销毁),按院方合规要求来。</td></tr>
+        </tbody>
+      </table></div>
+      <p class="body"><b>平台实操自查清单(集训/跟岗练,本册只列不教):</b>照下面这张表自检,哪行答不上,就是集训 M1 课或跟岗要补的:①在纳米Work 上独立搭一个能跑的 Agent;②用 Connector 接一个模拟数据源;③SkillHub 里找到并装一个 Skill;④用 Memory 和 Trace 定位一次"答错"的原因;⑤独立排掉 3 个平台故障。五项全过,平台关才算过。</p>
       <h3 class="sub">SDR = 数据地基</h3>
       <p class="body">智能体要跑起来靠数据,可商业化项目全卡在同一个地方——<b>数据太多、太乱、拿不出来</b>。一个客户少则三五个业务系统,多的十几个;每家厂商字段名还不一样;客户又不愿意开数据库直连。结果每接一个客户都要重写一遍对接代码,耗在数据上的时间比做智能体还多。<b>没数据 → 智能体是空壳。</b></p>
       <div class="tbl-wrap"><table>
@@ -491,8 +558,8 @@
         <p><span class="lead">对客户只有一个纳米Work</span> —— SEAF 藏底层供能,别在客户面前拆开讲。</p>
       </div>
       <div class="drill"><p class="dt">当堂练习 + 检查点</p>
-        <ol><li>用发电厂的比喻,给同伴讲清 SEAF 和纳米Work 的关系。</li><li>说出 SDR 解决的四个卡点各对应哪个解法。</li></ol>
-        <p class="chk"><b>过关:</b> 能讲清"客户只面对一个产品";四个卡点对应无错。</p>
+        <ol><li>用发电厂的比喻,给同伴讲清 SEAF 和纳米Work 的关系。</li><li>说出 SDR 解决的四个卡点各对应哪个解法。</li><li>同伴扮信息科问三个数据安全问题,你按口径接住。</li></ol>
+        <p class="chk"><b>过关:</b> 能讲清"客户只面对一个产品";四个卡点对应无错;安全三问答不卡壳。</p>
       </div>
       <p class="reading">延伸:<span class="wl">[[98 FDE项目管理/00 SEAF底座跟进/SEAF问题跟进.md]]</span> · <span class="wl">[[98 FDE项目管理/02 上海四院/SDR数据仓库/为什么必须做SDR.md]]</span></p>
     </section>
@@ -515,8 +582,22 @@
         <div class="card"><div class="ch">六项调研框架</div><p>目标 / 要什么 / 痛点 / 价值 / 业务流程 / 数据流程。业务流程要拆到每个节点的输入输出。</p></div>
         <div class="card"><div class="ch">四把钥匙(撬隐性经验)</div><p>吐槽法 / 场景重现 / 如果法 / 反面教材。业务规则直接问、数据找 IT 要、隐性经验靠激不靠问。</p></div>
       </div>
+      <h3 class="sub">七种咨询方法(话术卡的完整口径)</h3>
+      <p class="body">四把钥匙不是全部——完整的话术卡里是<b>七种</b>。前三种拿<b>显性事实</b>(客户说得清的),后四种撬<b>隐性经验</b>(客户说不清、要激出来的)。新人最容易犯的错是拿"吐槽法"去问基础事实,客户没槽可吐就冷场——先问前三样把基线摸了,再换钥匙。</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:120px">方法</th><th style="width:90px">管什么</th><th>怎么开口(示例)</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">STAR</span></td><td>显性 · 挖事实</td><td>"上次遇到这情况,当时背景是啥、你们怎么做的、结果怎样?"——拿完整事件,不拿观点</td></tr>
+          <tr><td><span class="k">5W1H</span></td><td>显性 · 补基线</td><td>"这个环节谁做、多久做一次、在哪做、怎么做的?"——现状基线就靠它</td></tr>
+          <tr><td><span class="k">量化锚定</span></td><td>显性 · 定数值</td><td>"说慢,多慢?几天出一次、一次花几个小时?"——不落到数字,后面没法算价值和验收</td></tr>
+          <tr><td><span class="k">吐槽法</span></td><td>隐性 · <b>最好使</b></td><td>"这套流程里最烦的是哪块?"——让客户先骂现状,真需求顺着牢骚流出来(四院验证 #1)</td></tr>
+          <tr><td><span class="k">场景重现</span></td><td>隐性 · 演一遍</td><td>"您把上周做这事的过程从头走一遍,我跟着记"——走一遍比描述十遍都准</td></tr>
+          <tr><td><span class="k">如果法</span></td><td>隐性 · 探边界</td><td>"如果这步自动做了,下一卡点在哪?"——挖出客户自己都没想的边界</td></tr>
+          <tr><td><span class="k">反面教材</span></td><td>隐性 · 避坑</td><td>"有没有哪次做砸过?砸在哪?"——失败案例里的规则,手册里永远没有</td></tr>
+        </tbody>
+      </table></div>
       <h3 class="sub">阶段三:签字定稿 + 拆智能体矩阵</h3>
-      <p class="body">先把需求收敛成《需求最终确认表》签字定死,再把一条业务链路拆成智能体矩阵——<b>一个环节一个专用智能体,各管一段、首尾相接</b>。每个智能体照设计表走。</p>
+      <p class="body">先把需求收敛成《需求最终确认表》签字定死,再出 <b>PRD(产品需求文档,模板和范例都在工作台手册里)</b>,然后把一条业务链路拆成智能体矩阵——<b>一个环节一个专用智能体,各管一段、首尾相接</b>。每个智能体照《智能体设计表》走(手册 03 目录下,连同知识库/提示词/Skill/连接器/A-B/Eval 六个模板一起用)。</p>
       <div class="flow">
 五层拆解法(把业务专家的隐性经验拆成可执行结构)
 <span class="amber">Workflow</span>(整体流程) → <span class="amber">节点数据流</span> → <span class="amber">Playbook</span>(规则) → <span class="amber">边界</span>(管到哪) → <span class="amber">异常</span>(出岔子怎么办)
@@ -570,8 +651,8 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <p><span class="lead">边界和异常最容易漏</span> —— 正常路径谁都会写,异常兜底和转人工才是上线不翻车的关键;<span class="lead">准确率≥90% 不达标不放行。</span></p>
       </div>
       <div class="drill"><p class="dt">当堂练习 + 检查点</p>
-        <ol><li>拿一个假场景("科室想看月度运营"),用六项框架列出该问哪些问题。</li><li>把这个场景用五层拆解法拆一遍,标出边界和异常。</li></ol>
-        <p class="chk"><b>过关:</b> 六项框架不漏项;五层里边界、异常都写到了。</p>
+        <ol><li>拿一个假场景("科室想看月度运营"),用六项框架列出该问哪些问题。</li><li>把这个场景用五层拆解法拆一遍,标出边界和异常。</li><li>同伴扮科室主任,你前 5 分钟只用 STAR/5W1H/量化锚定摸基线,再换吐槽法撬一个隐性痛点出来。</li></ol>
+        <p class="chk"><b>过关:</b> 六项框架不漏项;五层里边界、异常都写到了;七种方法用对场合。</p>
       </div>
       <p class="reading">延伸:阶段一/二/三规范说明(<span class="wl">99 FDE模式/100 FDE作战手册</span> 各阶段文件夹)</p>
     </section>

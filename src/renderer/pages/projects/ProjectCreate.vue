@@ -13,9 +13,7 @@
       <!-- Main card -->
       <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
         <!-- Icon -->
-        <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-6">
-          <i class="fa-solid fa-wand-magic-sparkles text-2xl text-blue-700"></i>
-        </div>
+        <img src="../../assets/logo.png" alt="Logo" class="w-14 h-14 rounded-2xl object-cover mb-6" />
 
         <h1 class="text-2xl font-bold text-slate-800 mb-2">新建 FDE 项目</h1>
         <p class="text-sm text-slate-500 mb-8">

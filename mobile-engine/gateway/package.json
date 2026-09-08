@@ -1,0 +1,13 @@
+{
+  "name": "hermes-acp-gateway",
+  "version": "1.0.0",
+  "description": "本地网关:把 hermes-acp 的 stdio JSON-RPC 桥接成 127.0.0.1 上的 HTTP+SSE,供安卓 WebView(Capacitor)访问。零 npm 依赖,只用 Node 内置模块。",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "ISC"
+}

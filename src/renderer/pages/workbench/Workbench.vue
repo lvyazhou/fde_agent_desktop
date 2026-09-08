@@ -18,7 +18,7 @@
           <div class="relative flex items-start justify-between gap-6 flex-wrap">
             <div class="min-w-0 flex-1">
               <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-[12px] font-medium mb-2 backdrop-blur">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <img src="../../assets/logo.png" alt="Logo" class="w-4 h-4 rounded object-cover" />
                 FDE 五阶段作战工作台
               </div>
               <h1 class="hero-title font-bold mb-1.5 leading-snug">把「客户要 AI」翻译成「能落地的行业工作台」</h1>
