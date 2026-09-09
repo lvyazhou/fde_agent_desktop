@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="shrink-0 px-4 py-3 border-b border-slate-100">
       <div class="flex items-center justify-between mb-3">
-        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">会话</span>
+        <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">智能对话</span>
         <button class="text-slate-400 hover:text-slate-600 text-xs cursor-pointer" @click="$emit('close')">
           <i class="fa-solid fa-chevron-left"></i>
         </button>
@@ -23,7 +23,7 @@
         <i class="fa-solid fa-magnifying-glass text-[10px] text-slate-400"></i>
         <input
           v-model="searchQuery"
-          placeholder="搜索会话/任务"
+          placeholder="搜索对话"
           class="flex-1 bg-transparent text-xs text-slate-600 placeholder-slate-400 focus:outline-none"
         />
       </div>
@@ -41,7 +41,12 @@
           class="w-full text-left px-3 py-2 rounded-xl mb-0.5 transition-all flex items-center gap-2.5 cursor-pointer"
           :class="project.slug === currentSlug ? 'bg-blue-50 border border-blue-100/60' : 'hover:bg-slate-50'"
         >
-          <i :class="phaseIcon(project.phase)" class="text-[11px] w-4 text-center" :style="{ color: project.slug === currentSlug ? '#2563eb' : '#64748b' }"></i>
+          <span class="relative w-4 shrink-0 flex items-center justify-center">
+            <i :class="phaseIcon(project.phase, project.projectType, project.aiApp)" class="text-[11px]" :style="{ color: project.slug === currentSlug ? '#2563eb' : '#64748b' }"></i>
+            <span v-if="project.projectType === 'ai-app'" class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-500 border border-white flex items-center justify-center" title="AI应用专家">
+              <i class="fa-solid fa-bolt text-white" style="font-size:6px"></i>
+            </span>
+          </span>
           <span class="flex-1 min-w-0 text-[13px] font-medium truncate" :class="project.slug === currentSlug ? 'text-blue-800' : 'text-slate-700'">{{ project.name }}</span>
           <span v-if="project.slug === currentSlug" class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
         </button>
@@ -57,7 +62,12 @@
           class="w-full text-left px-3 py-2 rounded-xl mb-0.5 transition-all flex items-center gap-2.5 cursor-pointer"
           :class="project.slug === currentSlug ? 'bg-blue-50 border border-blue-100/60' : 'hover:bg-slate-50'"
         >
-          <i :class="phaseIcon(project.phase)" class="text-[11px] w-4 text-center text-slate-400"></i>
+          <span class="relative w-4 shrink-0 flex items-center justify-center">
+            <i :class="phaseIcon(project.phase, project.projectType, project.aiApp)" class="text-[11px] text-slate-400"></i>
+            <span v-if="project.projectType === 'ai-app'" class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-blue-500 border border-white flex items-center justify-center" title="AI应用专家">
+              <i class="fa-solid fa-bolt text-white" style="font-size:6px"></i>
+            </span>
+          </span>
           <span class="flex-1 min-w-0 text-[13px] truncate text-slate-600">{{ project.name }}</span>
           <span class="text-[10px] text-slate-400 shrink-0">{{ formatDate(project.updatedAt || project.createdAt) }}</span>
         </button>
@@ -136,7 +146,8 @@ const olderProjects = computed(() => {
   return filteredProjects.value.filter(p => (p.updatedAt || p.createdAt || '').slice(0, 10) < sevenDaysAgo);
 });
 
-const phaseIcon = (phase) => {
+const phaseIcon = (phase, projectType, aiApp) => {
+  if (projectType === 'ai-app' && aiApp && aiApp.icon) return `fa-solid fa-${aiApp.icon}`;
   if (phase === 'iterating') return 'fa-solid fa-rotate';
   if (phase === 'prototype') return 'fa-solid fa-palette';
   if (phase === 'spec') return 'fa-solid fa-list-check';

@@ -9,6 +9,7 @@ const validInvokeChannels = new Set([
   'shell:open-external',
   'fs:read-file',
   'fs:read-directory',
+  'fs:save-local-file',
   'fs:get-home-dir',
   'hermes:list-projects',
   'hermes:create-project',
@@ -66,6 +67,22 @@ const validInvokeChannels = new Set([
   'license:status',
   'license:machine-sn',
   'license:import',
+  // AI 应用广场
+  'ai-apps:list',
+  'ai-apps:get',
+  'ai-apps:save',
+  'ai-apps:publish',
+  'ai-apps:unpublish',
+  'ai-apps:delete',
+  // AI 应用记忆 + 知识库
+  'ai-apps:memory-get',
+  'ai-apps:memory-save',
+  'ai-apps:memory-append',
+  'ai-apps:memory-open',
+  'ai-apps:knowledge-list',
+  'ai-apps:knowledge-upload',
+  'ai-apps:knowledge-delete',
+  'ai-apps:knowledge-open',
 ]);
 
 const validSendChannels = new Set([
@@ -132,7 +149,7 @@ contextBridge.exposeInMainWorld('api', {
 
   // Hermes project management
   hermes: {
-    listProjects() { return invoke('hermes:list-projects'); },
+    listProjects(options) { return invoke('hermes:list-projects', options); },
     createProject(params) { return invoke('hermes:create-project', params); },
     loadProject(slug) { return invoke('hermes:load-project', slug); },
     deleteProject(slug) { return invoke('hermes:delete-project', slug); },
@@ -189,6 +206,7 @@ contextBridge.exposeInMainWorld('api', {
     readFile(filePath) { return invoke('fs:read-file', filePath); },
     readDirectory(dirPath) { return invoke('fs:read-directory', dirPath); },
     getHomeDir() { return invoke('fs:get-home-dir'); },
+    saveLocalFile(srcPath) { return invoke('fs:save-local-file', srcPath); },
   },
 
   // Skills
@@ -226,5 +244,25 @@ contextBridge.exposeInMainWorld('api', {
     status() { return invoke('license:status'); },
     machineSn() { return invoke('license:machine-sn'); },
     import() { return invoke('license:import'); },
+  },
+
+  // AI 应用广场
+  aiApps: {
+    list() { return invoke('ai-apps:list'); },
+    get(id) { return invoke('ai-apps:get', { id }); },
+    save(app) { return invoke('ai-apps:save', { app }); },
+    publish(id) { return invoke('ai-apps:publish', { id }); },
+    unpublish(id) { return invoke('ai-apps:unpublish', { id }); },
+    delete(id) { return invoke('ai-apps:delete', { id }); },
+    // 记忆
+    memoryGet(id) { return invoke('ai-apps:memory-get', { id }); },
+    memorySave(id, content) { return invoke('ai-apps:memory-save', { id, content }); },
+    memoryAppend(id, content, source) { return invoke('ai-apps:memory-append', { id, content, source }); },
+    memoryOpen(id) { return invoke('ai-apps:memory-open', { id }); },
+    // 知识库
+    knowledgeList(id) { return invoke('ai-apps:knowledge-list', { id }); },
+    knowledgeUpload(id) { return invoke('ai-apps:knowledge-upload', { id }); },
+    knowledgeDelete(id, file) { return invoke('ai-apps:knowledge-delete', { id, file }); },
+    knowledgeOpen(id) { return invoke('ai-apps:knowledge-open', { id }); },
   },
 });

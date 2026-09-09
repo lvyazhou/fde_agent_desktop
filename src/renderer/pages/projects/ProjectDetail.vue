@@ -128,7 +128,7 @@
                       </div>
                     </div>
                   </div>
-                  <div v-if="msg.content || (isStreaming && idx === messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)"></div>
+                  <div v-if="msg.content || (isStreaming && idx === messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"</div>
                   <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
                 </div>
               </div>
@@ -359,7 +359,7 @@
                         </div>
                       </div>
                     </div>
-                    <div v-if="msg.content || (isStreaming && idx === iterateMessages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)"></div>
+                    <div v-if="msg.content || (isStreaming && idx === iterateMessages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"</div>
                     <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
                   </div>
                 </div>
@@ -541,7 +541,7 @@
                     </div>
                   </div>
                   <!-- Content: no bubble, plain text -->
-                  <div v-if="msg.content || (isStreaming && idx === stage3Messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)"></div>
+                  <div v-if="msg.content || (isStreaming && idx === stage3Messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"</div>
                   <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
                 </div>
               </div>
@@ -696,6 +696,22 @@ const lightboxVisible = ref(false);
 const openLightbox = (src) => {
   lightboxSrc.value = src;
   lightboxVisible.value = true;
+};
+const handleContentImgClick = (e) => {
+  const img = e.target.closest('img.chat-inline-img');
+  if (img) { openLightbox(img.src); return; }
+  const dlBtn = e.target.closest('.chat-file-download');
+  if (dlBtn) {
+    e.stopPropagation();
+    const fp = dlBtn.dataset.filepath;
+    if (fp) window.api.fs.saveLocalFile(fp);
+    return;
+  }
+  const chip = e.target.closest('.chat-file-chip');
+  if (chip) {
+    const fp = chip.dataset.filepath;
+    if (fp) window.api.shell.openPath(fp);
+  }
 };
 
 // --- FDE 五阶段工作台状态 ---
@@ -1155,10 +1171,65 @@ function formatToolCallText(title, args) {
   return `🔧 ${title}`;
 }
 
-// --- Markdown rendering ---
+// --- Markdown rendering (with inline image + file chip support) ---
+const IMG_EXTS = 'png|jpg|jpeg|gif|svg|webp';
+const FILE_EXTS = 'xlsx|xls|csv|pdf|doc|docx|ppt|pptx|zip|rar|7z|gz|tar|mp3|mp4|wav|mov|avi|txt|md|json|html|css|js|py|java|go|rs|sh';
+const processImagePaths = (content) => {
+  const imgTag = (fp) => {
+    const safePath = fp.replace(/\\/g, '/').replace(/^\//, '');
+    return `<img src="file:///${safePath}" class="max-w-[480px] rounded-lg border border-slate-200 my-2 cursor-zoom-in chat-inline-img" onerror="this.style.display='none'" />`;
+  };
+  const fileChip = (fp) => {
+    const name = fp.split('/').pop();
+    const ext = (name.split('.').pop() || '').toLowerCase();
+    let icon = 'fa-file text-slate-400';
+    if (ext === 'pdf') icon = 'fa-file-pdf text-rose-500';
+    else if (['doc','docx'].includes(ext)) icon = 'fa-file-word text-blue-500';
+    else if (['xls','xlsx','csv'].includes(ext)) icon = 'fa-file-excel text-emerald-600';
+    else if (['ppt','pptx'].includes(ext)) icon = 'fa-file-powerpoint text-orange-500';
+    else if (['zip','rar','7z','gz','tar'].includes(ext)) icon = 'fa-file-zipper text-amber-500';
+    else if (['mp3','wav'].includes(ext)) icon = 'fa-file-audio text-violet-500';
+    else if (['mp4','mov','avi'].includes(ext)) icon = 'fa-file-video text-pink-500';
+    else if (['js','ts','py','java','go','rs','sh','css','html','json','vue'].includes(ext)) icon = 'fa-file-code text-indigo-500';
+    else if (['txt','md'].includes(ext)) icon = 'fa-file-lines text-blue-500';
+    const safePath = fp.replace(/\\/g, '/');
+    return `<span class="chat-file-chip" data-filepath="${safePath}" title="点击打开 · 右侧按钮另存为">`
+      + `<i class="fa-solid ${icon} text-[15px] shrink-0"></i>`
+      + `<span class="truncate">${name}</span>`
+      + `<button class="chat-file-download" data-filepath="${safePath}" title="另存为…">`
+      + `<i class="fa-solid fa-download text-[12px]"></i></button></span>`;
+  };
+  // MEDIA: images
+  let processed = content.replace(
+    new RegExp(`MEDIA:([^\\s\\n]+\\.(${IMG_EXTS}))`, 'gi'),
+    (_, fp) => imgTag(fp)
+  );
+  // MEDIA: non-image files
+  processed = processed.replace(
+    new RegExp(`MEDIA:([^\\s\\n]+\\.(${FILE_EXTS}))`, 'gi'),
+    (_, fp) => fileChip(fp)
+  );
+  // Bare absolute paths — images
+  processed = processed.replace(
+    new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${IMG_EXTS}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
+    (m, fp) => '\n' + imgTag(fp) + '\n'
+  );
+  // Bare absolute paths — non-image files
+  processed = processed.replace(
+    new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${FILE_EXTS}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
+    (m, fp) => '\n' + fileChip(fp) + '\n'
+  );
+  // Markdown image syntax
+  processed = processed.replace(
+    new RegExp(`!\\[[^\\]]*\\]\\((\\/[^)]+\\.(${IMG_EXTS}))\\)`, 'gi'),
+    (_, fp) => imgTag(fp)
+  );
+  return processed;
+};
+
 const renderMarkdown = (text) => {
   if (!text) return '';
-  return marked(text, { breaks: true, gfm: true });
+  return marked(processImagePaths(text), { breaks: true, gfm: true });
 };
 
 const renderedSpec = computed(() => {
@@ -2402,5 +2473,47 @@ textarea {
 .prose :deep(th) {
   background: #f8fafc;
   font-weight: 600;
+}
+:deep(.chat-file-chip) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 360px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: background 0.15s;
+  font-size: 13px;
+  color: #334155;
+  line-height: 1.4;
+}
+:deep(.chat-file-chip:hover) {
+  background: #e2e8f0;
+}
+:deep(.chat-file-chip .truncate) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+:deep(.chat-file-download) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+}
+:deep(.chat-file-download:hover) {
+  background: #cbd5e1;
+  color: #1e293b;
 }
 </style>

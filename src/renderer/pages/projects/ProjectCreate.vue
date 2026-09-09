@@ -76,7 +76,7 @@ const handleSubmit = async () => {
   submitting.value = true;
   try {
     const name = text.slice(0, 20) + (text.length > 20 ? '...' : '');
-    const result = await window.api.hermes.createProject({ name, requirement: text });
+    const result = await window.api.hermes.createProject({ name, requirement: text, projectType: 'fde-project' });
     if (result && result.slug) {
       router.push(`/projects/${result.slug}`);
     }

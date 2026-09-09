@@ -179,6 +179,7 @@ def generate_images(args):
                     with open(filepath, "wb") as f:
                         f.write(img_resp.content)
                     print(f"✓ 已保存: {filepath}")
+                    print(f"MEDIA:{os.path.abspath(filepath)}")
                     saved_paths.append(filepath)
                 else:
                     print(f"✗ 下载图片失败: HTTP {img_resp.status_code}")
@@ -186,6 +187,7 @@ def generate_images(args):
                 with open(filepath, "wb") as f:
                     f.write(base64.b64decode(b64_json))
                 print(f"✓ 已保存 (base64): {filepath}")
+                print(f"MEDIA:{os.path.abspath(filepath)}")
                 saved_paths.append(filepath)
 
         print(f"\n完成！共生成 {len(saved_paths)} 张图片。")

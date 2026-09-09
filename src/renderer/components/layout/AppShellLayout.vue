@@ -74,6 +74,15 @@
             <span class="nav-label nav-p1">智能对话</span>
           </RouterLink>
           <RouterLink
+            to="/apps"
+            class="nav-link"
+            :class="isExpertsRoute ? 'nav-link--active' : ''"
+            title="AI应用广场"
+          >
+            <i class="fa-solid fa-store text-[11px]"></i>
+            <span class="nav-label nav-p1">AI应用广场</span>
+          </RouterLink>
+          <RouterLink
             to="/projects"
             class="nav-link"
             :class="isProjectsRoute ? 'nav-link--active' : ''"
@@ -200,6 +209,7 @@ const isHomeRoute = computed(() => route.path === '/');
 const isProjectSpecRoute = computed(() => route.path === '/project-spec');
 const isTrainingRoute = computed(() => route.path === '/training');
 const isChatRoute = computed(() => route.path === '/chat');
+const isExpertsRoute = computed(() => route.path === '/experts' || route.path === '/apps');
 const isProjectsRoute = computed(() => route.path.startsWith('/projects'));
 const isKnowledgeRoute = computed(() => route.path === '/knowledge');
 const isSkillsRoute = computed(() => route.path === '/skills');

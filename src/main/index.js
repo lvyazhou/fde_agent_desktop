@@ -32,6 +32,9 @@ const PROJECTS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'projects');
 const HANDBOOK_DIR = path.join(PRODUCT_LOBSTER_HOME, 'fde-handbook');
 const SKILLS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'skills');
 const CONFIG_YAML_PATH = path.join(PRODUCT_LOBSTER_HOME, 'config.yaml');
+const AI_APPS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'ai-apps');
+const AI_APPS_FILE = path.join(AI_APPS_DIR, 'apps.json');
+const AI_APPS_MEMORY_DIR = path.join(AI_APPS_DIR, 'memory');
 
 // --- config.yaml model persistence -----------------------------------------
 // config.yaml 是 hermes 选择模型的唯一事实来源（cli.py 明确不读 LLM_MODEL/OPENAI_MODEL 环境变量）。
@@ -177,7 +180,7 @@ function captureModelsFromSession(result) {
 }
 
 function ensureDirs() {
-  for (const dir of [PRODUCT_LOBSTER_HOME, PROJECTS_DIR]) {
+  for (const dir of [PRODUCT_LOBSTER_HOME, PROJECTS_DIR, AI_APPS_DIR, AI_APPS_MEMORY_DIR]) {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
@@ -523,6 +526,21 @@ function resolveProjectPath(slug, ...rest) {
   return normalized;
 }
 
+// ---------------------------------------------------------------------------
+// Project type inference — 区分"智能对话"与"FDE 项目"
+// ---------------------------------------------------------------------------
+const CHAT_SLUG_PREFIXES = ['chat-', 'coach-', 'expert-', 'app-'];
+
+function inferProjectType(slug, meta) {
+  if (meta && meta.projectType) return meta.projectType;
+  if (CHAT_SLUG_PREFIXES.some((p) => String(slug || '').startsWith(p))) return 'chat';
+  return 'fde-project';
+}
+
+function conversationKindOf(projectType) {
+  return projectType === 'fde-project' ? 'project' : 'chat';
+}
+
 // FDE 五阶段默认落点(新项目落阶段②,过渡友好;与前端 fde-stages.js DEFAULT_STAGE 一致)
 const FDE_DEFAULT_STAGE = 2;
 
@@ -807,6 +825,22 @@ ipcMain.handle('shell:open-path', async (_event, targetPath) => {
     const error = await shell.openPath(targetPath);
     if (error) return { success: false, error };
     return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('fs:save-local-file', async (_event, srcPath) => {
+  try {
+    if (!fs.existsSync(srcPath)) return { success: false, error: '文件不存在' };
+    const defaultName = path.basename(srcPath);
+    const { canceled, filePath: dest } = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: defaultName,
+      title: '保存文件',
+    });
+    if (canceled || !dest) return { success: false, canceled: true };
+    fs.copyFileSync(srcPath, dest);
+    return { success: true, filePath: dest };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -1432,21 +1466,23 @@ ipcMain.handle('license:import', async () => {
 // IPC handlers — Hermes project management
 // ---------------------------------------------------------------------------
 
-ipcMain.handle('hermes:list-projects', async () => {
+ipcMain.handle('hermes:list-projects', async (_event, options) => {
   try {
     if (!fs.existsSync(PROJECTS_DIR)) return [];
+    const kindFilter = (options && options.kind) || 'all';
     const entries = fs.readdirSync(PROJECTS_DIR, { withFileTypes: true });
     const projects = [];
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
       const meta = readProjectMeta(entry.name);
       if (meta) {
+        const projectType = inferProjectType(entry.name, meta);
+        const conversationKind = conversationKindOf(projectType);
+        if (kindFilter !== 'all' && conversationKind !== kindFilter) continue;
         const outputs = computeProjectOutputs(entry.name);
         const phase = meta.phase || (outputs.hasPrototype ? 'iterating' : outputs.hasSpec ? 'prototype' : 'brainstorming');
-        // 真实阶段:以磁盘产出推断的 derivedStage 为准(文件不会骗人),
-        // 与 meta.stage(可能被手动切到更靠后)取较大值——已推进过的阶段不回退。
         const stage = Math.max(outputs.derivedStage || 0, Number(meta.stage) || 0) || FDE_DEFAULT_STAGE;
-        projects.push({ slug: entry.name, ...meta, stage, outputs, hasSpec: outputs.hasSpec, hasPrototype: outputs.hasPrototype, deliverables: outputs.deliverables, derivedStage: outputs.derivedStage, phase });
+        projects.push({ slug: entry.name, ...meta, projectType, conversationKind, stage, outputs, hasSpec: outputs.hasSpec, hasPrototype: outputs.hasPrototype, deliverables: outputs.deliverables, derivedStage: outputs.derivedStage, phase });
       }
     }
     projects.sort((a, b) => (b.updatedAt || b.createdAt || '').localeCompare(a.updatedAt || a.createdAt || ''));
@@ -1456,7 +1492,8 @@ ipcMain.handle('hermes:list-projects', async () => {
   }
 });
 
-ipcMain.handle('hermes:create-project', async (_event, { name, requirement, slug: customSlug }) => {
+ipcMain.handle('hermes:create-project', async (_event, params) => {
+  const { name, requirement, slug: customSlug, projectType: requestedType, expert, aiApp } = params || {};
   try {
     const slug = customSlug || slugify(name);
     const projectDir = resolveProjectPath(slug);
@@ -1475,6 +1512,12 @@ ipcMain.handle('hermes:create-project', async (_event, { name, requirement, slug
       fs.mkdirSync(path.join(projectDir, sub), { recursive: true });
     }
 
+    // 如果是 AI 应用专家项目，先准备记忆 + 知识 + CLAUDE.md，
+    // 让 session/new 启动时 cwd 里就有完整的专家上下文。
+    if (aiApp && aiApp.id) {
+      prepareAiAppProjectContext(slug, aiApp);
+    }
+
     // Create session via ACP
     let sessionId = null;
     if (acp) {
@@ -1487,6 +1530,7 @@ ipcMain.handle('hermes:create-project', async (_event, { name, requirement, slug
       }
     }
 
+    const projectType = requestedType || inferProjectType(slug, {});
     const meta = {
       name,
       slug,
@@ -1495,11 +1539,14 @@ ipcMain.handle('hermes:create-project', async (_event, { name, requirement, slug
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       phase: 'brainstorming',
+      projectType,
       // FDE 五阶段:新项目默认落阶段②(现有能力所在,过渡友好)
       stage: FDE_DEFAULT_STAGE,
       stageStatus: { 1: 'done', 2: 'active', 3: 'todo', 4: 'todo', 5: 'todo' },
       outputs: { hasSpec: false, hasPrototype: false, prototypeFileCount: 0 },
       messageCount: 0,
+      ...(expert ? { expert } : {}),
+      ...(aiApp ? { aiApp } : {}),
     };
     writeProjectMeta(slug, meta);
 
@@ -1513,6 +1560,12 @@ ipcMain.handle('hermes:load-project', async (_event, slug) => {
   try {
     const meta = readProjectMeta(slug);
     if (!meta) throw new Error(`Project "${slug}" not found`);
+
+    // AI 应用专家项目：每次打开都用最新的记忆 + 知识刷新 CLAUDE.md，
+    // 这样在应用管理页更新的记忆/知识能立刻在已有项目里生效。
+    if (meta.aiApp && meta.aiApp.id) {
+      prepareAiAppProjectContext(slug, meta.aiApp);
+    }
 
     const persistedMessages = readMessages(slug);
     let sessionRecovered = false;
@@ -1780,6 +1833,11 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
     // Auto-recover session if missing
     if (!meta.sessionId) {
       const projectDir = resolveProjectPath(slug);
+      // AI 应用专家项目：会话过期重建前，先刷新 CLAUDE.md，
+      // 让新 session 依旧带着专家的记忆与知识上下文。
+      if (meta.aiApp && meta.aiApp.id) {
+        prepareAiAppProjectContext(slug, meta.aiApp);
+      }
       const newSession = await acp.request('session/new', { cwd: projectDir, mcpServers: [] });
       captureModelsFromSession(newSession);
       meta.sessionId = newSession.sessionId;
@@ -2569,6 +2627,504 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+  }
+});
+
+// ---------------------------------------------------------------------------
+// AI 应用专家系统 —— 记忆 / 知识库 / 项目上下文（CLAUDE.md）
+// ---------------------------------------------------------------------------
+// 每个 AI 应用在 ai-apps/memory/<appId>/ 下有独立的：
+//   memory.md      —— 应用专家的长期记忆（用户可编辑 / 追加）
+//   knowledge/     —— 应用专家的知识库文件（用户上传的资料）
+// 用这个应用创建 / 打开项目时，把记忆 + 知识注入到项目根 CLAUDE.md，
+// 并把知识文件拷贝到 projects/<slug>/knowledge/app/ 供 agent 就地读取。
+
+function sanitizeAiAppPathId(appId) {
+  const id = String(appId == null ? '' : appId).trim();
+  if (!id) throw new Error('appId is required');
+  // 禁止路径分隔符与父目录跳出；限制长度。
+  if (id === '.' || id === '..' || /[\\/]/.test(id) || id.includes('..')) {
+    throw new Error(`Invalid appId: ${appId}`);
+  }
+  if (id.length > 120) throw new Error('appId too long');
+  return id;
+}
+
+function resolveAiAppMemoryDir(appId, ...rest) {
+  const safeId = sanitizeAiAppPathId(appId);
+  const target = path.resolve(AI_APPS_MEMORY_DIR, safeId, ...rest);
+  const root = path.resolve(AI_APPS_MEMORY_DIR);
+  // 目录跳出防护：解析后的路径必须落在 memory 根目录内。
+  if (target !== root && !target.startsWith(root + path.sep)) {
+    throw new Error('Path traversal detected');
+  }
+  return target;
+}
+
+function aiAppMemoryTemplate(appName) {
+  const name = String(appName || '该应用');
+  return `# ${name} — 专家记忆
+
+> 这里记录「${name}」这位 AI 应用专家的长期记忆：偏好、约束、历史决策、专业知识要点。
+> 每次用该应用创建或打开项目时，这些记忆会被注入到项目的 CLAUDE.md，指导 AI 的工作方式。
+
+## 核心定位
+
+（在这里补充这位专家的定位、擅长的场景、要坚持的原则）
+
+## 长期记忆
+
+（下面按日期自动追加，或手动编辑）
+`;
+}
+
+function ensureAiAppMemoryStore(appId, appName) {
+  const dir = resolveAiAppMemoryDir(appId);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const knowledgeDir = resolveAiAppMemoryDir(appId, 'knowledge');
+  if (!fs.existsSync(knowledgeDir)) fs.mkdirSync(knowledgeDir, { recursive: true });
+  const memoryFile = resolveAiAppMemoryDir(appId, 'memory.md');
+  if (!fs.existsSync(memoryFile)) {
+    fs.writeFileSync(memoryFile, aiAppMemoryTemplate(appName), 'utf-8');
+  }
+  return { dir, knowledgeDir, memoryFile };
+}
+
+function readAiAppMemory(appId) {
+  const memoryFile = resolveAiAppMemoryDir(appId, 'memory.md');
+  try {
+    if (!fs.existsSync(memoryFile)) return '';
+    return fs.readFileSync(memoryFile, 'utf-8');
+  } catch (e) {
+    console.error('[ai-apps] readAiAppMemory failed:', e.message);
+    return '';
+  }
+}
+
+function writeAiAppMemory(appId, content) {
+  ensureAiAppMemoryStore(appId);
+  const memoryFile = resolveAiAppMemoryDir(appId, 'memory.md');
+  fs.writeFileSync(memoryFile, typeof content === 'string' ? content : '', 'utf-8');
+  return memoryFile;
+}
+
+function appendAiAppMemory(appId, entry, source) {
+  ensureAiAppMemoryStore(appId);
+  const memoryFile = resolveAiAppMemoryDir(appId, 'memory.md');
+  const text = typeof entry === 'string' ? entry.trim() : '';
+  if (!text) return memoryFile;
+  const stamp = new Date().toISOString().slice(0, 10);
+  const src = source ? `（来源：${String(source).slice(0, 100)}）` : '';
+  const section = `\n\n### ${stamp} ${src}\n\n${text}\n`;
+  fs.appendFileSync(memoryFile, section, 'utf-8');
+  return memoryFile;
+}
+
+// 把 memory/<appId>/knowledge/ 里的文件同步到 projects/<slug>/knowledge/app/。
+// 每次都清空并重建 knowledge/app/，确保与知识库一致（删除的文件不残留）。
+function syncAiAppKnowledgeToProject(appId, slug) {
+  const srcDir = resolveAiAppMemoryDir(appId, 'knowledge');
+  const dstDir = resolveProjectPath(slug, 'knowledge', 'app');
+  // 清空并重建目标目录。
+  try {
+    if (fs.existsSync(dstDir)) fs.rmSync(dstDir, { recursive: true, force: true });
+  } catch (e) {
+    console.warn('[ai-apps] clean knowledge/app failed:', e.message);
+  }
+  fs.mkdirSync(dstDir, { recursive: true });
+
+  const files = [];
+  if (!fs.existsSync(srcDir)) return files;
+  let entries = [];
+  try {
+    entries = fs.readdirSync(srcDir, { withFileTypes: true });
+  } catch (e) {
+    console.warn('[ai-apps] read knowledge dir failed:', e.message);
+    return files;
+  }
+  for (const entry of entries) {
+    if (!entry.isFile()) continue; // 只同步顶层文件
+    const name = entry.name;
+    const srcPath = path.join(srcDir, name);
+    const dstPath = path.join(dstDir, name);
+    try {
+      fs.copyFileSync(srcPath, dstPath);
+      const stat = fs.statSync(dstPath);
+      files.push({
+        name,
+        relPath: path.posix.join('knowledge', 'app', name),
+        size: stat.size,
+        ext: path.extname(name).replace(/^\./, '').toLowerCase(),
+      });
+    } catch (e) {
+      console.warn(`[ai-apps] copy knowledge file ${name} failed:`, e.message);
+    }
+  }
+  return files;
+}
+
+// 渲染项目根 CLAUDE.md：把 AI 应用的画像 + 记忆 + 知识清单写进去，
+// 让 agent 从项目一打开就带着这位专家的人设与知识工作。
+function buildAiAppClaudeMd(app, memory, knowledgeFiles) {
+  const a = app || {};
+  const name = a.name || 'AI 应用专家';
+  const lines = [];
+  lines.push(`# ${name}`);
+  lines.push('');
+  lines.push('> 本文件由 AI 应用专家系统自动生成。它定义了当前项目的 AI 专家人设、工作方式、记忆与知识库。');
+  lines.push('> 请始终以这位专家的身份、遵循下面的约束进行工作。');
+  lines.push('');
+
+  if (a.tagline) { lines.push(`**一句话定位**：${a.tagline}`); lines.push(''); }
+  if (a.summary) { lines.push('## 专家简介'); lines.push(''); lines.push(a.summary); lines.push(''); }
+
+  if (Array.isArray(a.bestFor) && a.bestFor.length) {
+    lines.push('## 最擅长');
+    lines.push('');
+    for (const item of a.bestFor) lines.push(`- ${item}`);
+    lines.push('');
+  }
+
+  if (a.capabilities) { lines.push('## 能力'); lines.push(''); lines.push(a.capabilities); lines.push(''); }
+  if (a.workflow) { lines.push('## 工作流程'); lines.push(''); lines.push(a.workflow); lines.push(''); }
+  if (a.constraints) { lines.push('## 约束与原则'); lines.push(''); lines.push(a.constraints); lines.push(''); }
+  if (a.riskNotice) { lines.push('## 风险提示'); lines.push(''); lines.push(a.riskNotice); lines.push(''); }
+  if (a.prompt) { lines.push('## 系统提示词'); lines.push(''); lines.push(a.prompt); lines.push(''); }
+
+  lines.push('## 专家记忆');
+  lines.push('');
+  const mem = (typeof memory === 'string' ? memory : '').trim();
+  lines.push(mem || '（暂无记忆）');
+  lines.push('');
+
+  lines.push('## 知识库');
+  lines.push('');
+  const files = Array.isArray(knowledgeFiles) ? knowledgeFiles : [];
+  if (files.length) {
+    lines.push('以下知识文件已同步到项目 `knowledge/app/` 目录，需要时请直接读取：');
+    lines.push('');
+    for (const f of files) lines.push(`- \`${f.relPath}\`${f.size ? ` (${f.size} bytes)` : ''}`);
+  } else {
+    lines.push('（暂无知识库文件）');
+  }
+  lines.push('');
+
+  return lines.join('\n');
+}
+
+// 编排：确保记忆存在 → 读记忆 → 同步知识 → 生成并写入 CLAUDE.md。
+// aiAppSnapshot 是保存在项目 meta.aiApp 里的应用快照（至少含 id/name）。
+function prepareAiAppProjectContext(slug, aiAppSnapshot) {
+  const app = aiAppSnapshot || {};
+  const appId = app.id;
+  if (!appId) return { memoryChars: 0, knowledgeCount: 0 };
+  try {
+    ensureAiAppMemoryStore(appId, app.name);
+    const memory = readAiAppMemory(appId);
+    const knowledgeFiles = syncAiAppKnowledgeToProject(appId, slug);
+    const claudeMd = buildAiAppClaudeMd(app, memory, knowledgeFiles);
+    const claudePath = resolveProjectPath(slug, 'CLAUDE.md');
+    fs.writeFileSync(claudePath, claudeMd, 'utf-8');
+    return { memoryChars: memory.length, knowledgeCount: knowledgeFiles.length };
+  } catch (e) {
+    console.error('[ai-apps] prepareAiAppProjectContext failed:', e.message);
+    return { memoryChars: 0, knowledgeCount: 0, error: e.message };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// AI 应用广场 —— 本地应用持久化
+// ---------------------------------------------------------------------------
+
+const AI_APPS_ALLOWED_FIELDS = [
+  'id', 'name', 'category', 'icon', 'color', 'tagline', 'summary',
+  'bestFor', 'starters', 'sessionName', 'slugPrefix', 'displayOpening',
+  'capabilities', 'workflow', 'constraints', 'riskNotice', 'prompt',
+  'developer', 'source', 'status', 'createdAt', 'updatedAt', 'preferredModel',
+];
+
+function readLocalAiApps() {
+  try {
+    if (!fs.existsSync(AI_APPS_FILE)) return [];
+    const raw = fs.readFileSync(AI_APPS_FILE, 'utf-8');
+    const store = JSON.parse(raw);
+    return Array.isArray(store.apps) ? store.apps : [];
+  } catch (e) {
+    console.error('[ai-apps] read failed:', e.message);
+    return [];
+  }
+}
+
+function writeLocalAiApps(apps) {
+  const store = { version: 1, updatedAt: new Date().toISOString(), apps };
+  fs.writeFileSync(AI_APPS_FILE, JSON.stringify(store, null, 2) + '\n', 'utf-8');
+}
+
+function sanitizeAiAppId(name) {
+  const base = String(name || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9一-鿿]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+  return `local-${base || 'app'}-${Date.now()}`;
+}
+
+function clampStr(v, max = 2000) {
+  return typeof v === 'string' ? v.slice(0, max) : '';
+}
+
+function clampArr(v, maxItems = 20, maxLen = 200) {
+  if (!Array.isArray(v)) return [];
+  return v.slice(0, maxItems).map((s) => clampStr(String(s), maxLen));
+}
+
+function normalizeLocalAiApp(input, existing) {
+  const now = new Date().toISOString();
+  const app = {};
+  for (const key of AI_APPS_ALLOWED_FIELDS) {
+    if (key in input) app[key] = input[key];
+  }
+  app.id = existing ? existing.id : (input.id && String(input.id).startsWith('local-') ? String(input.id) : sanitizeAiAppId(input.name));
+  app.name = clampStr(app.name || '未命名应用', 100);
+  app.category = clampStr(app.category || 'enterprise', 60);
+  app.icon = clampStr(app.icon || 'rocket', 60);
+  app.color = clampStr(app.color || '#2563eb', 20);
+  app.tagline = clampStr(app.tagline, 200);
+  app.summary = clampStr(app.summary, 1000);
+  app.bestFor = clampArr(app.bestFor);
+  app.starters = clampArr(app.starters, 10, 500);
+  app.sessionName = clampStr(app.sessionName || app.name, 100);
+  app.slugPrefix = clampStr(app.slugPrefix || `app-${app.id}`, 80);
+  app.displayOpening = clampStr(app.displayOpening || `启动${app.name}`, 200);
+  app.capabilities = clampStr(app.capabilities, 3000);
+  app.workflow = clampStr(app.workflow, 3000);
+  app.constraints = clampStr(app.constraints, 2000);
+  app.riskNotice = clampStr(app.riskNotice, 500);
+  app.prompt = clampStr(app.prompt, 8000);
+  app.developer = {
+    author: clampStr((app.developer && app.developer.author) || '本地开发者', 100),
+    version: clampStr((app.developer && app.developer.version) || '1.0.0', 20),
+  };
+  app.source = 'local';
+  app.status = app.status === 'published' ? 'published' : 'draft';
+  app.createdAt = existing ? existing.createdAt : now;
+  app.updatedAt = now;
+  return app;
+}
+
+ipcMain.handle('ai-apps:list', async () => {
+  try {
+    const apps = readLocalAiApps();
+    return { success: true, apps };
+  } catch (e) {
+    return { success: false, error: e.message, apps: [] };
+  }
+});
+
+ipcMain.handle('ai-apps:get', async (_event, { id }) => {
+  try {
+    const apps = readLocalAiApps();
+    const app = apps.find((a) => a.id === id);
+    if (!app) return { success: false, error: 'App not found' };
+    return { success: true, app };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:save', async (_event, { app: input }) => {
+  try {
+    if (!input || !input.name) return { success: false, error: '应用名称不能为空' };
+    const apps = readLocalAiApps();
+    const existingIdx = input.id ? apps.findIndex((a) => a.id === input.id) : -1;
+    const existing = existingIdx >= 0 ? apps[existingIdx] : null;
+    const app = normalizeLocalAiApp(input, existing);
+    if (existingIdx >= 0) {
+      apps[existingIdx] = app;
+    } else {
+      apps.push(app);
+    }
+    writeLocalAiApps(apps);
+    return { success: true, app };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:publish', async (_event, { id }) => {
+  try {
+    const apps = readLocalAiApps();
+    const app = apps.find((a) => a.id === id);
+    if (!app) return { success: false, error: 'App not found' };
+    app.status = 'published';
+    app.updatedAt = new Date().toISOString();
+    writeLocalAiApps(apps);
+    return { success: true, app };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:unpublish', async (_event, { id }) => {
+  try {
+    const apps = readLocalAiApps();
+    const app = apps.find((a) => a.id === id);
+    if (!app) return { success: false, error: 'App not found' };
+    app.status = 'draft';
+    app.updatedAt = new Date().toISOString();
+    writeLocalAiApps(apps);
+    return { success: true, app };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:delete', async (_event, { id }) => {
+  try {
+    let apps = readLocalAiApps();
+    const before = apps.length;
+    apps = apps.filter((a) => a.id !== id);
+    if (apps.length === before) return { success: false, error: 'App not found' };
+    writeLocalAiApps(apps);
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// --- AI 应用专家：记忆 IPC -------------------------------------------------
+
+ipcMain.handle('ai-apps:memory-get', async (_event, { id } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    const app = readLocalAiApps().find((a) => a.id === id);
+    ensureAiAppMemoryStore(id, app && app.name);
+    const content = readAiAppMemory(id);
+    const memPath = resolveAiAppMemoryDir(id, 'memory.md');
+    return { success: true, content, path: memPath };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:memory-save', async (_event, { id, content } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    const memPath = writeAiAppMemory(id, typeof content === 'string' ? content : '');
+    return { success: true, path: memPath };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:memory-append', async (_event, { id, content, source } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    const memPath = appendAiAppMemory(id, content, source);
+    return { success: true, path: memPath };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:memory-open', async (_event, { id } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    const app = readLocalAiApps().find((a) => a.id === id);
+    const { dir } = ensureAiAppMemoryStore(id, app && app.name);
+    const err = await shell.openPath(dir);
+    if (err) return { success: false, error: err };
+    return { success: true, path: dir };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// --- AI 应用专家：知识库 IPC -----------------------------------------------
+
+ipcMain.handle('ai-apps:knowledge-list', async (_event, { id } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    const app = readLocalAiApps().find((a) => a.id === id);
+    const { knowledgeDir } = ensureAiAppMemoryStore(id, app && app.name);
+    const entries = fs.readdirSync(knowledgeDir, { withFileTypes: true });
+    const files = [];
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      const full = path.join(knowledgeDir, entry.name);
+      let stat;
+      try { stat = fs.statSync(full); } catch { continue; }
+      files.push({
+        name: entry.name,
+        ext: path.extname(entry.name).replace(/^\./, '').toLowerCase(),
+        size: stat.size,
+        mtime: stat.mtimeMs,
+      });
+    }
+    files.sort((a, b) => a.name.localeCompare(b.name));
+    return { success: true, files, path: knowledgeDir };
+  } catch (e) {
+    return { success: false, error: e.message, files: [] };
+  }
+});
+
+ipcMain.handle('ai-apps:knowledge-upload', async (_event, { id } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    const app = readLocalAiApps().find((a) => a.id === id);
+    const { knowledgeDir } = ensureAiAppMemoryStore(id, app && app.name);
+    const res = await dialog.showOpenDialog(mainWindow, {
+      title: '选择要加入知识库的文件',
+      properties: ['openFile', 'multiSelections'],
+    });
+    if (res.canceled || !res.filePaths || res.filePaths.length === 0) {
+      return { success: false, canceled: true };
+    }
+    const added = [];
+    for (const src of res.filePaths) {
+      const base = path.basename(src);
+      const dst = path.join(knowledgeDir, base);
+      try {
+        fs.copyFileSync(src, dst);
+        added.push(base);
+      } catch (e) {
+        console.warn(`[ai-apps] copy uploaded file ${base} failed:`, e.message);
+      }
+    }
+    return { success: true, added };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:knowledge-delete', async (_event, { id, file } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    if (!file) return { success: false, error: 'file is required' };
+    const app = readLocalAiApps().find((a) => a.id === id);
+    const { knowledgeDir } = ensureAiAppMemoryStore(id, app && app.name);
+    const base = path.basename(String(file)); // 只用文件名，杜绝路径穿越
+    if (!base || base === '.' || base === '..') {
+      return { success: false, error: 'Invalid file name' };
+    }
+    const target = path.join(knowledgeDir, base);
+    if (fs.existsSync(target)) fs.rmSync(target, { force: true });
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:knowledge-open', async (_event, { id } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    const app = readLocalAiApps().find((a) => a.id === id);
+    const { knowledgeDir } = ensureAiAppMemoryStore(id, app && app.name);
+    const err = await shell.openPath(knowledgeDir);
+    if (err) return { success: false, error: err };
+    return { success: true, path: knowledgeDir };
+  } catch (e) {
+    return { success: false, error: e.message };
   }
 });
 

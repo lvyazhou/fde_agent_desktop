@@ -2,20 +2,20 @@
   <div class="flex h-full min-h-0 kb-bg">
     <!-- ── 左侧:五阶段分类树 ────────────────────────── -->
     <aside class="kb-tree shrink-0 flex flex-col bg-white/95 backdrop-blur border-r border-slate-200/70">
-      <div class="px-4 pt-4 pb-3 border-b border-slate-100">
-        <div class="flex items-center gap-2.5 mb-3">
-          <span class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-sm shadow-blue-500/30">
-            <i class="fa-solid fa-book-open text-white text-[12px]"></i>
+      <div class="px-3 pt-3.5 pb-2.5 border-b border-slate-100">
+        <div class="flex items-center gap-2 mb-2.5">
+          <span class="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
+            <i class="fa-solid fa-book-open text-white text-[11px]"></i>
           </span>
-          <span class="text-[13px] font-bold text-slate-800">FDE 作战手册</span>
+          <span class="text-[12.5px] font-semibold text-slate-700">FDE 作战手册</span>
         </div>
         <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-[11px]"></i>
+          <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
           <input
             v-model="keyword"
             type="text"
             placeholder="搜索交付物 / 知识…"
-            class="w-full text-[12.5px] bg-slate-50 border border-transparent focus:bg-white focus:border-blue-400 rounded-lg pl-8 pr-3 py-2 focus:outline-none transition"
+            class="w-full text-[12px] bg-slate-50 border border-transparent focus:bg-white focus:border-blue-400 rounded-md pl-7 pr-2.5 py-1.5 focus:outline-none transition"
           />
         </div>
       </div>
@@ -64,37 +64,35 @@
 
     <!-- ── 右侧:卡片区 ────────────────────────── -->
     <div class="flex-1 min-w-0 overflow-y-auto">
-      <div class="max-w-[1400px] mx-auto px-6 py-6">
-        <!-- 面包屑 + 标题 -->
-        <div class="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <div class="text-[12px] text-slate-400 flex items-center gap-1.5 mb-1">
-              <i class="fa-solid fa-book-open"></i>知识库
-              <i class="fa-solid fa-angle-right text-[10px]"></i>
-              <span class="text-slate-600">{{ activeName }}</span>
+      <div class="px-6 py-6 lg:px-8">
+        <!-- 标题 -->
+        <div class="mb-4 flex items-center justify-between gap-4">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h1 class="text-[17px] font-bold text-slate-800 truncate">{{ activeName }}</h1>
+              <span class="text-[12px] text-slate-400 shrink-0">共 {{ active !== 'projects' ? filtered.length : projectItemCount }} 份</span>
             </div>
-            <h1 class="text-xl font-bold text-slate-800">{{ activeName }}</h1>
-            <p v-if="active !== 'projects'" class="text-[13px] text-slate-400 mt-0.5">
-              按 FDE 五阶段作战链沉淀的真实交付物与知识模板 · 共 {{ filtered.length }} 份
+            <p v-if="active !== 'projects'" class="text-[12px] text-slate-400 mt-0.5 truncate">
+              按 FDE 五阶段作战链沉淀的真实交付物与知识模板
             </p>
-            <p v-else class="text-[13px] text-slate-400 mt-0.5">
-              各项目里 AI 生成的交付物与文档 · 可一键归档到作战阶段知识库 · 共 {{ projectItemCount }} 份
+            <p v-else class="text-[12px] text-slate-400 mt-0.5 truncate">
+              各项目里 AI 生成的交付物与文档 · 可一键归档到作战阶段知识库
             </p>
           </div>
           <button
             v-if="active !== 'projects'"
             @click="openUpload"
-            class="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm"
+            class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12.5px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm"
           >
-            <i class="fa-solid fa-cloud-arrow-up text-[12px]"></i>上传归档
+            <i class="fa-solid fa-cloud-arrow-up text-[11px]"></i>上传归档
           </button>
           <button
             v-else
             @click="loadProjects"
             :disabled="scanningProjects"
-            class="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition"
+            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition"
           >
-            <i class="fa-solid fa-rotate text-[12px]" :class="scanningProjects ? 'fa-spin' : ''"></i>重新扫描
+            <i class="fa-solid fa-rotate text-[11px]" :class="scanningProjects ? 'fa-spin' : ''"></i>重新扫描
           </button>
         </div>
 
@@ -143,7 +141,7 @@
                 <span class="text-[13.5px] font-semibold text-slate-700">{{ pj.name }}</span>
                 <span class="text-[11px] text-slate-400 bg-slate-100 rounded-full px-2 py-0.5">{{ pj.items.length }} 份</span>
               </div>
-              <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div class="kb-grid">
                 <div v-for="item in pj.items" :key="item.relPath" class="kb-card text-left group">
                   <div class="kb-card__accent" :style="{ background: fmtColor(item.type) }"></div>
                   <button class="block w-full text-left" @click="openProjectDoc(pj, item)">
@@ -174,9 +172,9 @@
 
         <!-- ═══ 阶段/全部视图卡片网格 ═══ -->
         <template v-else>
-        <div v-if="filtered.length" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div v-if="filtered.length" class="kb-grid">
           <div
-            v-for="item in filtered"
+            v-for="item in pagedItems"
             :key="item.stageDir + '/' + item.file"
             class="kb-card text-left group"
           >
@@ -206,6 +204,21 @@
         <div v-else class="text-center py-20 text-slate-300">
           <i class="fa-solid fa-box-open text-5xl mb-3"></i>
           <p class="text-[13px]">该分类下暂无文档</p>
+        </div>
+
+        <!-- 分页条 -->
+        <div v-if="totalPages > 1" class="flex items-center justify-center gap-1 mt-6">
+          <button class="pgn" :disabled="currentPage <= 1" @click="currentPage--">
+            <i class="fa-solid fa-chevron-left text-[10px]"></i>
+          </button>
+          <button
+            v-for="p in totalPages" :key="p"
+            class="pgn" :class="p === currentPage ? 'pgn--cur' : ''"
+            @click="currentPage = p"
+          >{{ p }}</button>
+          <button class="pgn" :disabled="currentPage >= totalPages" @click="currentPage++">
+            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+          </button>
         </div>
         </template>
       </div>
@@ -308,7 +321,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import DocViewer from '@/components/workbench/DocViewer.vue';
 
 const CN_NUM = ['一', '二', '三', '四', '五'];
@@ -489,6 +502,19 @@ const filtered = computed(() => {
   return list;
 });
 
+// ── 分页(阶段/全部视图) ──
+const currentPage = ref(1);
+const pageSize = ref(12);
+const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize.value)));
+const pagedItems = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  return filtered.value.slice(start, start + pageSize.value);
+});
+// 筛选条件变化 / 切换分类 / 搜索时,回到第 1 页
+watch([active, catFilter, keyword], () => { currentPage.value = 1; });
+// 当前页超出范围(如删除后)自动回退
+watch(totalPages, (tp) => { if (currentPage.value > tp) currentPage.value = tp; });
+
 const statCards = computed(() => [
   { label: '文档总数', value: allItems.value.length, icon: 'fa-file-lines', bg: '#2563eb' },
   { label: '交付物', value: allItems.value.filter((i) => i.category === 'deliverable').length, icon: 'fa-box-open', bg: '#3b82f6' },
@@ -536,7 +562,31 @@ function openProjectDoc(pj, item) {
     radial-gradient(700px 400px at 0% 100%, rgba(14, 165, 233, 0.05), transparent 55%),
     #f4f7fb;
 }
-.kb-tree { width: 272px; }
+.kb-tree { width: 240px; }
+
+/* 自适应卡片网格:列数随宽度自动增减(最小 260px 一列),窄屏 2 列宽屏可到 4-5 列 */
+.kb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+/* 分页按钮 */
+.pgn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 9px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.pgn:hover:not(:disabled) { border-color: #93b4fb; color: #2563eb; }
+.pgn--cur { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 600; }
+.pgn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .tree-node {
   width: 100%;

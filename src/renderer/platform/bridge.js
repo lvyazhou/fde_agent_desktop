@@ -158,7 +158,7 @@ const api = {
 
   // Hermes:核心链路,全部走网关。签名与 preload 一一对应。
   hermes: {
-    listProjects() { return invoke('hermes:list-projects'); },
+    listProjects(options) { return invoke('hermes:list-projects', options); },
     createProject(params) { return invoke('hermes:create-project', params); },
     loadProject(slug) { return invoke('hermes:load-project', slug); },
     deleteProject(slug) { return invoke('hermes:delete-project', slug); },
@@ -215,6 +215,7 @@ const api = {
     readFile(filePath) { return invoke('fs:read-file', filePath); },
     readDirectory(dirPath) { return invoke('fs:read-directory', dirPath); },
     getHomeDir() { return invoke('fs:get-home-dir'); },
+    saveLocalFile(srcPath) { return invoke('fs:save-local-file', srcPath); },
   },
 
   skills: {

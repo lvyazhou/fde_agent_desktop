@@ -220,7 +220,7 @@ const renameInput = ref(null);
 const loadProjects = async () => {
   loading.value = true;
   try {
-    const list = await window.api.hermes.listProjects();
+    const list = await window.api.hermes.listProjects({ kind: 'project' });
     projects.value = list || [];
   } catch (e) {
     console.error('Failed to load projects:', e);

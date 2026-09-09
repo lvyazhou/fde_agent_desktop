@@ -160,7 +160,7 @@ onMounted(async () => {
   // Load project count
   if (window.api && window.api.hermes) {
     try {
-      const projects = await window.api.hermes.listProjects();
+      const projects = await window.api.hermes.listProjects({ kind: 'project' });
       projectCount.value = projects ? projects.length : 0;
     } catch (e) {}
   }

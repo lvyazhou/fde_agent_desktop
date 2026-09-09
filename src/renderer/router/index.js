@@ -11,6 +11,7 @@ import ProjectDetail from '@/pages/projects/ProjectDetail.vue';
 import Knowledge from '@/pages/knowledge/Knowledge.vue';
 import Skills from '@/pages/skills/Skills.vue';
 import Settings from '@/pages/settings/Settings.vue';
+import ExpertSquare from '@/pages/experts/ExpertSquare.vue';
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -28,6 +29,8 @@ const router = createRouter({
         { path: 'projects', component: ProjectList },
         { path: 'projects/new', component: ProjectCreate },
         { path: 'projects/:slug', component: ProjectDetail, props: true },
+        { path: 'experts', component: ExpertSquare },
+        { path: 'apps', component: ExpertSquare },
         { path: 'knowledge', component: Knowledge },
         { path: 'skills', component: Skills },
         { path: 'settings', component: Settings },

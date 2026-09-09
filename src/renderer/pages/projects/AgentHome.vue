@@ -66,16 +66,37 @@
     >
       <i class="fa-solid fa-circle-info text-xs"></i>
     </button>
+
+    <!-- AI 应用:保存为长期记忆 -->
+    <button
+      v-if="isAiAppSession && !isStreaming && messages.length >= 2"
+      @click="saveRecentAsMemory"
+      :disabled="savingMemory"
+      class="fixed bottom-20 right-4 z-10 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/95 backdrop-blur border border-slate-200/70 text-[11.5px] text-slate-500 hover:text-blue-600 hover:border-blue-300 shadow-sm transition-all cursor-pointer disabled:opacity-50"
+      title="将最近一轮对话保存为该专家的长期记忆"
+    >
+      <i class="fa-solid fa-brain text-[10px]"></i>
+      {{ savingMemory ? '保存中…' : '保存为长期记忆' }}
+    </button>
+
+    <!-- 记忆保存 toast -->
+    <div
+      v-if="memoryToast"
+      class="fixed top-16 right-4 z-[60] bg-slate-800 text-white text-[12px] px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2"
+    >
+      <i class="fa-solid fa-circle-check text-blue-400"></i>{{ memoryToast }}
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import SessionList from '@/components/agent/SessionList.vue';
 import ChatPanel from '@/components/agent/ChatPanel.vue';
 import InfoSidebar from '@/components/agent/InfoSidebar.vue';
 import { isMultimodalModel } from '@/composables/useChatComposer';
+import { findBuiltinAiAppById, buildAiAppOpeningPrompt } from '@/data/ai-apps';
 
 const router = useRouter();
 const route = useRoute();
@@ -141,7 +162,7 @@ function formatTimestamp(date) {
 // --- Load projects list ---
 const loadProjects = async () => {
   try {
-    projects.value = await window.api.hermes.listProjects();
+    projects.value = await window.api.hermes.listProjects({ kind: 'chat' });
   } catch (e) {
     projects.value = [];
   }
@@ -452,7 +473,7 @@ const handleSend = async (text) => {
     currentSlug.value = chatSlug;
     currentProjectName.value = chatName;
     try {
-      await window.api.hermes.createProject({ name: chatName, requirement: text, slug: chatSlug });
+      await window.api.hermes.createProject({ name: chatName, requirement: text, slug: chatSlug, projectType: 'chat' });
       loadProjects(); // 不 await，后台刷新即可
     } catch (e) {
       console.error('Auto-create chat failed:', e);
@@ -521,7 +542,7 @@ const handleSendWithAttachments = async (text, attachments) => {
     currentSlug.value = chatSlug;
     currentProjectName.value = '新对话';
     try {
-      await window.api.hermes.createProject({ name: '新对话', requirement: text, slug: chatSlug });
+      await window.api.hermes.createProject({ name: '新对话', requirement: text, slug: chatSlug, projectType: 'chat' });
       loadProjects(); // 不 await，后台刷新即可
     } catch (e) {
       console.error('Auto-create chat failed:', e);
@@ -731,7 +752,7 @@ const startCoachSession = async () => {
 
   // 后台建会话
   try {
-    await window.api.hermes.createProject({ name: 'FDE 教练陪练', requirement: 'FDE 教练陪练', slug: chatSlug });
+    await window.api.hermes.createProject({ name: 'FDE 教练陪练', requirement: 'FDE 教练陪练', slug: chatSlug, projectType: 'fde-coach' });
     loadProjects(); // 不 await，后台刷新
   } catch (e) {
     console.error('Create coach session failed:', e);
@@ -758,6 +779,124 @@ const startCoachSession = async () => {
   }
 };
 
+// --- AI 应用广场:从 ?app=<id> 或 ?expert=<id> 进入时,自动起一个应用对话 ---
+async function findAiAppByRoute(id, source) {
+  if (!id) return null;
+  if (source === 'local' && window.api?.aiApps?.get) {
+    const res = await window.api.aiApps.get(id);
+    if (res?.success && res.app) return res.app;
+  }
+  const builtin = findBuiltinAiAppById(id);
+  if (builtin) return builtin;
+  if (window.api?.aiApps?.get) {
+    const res = await window.api.aiApps.get(id);
+    if (res?.success && res.app) return res.app;
+  }
+  return null;
+}
+
+const startAiAppSession = async (appId, source) => {
+  const app = await findAiAppByRoute(appId, source);
+  if (!app) return false;
+
+  // 按专家绑定模型：如果应用指定了 preferredModel 且与当前不同，自动切换
+  if (app.preferredModel && app.preferredModel !== currentModel.value) {
+    try {
+      currentModel.value = app.preferredModel;
+      await window.api.hermes.setModel('', app.preferredModel);
+    } catch (e) {
+      console.warn('Auto model switch failed:', e);
+    }
+  }
+
+  startNewChat();
+  const chatSlug = `${app.slugPrefix || `app-${app.id}`}-${Date.now()}`;
+  currentSlug.value = chatSlug;
+  currentProjectName.value = app.sessionName || app.name;
+
+  const hiddenPrompt = buildAiAppOpeningPrompt(app);
+  const displayText = app.displayOpening || `启动${app.name}`;
+
+  messages.value.push(createMessage('user', hiddenPrompt, { displayContent: displayText }));
+  isStreaming.value = true;
+  currentStreamId = Date.now().toString();
+  messages.value.push(createMessage('assistant', '', {
+    thinkingSteps: [{ text: `正在启动${app.name}…`, icon: `fa-solid fa-${app.icon || 'rocket'}`, visible: true }],
+    thinkingDone: false,
+    expanded: true,
+    typingContent: '',
+    timestamp: '',
+    streamId: currentStreamId,
+  }));
+  await nextTick();
+  chatPanelRef.value?.scrollToBottom?.();
+
+  try {
+    await window.api.hermes.createProject({
+      name: app.sessionName || app.name,
+      requirement: displayText,
+      slug: chatSlug,
+      projectType: 'ai-app',
+      aiApp: { ...app, source: app.source || source || 'builtin' },
+    });
+    loadProjects();
+  } catch (e) {
+    console.error('Create AI app session failed:', e);
+    isStreaming.value = false;
+    messages.value.pop();
+    return true;
+  }
+
+  await window.api.hermes.saveMessage(currentSlug.value, { role: 'user', content: displayText, tab: 'requirement', timestamp: new Date().toISOString() });
+  try {
+    await window.api.hermes.prompt(currentSlug.value, hiddenPrompt);
+    setTimeout(() => {
+      if (isStreaming.value) {
+        finalizeLastAssistantMessage();
+        isStreaming.value = false;
+        isToolRunning.value = false;
+      }
+    }, 2000);
+  } catch (e) {
+    console.error('AI app prompt failed:', e);
+    isStreaming.value = false;
+  }
+  return true;
+};
+
+// --- AI 应用长期记忆:保存最近一轮对话为长期记忆 ---
+const savingMemory = ref(false);
+const memoryToast = ref('');
+const isAiAppSession = computed(() => !!(currentMeta.value && currentMeta.value.aiApp && currentMeta.value.aiApp.id));
+
+const saveRecentAsMemory = async () => {
+  if (savingMemory.value || !isAiAppSession.value) return;
+  const appId = currentMeta.value.aiApp.id;
+  const lastUser = [...messages.value].reverse().find((m) => m.role === 'user');
+  const lastAssistant = [...messages.value].reverse().find((m) => m.role === 'assistant' && m.content);
+  if (!lastUser && !lastAssistant) return;
+
+  const parts = [];
+  if (lastUser) parts.push(`用户：${(lastUser.displayContent || lastUser.content || '').slice(0, 500)}`);
+  if (lastAssistant) parts.push(`专家：${(lastAssistant.content || '').slice(0, 1000)}`);
+  const content = parts.join('\n\n');
+
+  savingMemory.value = true;
+  try {
+    const res = await window.api.aiApps.memoryAppend(appId, content, {
+      slug: currentSlug.value,
+      appName: currentMeta.value.aiApp.name || '',
+      savedAt: new Date().toISOString(),
+    });
+    memoryToast.value = res?.success ? '已保存为长期记忆' : ('保存失败：' + (res?.error || ''));
+  } catch (e) {
+    memoryToast.value = '保存失败：' + (e.message || e);
+  } finally {
+    savingMemory.value = false;
+    setTimeout(() => { memoryToast.value = ''; }, 2600);
+  }
+};
+
 // --- Lifecycle ---
 onMounted(async () => {
   await loadProjects();
@@ -770,10 +909,26 @@ onMounted(async () => {
 
   // 优先:工作台跳来的教练陪练
   if (route.query.coach) {
-    // 清掉 query,避免刷新重复触发
     router.replace({ path: '/chat' });
     await startCoachSession();
     return;
+  }
+
+  // AI 应用广场跳入
+  if (route.query.app) {
+    const appId = String(route.query.app);
+    const source = route.query.source ? String(route.query.source) : '';
+    router.replace({ path: '/chat' });
+    const handled = await startAiAppSession(appId, source);
+    if (handled) return;
+  }
+
+  // 兼容旧 AI 专家广场链接
+  if (route.query.expert) {
+    const expertId = String(route.query.expert);
+    router.replace({ path: '/chat' });
+    const handled = await startAiAppSession(expertId, 'builtin');
+    if (handled) return;
   }
 
   // 否则:自动选中最近的项目/对话
