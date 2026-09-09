@@ -19,7 +19,8 @@
     "build": "npm run build:win",
     "android:sync": "npm run build:renderer && npx cap sync android",
     "android:open": "npx cap open android",
-    "android:apk": "npm run build:renderer && npx cap sync android && cd android && ./gradlew assembleDebug"
+    "android:apk": "npm run build:renderer && npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew assembleDebug && cd .. && mkdir -p dist && cp android/app/build/outputs/apk/debug/app-debug.apk 'dist/FDE产设大师-android-debug.apk' && echo '✓ APK -> dist/FDE产设大师-android-debug.apk'",
+    "android:apk:release": "npm run build:renderer && npx cap sync android && cd android && JAVA_HOME=/opt/homebrew/opt/openjdk@17 ./gradlew assembleRelease && cd .. && mkdir -p dist && cp android/app/build/outputs/apk/release/app-release.apk 'dist/FDE产设大师-android-release.apk' && echo '✓ APK -> dist/FDE产设大师-android-release.apk'"
   },
   "keywords": [
     "ai",

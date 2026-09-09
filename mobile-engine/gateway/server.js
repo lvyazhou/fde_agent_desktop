@@ -26,7 +26,9 @@ const AcpClient = require('./acp-client');
 
 // --- 配置 ---
 const PORT = parseInt(process.env.HERMES_GATEWAY_PORT || '43918', 10);
-const HOST = '127.0.0.1';
+// 默认只绑本机(127.0.0.1)最安全;设 HERMES_GATEWAY_HOST=0.0.0.0 可让局域网手机连进来
+// (如 Mac 当服务器,手机连 Mac 的局域网 IP)。token 鉴权仍然生效。
+const HOST = process.env.HERMES_GATEWAY_HOST || '127.0.0.1';
 const HERMES_HOME = process.env.HERMES_HOME || path.join(os.homedir(), '.hermes');
 // token:优先用环境变量(APK 里也用同一个),否则生成并写到 ~/.hermes/gateway-token
 const TOKEN_FILE = path.join(HERMES_HOME, 'gateway-token');

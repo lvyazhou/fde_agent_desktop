@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-08T06:36:34.797Z",
+  "generatedAt": "2026-09-08T12:40:04.629Z",
   "source": "product-lobster-desktop/skills",
   "groups": [
     {
@@ -43,6 +43,13 @@
       "icon": "lightbulb",
       "color": "#0369a1",
       "count": 3
+    },
+    {
+      "id": "general",
+      "name": "通用工具",
+      "icon": "toolbox",
+      "color": "#64748b",
+      "count": 1
     }
   ],
   "skills": [
@@ -67,6 +74,17 @@
       "version": "",
       "summary": "Generate cyber/tech style business analysis dashboards using React, ECharts and Ant Desi…",
       "description": "Generate cyber/tech style business analysis dashboards using React, ECharts and Ant Design. Use this when the user asks to generate, build, or create a data dashboard, analysis screen, large screen display (大屏), or data visualization panel based on business requirements."
+    },
+    {
+      "id": "prototype-generator-blue",
+      "name": "prototype-generator",
+      "file": "SKILL.md",
+      "group": "general",
+      "icon": "toolbox",
+      "color": "#64748b",
+      "version": "",
+      "summary": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/AI产品原型/智能体产品/做个demo/做个页面/prototype/做系统原型.",
+      "description": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/AI产品原型/智能体产品/做个demo/做个页面/prototype/做系统原型. Accepts ANY input (sentence, doc, image, requirements). This is an AI-PRODUCT prototype designer: every prototype it generates is an agent product by default — with an agent-tools workbench page, LOOP drawers, streaming chat, AI-reasoning displays and proactive alerts baked in, not bolted on. Output: multi-page HTML + JS + data/ directory, ready to open in browser or package with Electron."
     },
     {
       "id": "md-export",
@@ -120,8 +138,8 @@
       "icon": "wand-magic-sparkles",
       "color": "#1d4ed8",
       "version": "",
-      "summary": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/做个demo/做个页面/prototype/做系统原型.",
-      "description": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/做个demo/做个页面/prototype/做系统原型. Accepts ANY input (sentence, doc, image, requirements). Generates high-fidelity interactive HTML prototypes with real mock data, following the unified design specification. Output: multi-page HTML + JS + data/ directory, ready to open in browser or package with Electron."
+      "summary": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/AI产品原型/智能体产品/做个demo/做个页面/prototype/做系统原型.",
+      "description": "Use when user says 生成原型/做原型/出原型/设计原型/画原型/产品原型/AI产品原型/智能体产品/做个demo/做个页面/prototype/做系统原型. Accepts ANY input (sentence, doc, image, requirements). This is an AI-PRODUCT prototype designer: every prototype it generates is an agent product by default — with an agent-tools workbench page, LOOP drawers, streaming chat, AI-reasoning displays and proactive alerts baked in, not bolted on. Output: multi-page HTML + JS + data/ directory, ready to open in browser or package with Electron."
     },
     {
       "id": "prototype-iterate",

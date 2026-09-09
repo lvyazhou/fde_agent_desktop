@@ -42,5 +42,7 @@ custom_providers:
       - qwen/qwen3.8-max
       - minimax/MiniMax-M2.7-highspeed
 
-providers: {}
+providers:
+  custom:
+    stale_timeout_seconds: 300
 fallback_providers: []

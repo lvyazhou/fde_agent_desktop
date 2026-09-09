@@ -374,6 +374,9 @@ function startHermes() {
       VIRTUAL_ENV: '',
       // Hermes 工具执行需要 Git Bash
       HERMES_GIT_BASH_PATH: resolveGitBashPath(),
+      // 终端环境不活跃清理阈值（秒），必须 > prompt 超时（600s），
+      // 否则长任务期间终端被提前回收导致引擎卡死。
+      TERMINAL_LIFETIME_SECONDS: '900',
       // Git Bash path conversion fixes for Windows
       MSYS_NO_PATHCONV: '1',
       MSYS2_ARG_CONV_EXCL: '*',
