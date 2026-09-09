@@ -219,7 +219,7 @@
               />
               <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 cursor-pointer hover:bg-blue-100 transition-colors" style="font-size:10px;line-height:1">
                 <i class="fa-solid fa-robot" style="font-size:9px"></i>
-                AI 产品设计智能体
+                {{ (projectMeta?.aiApp?.name) || 'AI 产品设计智能体' }}
                 <i class="fa-solid fa-chevron-down ml-0.5" style="font-size:7px"></i>
               </span>
               <button
@@ -301,6 +301,7 @@ import { prepareImage } from '@/composables/imagePrep';
 const props = defineProps({
   slug: { type: String, required: true },
   projectName: { type: String, default: '' },
+  projectMeta: { type: Object, default: () => ({}) },
   messages: { type: Array, default: () => [] },
   isStreaming: { type: Boolean, default: false },
   elapsedSec: { type: Number, default: 0 },

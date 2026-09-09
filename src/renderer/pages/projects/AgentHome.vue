@@ -15,6 +15,7 @@
       ref="chatPanelRef"
       :slug="currentSlug"
       :project-name="currentProjectName"
+      :project-meta="currentMeta"
       :messages="messages"
       :is-streaming="isStreaming"
       :elapsed-sec="elapsedSec"
