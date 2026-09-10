@@ -217,8 +217,16 @@
                 :current="currentModel"
                 @change="(id) => $emit('change-model', id)"
               />
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-100 text-blue-600 cursor-pointer hover:bg-blue-100 transition-colors" style="font-size:10px;line-height:1">
-                <i class="fa-solid fa-robot" style="font-size:9px"></i>
+              <span
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border cursor-pointer hover:opacity-80 transition-colors"
+                :style="{
+                  fontSize: '10px', lineHeight: '1',
+                  background: (projectMeta?.aiApp?.color || '#2563eb') + '0d',
+                  borderColor: (projectMeta?.aiApp?.color || '#2563eb') + '30',
+                  color: projectMeta?.aiApp?.color || '#2563eb',
+                }"
+              >
+                <i :class="'fa-solid fa-' + (projectMeta?.aiApp?.icon || 'robot')" style="font-size:9px"></i>
                 {{ (projectMeta?.aiApp?.name) || 'AI 产品设计智能体' }}
                 <i class="fa-solid fa-chevron-down ml-0.5" style="font-size:7px"></i>
               </span>
@@ -290,7 +298,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, watch, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, reactive, nextTick, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { marked } from 'marked';
 import WelcomeHero from './WelcomeHero.vue';
 import ModelSelector from './ModelSelector.vue';
@@ -311,7 +319,7 @@ const props = defineProps({
   currentModel: { type: String, default: '' },
 });
 
-const emit = defineEmits(['send', 'send-quick', 'send-with-attachments', 'cancel', 'navigate', 'fork', 'regenerate', 'feedback', 'delete', 'change-model']);
+const emit = defineEmits(['send', 'send-quick', 'send-with-attachments', 'cancel', 'navigate', 'fork', 'regenerate', 'feedback', 'delete', 'change-model', 'preview-file']);
 
 // 等待"活着感"：随等待时长升级的安心文案，把"慢"归因到网关而非软件卡死。
 // 只在"进行中"的思考头部使用（thinkingDone 时仍显示"推理完成"）。
@@ -339,8 +347,6 @@ const openLightbox = (src) => {
   lightboxVisible.value = true;
 };
 const handleContentImgClick = (e) => {
-  const img = e.target.closest('img.chat-inline-img');
-  if (img) { openLightbox(img.src); return; }
   const dlBtn = e.target.closest('.chat-file-download');
   if (dlBtn) {
     e.stopPropagation();
@@ -348,11 +354,28 @@ const handleContentImgClick = (e) => {
     if (fp) window.api.fs.saveLocalFile(fp);
     return;
   }
-  const chip = e.target.closest('.chat-file-chip');
-  if (chip) {
-    const fp = chip.dataset.filepath;
+  const openBtn = e.target.closest('.chat-file-open');
+  if (openBtn) {
+    e.stopPropagation();
+    const fp = openBtn.dataset.filepath;
     if (fp) window.api.shell.openPath(fp);
+    return;
   }
+  const card = e.target.closest('.chat-delivery-card');
+  if (card) {
+    const fp = card.dataset.filepath;
+    emit('preview-file', {
+      filePath: fp,
+      name: card.dataset.name,
+      ext: card.dataset.ext,
+      previewKind: card.dataset.previewkind,
+      sizeLabel: card.dataset.sizelabel,
+      ...(resolvedFiles.has(fp) ? resolvedFiles.get(fp) : {}),
+    });
+    return;
+  }
+  const img = e.target.closest('img.chat-inline-img');
+  if (img) openLightbox(img.src);
 };
 
 // Auto-grow textarea like Doubao (single line -> expands up to max-h)
@@ -622,67 +645,171 @@ const renderMarkdown = (text) => {
   }
 };
 
+const ALL_EXTS = 'png|jpg|jpeg|gif|svg|webp|bmp|ico|pdf|html|htm|xlsx|xls|csv|doc|docx|ppt|pptx|zip|rar|7z|gz|tar|mp3|mp4|wav|mov|avi|txt|md|json|js|ts|css|py|java|go|rs|sh|vue';
+const IMG_EXTS_SET = new Set(['png','jpg','jpeg','gif','svg','webp','bmp','ico']);
+
+function escAttr(s) { return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function deliveryCardHtml(fp, resolvedMeta) {
+  const safePath = fp.replace(/\\/g, '/');
+  const name = safePath.split('/').pop();
+  const ext = (name.includes('.') ? name.split('.').pop() : '').toLowerCase();
+  const meta = resolvedMeta || {};
+  const sizeLabel = meta.sizeLabel || '';
+  const TEXT_EXTS = new Set(['md','txt','csv','json','js','ts','py','sh','css','xml','yaml','yml','vue','jsx','tsx','java','go','rs']);
+  const previewKind = meta.previewKind || (IMG_EXTS_SET.has(ext) ? 'image' : ext === 'pdf' ? 'pdf' : ['html','htm'].includes(ext) ? 'html' : TEXT_EXTS.has(ext) ? 'text' : 'unsupported');
+  const isImg = IMG_EXTS_SET.has(ext);
+
+  // Icon mapping
+  const iconMap = {
+    pdf: ['fa-file-pdf', '#e11d48', '#fff1f2'],
+    doc: ['fa-file-word', '#2563eb', '#eff6ff'], docx: ['fa-file-word', '#2563eb', '#eff6ff'],
+    xls: ['fa-file-excel', '#059669', '#ecfdf5'], xlsx: ['fa-file-excel', '#059669', '#ecfdf5'], csv: ['fa-file-excel', '#059669', '#ecfdf5'],
+    ppt: ['fa-file-powerpoint', '#ea580c', '#fff7ed'], pptx: ['fa-file-powerpoint', '#ea580c', '#fff7ed'],
+    zip: ['fa-file-zipper', '#d97706', '#fffbeb'], rar: ['fa-file-zipper', '#d97706', '#fffbeb'], '7z': ['fa-file-zipper', '#d97706', '#fffbeb'],
+    png: ['fa-image', '#7c3aed', '#f5f3ff'], jpg: ['fa-image', '#7c3aed', '#f5f3ff'], jpeg: ['fa-image', '#7c3aed', '#f5f3ff'],
+    gif: ['fa-image', '#7c3aed', '#f5f3ff'], svg: ['fa-image', '#7c3aed', '#f5f3ff'], webp: ['fa-image', '#7c3aed', '#f5f3ff'],
+    mp3: ['fa-file-audio', '#7c3aed', '#f5f3ff'], wav: ['fa-file-audio', '#7c3aed', '#f5f3ff'],
+    mp4: ['fa-file-video', '#db2777', '#fdf2f8'], mov: ['fa-file-video', '#db2777', '#fdf2f8'],
+    html: ['fa-file-code', '#4f46e5', '#eef2ff'], htm: ['fa-file-code', '#4f46e5', '#eef2ff'],
+    js: ['fa-file-code', '#4f46e5', '#eef2ff'], json: ['fa-file-code', '#4f46e5', '#eef2ff'], py: ['fa-file-code', '#4f46e5', '#eef2ff'],
+    md: ['fa-file-lines', '#2563eb', '#eff6ff'], txt: ['fa-file-lines', '#2563eb', '#eff6ff'],
+  };
+  const [icon, color, bg] = iconMap[ext] || ['fa-file', '#94a3b8', '#f8fafc'];
+
+  // Type label
+  const typeLabels = {
+    pdf:'PDF', doc:'Word', docx:'Word', xls:'Excel', xlsx:'Excel', csv:'CSV',
+    ppt:'PPT', pptx:'PPT', zip:'ZIP', rar:'RAR', '7z':'7Z',
+    png:'PNG', jpg:'JPEG', jpeg:'JPEG', gif:'GIF', svg:'SVG', webp:'WebP',
+    mp3:'MP3', wav:'WAV', mp4:'MP4', mov:'MOV',
+    html:'HTML', htm:'HTML', js:'JS', json:'JSON', py:'Python', md:'Markdown', txt:'文本',
+  };
+  const typeLabel = typeLabels[ext] || ext.toUpperCase() || '文件';
+  const metaText = sizeLabel ? `${typeLabel} · ${sizeLabel}` : typeLabel;
+
+  // Image thumbnail for image files
+  const thumbHtml = isImg
+    ? `<img src="file:///${escAttr(safePath.replace(/^\//, ''))}" class="chat-delivery-thumb" onerror="this.style.display='none'" />`
+    : '';
+
+  return `<div class="chat-delivery-card" data-filepath="${escAttr(safePath)}" data-name="${escAttr(name)}" data-ext=".${escAttr(ext)}" data-previewkind="${escAttr(previewKind)}" data-sizelabel="${escAttr(sizeLabel)}">`
+    + `<div class="chat-delivery-icon" style="background:${bg}"><i class="fa-solid ${icon}" style="color:${color}"></i></div>`
+    + `<div class="chat-delivery-main"><div class="chat-delivery-name">${escAttr(name)}</div><div class="chat-delivery-meta">${escAttr(metaText)}</div></div>`
+    + thumbHtml
+    + `<button class="chat-delivery-action chat-file-download" data-filepath="${escAttr(safePath)}" title="另存为…"><i class="fa-solid fa-download"></i></button>`
+    + `<button class="chat-delivery-action chat-file-open" data-filepath="${escAttr(safePath)}" title="用系统程序打开"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>`
+    + `</div>`;
+}
+
+const IMG_EXTS = 'png|jpg|jpeg|gif|svg|webp|bmp|ico';
+const FILE_EXTS = 'pdf|html|htm|xlsx|xls|csv|doc|docx|ppt|pptx|zip|rar|7z|gz|tar|mp3|mp4|wav|mov|avi|txt|md|json|js|ts|css|py|java|go|rs|sh|vue';
+
 const renderAssistantContent = (content) => {
   if (!content) return '';
   try {
-    const imgExts = 'png|jpg|jpeg|gif|svg|webp';
-    const fileExts = 'xlsx|xls|csv|pdf|doc|docx|ppt|pptx|zip|rar|7z|gz|tar|mp3|mp4|wav|mov|avi|txt|md|json|html|css|js|py|java|go|rs|sh';
-    const allExts = imgExts + '|' + fileExts;
+    const card = (fp) => deliveryCardHtml(fp, resolvedFiles.get(fp));
     const imgTag = (fp) => {
-      const safePath = fp.replace(/\\/g, '/').replace(/^\//, '');
+      const resolved = resolvedFiles.get(fp);
+      const absPath = (resolved && resolved.filePath) ? resolved.filePath : fp;
+      const safePath = absPath.replace(/\\/g, '/').replace(/^\//, '');
       return `<img src="file:///${safePath}" class="max-w-[480px] rounded-lg border border-slate-200 my-2 cursor-zoom-in chat-inline-img" onerror="this.style.display='none'" />`;
     };
-    const fileChip = (fp) => {
-      const name = fp.split('/').pop();
-      const ext = (name.split('.').pop() || '').toLowerCase();
-      let icon = 'fa-file text-slate-400';
-      if (ext === 'pdf') icon = 'fa-file-pdf text-rose-500';
-      else if (['doc','docx'].includes(ext)) icon = 'fa-file-word text-blue-500';
-      else if (['xls','xlsx','csv'].includes(ext)) icon = 'fa-file-excel text-emerald-600';
-      else if (['ppt','pptx'].includes(ext)) icon = 'fa-file-powerpoint text-orange-500';
-      else if (['zip','rar','7z','gz','tar'].includes(ext)) icon = 'fa-file-zipper text-amber-500';
-      else if (['mp3','wav'].includes(ext)) icon = 'fa-file-audio text-violet-500';
-      else if (['mp4','mov','avi'].includes(ext)) icon = 'fa-file-video text-pink-500';
-      else if (['js','ts','py','java','go','rs','sh','css','html','json','vue'].includes(ext)) icon = 'fa-file-code text-indigo-500';
-      else if (['txt','md'].includes(ext)) icon = 'fa-file-lines text-blue-500';
-      const safePath = fp.replace(/\\/g, '/');
-      return `<span class="chat-file-chip" data-filepath="${safePath}" title="点击打开 · 右侧按钮另存为">`
-        + `<i class="fa-solid ${icon} text-[15px] shrink-0"></i>`
-        + `<span class="truncate">${name}</span>`
-        + `<button class="chat-file-download" data-filepath="${safePath}" title="另存为…">`
-        + `<i class="fa-solid fa-download text-[12px]"></i></button></span>`;
+    const render = (fp) => {
+      const ext = (fp.split('.').pop() || '').toLowerCase();
+      if (IMG_EXTS_SET.has(ext)) {
+        const isAbsolute = fp.startsWith('/');
+        if (!isAbsolute && !resolvedFiles.has(fp)) return card(fp);
+        return imgTag(fp);
+      }
+      return card(fp);
     };
 
-    // 1. MEDIA: prefix — images
-    let processed = content.replace(
-      new RegExp(`MEDIA:([^\\s\\n]+\\.(${imgExts}))`, 'gi'),
-      (_, fp) => imgTag(fp)
-    );
-    // 2. MEDIA: prefix — non-image files
+    // Use placeholders so marked doesn't escape HTML inside table cells
+    const placeholders = [];
+    const ph = (fp) => {
+      const html = render(fp);
+      const id = `XDLVR${placeholders.length}X`;
+      placeholders.push(html);
+      return id;
+    };
+
+    let processed = content;
+    // 1. MEDIA: prefix
     processed = processed.replace(
-      new RegExp(`MEDIA:([^\\s\\n]+\\.(${fileExts}))`, 'gi'),
-      (_, fp) => fileChip(fp)
+      new RegExp(`MEDIA:([^\\s\\n]+\\.(${ALL_EXTS}))`, 'gi'),
+      (_, fp) => ph(fp)
     );
-    // 3. Bare absolute paths on their own line — images
+    // 2. Bare absolute paths on their own line
     processed = processed.replace(
-      new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${imgExts}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
-      (m, fp) => '\n' + imgTag(fp) + '\n'
+      new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${ALL_EXTS}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
+      (m, fp) => '\n' + ph(fp) + '\n'
     );
-    // 4. Bare absolute paths on their own line — non-image files
+    // 3. Inline absolute paths (e.g. inside table cells)
     processed = processed.replace(
-      new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${fileExts}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
-      (m, fp) => '\n' + fileChip(fp) + '\n'
+      new RegExp(`(?<![\\w/:.])(\\/[^\\s\`<>|]+\\.(${ALL_EXTS}))(?![\\w/])`, 'gi'),
+      (_, fp) => ph(fp)
     );
-    // 5. Markdown image syntax with local file path
+    // 4. Relative paths like assets/foo.png, output/report.pdf
     processed = processed.replace(
-      new RegExp(`!\\[[^\\]]*\\]\\((\\/[^)]+\\.(${imgExts}))\\)`, 'gi'),
-      (_, fp) => imgTag(fp)
+      new RegExp(`(?<![\\w/:.])((?:[\\w.-]+\\/)+[\\w.-]+\\.(${ALL_EXTS}))(?![\\w/])`, 'gi'),
+      (m, fp) => ph(fp)
     );
-    return marked.parse(processed);
+    // 5. Markdown image syntax (only images)
+    processed = processed.replace(
+      new RegExp(`!\\[[^\\]]*\\]\\((\\/[^)]+\\.(${IMG_EXTS}))\\)`, 'gi'),
+      (_, fp) => ph(fp)
+    );
+    // 6. Bare Chinese-prose filename
+    processed = processed.replace(
+      new RegExp(`(?:已生成[：:.]\\s*|生成了\\s*)([^\\s，。、\\n]+\\.(${ALL_EXTS}))`, 'gi'),
+      (m, fn) => ph(fn)
+    );
+
+    // Let marked parse (placeholders are plain text, won't be escaped)
+    let html = marked.parse(processed);
+
+    // Replace placeholders with actual HTML
+    for (let i = 0; i < placeholders.length; i++) {
+      html = html.replace(`XDLVR${i}X`, placeholders[i]);
+    }
+    return html;
   } catch {
     return content;
   }
 };
+
+// Async file metadata resolution cache
+const resolvedFiles = reactive(new Map());
+const resolveQueue = new Set();
+
+async function resolveFileRefs(content) {
+  if (!content) return;
+  const allExtsRe = new RegExp(`(?:MEDIA:|(?:^|[\\s|(\`]))([^\\s，。、\\n|)<>\`]*\\.(${ALL_EXTS}))`, 'gim');
+  let match;
+  const refs = [];
+  while ((match = allExtsRe.exec(content)) !== null) {
+    const fp = match[1];
+    if (fp && !resolvedFiles.has(fp) && !resolveQueue.has(fp) && !fp.startsWith('http')) refs.push(fp);
+  }
+  for (const fp of refs) {
+    resolveQueue.add(fp);
+    try {
+      const res = await window.api.hermes.resolveFileRef(props.slug, fp);
+      if (res && res.success && res.file) {
+        resolvedFiles.set(fp, res.file);
+      }
+    } catch { /* skip */ }
+    resolveQueue.delete(fp);
+  }
+}
+
+watch(() => props.messages, (msgs) => {
+  if (!msgs) return;
+  for (const msg of msgs) {
+    if (msg.role === 'assistant' && msg.content) resolveFileRefs(msg.content);
+  }
+}, { immediate: true, deep: true });
 
 defineExpose({ scrollToBottom, scrollToMessage });
 </script>
@@ -770,46 +897,78 @@ defineExpose({ scrollToBottom, scrollToMessage });
   color: #475569;
   margin: 0.5em 0;
 }
-:deep(.chat-file-chip) {
+:deep(.chat-delivery-card) {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  max-width: 360px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: #f1f5f9;
+  gap: 10px;
+  width: 320px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   cursor: pointer;
-  transition: background 0.15s;
-  font-size: 13px;
-  color: #334155;
-  line-height: 1.4;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  margin: 6px 4px 6px 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
-:deep(.chat-file-chip:hover) {
-  background: #e2e8f0;
+:deep(.chat-delivery-card:hover) {
+  border-color: #93c5fd;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.08);
 }
-:deep(.chat-file-chip .truncate) {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-:deep(.chat-file-download) {
+:deep(.chat-delivery-icon) {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+:deep(.chat-delivery-main) {
+  flex: 1;
+  min-width: 0;
+}
+:deep(.chat-delivery-name) {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+:deep(.chat-delivery-meta) {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+:deep(.chat-delivery-thumb) {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+:deep(.chat-delivery-action) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: #94a3b8;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s, color 0.15s;
+  font-size: 12px;
 }
-:deep(.chat-file-download:hover) {
-  background: #cbd5e1;
-  color: #1e293b;
+:deep(.chat-delivery-action:hover) {
+  background: #f1f5f9;
+  color: #334155;
 }
 </style>

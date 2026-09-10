@@ -30,10 +30,18 @@
       @navigate="handleNavigate"
       @fork="handleFork"
       @change-model="handleChangeModel"
+      @preview-file="handlePreviewFile"
     />
 
-    <!-- Right: Info sidebar -->
+    <!-- Right: Preview panel or Info sidebar -->
+    <DeliverablePreviewPanel
+      v-if="previewFile"
+      :file="previewFile"
+      :slug="currentSlug"
+      @close="previewFile = null"
+    />
     <InfoSidebar
+      v-else
       v-show="showInfoPanel"
       :slug="currentSlug"
       :project-meta="currentMeta"
@@ -68,25 +76,6 @@
       <i class="fa-solid fa-circle-info text-xs"></i>
     </button>
 
-    <!-- AI 应用:保存为长期记忆 -->
-    <button
-      v-if="isAiAppSession && !isStreaming && messages.length >= 2"
-      @click="saveRecentAsMemory"
-      :disabled="savingMemory"
-      class="fixed bottom-20 right-4 z-10 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white/95 backdrop-blur border border-slate-200/70 text-[11.5px] text-slate-500 hover:text-blue-600 hover:border-blue-300 shadow-sm transition-all cursor-pointer disabled:opacity-50"
-      title="将最近一轮对话保存为该专家的长期记忆"
-    >
-      <i class="fa-solid fa-brain text-[10px]"></i>
-      {{ savingMemory ? '保存中…' : '保存为长期记忆' }}
-    </button>
-
-    <!-- 记忆保存 toast -->
-    <div
-      v-if="memoryToast"
-      class="fixed top-16 right-4 z-[60] bg-slate-800 text-white text-[12px] px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2"
-    >
-      <i class="fa-solid fa-circle-check text-blue-400"></i>{{ memoryToast }}
-    </div>
   </div>
 </template>
 
@@ -96,6 +85,7 @@ import { useRouter, useRoute } from 'vue-router';
 import SessionList from '@/components/agent/SessionList.vue';
 import ChatPanel from '@/components/agent/ChatPanel.vue';
 import InfoSidebar from '@/components/agent/InfoSidebar.vue';
+import DeliverablePreviewPanel from '@/components/common/DeliverablePreviewPanel.vue';
 import { isMultimodalModel } from '@/composables/useChatComposer';
 import { findBuiltinAiAppById, buildAiAppOpeningPrompt } from '@/data/ai-apps';
 
@@ -120,6 +110,11 @@ const availableModels = ref([]);                    // Feature 1: model list for
 const knowledgeFiles = ref([]);
 const showSessionPanel = ref(true);
 const showInfoPanel = ref(true);
+const previewFile = ref(null);
+
+const handlePreviewFile = (file) => {
+  previewFile.value = file;
+};
 const skills = ref([]);
 const logs = ref([]);
 
@@ -475,6 +470,7 @@ const handleSend = async (text) => {
     currentProjectName.value = chatName;
     try {
       await window.api.hermes.createProject({ name: chatName, requirement: text, slug: chatSlug, projectType: 'chat' });
+      currentMeta.value = { projectType: 'chat', slug: chatSlug, name: chatName };
       loadProjects(); // 不 await，后台刷新即可
     } catch (e) {
       console.error('Auto-create chat failed:', e);
@@ -544,6 +540,7 @@ const handleSendWithAttachments = async (text, attachments) => {
     currentProjectName.value = '新对话';
     try {
       await window.api.hermes.createProject({ name: '新对话', requirement: text, slug: chatSlug, projectType: 'chat' });
+      currentMeta.value = { projectType: 'chat', slug: chatSlug, name: '新对话' };
       loadProjects(); // 不 await，后台刷新即可
     } catch (e) {
       console.error('Auto-create chat failed:', e);
@@ -754,6 +751,7 @@ const startCoachSession = async () => {
   // 后台建会话
   try {
     await window.api.hermes.createProject({ name: 'FDE 教练陪练', requirement: 'FDE 教练陪练', slug: chatSlug, projectType: 'fde-coach' });
+    currentMeta.value = { projectType: 'fde-coach', slug: chatSlug, name: 'FDE 教练陪练' };
     loadProjects(); // 不 await，后台刷新
   } catch (e) {
     console.error('Create coach session failed:', e);
@@ -832,14 +830,16 @@ const startAiAppSession = async (appId, source) => {
   await nextTick();
   chatPanelRef.value?.scrollToBottom?.();
 
+  const aiApp = { ...app, source: app.source || source || 'builtin' };
   try {
     await window.api.hermes.createProject({
       name: app.sessionName || app.name,
       requirement: displayText,
       slug: chatSlug,
       projectType: 'ai-app',
-      aiApp: { ...app, source: app.source || source || 'builtin' },
+      aiApp,
     });
+    currentMeta.value = { projectType: 'ai-app', aiApp, slug: chatSlug, name: app.sessionName || app.name };
     loadProjects();
   } catch (e) {
     console.error('Create AI app session failed:', e);
@@ -865,9 +865,8 @@ const startAiAppSession = async (appId, source) => {
   return true;
 };
 
-// --- AI 应用长期记忆:保存最近一轮对话为长期记忆 ---
+// --- AI 应用长期记忆:每轮对话结束自动保存 ---
 const savingMemory = ref(false);
-const memoryToast = ref('');
 const isAiAppSession = computed(() => !!(currentMeta.value && currentMeta.value.aiApp && currentMeta.value.aiApp.id));
 
 const saveRecentAsMemory = async () => {
@@ -884,19 +883,23 @@ const saveRecentAsMemory = async () => {
 
   savingMemory.value = true;
   try {
-    const res = await window.api.aiApps.memoryAppend(appId, content, {
+    await window.api.aiApps.memoryAppend(appId, content, {
       slug: currentSlug.value,
       appName: currentMeta.value.aiApp.name || '',
       savedAt: new Date().toISOString(),
     });
-    memoryToast.value = res?.success ? '已保存为长期记忆' : ('保存失败：' + (res?.error || ''));
   } catch (e) {
-    memoryToast.value = '保存失败：' + (e.message || e);
+    console.warn('Auto-save memory failed:', e);
   } finally {
     savingMemory.value = false;
-    setTimeout(() => { memoryToast.value = ''; }, 2600);
   }
 };
+
+watch(isStreaming, (now, was) => {
+  if (was && !now && isAiAppSession.value && messages.value.length >= 2) {
+    setTimeout(saveRecentAsMemory, 1500);
+  }
+});
 
 // --- Lifecycle ---
 onMounted(async () => {

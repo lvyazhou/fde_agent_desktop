@@ -128,7 +128,7 @@
                       </div>
                     </div>
                   </div>
-                  <div v-if="msg.content || (isStreaming && idx === messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"</div>
+                  <div v-if="msg.content || (isStreaming && idx === messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"></div>
                   <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
                 </div>
               </div>
@@ -359,7 +359,7 @@
                         </div>
                       </div>
                     </div>
-                    <div v-if="msg.content || (isStreaming && idx === iterateMessages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"</div>
+                    <div v-if="msg.content || (isStreaming && idx === iterateMessages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"></div>
                     <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
                   </div>
                 </div>
@@ -541,7 +541,7 @@
                     </div>
                   </div>
                   <!-- Content: no bubble, plain text -->
-                  <div v-if="msg.content || (isStreaming && idx === stage3Messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"</div>
+                  <div v-if="msg.content || (isStreaming && idx === stage3Messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"></div>
                   <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
                 </div>
               </div>
@@ -698,8 +698,6 @@ const openLightbox = (src) => {
   lightboxVisible.value = true;
 };
 const handleContentImgClick = (e) => {
-  const img = e.target.closest('img.chat-inline-img');
-  if (img) { openLightbox(img.src); return; }
   const dlBtn = e.target.closest('.chat-file-download');
   if (dlBtn) {
     e.stopPropagation();
@@ -707,11 +705,21 @@ const handleContentImgClick = (e) => {
     if (fp) window.api.fs.saveLocalFile(fp);
     return;
   }
-  const chip = e.target.closest('.chat-file-chip');
-  if (chip) {
-    const fp = chip.dataset.filepath;
+  const openBtn = e.target.closest('.chat-file-open');
+  if (openBtn) {
+    e.stopPropagation();
+    const fp = openBtn.dataset.filepath;
     if (fp) window.api.shell.openPath(fp);
+    return;
   }
+  const card = e.target.closest('.chat-delivery-card');
+  if (card) {
+    const fp = card.dataset.filepath;
+    if (fp) window.api.shell.openPath(fp);
+    return;
+  }
+  const img = e.target.closest('img.chat-inline-img');
+  if (img) openLightbox(img.src);
 };
 
 // --- FDE 五阶段工作台状态 ---
@@ -1171,65 +1179,101 @@ function formatToolCallText(title, args) {
   return `🔧 ${title}`;
 }
 
-// --- Markdown rendering (with inline image + file chip support) ---
-const IMG_EXTS = 'png|jpg|jpeg|gif|svg|webp';
-const FILE_EXTS = 'xlsx|xls|csv|pdf|doc|docx|ppt|pptx|zip|rar|7z|gz|tar|mp3|mp4|wav|mov|avi|txt|md|json|html|css|js|py|java|go|rs|sh';
+// --- Markdown rendering (with delivery card support) ---
+const ALL_EXTS = 'png|jpg|jpeg|gif|svg|webp|bmp|ico|pdf|html|htm|xlsx|xls|csv|doc|docx|ppt|pptx|zip|rar|7z|gz|tar|mp3|mp4|wav|mov|avi|txt|md|json|js|ts|css|py|java|go|rs|sh|vue';
+const IMG_EXTS_SET = new Set(['png','jpg','jpeg','gif','svg','webp','bmp','ico']);
+
+function escAttr(s) { return String(s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function deliveryCardHtml(fp) {
+  const safePath = fp.replace(/\\/g, '/');
+  const name = safePath.split('/').pop();
+  const ext = (name.includes('.') ? name.split('.').pop() : '').toLowerCase();
+  const isImg = IMG_EXTS_SET.has(ext);
+  const iconMap = {
+    pdf: ['fa-file-pdf', '#e11d48', '#fff1f2'],
+    doc: ['fa-file-word', '#2563eb', '#eff6ff'], docx: ['fa-file-word', '#2563eb', '#eff6ff'],
+    xls: ['fa-file-excel', '#059669', '#ecfdf5'], xlsx: ['fa-file-excel', '#059669', '#ecfdf5'], csv: ['fa-file-excel', '#059669', '#ecfdf5'],
+    ppt: ['fa-file-powerpoint', '#ea580c', '#fff7ed'], pptx: ['fa-file-powerpoint', '#ea580c', '#fff7ed'],
+    zip: ['fa-file-zipper', '#d97706', '#fffbeb'], rar: ['fa-file-zipper', '#d97706', '#fffbeb'], '7z': ['fa-file-zipper', '#d97706', '#fffbeb'],
+    png: ['fa-image', '#7c3aed', '#f5f3ff'], jpg: ['fa-image', '#7c3aed', '#f5f3ff'], jpeg: ['fa-image', '#7c3aed', '#f5f3ff'],
+    gif: ['fa-image', '#7c3aed', '#f5f3ff'], svg: ['fa-image', '#7c3aed', '#f5f3ff'], webp: ['fa-image', '#7c3aed', '#f5f3ff'],
+    html: ['fa-file-code', '#4f46e5', '#eef2ff'], htm: ['fa-file-code', '#4f46e5', '#eef2ff'],
+    md: ['fa-file-lines', '#2563eb', '#eff6ff'], txt: ['fa-file-lines', '#2563eb', '#eff6ff'],
+  };
+  const [icon, color, bg] = iconMap[ext] || ['fa-file', '#94a3b8', '#f8fafc'];
+  const typeLabels = { pdf:'PDF', doc:'Word', docx:'Word', xls:'Excel', xlsx:'Excel', csv:'CSV', ppt:'PPT', pptx:'PPT', png:'PNG', jpg:'JPEG', jpeg:'JPEG', gif:'GIF', svg:'SVG', webp:'WebP', html:'HTML', md:'Markdown', txt:'文本' };
+  const typeLabel = typeLabels[ext] || ext.toUpperCase() || '文件';
+  const thumbHtml = isImg ? `<img src="file:///${escAttr(safePath.replace(/^\//, ''))}" class="chat-delivery-thumb" onerror="this.style.display='none'" />` : '';
+
+  return `<div class="chat-delivery-card" data-filepath="${escAttr(safePath)}" data-name="${escAttr(name)}" data-ext=".${escAttr(ext)}">`
+    + `<div class="chat-delivery-icon" style="background:${bg}"><i class="fa-solid ${icon}" style="color:${color}"></i></div>`
+    + `<div class="chat-delivery-main"><div class="chat-delivery-name">${escAttr(name)}</div><div class="chat-delivery-meta">${escAttr(typeLabel)}</div></div>`
+    + thumbHtml
+    + `<button class="chat-delivery-action chat-file-download" data-filepath="${escAttr(safePath)}" title="另存为…"><i class="fa-solid fa-download"></i></button>`
+    + `<button class="chat-delivery-action chat-file-open" data-filepath="${escAttr(safePath)}" title="用系统程序打开"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>`
+    + `</div>`;
+}
+
+const _pdPlaceholders = [];
 const processImagePaths = (content) => {
+  const card = (fp) => deliveryCardHtml(fp);
   const imgTag = (fp) => {
     const safePath = fp.replace(/\\/g, '/').replace(/^\//, '');
     return `<img src="file:///${safePath}" class="max-w-[480px] rounded-lg border border-slate-200 my-2 cursor-zoom-in chat-inline-img" onerror="this.style.display='none'" />`;
   };
-  const fileChip = (fp) => {
-    const name = fp.split('/').pop();
-    const ext = (name.split('.').pop() || '').toLowerCase();
-    let icon = 'fa-file text-slate-400';
-    if (ext === 'pdf') icon = 'fa-file-pdf text-rose-500';
-    else if (['doc','docx'].includes(ext)) icon = 'fa-file-word text-blue-500';
-    else if (['xls','xlsx','csv'].includes(ext)) icon = 'fa-file-excel text-emerald-600';
-    else if (['ppt','pptx'].includes(ext)) icon = 'fa-file-powerpoint text-orange-500';
-    else if (['zip','rar','7z','gz','tar'].includes(ext)) icon = 'fa-file-zipper text-amber-500';
-    else if (['mp3','wav'].includes(ext)) icon = 'fa-file-audio text-violet-500';
-    else if (['mp4','mov','avi'].includes(ext)) icon = 'fa-file-video text-pink-500';
-    else if (['js','ts','py','java','go','rs','sh','css','html','json','vue'].includes(ext)) icon = 'fa-file-code text-indigo-500';
-    else if (['txt','md'].includes(ext)) icon = 'fa-file-lines text-blue-500';
-    const safePath = fp.replace(/\\/g, '/');
-    return `<span class="chat-file-chip" data-filepath="${safePath}" title="点击打开 · 右侧按钮另存为">`
-      + `<i class="fa-solid ${icon} text-[15px] shrink-0"></i>`
-      + `<span class="truncate">${name}</span>`
-      + `<button class="chat-file-download" data-filepath="${safePath}" title="另存为…">`
-      + `<i class="fa-solid fa-download text-[12px]"></i></button></span>`;
+  const IMG_EXTS = 'png|jpg|jpeg|gif|svg|webp|bmp|ico';
+  const render = (fp) => {
+    const ext = (fp.split('.').pop() || '').toLowerCase();
+    if (IMG_EXTS_SET.has(ext)) {
+      if (!fp.startsWith('/')) return card(fp);
+      return imgTag(fp);
+    }
+    return card(fp);
   };
-  // MEDIA: images
+
+  _pdPlaceholders.length = 0;
+  const ph = (fp) => {
+    const html = render(fp);
+    const id = `XDLVR${_pdPlaceholders.length}X`;
+    _pdPlaceholders.push(html);
+    return id;
+  };
+
   let processed = content.replace(
-    new RegExp(`MEDIA:([^\\s\\n]+\\.(${IMG_EXTS}))`, 'gi'),
-    (_, fp) => imgTag(fp)
+    new RegExp(`MEDIA:([^\\s\\n]+\\.(${ALL_EXTS}))`, 'gi'),
+    (_, fp) => ph(fp)
   );
-  // MEDIA: non-image files
   processed = processed.replace(
-    new RegExp(`MEDIA:([^\\s\\n]+\\.(${FILE_EXTS}))`, 'gi'),
-    (_, fp) => fileChip(fp)
+    new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${ALL_EXTS}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
+    (m, fp) => '\n' + ph(fp) + '\n'
   );
-  // Bare absolute paths — images
   processed = processed.replace(
-    new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${IMG_EXTS}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
-    (m, fp) => '\n' + imgTag(fp) + '\n'
+    new RegExp(`(?<![\\w/:.])(\\/[^\\s\`<>|]+\\.(${ALL_EXTS}))(?![\\w/])`, 'gi'),
+    (_, fp) => ph(fp)
   );
-  // Bare absolute paths — non-image files
   processed = processed.replace(
-    new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${FILE_EXTS}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
-    (m, fp) => '\n' + fileChip(fp) + '\n'
+    new RegExp(`(?<![\\w/:.])((?:[\\w.-]+\\/)+[\\w.-]+\\.(${ALL_EXTS}))(?![\\w/])`, 'gi'),
+    (m, fp) => ph(fp)
   );
-  // Markdown image syntax
   processed = processed.replace(
     new RegExp(`!\\[[^\\]]*\\]\\((\\/[^)]+\\.(${IMG_EXTS}))\\)`, 'gi'),
-    (_, fp) => imgTag(fp)
+    (_, fp) => ph(fp)
+  );
+  processed = processed.replace(
+    new RegExp(`(?:已生成[：:.]\\s*|生成了\\s*)([^\\s，。、\\n]+\\.(${ALL_EXTS}))`, 'gi'),
+    (m, fn) => ph(fn)
   );
   return processed;
 };
 
 const renderMarkdown = (text) => {
   if (!text) return '';
-  return marked(processImagePaths(text), { breaks: true, gfm: true });
+  let html = marked(processImagePaths(text), { breaks: true, gfm: true });
+  for (let i = 0; i < _pdPlaceholders.length; i++) {
+    html = html.replace(`XDLVR${i}X`, _pdPlaceholders[i]);
+  }
+  return html;
 };
 
 const renderedSpec = computed(() => {
@@ -2474,46 +2518,78 @@ textarea {
   background: #f8fafc;
   font-weight: 600;
 }
-:deep(.chat-file-chip) {
+:deep(.chat-delivery-card) {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  max-width: 360px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  background: #f1f5f9;
+  gap: 10px;
+  width: 320px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #ffffff;
   border: 1px solid #e2e8f0;
   cursor: pointer;
-  transition: background 0.15s;
-  font-size: 13px;
-  color: #334155;
-  line-height: 1.4;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  margin: 6px 4px 6px 0;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
-:deep(.chat-file-chip:hover) {
-  background: #e2e8f0;
+:deep(.chat-delivery-card:hover) {
+  border-color: #93c5fd;
+  box-shadow: 0 2px 8px rgba(37,99,235,0.08);
 }
-:deep(.chat-file-chip .truncate) {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  min-width: 0;
-}
-:deep(.chat-file-download) {
+:deep(.chat-delivery-icon) {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  flex-shrink: 0;
+  font-size: 15px;
+}
+:deep(.chat-delivery-main) {
+  flex: 1;
+  min-width: 0;
+}
+:deep(.chat-delivery-name) {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+:deep(.chat-delivery-meta) {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+:deep(.chat-delivery-thumb) {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+:deep(.chat-delivery-action) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: #94a3b8;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s, color 0.15s;
+  font-size: 12px;
 }
-:deep(.chat-file-download:hover) {
-  background: #cbd5e1;
-  color: #1e293b;
+:deep(.chat-delivery-action:hover) {
+  background: #f1f5f9;
+  color: #334155;
 }
 </style>

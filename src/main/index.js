@@ -846,6 +846,148 @@ ipcMain.handle('fs:save-local-file', async (_event, srcPath) => {
   }
 });
 
+// --- Deliverable file resolution and preview ---
+
+const EXTENDED_MIME = {
+  ...MIME_TYPES,
+  '.pdf': 'application/pdf',
+  '.webp': 'image/webp',
+  '.bmp': 'image/bmp',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.mp4': 'video/mp4',
+  '.mov': 'video/quicktime',
+  '.txt': 'text/plain',
+  '.md': 'text/markdown',
+  '.csv': 'text/csv',
+  '.xml': 'text/xml',
+  '.py': 'text/x-python',
+  '.sh': 'text/x-shellscript',
+  '.yaml': 'text/yaml',
+  '.yml': 'text/yaml',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.xls': 'application/vnd.ms-excel',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.doc': 'application/msword',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  '.zip': 'application/zip',
+  '.rar': 'application/vnd.rar',
+  '.7z': 'application/x-7z-compressed',
+  '.gz': 'application/gzip',
+  '.tar': 'application/x-tar',
+};
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function previewKindForExt(ext) {
+  const e = (ext || '').toLowerCase();
+  if (['.png','.jpg','.jpeg','.gif','.svg','.webp','.bmp','.ico'].includes(e)) return 'image';
+  if (e === '.pdf') return 'pdf';
+  if (['.html','.htm'].includes(e)) return 'html';
+  if (['.md','.txt','.csv','.json','.js','.ts','.py','.sh','.css','.xml','.yaml','.yml','.vue','.jsx','.tsx'].includes(e)) return 'text';
+  return 'unsupported';
+}
+
+function buildFileMeta(filePath) {
+  const name = path.basename(filePath);
+  const ext = path.extname(name).toLowerCase();
+  const stat = fs.statSync(filePath);
+  return {
+    filePath: path.resolve(filePath),
+    name,
+    ext,
+    mime: EXTENDED_MIME[ext] || 'application/octet-stream',
+    size: stat.size,
+    sizeLabel: formatFileSize(stat.size),
+    previewKind: previewKindForExt(ext),
+  };
+}
+
+ipcMain.handle('hermes:resolve-file-ref', async (_event, { slug, ref }) => {
+  try {
+    if (!ref) return { success: false, error: 'empty ref' };
+    // 1. Absolute path
+    if (path.isAbsolute(ref)) {
+      if (fs.existsSync(ref) && fs.statSync(ref).isFile()) {
+        return { success: true, file: buildFileMeta(ref) };
+      }
+      return { success: false, error: '文件不存在' };
+    }
+    // 2. Relative/basename within project
+    if (slug) {
+      const projectDir = resolveProjectPath(slug);
+      if (fs.existsSync(projectDir)) {
+        // Try direct relative path first
+        const direct = path.join(projectDir, ref);
+        if (fs.existsSync(direct) && fs.statSync(direct).isFile()) {
+          const meta = buildFileMeta(direct);
+          meta.relPath = ref;
+          return { success: true, file: meta };
+        }
+        // Recursive search for basename
+        const baseName = path.basename(ref);
+        const priorityDirs = ['', 'output', 'outputs', 'deliverables', 'prototype', 'stage2', 'stage3', 'generated_images'];
+        let bestMatch = null;
+        let bestMtime = 0;
+        const searchDir = (dir) => {
+          try {
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            for (const ent of entries) {
+              const full = path.join(dir, ent.name);
+              if (ent.isFile() && ent.name === baseName) {
+                const st = fs.statSync(full);
+                if (st.mtimeMs > bestMtime) {
+                  bestMatch = full;
+                  bestMtime = st.mtimeMs;
+                }
+              } else if (ent.isDirectory() && !ent.name.startsWith('.')) {
+                searchDir(full);
+              }
+            }
+          } catch { /* skip unreadable dirs */ }
+        };
+        // Search priority dirs first, then full project
+        for (const pd of priorityDirs) {
+          const sub = pd ? path.join(projectDir, pd) : projectDir;
+          if (fs.existsSync(sub)) searchDir(sub);
+          if (bestMatch) break;
+        }
+        if (!bestMatch) searchDir(projectDir);
+        if (bestMatch) {
+          const meta = buildFileMeta(bestMatch);
+          meta.relPath = path.relative(projectDir, bestMatch);
+          return { success: true, file: meta };
+        }
+      }
+    }
+    return { success: false, error: '文件未找到' };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+const MAX_DATA_URI_SIZE = 50 * 1024 * 1024; // 50 MB
+
+ipcMain.handle('fs:read-local-file-data-uri', async (_event, filePath) => {
+  try {
+    if (!filePath || !fs.existsSync(filePath)) return { success: false, error: '文件不存在' };
+    const stat = fs.statSync(filePath);
+    if (stat.size > MAX_DATA_URI_SIZE) return { success: false, error: '文件过大，无法预览', tooLarge: true };
+    const ext = path.extname(filePath).toLowerCase();
+    const mime = EXTENDED_MIME[ext] || 'application/octet-stream';
+    const buf = fs.readFileSync(filePath);
+    const dataUri = `data:${mime};base64,${buf.toString('base64')}`;
+    return { success: true, dataUri, mime, size: stat.size };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('shell:open-external', async (_event, url) => {
   try {
     await shell.openExternal(url);
@@ -2791,6 +2933,19 @@ function buildAiAppClaudeMd(app, memory, knowledgeFiles) {
   if (a.riskNotice) { lines.push('## 风险提示'); lines.push(''); lines.push(a.riskNotice); lines.push(''); }
   if (a.prompt) { lines.push('## 系统提示词'); lines.push(''); lines.push(a.prompt); lines.push(''); }
 
+  if (Array.isArray(a.skills) && a.skills.length) {
+    lines.push('## 推荐技能');
+    lines.push('');
+    lines.push('处理任务时，请优先考虑使用以下技能（通过 `skill_view` 查看用法后按需调用）：');
+    lines.push('');
+    for (const s of a.skills) {
+      const sn = typeof s === 'string' ? s : (s && (s.name || s.id));
+      const sd = (s && typeof s === 'object' && s.description) ? ` —— ${s.description}` : '';
+      if (sn) lines.push(`- **${sn}**${sd}`);
+    }
+    lines.push('');
+  }
+
   lines.push('## 专家记忆');
   lines.push('');
   const mem = (typeof memory === 'string' ? memory : '').trim();
@@ -2840,7 +2995,7 @@ const AI_APPS_ALLOWED_FIELDS = [
   'id', 'name', 'category', 'icon', 'color', 'tagline', 'summary',
   'bestFor', 'starters', 'sessionName', 'slugPrefix', 'displayOpening',
   'capabilities', 'workflow', 'constraints', 'riskNotice', 'prompt',
-  'developer', 'source', 'status', 'createdAt', 'updatedAt', 'preferredModel',
+  'developer', 'source', 'status', 'createdAt', 'updatedAt', 'preferredModel', 'skills',
 ];
 
 function readLocalAiApps() {
@@ -2901,6 +3056,7 @@ function normalizeLocalAiApp(input, existing) {
   app.constraints = clampStr(app.constraints, 2000);
   app.riskNotice = clampStr(app.riskNotice, 500);
   app.prompt = clampStr(app.prompt, 8000);
+  app.skills = clampArr(app.skills, 30, 100);
   app.developer = {
     author: clampStr((app.developer && app.developer.author) || '本地开发者', 100),
     version: clampStr((app.developer && app.developer.version) || '1.0.0', 20),

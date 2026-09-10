@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FDE 培训 · 讲师版 60 分钟讲稿</title>
+<meta name="description" content="配套 FDE 新任项目经理培训教程的讲师 speaker notes:红绿灯配速、转场话术、图表一句话、提问钩子,60 分钟照着讲。">
+<style>
+  :root{
+    --ink:#0f1729;--paper:#f7f5f0;--paper-card:#fff;--brass:#c8862a;
+    --alert:#b5433a;--ok:#2f7d54;--amber:#e3a94a;
+    --neutral-line:#dfdbd1;--neutral-faint:#ece8de;--text:#232937;--text-dim:#5a6270;
+    --oninK:#eef1f7;--oninK-dim:#9aa6bd;--shadow:0 1px 2px rgba(15,23,41,.06),0 8px 24px rgba(15,23,41,.06);--radius:10px;
+  }
+  :root:not([data-theme="light"]){@media (prefers-color-scheme:dark){
+    --paper:#10151f;--paper-card:#171e2b;--text:#e6e9f0;--text-dim:#97a1b4;
+    --neutral-line:#2a3448;--neutral-faint:#1b2333;--brass:#e0a94a;--alert:#e0736a;--ok:#5bb98a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}}
+  :root[data-theme="dark"]{
+    --paper:#10151f;--paper-card:#171e2b;--text:#e6e9f0;--text-dim:#97a1b4;
+    --neutral-line:#2a3448;--neutral-faint:#1b2333;--brass:#e0a94a;--alert:#e0736a;--ok:#5bb98a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--text);font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:"Noto Serif SC",Georgia,"Songti SC",serif;text-wrap:balance}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+
+  /* HERO */
+  .hero{background:var(--ink);color:var(--oninK);position:relative;overflow:hidden}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(800px 380px at 84% -10%,rgba(200,134,42,.18),transparent 60%);pointer-events:none}
+  .hero-inner{position:relative;padding:44px 0 40px}
+  .eyebrow{font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--amber);font-weight:600;margin:0 0 14px;display:flex;align-items:center;gap:12px}
+  .eyebrow::before{content:"";width:28px;height:1px;background:var(--amber)}
+  .hero h1{font-size:clamp(24px,4vw,38px);line-height:1.15;margin:0 0 14px;font-weight:700}
+  .hero h1 .amber{color:var(--amber)}
+  .hero-lead{font-size:15px;color:var(--oninK-dim);max-width:64ch;margin:0 0 22px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px 20px;padding:14px 18px;border:1px solid rgba(227,169,74,.32);border-radius:var(--radius);background:rgba(200,134,42,.06);font-size:13px}
+  .legend b{color:var(--amber)}
+  .legend .lz{display:flex;align-items:center;gap:7px}
+  .dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
+  .dot.r{background:var(--alert)}.dot.y{background:var(--brass)}.dot.g{background:#8a93a6}
+
+  /* HOW-TO 条 */
+  .howto{background:var(--neutral-faint);border-bottom:1px solid var(--neutral-line);padding:22px 0}
+  .howto .wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  @media (max-width:760px){.howto .wrap{grid-template-columns:1fr}}
+  .howto .h{border:1px solid var(--neutral-line);border-radius:var(--radius);padding:12px 15px;background:var(--paper-card);font-size:13px}
+  .howto .h b{display:block;color:var(--brass);margin-bottom:4px;font-size:13px}
+  .timebar{display:flex;flex-wrap:wrap;gap:6px;padding:14px 0 0}
+  .timebar .seg{font-size:11px;font-family:ui-monospace,monospace;padding:3px 9px;border-radius:6px;background:var(--paper-card);border:1px solid var(--neutral-line);color:var(--text-dim)}
+  .timebar .seg b{color:var(--brass)}
+
+  main{padding:34px 0 80px}
+  /* MODULE 讲稿块 */
+  .m{background:var(--paper-card);border:1px solid var(--neutral-line);border-radius:var(--radius);box-shadow:var(--shadow);margin:0 0 20px;overflow:hidden;scroll-margin-top:16px}
+  .m-head{display:flex;align-items:center;gap:14px;padding:14px 20px;background:var(--ink);color:var(--oninK)}
+  .m-num{font-family:ui-monospace,monospace;font-size:15px;font-weight:700;color:var(--amber);border:1.5px solid var(--amber);border-radius:8px;width:42px;height:42px;display:grid;place-items:center;flex:0 0 auto}
+  .m-head h2{font-size:19px;margin:0;color:var(--oninK)}
+  .m-head .clock{margin-left:auto;font-family:ui-monospace,monospace;font-size:13px;color:var(--amber);font-weight:700;white-space:nowrap}
+  .m-body{padding:16px 20px 18px}
+
+  .say{border-left:3px solid var(--brass);background:color-mix(in srgb,var(--brass) 6%,transparent);border-radius:0 8px 8px 0;padding:10px 15px;margin:0 0 14px;font-family:"Noto Serif SC",serif;font-size:15px}
+  .say .lb{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--brass);font-weight:700;font-family:"Noto Sans SC",sans-serif;display:block;margin-bottom:3px}
+
+  ul.beats{list-style:none;margin:0 0 14px;padding:0}
+  ul.beats li{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-top:1px solid var(--neutral-faint);font-size:14px}
+  ul.beats li:first-child{border-top:0}
+  ul.beats li .tag{flex:0 0 auto;width:15px;height:15px;border-radius:50%;margin-top:4px}
+  ul.beats li.r .tag{background:var(--alert)}
+  ul.beats li.y .tag{background:var(--brass)}
+  ul.beats li.g .tag{background:#8a93a6}
+  ul.beats li.g{color:var(--text-dim)}
+  ul.beats li b{color:var(--text)}
+  ul.beats li .k{font-family:ui-monospace,monospace;font-size:11px;color:var(--text-dim);flex:0 0 auto;min-width:60px}
+
+  .fig{display:flex;gap:10px;align-items:flex-start;background:var(--neutral-faint);border-radius:8px;padding:10px 14px;margin:0 0 14px;font-size:13.5px}
+  .fig .ic{color:var(--brass);font-weight:700;flex:0 0 auto}
+  .fig b{color:var(--text)}
+
+  .hook{border:1px dashed var(--brass);border-radius:8px;padding:10px 14px;margin:0 0 14px;background:color-mix(in srgb,var(--brass) 5%,transparent);font-size:13.5px}
+  .hook .lb{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--brass);font-weight:700;margin-right:8px}
+
+  .turn{border-left:3px solid var(--ok);background:color-mix(in srgb,var(--ok) 7%,transparent);border-radius:0 8px 8px 0;padding:10px 15px;font-size:14px}
+  .turn .lb{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--ok);font-weight:700;display:block;margin-bottom:3px}
+  .turn .arw{color:var(--ok);font-weight:700}
+
+  .divider{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--text-dim);text-align:center;margin:26px 0 14px;position:relative}
+  .divider::before,.divider::after{content:"";position:absolute;top:50%;width:34%;height:1px;background:var(--neutral-line)}
+  .divider::before{left:0}.divider::after{right:0}
+
+  footer{background:var(--ink);color:var(--oninK-dim);padding:30px 0;font-size:13px;text-align:center}
+  footer b{color:var(--amber);font-family:"Noto Serif SC",serif}
+
+  /* 打印:一块一页边界友好 */
+  @media print{
+    body{background:#fff}
+    .howto,.hero::before{display:none}
+    .m{break-inside:avoid;box-shadow:none}
+  }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@500;700&display=swap">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero-inner">
+    <p class="eyebrow">FDE 培训 · 讲师版 · 60 分钟讲稿</p>
+    <h1>照着这份讲,<span class="amber">不用临场想详略、接转场、编图说明</span>。</h1>
+    <p class="hero-lead">
+      这是配套《FDE 新任项目经理培训教程》的讲师 speaker notes。教程是给学员读的、信息密;这份是给你讲的、只留讲的动作。
+      每块四样东西:开场一句、红绿灯配速(60 分钟只讲🔴)、图表指着说什么、转场一句话。中间夹提问钩子,顺势喘口气。
+    </p>
+    <div class="legend">
+      <span class="lz"><span class="dot r"></span><b>必讲</b> 主干,跳了断链</span>
+      <span class="lz"><span class="dot y"></span><b>有时间讲</b> 超时先砍这些</span>
+      <span class="lz"><span class="dot g"></span><b>让自读</b> 一句带过,指教程</span>
+    </div>
+  </div>
+</header>
+
+<section class="howto">
+  <div class="wrap">
+    <div class="h"><b>1 · 只讲红灯</b>60 分钟讲不完 10 块 × 9 层。红灯是主干,一条链下来不断;黄灯看表,时间紧先砍;灰灯一句话带过"细节看教程"。</div>
+    <div class="h"><b>2 · 转场念绿框</b>转场话术写死了。上一块收在哪、下一块从哪起,念绿色的「转场」框,不用自己接,冷场就没了。</div>
+    <div class="h"><b>3 · 图别逐字念</b>每张图配一句"手指着说什么"。念那一句,别照着图逐格解释——图是给学员事后看的,你只给一句抓手。</div>
+    <div class="timebar">
+      <span class="seg"><b>00</b> 3′</span><span class="seg"><b>01</b> 10′</span><span class="seg"><b>02</b> 7′</span><span class="seg"><b>03</b> 8′</span><span class="seg"><b>04</b> 10′</span><span class="seg"><b>05</b> 6′</span><span class="seg"><b>06</b> 4′</span><span class="seg"><b>07</b> 4′</span><span class="seg"><b>08</b> 5′</span><span class="seg"><b>09</b> 3′</span><span class="seg">合计 ≈60′</span>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+
+  <!-- 00 -->
+  <section class="m" id="s0">
+    <div class="m-head"><div class="m-num">00</div><h2>你来是干嘛的</h2><span class="clock">🕐 3 分钟</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"开始前先把你们的角色一句话说清——FDE 不签单、不谈价,就管三件事。这三件事记住了,后面所有内容都是围着它转的。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>三件事:</b>需求对接、技术信任、方案落地。带 3–5 人小组,把客户一句话做成线上能用的工作台。</div></li>
+        <li class="r"><span class="tag"></span><div><b>不越界:</b>价格转商务、竞品不主动谈、不替客户拍业务的板。</div></li>
+        <li class="r"><span class="tag"></span><div><b>一条总铁律:</b>以智能体设计为主、平台为辅。别一上来折腾平台。</div></li>
+        <li class="g"><span class="tag"></span><div>"验收 vs 真有人用"的区别——一句话点一下,细节留到模块 07 讲使用率时展开。</div></li>
+      </ul>
+      <div class="hook"><span class="lb">提问钩子</span>"谁能用一句话说清 FDE 和销售的区别?"——等一个人答,顺势收口到"对,我们管落地不管签单"。</div>
+      <div class="turn"><span class="lb">转场</span>角色清楚了。<span class="arw">→</span>"那这活到底怎么一步步干下来?先看整根骨架——五阶段。"</div>
+    </div>
+  </section>
+
+  <!-- 01 -->
+  <section class="m" id="s1">
+    <div class="m-head"><div class="m-num">01</div><h2>FDE 五阶段总览</h2><span class="clock">🕐 10 分钟 · 重头</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"这块是骨架课,后面全挂在这。你只要记住一条链 + 三套节奏 + 三处签字,这块就过了。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>一条链:</b>客户一句话 → 调研备弹 → 沟通出原型 → 需求确认+智能体设计 → 工作台上线 → 试用定稿 → 复制下个行业。用盖楼的比喻带一遍。</div></li>
+        <li class="r"><span class="tag"></span><div><b>两条线并行:</b>需求主线(对业务科室)+ 环境地基线(对信息科开 VPN/部署)。两线各走各的,<b>两线齐了才交付版本</b>。</div></li>
+        <li class="r"><span class="tag"></span><div><b>三套节奏别混:</b>2+1(数"次",需求侧)· 3/7/14(算"天",签字后开发)· Sprint S1–S4(团队推进骨架)。</div></li>
+        <li class="r"><span class="tag"></span><div><b>三处签字:</b>S1末对接确认表 · S2初需求最终确认表 · S4末交付签字表。漏一处后面返工。</div></li>
+        <li class="y"><span class="tag"></span><div>Sprint 四段各几天、数据治理最易超时——有时间展开,紧了就指图让自读。</div></li>
+        <li class="g"><span class="tag"></span><div>加时赛规则(甲方卡住发邮件留痕)——一句话带过。</div></li>
+      </ul>
+      <div class="fig"><span class="ic">👉 图</span><div><b>五阶段与Sprint关系图:</b>"上面一条是客户看到的五阶段,下面一条是你们团队的两周节奏,一一对应。你就记下面三个红框——三处签字卡口,一处都不能省。"</div></div>
+      <div class="hook"><span class="lb">提问钩子</span>报三个场景(改需求跑第三轮 / 签字后开发 / 甲方不开 VPN),问各属哪套节奏。全场抢答,热身效果好。</div>
+      <div class="turn"><span class="lb">转场</span>骨架有了。<span class="arw">→</span>"但走进医院,数据都在哪些系统里?这是新人最容易懵的一块,先补医疗底。"</div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section class="m" id="s2">
+    <div class="m-head"><div class="m-num">02</div><h2>医疗行业架构</h2><span class="clock">🕐 7 分钟</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"医疗智能体的燃料是数据,数据都躺在几个系统里。这块记住一个源头、一个'多半没有',就够上手了。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>五大系统:</b>HIS(挂号收费,<b>所有业务数据源头</b>)· EMR 病历 · LIS 检验 · PACS 影像 · CDR 汇总仓库。</div></li>
+        <li class="r"><span class="tag"></span><div><b>关键认知:</b>CDR 要过较高互联互通等级才建得起来,<b>大多数医院没有</b>——这就是要做 SDR 的原因(埋钩子,下一块揭)。</div></li>
+        <li class="r"><span class="tag"></span><div><b>一条现场铁律:</b>只跟 IT 聊不出业务需求,决策权在业务科室,信息科是给数据的配合方。</div></li>
+        <li class="y"><span class="tag"></span><div>智能体矩阵(围术期/质控/患者/运营/HR)——报一遍名字,说"接新场景先看能不能搬"。</div></li>
+        <li class="g"><span class="tag"></span><div>术语表(国考/DRG/CMI/药占比/耗占比/平均住院日/互联互通)——<b>别逐条念</b>,说"这张表课后背,客户随口说术语你能接住就算过"。</div></li>
+      </ul>
+      <div class="fig"><span class="ic">👉 图</span><div><b>五大系统数据流图:</b>"顺着箭头看——HIS 是源头,往下汇。重点是这条灰色虚线:多数医院没 CDR,SDR 就直接接各系统。记住智能体永远走最右边的 SDR。"</div></div>
+      <div class="hook"><span class="lb">提问钩子</span>"客户说'从 HIS 拉个数据',你第一反应问什么?"——引出"数据在哪张表、跟别的系统通不通",带出草图意识。</div>
+      <div class="turn"><span class="lb">转场</span>系统认识了。<span class="arw">→</span>"那我们拿什么把这些数据接起来、喂给智能体?这就是藏在背后的两块地基——SEAF 和 SDR。"</div>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section class="m" id="s3">
+    <div class="m-head"><div class="m-num">03</div><h2>技术底座 · SEAF + SDR</h2><span class="clock">🕐 8 分钟</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"这块讲两个藏在背后的地基。记住三句话:对客户只有一个纳米Work、SDR 是取数唯一入口、去医院必被问数据安全。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>SEAF 用发电厂比喻:</b>对外只有一个产品——纳米Work 工作台;SEAF 像发电厂,藏底层供能不露面。客户只碰插座和电器。</div></li>
+        <li class="r"><span class="tag"></span><div><b>SDR 是地基不是锦上添花:</b>商业化项目全卡在"数据太多太乱拿不出来"。没数据 → 智能体是空壳。</div></li>
+        <li class="r"><span class="tag"></span><div><b>SDR vs CDR 一句话:</b>智能体从不直连医院数据库,一律走 SDR。有 CDR 就抽 CDR,没 CDR 就直接接各系统。</div></li>
+        <li class="r"><span class="tag"></span><div><b>数据安全三问答(去医院必被问):</b>数据不出院(360私有云专属实例)· 离线模型不存储不联网不训练 · 180天可配审计。这三句背下来。</div></li>
+        <li class="y"><span class="tag"></span><div>SDR 四个卡点对应四个解法——有时间过表,紧了指教程。</div></li>
+        <li class="g"><span class="tag"></span><div>平台实操自查清单(搭Agent/接Connector/Trace排错)——说"这五项在集训和跟岗手上练,今天只让你知道有这关"。</div></li>
+      </ul>
+      <div class="fig"><span class="ic">👉 图</span><div><b>SDR/CDR 区别对照图:</b>"左边有 CDR 的医院轻松,右边多数医院没 CDR、SDR 累点。但你只要记最底下那句——智能体永远走 SDR,从不直连数据库。"</div></div>
+      <div class="hook"><span class="lb">提问钩子</span>"你是信息科主任,最担心什么?"——引出数据安全,顺势演一遍三问答,让学员感受现场压力。</div>
+      <div class="turn"><span class="lb">转场</span>地基有了。<span class="arw">→</span>"数据能拿到了,怎么把业务专家脑子里的经验,拆成一个个能跑的智能体?进最核心的技术阶段。"</div>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section class="m" id="s4">
+    <div class="m-head"><div class="m-num">04</div><h2>需求与智能体设计</h2><span class="clock">🕐 10 分钟 · 重头</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"这是最核心的技术阶段,盖了阶段一二三。记住两把工具:挖需求的六项框架、拆智能体的五层拆解法。最后卡一道 Eval 门禁。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>挖需求两件套:</b>六项调研框架(目标/要什么/痛点/价值/业务流程/数据流程)+ 先问后讲、让客户自己说。</div></li>
+        <li class="r"><span class="tag"></span><div><b>先签字再设计:</b>需求收敛成《需求最终确认表》签字定死——猜错一条后面全返工。</div></li>
+        <li class="r"><span class="tag"></span><div><b>五层拆解法:</b>Workflow → 节点数据流 → Playbook → 边界 → 异常,映射到 Agent 六组件。<b>边界和异常最容易漏</b>。</div></li>
+        <li class="r"><span class="tag"></span><div><b>Eval 门禁:</b>准确率 ≥90% 才放行,不达标不上线。这是硬线。</div></li>
+        <li class="y"><span class="tag"></span><div>心内科"四步归因"样板(3天→15分钟)——<b>有时间一定讲,这是最抓人的落地例子</b>;真紧了才砍。</div></li>
+        <li class="g"><span class="tag"></span><div>七种咨询方法逐条(STAR/5W1H/量化锚定/四把钥匙)——说"显性靠前三种、隐性靠四把钥匙,吐槽法最好使",逐条留自读。</div></li>
+      </ul>
+      <div class="fig"><span class="ic">👉 图</span><div><b>五层拆解到上线流程图:</b>"三层往下看——五层拆解(红色'异常'最爱漏)映射进六组件,调完过 Eval ≥90% 才放行。你手指停在红色异常框上强调一下。"</div></div>
+      <div class="hook"><span class="lb">提问钩子</span>给一个假场景("科室想看月度运营"),现场让两三个人各说一层拆解,你补边界和异常——立刻看出谁真懂。</div>
+      <div class="turn"><span class="lb">转场</span>智能体设计好了。<span class="arw">→</span>"设计是图纸,怎么真盖成能访问的系统?进阶段四——最容易失控的一步。"</div>
+    </div>
+  </section>
+
+  <!-- 05 -->
+  <section class="m" id="s5">
+    <div class="m-head"><div class="m-num">05</div><h2>行业工作台</h2><span class="clock">🕐 6 分钟</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"阶段四把前面的原型和智能体挂上去跑起来。记住:五步走 + 技术栈锁死。阶段四不重新设计,只把设计好的挂上去。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>五步走:</b>建模 → 后端 → 前端 → 联调(真实数据非mock)→ 上线(极库云→容器云给URL)。上一步输出=下一步输入。</div></li>
+        <li class="r"><span class="tag"></span><div><b>技术栈锁死:</b>后端 FastAPI、前端 Vue3+Vben,多租户强制 hospital_id。<b>技术栈一乱,复制无从谈起</b>。</div></li>
+        <li class="r"><span class="tag"></span><div><b>一条铁律:</b>建模不通不许往下走;先 demo 后完整,别一口气憋大的。</div></li>
+        <li class="y"><span class="tag"></span><div>三层门禁(铁律CLAUDE.md + 规范库 + CI硬拦截)约束 AI 别乱写——有时间提一句。</div></li>
+        <li class="g"><span class="tag"></span><div>64 个标准 skill 的细节——一句"照规范生成不从零手写",留自读。</div></li>
+      </ul>
+      <div class="fig"><span class="ic">👉 图</span><div><b>工作台五步走:</b>"就一条流水线,建模在最左边——记住'建模不通不许往下走',这是最常翻车的地方。"</div></div>
+      <div class="turn"><span class="lb">转场</span>系统能跑了、要上线。<span class="arw">→</span>"上线走哪条路、怎么保证 A 院看不到 B 院数据?下一块极库云。"</div>
+    </div>
+  </section>
+
+  <!-- 06 -->
+  <section class="m" id="s6">
+    <div class="m-head"><div class="m-num">06</div><h2>极库云 + 容器云</h2><span class="clock">🕐 4 分钟</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"上线走一条固定链路,守两条硬要求。这块短,记链路 + 隔离就行。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>上线链路:</b>写代码 → 极库云(托管+CI)→ 360智汇云容器云(部署)→ 给客户可访问 URL。</div></li>
+        <li class="r"><span class="tag"></span><div><b>两条硬要求:</b>多租户 hospital_id 隔离(数据串了是事故)· 无硬编码密钥。</div></li>
+        <li class="y"><span class="tag"></span><div>极库云三重身份(代码托管/知识库中心/CI)——有时间点一下。</div></li>
+        <li class="g"><span class="tag"></span><div>统一工具链五件套——一句"工具统一才能复制",留自读。</div></li>
+      </ul>
+      <div class="fig"><span class="ic">👉 图</span><div><b>上线链路图:</b>"从左到右一条线到 URL 交给客户。红字那行(隔离+无密钥)是全程守住的底线。"</div></div>
+      <div class="turn"><span class="lb">转场</span>东西上线了。<span class="arw">→</span>"上线不是结束,是试运行的开始——怎么盯到真有人用?"</div>
+    </div>
+  </section>
+
+  <!-- 07 -->
+  <section class="m" id="s7">
+    <div class="m-head"><div class="m-num">07</div><h2>客户试用与优化</h2><span class="clock">🕐 4 分钟</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"产品做出来不算完,试运行才开始。记住三轮定稿 + 一条收官铁律。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>三轮递进定稿:</b>第一轮看方向 → 第二轮抠细节 → 第三轮定死。问题从粗到细,标准从松到严。</div></li>
+        <li class="r"><span class="tag"></span><div><b>收官铁律:</b>验收只代表"当时能跑",<b>30 天使用率才代表真有人用</b>。30/60/90 天盯不同的事。</div></li>
+        <li class="y"><span class="tag"></span><div>反馈三分类(功能缺失/逻辑不通/体验)+ 五步处理——有时间提。</div></li>
+        <li class="g"><span class="tag"></span><div>Trace 全链路回放——一句"出问题能定位是理解错还是工具错",留自读。</div></li>
+      </ul>
+      <div class="fig"><span class="ic">👉 图</span><div><b>三轮定稿漏斗图:</b>"像漏斗,一轮比一轮窄、一轮比一轮严。别停在第一轮看着对就交付。"</div></div>
+      <div class="turn"><span class="lb">转场</span>交付闭环讲完了。<span class="arw">→</span>"这一路上有哪些规矩得守、日常在哪管项目?收口到项管规范。"</div>
+    </div>
+  </section>
+
+  <!-- 08 -->
+  <section class="m" id="s8">
+    <div class="m-head"><div class="m-num">08</div><h2>项目管理规范</h2><span class="clock">🕐 5 分钟</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"这块是贯穿全程的规矩,日常都落在极库云上。记住五类规范卡在哪、两类角色各干啥。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>五类规范按时间线卡节点:</b>签字前交付规范 → 设计时设计规范 → 开发中质量规范 → 要交付验收规范 → 交付后复制规范。</div></li>
+        <li class="r"><span class="tag"></span><div><b>两类角色:</b>项目经理(大脑,指挥/盯进度/拍板,不下场)· 交付工程师(手脚,拆场景/搭系统/上线)。<b>项目经理指挥、交付干活。</b></div></li>
+        <li class="r"><span class="tag"></span><div><b>三个闸口:</b>72h 签字制 · 三个人工确认节点(原型签字/建模评审/合并审核)· P0–P3 响应 SLA。</div></li>
+        <li class="y"><span class="tag"></span><div>需求拆条→排版本→盯进度(10个需求拆10条排P0/P1/P2)——有时间用例子过一遍。</div></li>
+        <li class="g"><span class="tag"></span><div>产品复制模式(标品/定制化决策)——一句"标品照SOP快走,定制先评估",留自读。</div></li>
+      </ul>
+      <div class="fig"><span class="ic">👉 图</span><div><b>需求管理流程图:</b>"用户10个需求 → 极库云拆10条 → 排进P0/P1/P2三个版本 → 交付每天更新。你只强调'别一锅端,按优先级装版本'。"</div></div>
+      <div class="turn"><span class="lb">转场</span>规矩清楚了。<span class="arw">→</span>"最后,把前面全部串一遍——实战演练怎么考出师。"</div>
+    </div>
+  </section>
+
+  <!-- 09 -->
+  <section class="m" id="s9">
+    <div class="m-head"><div class="m-num">09</div><h2>项目实战演练</h2><span class="clock">🕐 3 分钟 · 收口</span></div>
+    <div class="m-body">
+      <div class="say"><span class="lb">开场怎么说</span>"前面八块学完,最后用实战串一遍。3–4 人一组接一个陌生医疗场景,从阶段一走到出 demo,答辩过五维评分。"</div>
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>五维计分卡:</b>交付效率20% · 验收通过率25% · 30天使用率25% · 产品化贡献15% · 知识沉淀15%。后两项占30%,交付完得给体系留东西。</div></li>
+        <li class="r"><span class="tag"></span><div><b>质量三道防线:</b>准入(无证不上岗)· 过程(S1–S4节点检查,卡住不许往下)· 结果(30/60/90天使用率)。</div></li>
+        <li class="y"><span class="tag"></span><div>场景剧本(教练智能体扮科室主任/信息科/临床医生)——有时间说玩法。</div></li>
+        <li class="g"><span class="tag"></span><div>分组任务每阶段产出物表——指教程,一句"每阶段都有明确产出物,不产出等于没学"。</div></li>
+      </ul>
+      <div class="say" style="border-color:var(--alert);background:color-mix(in srgb,var(--alert) 6%,transparent)"><span class="lb" style="color:var(--alert)">收尾一句</span>"记住今天最该带走的:以智能体设计为主、平台为辅;需求先签字再设计;验收只代表当时能跑,30 天使用率才代表真有人用。散会。"</div>
+      <div class="hook"><span class="lb">留白提问</span>"今天哪一块你觉得回去马上能用上?"——收集反馈,也让大家自己复述一遍重点。</div>
+    </div>
+  </section>
+
+  <div class="divider">讲师自查</div>
+  <section class="m" id="tips">
+    <div class="m-body">
+      <ul class="beats">
+        <li class="r"><span class="tag"></span><div><b>手边只放这份,教程投屏。</b>你讲你的红绿灯,学员屏幕上是教程——两份分工,别自己对着教程逐字念。</div></li>
+        <li class="r"><span class="tag"></span><div><b>过半看表。</b>讲到模块 05 该到 34 分钟左右;超了就把 06/07/08 的黄灯全砍成灰灯,主干照样完整。</div></li>
+        <li class="r"><span class="tag"></span><div><b>转场只念绿框,别即兴。</b>今天磕绊多半在转场——写死了就照念,一句话把上下块缝上。</div></li>
+        <li class="y"><span class="tag"></span><div>三个提问钩子(01/03/04)是你的喘气点,也是把学员从听众变参与者的开关。至少用满两个。</div></li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    FDE 培训 · 讲师版 60 分钟讲稿 · 配套《FDE 新任项目经理培训教程》<br>
+    <b>教程给学员读,这份给你讲。红灯讲完,这堂课就立住了。</b>
+  </div>
+</footer>
+
+</body>
+</html>

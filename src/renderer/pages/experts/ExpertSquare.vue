@@ -57,31 +57,31 @@
           <div class="flex items-center gap-2 shrink-0">
             <button
               @click="toggleDevMode"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-medium border transition"
+              class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-medium border active:scale-95 transition-all"
               :class="devMode
-                ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                ? 'bg-blue-600 border-blue-600 text-white'
                 : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'"
             >
-              <i class="fa-solid fa-code text-[10px]"></i>开发者模式
+              <i class="fa-solid fa-code text-[9px]"></i>开发者
             </button>
             <button
               v-if="devMode"
               @click="openEditor(null)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm shadow-blue-500/25"
+              class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-medium bg-blue-600 hover:bg-blue-700 active:scale-95 text-white transition-all"
             >
-              <i class="fa-solid fa-plus text-[10px]"></i>创建应用
+              <i class="fa-solid fa-plus text-[9px]"></i>创建
             </button>
           </div>
         </div>
 
-        <div class="grid gap-4 mb-5" :class="devMode ? 'grid-cols-4' : 'grid-cols-3'">
+        <div class="grid gap-3 mb-4" :class="devMode ? 'grid-cols-4' : 'grid-cols-3'">
           <div v-for="s in statCards" :key="s.label" class="stat-card">
-            <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px ${s.bg}55` }">
+            <div class="stat-icon" :style="{ background: s.bg }">
               <i :class="'fa-solid ' + s.icon"></i>
             </div>
             <div>
-              <div class="text-[22px] font-bold text-slate-800 leading-none tracking-tight">{{ s.value }}</div>
-              <div class="text-[11px] text-slate-400 mt-1.5">{{ s.label }}</div>
+              <div class="text-[18px] font-bold text-slate-800 leading-none tracking-tight">{{ s.value }}</div>
+              <div class="text-[10px] text-slate-400 mt-1">{{ s.label }}</div>
             </div>
           </div>
         </div>
@@ -94,7 +94,7 @@
           >
             <div class="es-card__accent" :style="{ background: app.color }"></div>
             <div class="flex items-start gap-3">
-              <span class="es-icon" :style="{ background: app.color, boxShadow: `0 6px 16px ${app.color}55` }">
+              <span class="es-icon" :style="{ background: app.color }">
                 <i :class="'fa-solid fa-' + (app.icon || 'rocket')"></i>
               </span>
               <div class="flex-1 min-w-0">
@@ -113,18 +113,18 @@
               </div>
             </div>
             <p class="text-[12px] text-slate-500 mt-3 leading-relaxed line-clamp-2">{{ app.summary }}</p>
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+            <div class="mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
               <div class="flex items-center gap-2">
                 <button
                   @click="openDetail(app)"
-                  class="text-[11px] text-slate-400 hover:text-blue-600 transition-colors"
+                  class="text-[11px] text-slate-400 hover:text-blue-600 active:scale-95 transition-all cursor-pointer"
                 >
                   <i class="fa-solid fa-circle-info mr-1"></i>查看详情
                 </button>
                 <button
                   v-if="devMode && app.source === 'local'"
                   @click.stop="openEditor(app)"
-                  class="w-6 h-6 rounded-md text-slate-300 hover:text-blue-600 hover:bg-blue-50 transition"
+                  class="w-6 h-6 rounded-md text-slate-300 hover:text-blue-600 hover:bg-blue-50 active:scale-90 transition-all cursor-pointer"
                   title="编辑应用"
                 >
                   <i class="fa-solid fa-pen text-[10px]"></i>
@@ -133,14 +133,14 @@
               <button
                 v-if="app.status === 'published'"
                 @click.stop="launchApp(app)"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm"
+                class="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 hover:text-blue-700 active:scale-95 transition-all cursor-pointer"
               >
                 <i class="fa-solid fa-bolt text-[10px]"></i>启动应用
               </button>
               <button
                 v-else
                 @click.stop="openEditor(app)"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11.5px] font-medium bg-amber-500 hover:bg-amber-600 text-white transition shadow-sm"
+                class="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 hover:text-amber-700 active:scale-95 transition-all cursor-pointer"
               >
                 <i class="fa-solid fa-pen text-[10px]"></i>编辑
               </button>
@@ -286,6 +286,22 @@
               </div>
             </div>
 
+            <!-- 使用技能 -->
+            <div v-if="(selected.skills || []).length" class="mb-5">
+              <h4 class="text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">
+                <i class="fa-solid fa-wand-magic-sparkles mr-1.5 text-blue-500"></i>使用技能
+              </h4>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="s in selected.skills"
+                  :key="s"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] bg-violet-50 text-violet-700 border border-violet-100"
+                >
+                  <i class="fa-solid fa-puzzle-piece text-[9px]"></i>{{ s }}
+                </span>
+              </div>
+            </div>
+
             <!-- 专家资产（仅开发者模式） -->
             <div v-if="devMode" class="mb-5">
               <h4 class="text-[12px] font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -334,20 +350,20 @@
           </div>
 
           <!-- 底部 CTA -->
-          <div class="px-5 py-4 border-t border-slate-200/80 shrink-0">
+          <div class="px-5 py-3 border-t border-slate-200/80 shrink-0">
             <button
               v-if="selected.status === 'published'"
               @click="launchApp(selected)"
-              class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm shadow-blue-500/25"
+              class="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold bg-blue-600 hover:bg-blue-700 active:scale-[0.97] text-white transition-all"
             >
-              <i class="fa-solid fa-bolt text-[11px]"></i>启动该应用
+              <i class="fa-solid fa-bolt text-[10px]"></i>启动该应用
             </button>
             <button
               v-else
               @click="openEditor(selected)"
-              class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-amber-500 hover:bg-amber-600 text-white transition shadow-sm"
+              class="w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold bg-amber-500 hover:bg-amber-600 active:scale-[0.97] text-white transition-all"
             >
-              <i class="fa-solid fa-pen text-[11px]"></i>编辑应用
+              <i class="fa-solid fa-pen text-[10px]"></i>编辑应用
             </button>
           </div>
         </aside>
@@ -436,6 +452,25 @@
             <div>
               <label class="ed-label">风险提醒</label>
               <input v-model="form.riskNotice" type="text" class="ed-input" placeholder="需要提醒用户注意的风险" />
+            </div>
+
+            <div>
+              <label class="ed-label">
+                绑定技能 <span class="font-normal text-slate-400">(勾选后引导专家优先使用，已选 {{ form.skills.length }})</span>
+              </label>
+              <div v-if="allSkills.length" class="skill-picker">
+                <label
+                  v-for="sk in allSkills"
+                  :key="sk.id"
+                  class="skill-chip"
+                  :class="form.skills.includes(sk.name) ? 'skill-chip--on' : ''"
+                >
+                  <input type="checkbox" class="hidden" :value="sk.name" v-model="form.skills" />
+                  <i class="fa-solid fa-check text-[9px]" v-if="form.skills.includes(sk.name)"></i>
+                  <span class="truncate">{{ sk.name }}</span>
+                </label>
+              </div>
+              <p v-else class="text-[11px] text-slate-400 py-2">暂无可用技能，可先到「技能」页导入</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -640,6 +675,20 @@ const businessCategories = categories.filter((c) => !virtualCatIds.includes(c.id
 
 // ── 本地应用 ──
 const localApps = ref([]);
+const allSkills = ref([]);
+
+async function refreshSkills() {
+  try {
+    const res = await window.api?.skills?.getManifest();
+    if (res && res.success && res.data && Array.isArray(res.data.skills)) {
+      allSkills.value = res.data.skills.map((s) => ({ id: s.id, name: s.name, group: s.group, summary: s.summary || s.description || '' }));
+    } else {
+      allSkills.value = [];
+    }
+  } catch (e) {
+    allSkills.value = [];
+  }
+}
 
 async function refreshLocalApps() {
   try {
@@ -656,6 +705,7 @@ async function refreshLocalApps() {
 
 onMounted(() => {
   refreshLocalApps();
+  refreshSkills();
 });
 
 // 合并的完整应用列表
@@ -801,6 +851,7 @@ const form = reactive({
   author: '',
   version: '1.0.0',
   preferredModel: '',
+  skills: [],
 });
 
 function resetForm() {
@@ -820,6 +871,7 @@ function resetForm() {
   form.author = '';
   form.version = '1.0.0';
   form.preferredModel = '';
+  form.skills = [];
 }
 
 function openEditor(app) {
@@ -841,6 +893,7 @@ function openEditor(app) {
     form.author = (app.developer && app.developer.author) || '';
     form.version = (app.developer && app.developer.version) || '1.0.0';
     form.preferredModel = app.preferredModel || '';
+    form.skills = Array.isArray(app.skills) ? [...app.skills] : [];
   } else {
     resetForm();
   }
@@ -877,6 +930,7 @@ function buildPayload() {
       version: form.version.trim() || '1.0.0',
     },
     preferredModel: form.preferredModel.trim(),
+    skills: [...form.skills],
   };
   if (form.id) payload.id = form.id;
   return payload;
@@ -1095,6 +1149,7 @@ async function openAssetDir(type) {
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 .pgn:hover:not(:disabled) { border-color: #93b4fb; color: #2563eb; }
+.pgn:active:not(:disabled) { transform: scale(0.92); }
 .pgn--cur { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 600; }
 .pgn:disabled { opacity: 0.4; cursor: not-allowed; }
 
@@ -1112,6 +1167,7 @@ async function openAssetDir(type) {
 }
 .tree-node:hover { background: #f0f5ff; color: #2563eb; }
 .tree-node:hover .tree-badge { transform: scale(1.06); }
+.tree-node:active { transform: scale(0.97); }
 .tree-node--active {
   background: linear-gradient(90deg, #e8f1ff, #f3f8ff);
   color: #1d4ed8;
@@ -1143,28 +1199,29 @@ async function openAssetDir(type) {
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 15px 16px;
-  border-radius: 14px;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
   background: linear-gradient(180deg, #ffffff, #fbfdff);
   border: 1px solid #e8ecf3;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
 }
 .stat-card:hover {
-  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.10);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
+  transform: translateY(-1px);
   border-color: #d4e2fb;
 }
+.stat-card:active { transform: scale(0.97); }
 .stat-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 16px;
+  font-size: 13px;
   flex-shrink: 0;
 }
 
@@ -1174,8 +1231,8 @@ async function openAssetDir(type) {
   width: 100%;
   background: #fff;
   border: 1px solid #e8ecf0;
-  border-radius: 14px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 14px;
   overflow: hidden;
   transition: box-shadow 0.22s ease, transform 0.22s ease, border-color 0.22s ease;
 }
@@ -1184,26 +1241,27 @@ async function openAssetDir(type) {
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
+  height: 2px;
   opacity: 0;
   transition: opacity 0.22s ease;
 }
 .es-card:hover {
-  box-shadow: 0 12px 30px rgba(30, 58, 138, 0.13);
-  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(30, 58, 138, 0.10);
+  transform: translateY(-2px);
   border-color: #c7d7f5;
 }
+.es-card:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(30, 58, 138, 0.08); }
 .es-card:hover .es-card__accent { opacity: 1; }
 
 .es-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 18px;
+  font-size: 15px;
   flex-shrink: 0;
 }
 
@@ -1264,6 +1322,41 @@ async function openAssetDir(type) {
   border-radius: 9px;
   background: #fff;
   cursor: pointer;
+}
+
+/* ── 技能多选 ── */
+.skill-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+.skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 160px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #64748b;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.skill-chip:hover { border-color: #93b4fb; color: #2563eb; }
+.skill-chip:active { transform: scale(0.95); }
+.skill-chip--on {
+  background: #eff4ff;
+  border-color: #2563eb;
+  color: #1d4ed8;
+  font-weight: 500;
 }
 
 /* ── Toast ── */

@@ -13,7 +13,10 @@
       <!-- 1. Agent Status -->
       <AccordionSection title="智能体状态" icon="fa-solid fa-robot" icon-color="#2563eb" :default-open="true">
         <div class="flex items-center gap-2 mb-2">
-          <span class="w-2 h-2 rounded-full bg-green-500 shrink-0 animate-pulse"></span>
+          <span v-if="projectMeta?.aiApp?.icon" class="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" :style="{ background: (projectMeta.aiApp.color || '#2563eb') + '14' }">
+            <i :class="'fa-solid fa-' + projectMeta.aiApp.icon" class="text-[10px]" :style="{ color: projectMeta.aiApp.color || '#2563eb' }"></i>
+          </span>
+          <span v-else class="w-2 h-2 rounded-full bg-green-500 shrink-0 animate-pulse"></span>
           <span class="text-xs font-semibold text-slate-800">{{ (projectMeta?.aiApp?.name) || '沧澜 AI' }}</span>
           <span class="text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded font-medium ml-auto">在线</span>
         </div>

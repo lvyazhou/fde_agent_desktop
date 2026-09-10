@@ -207,6 +207,7 @@ const api = {
     },
     browseSkills(query) { return invoke('hermes:browse-skills', { query }); },
     generateSuggestions(userMessage, aiResponse) { return invoke('hermes:generate-suggestions', { userMessage, aiResponse }); },
+    resolveFileRef(slug, ref) { return invoke('hermes:resolve-file-ref', { slug, ref }); },
     onSessionUpdate(handler) { return on('hermes:session-update', handler); },
     onPermissionRequest(handler) { return on('hermes:permission-request', handler); },
   },
@@ -216,6 +217,7 @@ const api = {
     readDirectory(dirPath) { return invoke('fs:read-directory', dirPath); },
     getHomeDir() { return invoke('fs:get-home-dir'); },
     saveLocalFile(srcPath) { return invoke('fs:save-local-file', srcPath); },
+    readLocalFileDataUri(filePath) { return invoke('fs:read-local-file-data-uri', filePath); },
   },
 
   skills: {
