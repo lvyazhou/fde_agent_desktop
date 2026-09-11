@@ -715,20 +715,26 @@ const renderAssistantContent = (content) => {
       const safePath = absPath.replace(/\\/g, '/').replace(/^\//, '');
       return `<img src="file:///${safePath}" class="max-w-[480px] rounded-lg border border-slate-200 my-2 cursor-zoom-in chat-inline-img" onerror="this.style.display='none'" />`;
     };
+    // 非图片文件只有在项目目录里真实解析到(resolvedFiles)时才渲染成可下载卡片。
+    // 否则返回 null —— 那只是模型正文里顺口提到的一个文件名(如讲解代码时的
+    // run_agent.py / registry.py),本地并不存在,渲染成卡片会得到"打不开、下不了"的死卡片。
     const render = (fp) => {
       const ext = (fp.split('.').pop() || '').toLowerCase();
       if (IMG_EXTS_SET.has(ext)) {
         const isAbsolute = fp.startsWith('/');
-        if (!isAbsolute && !resolvedFiles.has(fp)) return card(fp);
+        if (!isAbsolute && !resolvedFiles.has(fp)) return null;
         return imgTag(fp);
       }
+      if (!resolvedFiles.has(fp)) return null; // 未解析到的非图片文件 → 不转卡片
       return card(fp);
     };
 
-    // Use placeholders so marked doesn't escape HTML inside table cells
+    // Use placeholders so marked doesn't escape HTML inside table cells.
+    // 返回 null 表示不转卡片:调用方应保留原始匹配文本,交给 marked 正常渲染。
     const placeholders = [];
     const ph = (fp) => {
       const html = render(fp);
+      if (html == null) return null;
       const id = `XDLVR${placeholders.length}X`;
       placeholders.push(html);
       return id;
@@ -738,32 +744,32 @@ const renderAssistantContent = (content) => {
     // 1. MEDIA: prefix
     processed = processed.replace(
       new RegExp(`MEDIA:([^\\s\\n]+\\.(${ALL_EXTS}))`, 'gi'),
-      (_, fp) => ph(fp)
+      (m, fp) => ph(fp) ?? m
     );
     // 2. Bare absolute paths on their own line
     processed = processed.replace(
       new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${ALL_EXTS}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
-      (m, fp) => '\n' + ph(fp) + '\n'
+      (m, fp) => { const id = ph(fp); return id == null ? m : '\n' + id + '\n'; }
     );
     // 3. Inline absolute paths (e.g. inside table cells)
     processed = processed.replace(
       new RegExp(`(?<![\\w/:.])(\\/[^\\s\`<>|]+\\.(${ALL_EXTS}))(?![\\w/])`, 'gi'),
-      (_, fp) => ph(fp)
+      (m, fp) => ph(fp) ?? m
     );
     // 4. Relative paths like assets/foo.png, output/report.pdf
     processed = processed.replace(
       new RegExp(`(?<![\\w/:.])((?:[\\w.-]+\\/)+[\\w.-]+\\.(${ALL_EXTS}))(?![\\w/])`, 'gi'),
-      (m, fp) => ph(fp)
+      (m, fp) => ph(fp) ?? m
     );
     // 5. Markdown image syntax (only images)
     processed = processed.replace(
       new RegExp(`!\\[[^\\]]*\\]\\((\\/[^)]+\\.(${IMG_EXTS}))\\)`, 'gi'),
-      (_, fp) => ph(fp)
+      (m, fp) => ph(fp) ?? m
     );
     // 6. Bare Chinese-prose filename
     processed = processed.replace(
       new RegExp(`(?:已生成[：:.]\\s*|生成了\\s*)([^\\s，。、\\n]+\\.(${ALL_EXTS}))`, 'gi'),
-      (m, fn) => ph(fn)
+      (m, fn) => { const id = ph(fn); return id == null ? m : m.replace(fn, id); }
     );
 
     // Let marked parse (placeholders are plain text, won't be escaped)

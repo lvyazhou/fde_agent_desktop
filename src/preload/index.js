@@ -62,6 +62,7 @@ const validInvokeChannels = new Set([
   'skills:open',
   'skills:import-zip',
   'skills:delete',
+  'skills:write',
   'skills:hub-search',
   'skills:hub-install',
   // 环境自检 + 连通性
@@ -78,6 +79,11 @@ const validInvokeChannels = new Set([
   'ai-apps:publish',
   'ai-apps:unpublish',
   'ai-apps:delete',
+  // 内置专家覆盖层
+  'ai-apps:builtin-overrides',
+  'ai-apps:builtin-save',
+  'ai-apps:builtin-delete',
+  'ai-apps:builtin-reset',
   // AI 应用记忆 + 知识库
   'ai-apps:memory-get',
   'ai-apps:memory-save',
@@ -224,6 +230,7 @@ contextBridge.exposeInMainWorld('api', {
     importZip() { return invoke('skills:import-zip'); },
     onImportProgress(handler) { return on('skills:import-progress', handler); },
     delete(skill) { return invoke('skills:delete', { skill }); },
+    write(payload) { return invoke('skills:write', payload); },
     hubSearch(query, tag, limit, cursor) { return invoke('skills:hub-search', { query, tag, limit, cursor }); },
     hubInstall(item) { return invoke('skills:hub-install', { slug: item.slug, version: item.version, downloadUrl: item.downloadUrl }); },
   },
@@ -262,6 +269,11 @@ contextBridge.exposeInMainWorld('api', {
     publish(id) { return invoke('ai-apps:publish', { id }); },
     unpublish(id) { return invoke('ai-apps:unpublish', { id }); },
     delete(id) { return invoke('ai-apps:delete', { id }); },
+    // 内置专家覆盖层
+    builtinOverrides() { return invoke('ai-apps:builtin-overrides'); },
+    builtinSave(id, patch) { return invoke('ai-apps:builtin-save', { id, patch }); },
+    builtinDelete(id) { return invoke('ai-apps:builtin-delete', { id }); },
+    builtinReset(id) { return invoke('ai-apps:builtin-reset', { id }); },
     // 记忆
     memoryGet(id) { return invoke('ai-apps:memory-get', { id }); },
     memorySave(id, content) { return invoke('ai-apps:memory-save', { id, content }); },

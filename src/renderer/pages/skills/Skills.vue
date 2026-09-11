@@ -155,7 +155,7 @@
     <!-- ── 技能说明抽屉 ────────────────────────── -->
     <transition name="drawer">
       <div v-if="selected" class="fixed inset-0 z-50">
-        <div class="absolute inset-0 bg-slate-900/40" @click="selected = null"></div>
+        <div class="absolute inset-0 bg-slate-900/40" @click="!editing && (selected = null)"></div>
         <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] bg-white shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
@@ -168,13 +168,26 @@
               </div>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <button @click="openDir(selected)" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-slate-600 hover:bg-slate-100 transition" title="打开技能目录">
-                <i class="fa-solid fa-folder-open text-[11px]"></i><span>打开目录</span>
-              </button>
-              <button @click="deleteSkill(selected)" :disabled="deleting" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-rose-500 hover:bg-rose-50 transition disabled:opacity-50" title="删除技能">
-                <i class="fa-solid fa-trash text-[11px]"></i><span>删除</span>
-              </button>
-              <button @click="selected = null" class="w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 transition"><i class="fa-solid fa-xmark"></i></button>
+              <template v-if="!editing">
+                <button @click="startEdit()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-blue-600 hover:bg-blue-50 transition" title="编辑技能">
+                  <i class="fa-solid fa-pen text-[11px]"></i><span>编辑</span>
+                </button>
+                <button @click="openDir(selected)" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-slate-600 hover:bg-slate-100 transition" title="打开技能目录">
+                  <i class="fa-solid fa-folder-open text-[11px]"></i><span>打开目录</span>
+                </button>
+                <button @click="deleteSkill(selected)" :disabled="deleting" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-rose-500 hover:bg-rose-50 transition disabled:opacity-50" title="删除技能">
+                  <i class="fa-solid fa-trash text-[11px]"></i><span>删除</span>
+                </button>
+                <button @click="selected = null" class="w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 transition"><i class="fa-solid fa-xmark"></i></button>
+              </template>
+              <template v-else>
+                <button @click="saveEdit()" :disabled="saving" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] text-white bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50" title="保存">
+                  <i class="fa-solid text-[11px]" :class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i><span>{{ saving ? '保存中…' : '保存' }}</span>
+                </button>
+                <button @click="cancelEdit()" :disabled="saving" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-slate-600 hover:bg-slate-100 transition disabled:opacity-50" title="取消">
+                  <i class="fa-solid fa-xmark text-[11px]"></i><span>取消</span>
+                </button>
+              </template>
             </div>
           </div>
 
@@ -187,7 +200,44 @@
               <i class="fa-solid fa-triangle-exclamation text-xl mb-2 text-amber-400"></i>
               <span class="text-[12px]">{{ error }}</span>
             </div>
-            <div v-else class="prose prose-sm prose-slate max-w-none skill-md" v-html="rendered"></div>
+            <div v-else-if="!editing" class="prose prose-sm prose-slate max-w-none skill-md" v-html="rendered"></div>
+            <!-- 编辑表单 -->
+            <div v-else class="space-y-4">
+              <div>
+                <label class="block text-[12px] font-medium text-slate-600 mb-1.5">名称</label>
+                <input v-model="form.name" type="text" placeholder="技能显示名称"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[12px] font-medium text-slate-600 mb-1.5">分类</label>
+                  <select v-model="form.category"
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 text-[13px] text-slate-800 bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                    <option v-for="g in SKILL_GROUP_OPTIONS" :key="g.id" :value="g.id">{{ g.name }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[12px] font-medium text-slate-600 mb-1.5">图标 <span class="text-slate-400 font-normal">(Font Awesome 名)</span></label>
+                  <div class="flex items-center gap-2">
+                    <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
+                      <i :class="faIcon(form.icon, 'cube')"></i>
+                    </span>
+                    <input v-model="form.icon" type="text" placeholder="如 star / wand-magic-sparkles"
+                      class="flex-1 min-w-0 px-3 py-2 rounded-lg border border-slate-200 text-[13px] text-slate-800 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[12px] font-medium text-slate-600 mb-1.5">描述</label>
+                <textarea v-model="form.description" rows="3" placeholder="技能触发描述(agent 据此判断何时调用)"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 text-[13px] text-slate-800 leading-relaxed resize-y focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"></textarea>
+              </div>
+              <div>
+                <label class="block text-[12px] font-medium text-slate-600 mb-1.5">正文 <span class="text-slate-400 font-normal">(Markdown)</span></label>
+                <textarea v-model="form.body" rows="18" spellcheck="false" placeholder="技能正文(Markdown)"
+                  class="w-full px-3 py-2 rounded-lg border border-slate-200 text-[12.5px] font-mono text-slate-800 leading-relaxed resize-y focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"></textarea>
+              </div>
+            </div>
           </div>
         </aside>
       </div>
@@ -389,6 +439,23 @@ const refreshing = ref(false);
 const deleting = ref(false);
 const toast = ref('');
 
+// 技能编辑态。form 收集结构化字段,YAML 合并全在主进程做(skills:write)。
+const editing = ref(false);
+const saving = ref(false);
+const form = ref({ name: '', description: '', body: '', category: 'general', icon: '' });
+
+// 编辑时的分类下拉选项 —— 与主进程 SKILLS_GROUPS 同 id/中文名(不可复用 hubCategories
+// 那是 SkillHub 的 API tag;也不可用 groups ref 它只含 count>0 的组)。
+const SKILL_GROUP_OPTIONS = [
+  { id: 'product-doc',  name: '产品文档' },
+  { id: 'prototype',    name: '原型设计' },
+  { id: 'report-image', name: '汇报出图' },
+  { id: 'dataviz',      name: '数据可视化' },
+  { id: 'coach',        name: '教练陪练' },
+  { id: 'thinking',     name: '思考协作' },
+  { id: 'general',      name: '通用工具' },
+];
+
 function showToast(msg) {
   toast.value = msg;
   setTimeout(() => { toast.value = ''; }, 2600);
@@ -585,7 +652,10 @@ async function installFromHub(item) {
   progressMsg.value = '准备下载…';
   hubInstalling.value = item.slug;
   try {
-    const res = await window.api.skills.hubInstall(item);
+    // item 来自 hubItems(ref)，是 Vue reactive Proxy，直接过 IPC 会触发
+    // structured-clone 失败(An object could not be cloned)。传前摊平成纯 JSON。
+    const plain = JSON.parse(JSON.stringify(item));
+    const res = await window.api.skills.hubInstall(plain);
     if (res && res.success) {
       progressPct.value = 100;
       importResult.value = { skillId: res.skillId || item.displayName || item.name };
@@ -652,6 +722,7 @@ function faIcon(name, fallback) {
 
 async function openSkill(sk) {
   selected.value = sk;
+  editing.value = false;
   loading.value = true;
   error.value = '';
   rendered.value = '';
@@ -668,6 +739,64 @@ async function openSkill(sk) {
     error.value = e.message || '读取失败';
   } finally {
     loading.value = false;
+  }
+}
+
+// 进编辑态:openSkill 只存了渲染后 html,没存源码 body,需重新读原文拆出纯 body。
+async function startEdit() {
+  const sk = selected.value;
+  if (!sk) return;
+  form.value = {
+    name: sk.name || '',
+    // selected.description 是 manifest 全文(非截断 summary),可直接用
+    description: sk.description || '',
+    body: '',
+    category: sk.group || 'general',
+    icon: (sk.icon || '').replace(/^fa-solid\s+fa-|^fa-/, ''),
+  };
+  editing.value = true;
+  try {
+    const res = await window.api.skills.read(sk.id, sk.file || 'SKILL.md');
+    if (res && res.success) {
+      form.value.body = (res.content || '').replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/, '');
+    }
+  } catch (e) {
+    showToast('读取源码失败:' + (e.message || e));
+  }
+}
+
+function cancelEdit() {
+  editing.value = false;
+}
+
+async function saveEdit() {
+  const sk = selected.value;
+  if (!sk || saving.value) return;
+  saving.value = true;
+  try {
+    const payload = {
+      skill: sk.id,
+      name: form.value.name,
+      description: form.value.description,
+      body: form.value.body,
+      category: form.value.category,
+      icon: (form.value.icon || '').trim(),
+    };
+    const res = await window.api.skills.write(payload);
+    if (res && res.success) {
+      await loadManifest();
+      // 用新数据刷新当前 selected(loadManifest 换了 skills 数组引用)
+      const fresh = skills.value.find((s) => s.id === sk.id);
+      if (fresh) { selected.value = fresh; await openSkill(fresh); }
+      editing.value = false;
+      showToast('已保存');
+    } else {
+      showToast('保存失败:' + (res?.error || '未知错误'));
+    }
+  } catch (e) {
+    showToast('保存失败:' + (e.message || e));
+  } finally {
+    saving.value = false;
   }
 }
 

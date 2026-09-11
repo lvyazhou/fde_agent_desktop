@@ -35,6 +35,9 @@ const CONFIG_YAML_PATH = path.join(PRODUCT_LOBSTER_HOME, 'config.yaml');
 const AI_APPS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'ai-apps');
 const AI_APPS_FILE = path.join(AI_APPS_DIR, 'apps.json');
 const AI_APPS_MEMORY_DIR = path.join(AI_APPS_DIR, 'memory');
+// 内置专家覆盖层：{ overrides: { [builtinId]: {…被改字段} }, deleted: [builtinId…] }
+// 不改源码 ai-experts.js，前端合并 内置定义 + 覆盖 = 最终展示，可随时恢复默认。
+const AI_APPS_BUILTIN_OVERRIDES_FILE = path.join(AI_APPS_DIR, 'builtin-overrides.json');
 
 // --- config.yaml model persistence -----------------------------------------
 // config.yaml 是 hermes 选择模型的唯一事实来源（cli.py 明确不读 LLM_MODEL/OPENAI_MODEL 环境变量）。
@@ -217,6 +220,9 @@ function ensureDirs() {
       if (!entry.isDirectory()) continue;
       const srcSkill = path.join(bundledSkillsDir, entry.name);
       const dstSkill = path.join(targetSkillsDir, entry.name);
+      // 用户在桌面端编辑过的内置技能会落 .edited 标记 → 跳过覆盖,保住编辑。
+      // 未编辑的内置技能仍随 app 升级更新。
+      if (fs.existsSync(path.join(dstSkill, '.edited'))) continue;
       copyDirSync(srcSkill, dstSkill);
     }
     console.log(`[main] Synced ${skillEntries.filter(e => e.isDirectory()).length} skills to ${targetSkillsDir}`);
@@ -1144,6 +1150,72 @@ function skillSummary(desc) {
   return s;
 }
 
+// 把单个 frontmatter 值序列化成 YAML 行(可能多行)。返回不含结尾换行的字符串。
+// 现有 parseSkillFrontmatter 不解双引号转义(只去首尾引号),为保证往返一致,
+// 凡含换行或 YAML 特殊字符的值一律用 block scalar(key: |)——解析器对 | 块
+// 的缩进续行处理是正确的,免疫内容里的冒号/引号/#,且不涉及转义。
+function serializeFrontmatterValue(key, rawVal) {
+  const val = rawVal == null ? '' : String(rawVal);
+  const needsBlock = val === '' || val.includes('\n') ||
+    /:\s/.test(val) || /\s#/.test(val) ||
+    /^[>|*&!%@`"'\-?{}\[\],#]/.test(val) ||
+    /[:#]$/.test(val) || /["']/.test(val);
+  if (needsBlock) {
+    if (val === '') return `${key}: ""`;
+    const indented = val.split('\n').map((l) => '  ' + l).join('\n');
+    return `${key}: |\n${indented}`;
+  }
+  return `${key}: ${val}`;
+}
+
+// 行级 patch:只重写 updates 里出现的键所在行(单行或多行块整段替换)，
+// 其余 frontmatter 行与正文逐字节保留。不整体重序列化(现有解析器不可逆)。
+// updates: { name?, description?, category?, icon? }，只处理值非 undefined 的键。
+function patchSkillFrontmatter(rawText, updates) {
+  const text = String(rawText || '');
+  const nl = text.includes('\r\n') ? '\r\n' : '\n';
+  const keys = Object.keys(updates).filter((k) => updates[k] !== undefined);
+  if (!keys.length) return text;
+
+  // 定位 frontmatter 块。无则新建一个插到最前。
+  const fmMatch = text.match(/^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(\r?\n|$)/);
+  if (!fmMatch) {
+    const block = keys.map((k) => serializeFrontmatterValue(k, updates[k])).join(nl);
+    return `---${nl}${block}${nl}---${nl}${text}`;
+  }
+
+  const fmInner = fmMatch[1];
+  const before = text.slice(0, fmMatch.index) + '---' + nl; // 开头 --- 行
+  const after = text.slice(fmMatch.index + fmMatch[0].length); // 结尾 --- 之后的正文
+  const lines = fmInner.split(/\r?\n/);
+
+  const remaining = new Set(keys);
+  const out = [];
+  for (let i = 0; i < lines.length; i++) {
+    const kv = lines[i].match(/^([A-Za-z0-9_-]+):[ \t]*(.*)$/);
+    if (kv && remaining.has(kv[1])) {
+      const key = kv[1];
+      // 与 parseSkillFrontmatter 一致:块标量或空值时吞掉后续缩进续行
+      const inlineVal = kv[2];
+      if (inlineVal === '|' || inlineVal === '>' || inlineVal === '|-' || inlineVal === '>-' || inlineVal === '') {
+        let j = i + 1;
+        while (j < lines.length && (/^\s+\S/.test(lines[j]) || lines[j].trim() === '')) j++;
+        i = j - 1; // 跳过被吞的续行
+      }
+      out.push(serializeFrontmatterValue(key, updates[key]));
+      remaining.delete(key);
+    } else {
+      out.push(lines[i]);
+    }
+  }
+  // 没在原块里出现的键 → 追加到块末
+  for (const k of keys) {
+    if (remaining.has(k)) out.push(serializeFrontmatterValue(k, updates[k]));
+  }
+
+  return before + out.join(nl) + nl + '---' + nl + after;
+}
+
 function skillGroupOf(id) {
   for (const g of SKILLS_GROUPS) if (g.members.includes(id)) return g.id;
   return 'general';
@@ -1182,7 +1254,10 @@ function scanSkillsManifest(dir) {
     let fm = {};
     try { fm = parseSkillFrontmatter(fs.readFileSync(candidate, 'utf-8')); } catch (e) {}
     const description = fm.description || '';
-    const group = skillGroupOf(id);
+    // group/icon 优先读 frontmatter(用户在桌面端编辑可改)，缺失回退硬编码:
+    // fm.category 合法才用，否则回退 skillGroupOf(id) 的成员映射。
+    const fmCat = fm.category && SKILLS_GROUPS.some((g) => g.id === fm.category) ? fm.category : null;
+    const group = fmCat || skillGroupOf(id);
     const meta = SKILLS_GROUPS.find((g) => g.id === group) || SKILLS_GROUPS[SKILLS_GROUPS.length - 1];
     const generated = !builtin.has(id) && group === 'general';
     skills.push({
@@ -1190,7 +1265,7 @@ function scanSkillsManifest(dir) {
       name: fm.name || id,
       file: path.basename(candidate),
       group,
-      icon: SKILL_ICONS[id] || meta.icon,
+      icon: fm.icon || SKILL_ICONS[id] || meta.icon,
       color: meta.color,
       version: fm.version || '',
       summary: skillSummary(description),
@@ -1275,7 +1350,60 @@ ipcMain.handle('skills:delete', async (_event, { skill }) => {
   }
 });
 
-// 把一个源文件复制进 HANDBOOK_DIR/<stageDir> 并登记 manifest,返回最终文件名。
+// 编辑技能:把 {name,description,category,icon} patch 进 SKILL.md 的 frontmatter,
+// body 用新正文整体替换,其余 frontmatter(注释/未识别字段/格式)逐字节保留。
+// 内置技能编辑后落一个 .edited 标记,ensureDirs 启动同步时跳过覆盖(否则编辑会丢)。
+ipcMain.handle('skills:write', async (_event, payload = {}) => {
+  try {
+    const id = String(payload.skill || '').trim();
+    if (!id || id.includes('/') || id.includes('\\') || id.includes('..')) {
+      return { success: false, error: '无效技能 id' };
+    }
+    const dirPath = path.join(SKILLS_DIR, id);
+    if (!dirPath.startsWith(SKILLS_DIR + path.sep)) return { success: false, error: '路径越界' };
+    // 定位 SKILL.md(大小写兼容),不存在则用默认名
+    const filePath = ['SKILL.md', 'skill.md']
+      .map((f) => path.join(dirPath, f))
+      .find((p) => fs.existsSync(p)) || path.join(dirPath, 'SKILL.md');
+    if (!filePath.startsWith(dirPath + path.sep)) return { success: false, error: '路径越界' };
+    if (!fs.existsSync(dirPath)) return { success: false, error: '技能不存在' };
+
+    const raw = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : '';
+
+    // 只 patch 传入的 frontmatter 字段(undefined 的键不动)
+    const updates = {};
+    if (payload.name !== undefined) updates.name = String(payload.name);
+    if (payload.description !== undefined) updates.description = String(payload.description);
+    if (payload.category !== undefined) updates.category = String(payload.category);
+    if (payload.icon !== undefined) updates.icon = String(payload.icon);
+    let next = patchSkillFrontmatter(raw, updates);
+
+    // body 整体替换(前端传了才换;body 是纯 markdown,无 YAML 风险)
+    if (payload.body !== undefined) {
+      const nl = next.includes('\r\n') ? '\r\n' : '\n';
+      const fmMatch = next.match(/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/);
+      const head = fmMatch ? next.slice(0, fmMatch.index + fmMatch[0].length) : '';
+      const body = String(payload.body);
+      next = head ? head + nl + body.replace(/^\r?\n/, '') : body;
+    }
+
+    fs.writeFileSync(filePath, next, 'utf-8');
+
+    // 内置技能:落 .edited 标记,防启动同步覆盖
+    if (bundledSkillIds().has(id)) {
+      try { fs.writeFileSync(path.join(dirPath, '.edited'), '', 'utf-8'); } catch (e) {}
+    }
+
+    // 重扫 manifest,保持与实时扫描一致
+    try {
+      const data = scanSkillsManifest(SKILLS_DIR);
+      fs.writeFileSync(path.join(SKILLS_DIR, 'manifest.json'), JSON.stringify(data, null, 2) + '\n', 'utf-8');
+    } catch (e) {}
+    return { success: true, skillId: id };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
 // 供 handbook:upload(本地选文件)与 handbook:archive-from-project(项目产物归档)共用。
 // 调用方负责已读入并最终写回 manifest 对象;此函数只处理单个 stage 的一次拷贝+登记。
 function registerHandbookFile(manifest, stageDir, srcPath, category) {
@@ -1973,8 +2101,44 @@ ipcMain.handle('hermes:upload-knowledge', async (_event, { slug }) => {
 // ---------------------------------------------------------------------------
 
 // Feature 1: Model switching
+// 读 config.yaml 的 custom_providers[].models 声明清单（下拉白名单）。
+// 引擎侧 session/new 会把 360 全量 300+ 模型塞进 available_models（explicit_only 没挡住
+// custom provider 的探测），所以桌面这层按 config 声明过滤，下拉只显示用户认可的那几个。
+function readDeclaredModelIds() {
+  try {
+    const raw = fs.readFileSync(CONFIG_YAML_PATH, 'utf8');
+    const ids = [];
+    let inModels = false;
+    for (const line of raw.split('\n')) {
+      if (/^\s*models:\s*$/.test(line)) { inModels = true; continue; }
+      if (inModels) {
+        const m = line.match(/^\s+-\s+(\S+)\s*$/);
+        if (m) { ids.push(m[1]); continue; }
+        // 缩进回落到非列表项 → models 块结束
+        if (line.trim() && !/^\s*#/.test(line)) break;
+      }
+    }
+    return ids;
+  } catch { return []; }
+}
+
+// 把模型 id 归一到「裸名」用于比较：剥掉 provider 前缀（custom:/openai-api: 等）。
+function bareModelId(id) {
+  const s = String(id || '').trim();
+  const withoutProto = s.includes(':') ? s.slice(s.indexOf(':') + 1) : s;
+  return withoutProto.toLowerCase();
+}
+
 ipcMain.handle('hermes:list-models', async () => {
-  return { models: cachedModels, current: currentModelId };
+  const declared = readDeclaredModelIds();
+  if (!declared.length) return { models: cachedModels, current: currentModelId };
+  const allow = new Set(declared.map(bareModelId));
+  const filtered = (cachedModels || []).filter((m) => {
+    const id = m && (m.model_id || m.modelId || m.id || m.name);
+    return id && allow.has(bareModelId(id));
+  });
+  // 过滤后为空（引擎列表和 config 完全对不上）→ 兜底返回原始，避免下拉空白。
+  return { models: filtered.length ? filtered : cachedModels, current: currentModelId };
 });
 
 ipcMain.handle('hermes:set-model', async (_event, { slug, modelId }) => {
@@ -3272,6 +3436,111 @@ ipcMain.handle('ai-apps:delete', async (_event, { id }) => {
     if (apps.length === before) return { success: false, error: 'App not found' };
     writeLocalAiApps(apps);
     return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// --- AI 应用广场：内置专家覆盖层 -------------------------------------------
+// 内置专家（source:'builtin'，来自 ai-experts.js）不能改源码，这里存一层用户覆盖。
+// 前端把 内置定义 + override 合并展示；deleted 里的内置 id 视为已删（软删，可恢复）。
+
+function readBuiltinOverrides() {
+  try {
+    if (!fs.existsSync(AI_APPS_BUILTIN_OVERRIDES_FILE)) return { overrides: {}, deleted: [] };
+    const store = JSON.parse(fs.readFileSync(AI_APPS_BUILTIN_OVERRIDES_FILE, 'utf-8'));
+    return {
+      overrides: (store && typeof store.overrides === 'object' && store.overrides) || {},
+      deleted: Array.isArray(store && store.deleted) ? store.deleted : [],
+    };
+  } catch (e) {
+    console.error('[ai-apps] read builtin overrides failed:', e.message);
+    return { overrides: {}, deleted: [] };
+  }
+}
+
+function writeBuiltinOverrides(store) {
+  const out = {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    overrides: store.overrides || {},
+    deleted: Array.isArray(store.deleted) ? store.deleted : [],
+  };
+  fs.writeFileSync(AI_APPS_BUILTIN_OVERRIDES_FILE, JSON.stringify(out, null, 2) + '\n', 'utf-8');
+}
+
+// 只允许覆盖这些展示/prompt 相关字段；id/source 等结构性字段不可改。
+const AI_APPS_OVERRIDABLE_FIELDS = [
+  'name', 'category', 'icon', 'color', 'tagline', 'summary',
+  'bestFor', 'starters', 'capabilities', 'workflow', 'constraints',
+  'riskNotice', 'prompt', 'preferredModel', 'skills',
+];
+
+function normalizeBuiltinOverride(input) {
+  const o = {};
+  if ('name' in input) o.name = clampStr(input.name, 100);
+  if ('category' in input) o.category = clampStr(input.category, 60);
+  if ('icon' in input) o.icon = clampStr(String(input.icon || '').replace(/^fa-/, ''), 60);
+  if ('color' in input) o.color = clampStr(input.color, 20);
+  if ('tagline' in input) o.tagline = clampStr(input.tagline, 200);
+  if ('summary' in input) o.summary = clampStr(input.summary, 1000);
+  if ('bestFor' in input) o.bestFor = clampArr(input.bestFor);
+  if ('starters' in input) o.starters = clampArr(input.starters, 10, 500);
+  if ('capabilities' in input) o.capabilities = clampStr(input.capabilities, 3000);
+  if ('workflow' in input) o.workflow = clampStr(input.workflow, 3000);
+  if ('constraints' in input) o.constraints = clampStr(input.constraints, 2000);
+  if ('riskNotice' in input) o.riskNotice = clampStr(input.riskNotice, 500);
+  if ('prompt' in input) o.prompt = clampStr(input.prompt, 8000);
+  if ('preferredModel' in input) o.preferredModel = clampStr(input.preferredModel, 200);
+  if ('skills' in input) o.skills = clampArr(input.skills, 30, 100);
+  return o;
+}
+
+ipcMain.handle('ai-apps:builtin-overrides', async () => {
+  try {
+    return { success: true, ...readBuiltinOverrides() };
+  } catch (e) {
+    return { success: false, error: e.message, overrides: {}, deleted: [] };
+  }
+});
+
+ipcMain.handle('ai-apps:builtin-save', async (_event, { id, patch } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    if (!patch || typeof patch !== 'object') return { success: false, error: 'patch is required' };
+    const store = readBuiltinOverrides();
+    const prev = store.overrides[id] || {};
+    const next = { ...prev, ...normalizeBuiltinOverride(patch) };
+    store.overrides[id] = next;
+    // 若曾被软删，保存即视为恢复显示
+    store.deleted = store.deleted.filter((d) => d !== id);
+    writeBuiltinOverrides(store);
+    return { success: true, id, override: next };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:builtin-delete', async (_event, { id } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    const store = readBuiltinOverrides();
+    if (!store.deleted.includes(id)) store.deleted.push(id);
+    writeBuiltinOverrides(store);
+    return { success: true, id };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('ai-apps:builtin-reset', async (_event, { id } = {}) => {
+  try {
+    if (!id) return { success: false, error: 'id is required' };
+    const store = readBuiltinOverrides();
+    delete store.overrides[id];
+    store.deleted = store.deleted.filter((d) => d !== id);
+    writeBuiltinOverrides(store);
+    return { success: true, id };
   } catch (e) {
     return { success: false, error: e.message };
   }

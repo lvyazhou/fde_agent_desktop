@@ -42,7 +42,7 @@
 ## 默认命令
 
 ```bash
-PYTHONIOENCODING=utf-8 python C:/Users/lvyazhou/.product-lobster/skills/image-generator/generate_images.py \
+PYTHONIOENCODING=utf-8 python "<SKILL_DIR>/scripts/generate_images.py" \
   -p "{完整提示词}" \
   -s 1792x1024 -q high \
   -d "{输出目录}" -o "{名称}_商务vN.png"

@@ -10,7 +10,7 @@ AI 图片生成工具，支持文本生图（Text-to-Image）和图生图（Imag
 ## Command
 
 ```bash
-python C:\Users\lvyazhou\.product-lobster\skills\image-generator\generate_images.py -p "PROMPT" [OPTIONS]
+python "<SKILL_DIR>/generate_images.py" -p "PROMPT" [OPTIONS]
 ```
 
 ## Parameters
@@ -26,7 +26,20 @@ python C:\Users\lvyazhou\.product-lobster\skills\image-generator\generate_images
 | `--style` | 风格: natural, vivid | — |
 | `-o` / `--output` | 输出文件名 | `generated_时间戳.png` |
 | `-d` / `--dir` | 输出目录 | 当前目录下 `generated_images/` |
-| `--model` | 模型 | `openai/gpt-image-2` |
+| `--model` | 模型（见下方「可用模型」） | `openai/gpt-image-2.5-flare` |
+| `--retries` | 失败自动重试次数 | `3` |
+
+## 可用模型
+
+360 API 已上线 **gpt-image-2.5**，画质与文字排版明显优于老版 gpt-image-2。
+
+| 模型 ID | 说明 | 稳定性（实测 5 次） |
+|---------|------|------|
+| `openai/gpt-image-2.5-flare` | **默认**。画质好、出图快而稳，2.5 系列首选 | 5/5 ✅ |
+| `openai/gpt-image-2.5-sunburst` | 2.5 风格备选：留白通透、光影更戏剧化，偶尔慢/超时 | 4/5 |
+| `openai/gpt-image-2` | 老版，画质与稳定性均略逊，保留兼容 | 4/5 |
+
+> 说明：API 网关偶发「服务异常(code 10181)」或超时，与选哪个模型无关；脚本已内置 `--retries`（默认 3 次）自动兜底。切换模型用 `--model <ID>`。
 
 ## Critical Rules
 
@@ -64,27 +77,27 @@ AI 生成的中文文字排版不稳定，建议：
 
 ```bash
 # 基础文本生图
-python C:\Users\lvyazhou\.product-lobster\skills\image-generator\generate_images.py \
+python "<SKILL_DIR>/generate_images.py" \
   -p "A cute orange tabby cat sitting on a windowsill, warm sunlight, cozy atmosphere" \
   -q medium
 
 # Twitter/X 封面
-python C:\Users\lvyazhou\.product-lobster\skills\image-generator\generate_images.py \
+python "<SKILL_DIR>/generate_images.py" \
   -p "Cinematic wide illustration: futuristic cityscape with neon lights reflecting on wet streets, cyberpunk aesthetic, deep blue and magenta tones, clean space on the left for text" \
   -s 1536x608 -q medium -o twitter_cover.png
 
 # 图生图（修改已有图片）
-python C:\Users\lvyazhou\.product-lobster\skills\image-generator\generate_images.py \
+python "<SKILL_DIR>/generate_images.py" \
   -p "Transform this into a watercolor painting style, keep the composition" \
   -i /path/to/source.png -q medium
 
 # 竖版海报
-python C:\Users\lvyazhou\.product-lobster\skills\image-generator\generate_images.py \
+python "<SKILL_DIR>/generate_images.py" \
   -p "Minimalist poster design: a single tree on a hill, golden hour, soft gradients" \
   -s 1024x1792 -q medium -o poster.png
 
 # 指定输出到项目目录
-python C:\Users\lvyazhou\.product-lobster\skills\image-generator\generate_images.py \
+python "<SKILL_DIR>/generate_images.py" \
   -p "App icon: a brain with circuit patterns, flat design, gradient blue to purple" \
   -s 1024x1024 -q medium -d /path/to/project/assets -o app_icon.png
 ```

@@ -24,6 +24,7 @@ import argparse
 import requests
 import json
 import base64
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -143,19 +144,34 @@ def generate_images(args):
 
     print(f"请求参数: {json.dumps(debug_payload, ensure_ascii=False, indent=2)}")
 
+    max_retries = getattr(args, "retries", 3)
+    data = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            response = requests.post(url, headers=headers, json=payload, timeout=240)
+            if response.status_code != 200:
+                print(f"\n✗ 请求失败 (第 {attempt}/{max_retries} 次): HTTP {response.status_code}")
+                print(response.text[:500])
+                if attempt < max_retries:
+                    time.sleep(attempt * 3); continue
+                return
+            resp_json = response.json()
+            if "error" in resp_json:
+                print(f"\n✗ API 返回错误 (第 {attempt}/{max_retries} 次): {json.dumps(resp_json['error'], ensure_ascii=False)}")
+                if attempt < max_retries:
+                    time.sleep(attempt * 3); continue
+                return
+            data = resp_json
+            break
+        except Exception as e:
+            print(f"\n✗ 请求异常 (第 {attempt}/{max_retries} 次): {e}")
+            if attempt < max_retries:
+                time.sleep(attempt * 3); continue
+            return
+    if data is None:
+        print(f"\n✗ 重试 {max_retries} 次仍失败，已放弃。")
+        return
     try:
-        response = requests.post(url, headers=headers, json=payload)
-
-        if response.status_code != 200:
-            print(f"\n✗ 请求失败: HTTP {response.status_code}")
-            print(response.text)
-            return
-
-        data = response.json()
-        if "error" in data:
-            print(f"\n✗ API 返回错误: {json.dumps(data['error'], ensure_ascii=False)}")
-            return
-
         output_dir = args.dir if args.dir else DEFAULT_OUTPUT_DIR
         os.makedirs(output_dir, exist_ok=True)
 
@@ -232,8 +248,8 @@ def main():
     parser.add_argument("-m", "--mask", type=str,
                         help="蒙版图片路径或URL（用于局部重绘）")
     parser.add_argument("--model", type=str,
-                        default="openai/gpt-image-2",
-                        help="使用的模型 (默认: openai/gpt-image-2)")
+                        default="openai/gpt-image-2.5-flare",
+                        help="使用的模型 (默认: openai/gpt-image-2.5-flare)")
     parser.add_argument("-n", type=int, default=1,
                         help="生成图片数量 (默认: 1)")
     parser.add_argument("-s", "--size", type=str,
@@ -249,6 +265,8 @@ def main():
                         help="输出目录（默认: 当前目录下的 generated_images/）")
     parser.add_argument("--api-key", type=str, default=API_KEY,
                         help="API Key（可选，默认使用内置Key）")
+    parser.add_argument("--retries", type=int, default=3,
+                        help="失败自动重试次数（默认: 3，应对网关偶发抖动）")
 
     args = parser.parse_args()
     generate_images(args)

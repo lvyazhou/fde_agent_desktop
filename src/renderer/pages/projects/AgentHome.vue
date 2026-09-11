@@ -45,7 +45,7 @@
       v-show="showInfoPanel"
       :slug="currentSlug"
       :project-meta="currentMeta"
-      :skills="skills"
+      :skills="sidebarSkills"
       :logs="logs"
       :suggested-questions="suggestedQuestions"
       :knowledge-files="knowledgeFiles"
@@ -786,12 +786,29 @@ async function findAiAppByRoute(id, source) {
     if (res?.success && res.app) return res.app;
   }
   const builtin = findBuiltinAiAppById(id);
-  if (builtin) return builtin;
+  if (builtin) return applyBuiltinOverride(builtin);
   if (window.api?.aiApps?.get) {
     const res = await window.api.aiApps.get(id);
     if (res?.success && res.app) return res.app;
   }
   return null;
+}
+
+// 内置专家可能被用户在广场里改过（覆盖层），启动时合并，让对话用最新定义。
+async function applyBuiltinOverride(builtin) {
+  try {
+    const res = await window.api?.aiApps?.builtinOverrides?.();
+    if (res?.success) {
+      if (Array.isArray(res.deleted) && res.deleted.includes(builtin.id)) {
+        // 已被软删的内置仍允许通过直链启动，用其覆盖或原始定义
+      }
+      const ov = res.overrides && res.overrides[builtin.id];
+      if (ov) return { ...builtin, ...ov };
+    }
+  } catch (e) {
+    // 覆盖层读取失败时回退到原始内置定义
+  }
+  return builtin;
 }
 
 const startAiAppSession = async (appId, source) => {
@@ -868,6 +885,21 @@ const startAiAppSession = async (appId, source) => {
 // --- AI 应用长期记忆:每轮对话结束自动保存 ---
 const savingMemory = ref(false);
 const isAiAppSession = computed(() => !!(currentMeta.value && currentMeta.value.aiApp && currentMeta.value.aiApp.id));
+
+// 右侧「技能」面板展示的技能列表：
+// - AI 应用/专家会话：只显示该专家绑定的技能（currentMeta.aiApp.skills），
+//   并尽量从本地扫描结果补全 label/图标；扫描不到的仍按名称展示。
+// - 普通对话：显示全部本地技能（原行为）。
+const sidebarSkills = computed(() => {
+  const bound = currentMeta.value?.aiApp?.skills;
+  if (isAiAppSession.value && Array.isArray(bound)) {
+    return bound.map((name) => {
+      const hit = skills.value.find((s) => (s.name || s.key || s) === name);
+      return hit || { name };
+    });
+  }
+  return skills.value;
+});
 
 const saveRecentAsMemory = async () => {
   if (savingMemory.value || !isAiAppSession.value) return;

@@ -86,6 +86,35 @@
           </div>
         </div>
 
+        <!-- 已移除的内置专家（回收站，仅开发者模式） -->
+        <div
+          v-if="devMode && deletedBuiltins.length"
+          class="mb-4 rounded-xl border border-slate-200/70 bg-white/70 px-4 py-3"
+        >
+          <div class="flex items-center gap-2 mb-2">
+            <i class="fa-solid fa-trash-can-arrow-up text-[11px] text-slate-400"></i>
+            <span class="text-[11.5px] font-semibold text-slate-500">已移除的内置专家</span>
+            <span class="text-[10.5px] text-slate-400">{{ deletedBuiltins.length }} 个 · 可恢复</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span
+              v-for="d in deletedBuiltins"
+              :key="d.id"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11.5px] bg-slate-50 border border-slate-200 text-slate-500"
+            >
+              <i :class="'fa-solid fa-' + (d.icon || 'rocket') + ' text-[10px]'" :style="{ color: d.color }"></i>
+              {{ d.name }}
+              <button
+                @click="restoreBuiltin(d)"
+                class="ml-1 text-blue-500 hover:text-blue-700 active:scale-90 transition"
+                title="恢复"
+              >
+                <i class="fa-solid fa-rotate-left text-[10px]"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+
         <div v-if="filtered.length" class="es-grid">
           <div
             v-for="app in pagedItems"
@@ -122,7 +151,7 @@
                   <i class="fa-solid fa-circle-info mr-1"></i>查看详情
                 </button>
                 <button
-                  v-if="devMode && app.source === 'local'"
+                  v-if="devMode && (app.source === 'local' || app.source === 'builtin')"
                   @click.stop="openEditor(app)"
                   class="w-6 h-6 rounded-md text-slate-300 hover:text-blue-600 hover:bg-blue-50 active:scale-90 transition-all cursor-pointer"
                   title="编辑应用"
@@ -210,6 +239,27 @@
                   class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
                 >
                   <i class="fa-solid fa-trash text-[10px]"></i>删除
+                </button>
+              </template>
+              <template v-else-if="devMode && selected.source === 'builtin'">
+                <button
+                  @click="openEditor(selected)"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600 transition"
+                >
+                  <i class="fa-solid fa-pen text-[10px]"></i>编辑
+                </button>
+                <button
+                  v-if="selected._edited"
+                  @click="resetBuiltin(selected)"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600 transition"
+                >
+                  <i class="fa-solid fa-rotate-left text-[10px]"></i>恢复默认
+                </button>
+                <button
+                  @click="removeApp(selected)"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
+                >
+                  <i class="fa-solid fa-eye-slash text-[10px]"></i>移除
                 </button>
               </template>
               <button @click="selected = null" class="w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 transition">
@@ -381,8 +431,8 @@
                 <i :class="'fa-solid fa-' + (form.icon || 'rocket')"></i>
               </span>
               <div class="min-w-0">
-                <div class="text-[13px] font-semibold text-slate-800 truncate">{{ form.id ? '编辑应用' : '创建应用' }}</div>
-                <div class="text-[11px] text-slate-400">配置并发布你的 AI 应用</div>
+                <div class="text-[13px] font-semibold text-slate-800 truncate">{{ editingBuiltinId ? '编辑内置专家' : (form.id ? '编辑应用' : '创建应用') }}</div>
+                <div class="text-[11px] text-slate-400">{{ editingBuiltinId ? '修改将保存为覆盖，可随时恢复默认' : '配置并发布你的 AI 应用' }}</div>
               </div>
             </div>
             <button @click="closeEditor" class="w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 transition">
@@ -490,24 +540,39 @@
           </div>
 
           <div class="px-5 py-4 border-t border-slate-200/80 shrink-0 flex items-center gap-2">
-            <button
-              @click="saveApp(false)"
-              :disabled="saving"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-white border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 transition disabled:opacity-50"
-            >
-              <i class="fa-solid fa-floppy-disk text-[11px]"></i>保存草稿
-            </button>
-            <button
-              @click="saveApp(true)"
-              :disabled="saving"
-              class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm shadow-blue-500/25 disabled:opacity-50"
-            >
-              <i class="fa-solid fa-rocket text-[11px]"></i>发布到广场
-            </button>
-            <button
-              @click="closeEditor"
-              class="px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-400 hover:text-slate-600 transition"
-            >取消</button>
+            <template v-if="editingBuiltinId">
+              <button
+                @click="saveApp(false)"
+                :disabled="saving"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm shadow-blue-500/25 disabled:opacity-50"
+              >
+                <i class="fa-solid fa-floppy-disk text-[11px]"></i>保存修改
+              </button>
+              <button
+                @click="closeEditor"
+                class="px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-400 hover:text-slate-600 transition"
+              >取消</button>
+            </template>
+            <template v-else>
+              <button
+                @click="saveApp(false)"
+                :disabled="saving"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-white border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 transition disabled:opacity-50"
+              >
+                <i class="fa-solid fa-floppy-disk text-[11px]"></i>保存草稿
+              </button>
+              <button
+                @click="saveApp(true)"
+                :disabled="saving"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm shadow-blue-500/25 disabled:opacity-50"
+              >
+                <i class="fa-solid fa-rocket text-[11px]"></i>发布到广场
+              </button>
+              <button
+                @click="closeEditor"
+                class="px-3 py-2.5 rounded-xl text-[13px] font-medium text-slate-400 hover:text-slate-600 transition"
+              >取消</button>
+            </template>
           </div>
         </aside>
       </div>
@@ -677,6 +742,26 @@ const businessCategories = categories.filter((c) => !virtualCatIds.includes(c.id
 const localApps = ref([]);
 const allSkills = ref([]);
 
+// ── 内置专家覆盖层（用户对内置专家的修改 / 软删）──
+const builtinOverrides = ref({}); // { [builtinId]: {…被改字段} }
+const builtinDeleted = ref([]);   // [builtinId…] 已软删
+
+async function refreshBuiltinOverrides() {
+  try {
+    const res = await window.api?.aiApps?.builtinOverrides();
+    if (res && res.success) {
+      builtinOverrides.value = res.overrides || {};
+      builtinDeleted.value = Array.isArray(res.deleted) ? res.deleted : [];
+    } else {
+      builtinOverrides.value = {};
+      builtinDeleted.value = [];
+    }
+  } catch (e) {
+    builtinOverrides.value = {};
+    builtinDeleted.value = [];
+  }
+}
+
 async function refreshSkills() {
   try {
     const res = await window.api?.skills?.getManifest();
@@ -706,10 +791,26 @@ async function refreshLocalApps() {
 onMounted(() => {
   refreshLocalApps();
   refreshSkills();
+  refreshBuiltinOverrides();
 });
 
+// 内置专家应用覆盖层：合并被改字段、剔除软删、标记 edited
+const effectiveBuiltins = computed(() =>
+  builtinAiApps
+    .filter((a) => !builtinDeleted.value.includes(a.id))
+    .map((a) => {
+      const ov = builtinOverrides.value[a.id];
+      return ov ? { ...a, ...ov, _edited: true } : a;
+    })
+);
+
 // 合并的完整应用列表
-const allApps = computed(() => [...builtinAiApps, ...localApps.value]);
+const allApps = computed(() => [...effectiveBuiltins.value, ...localApps.value]);
+
+// 已软删的内置专家（用于"回收站"恢复）
+const deletedBuiltins = computed(() =>
+  builtinAiApps.filter((a) => builtinDeleted.value.includes(a.id))
+);
 
 // devMode 关闭时草稿不可见
 const visibleApps = computed(() => {
@@ -734,6 +835,9 @@ function sourceBadge(app) {
   }
   if (app.source === 'local') {
     return { text: '本地发布', cls: 'src-badge--local' };
+  }
+  if (app._edited) {
+    return { text: '内置·已改', cls: 'src-badge--edited' };
   }
   return { text: '内置', cls: 'src-badge--builtin' };
 }
@@ -834,6 +938,7 @@ function showToast(msg, type = 'ok') {
 // ── 编辑器 ──
 const editing = ref(false);
 const saving = ref(false);
+const editingBuiltinId = ref(''); // 非空 = 正在编辑内置专家（保存到覆盖层）
 const form = reactive({
   id: '',
   name: '',
@@ -877,8 +982,10 @@ function resetForm() {
 function openEditor(app) {
   selected.value = null;
   if (app) {
+    // 内置专家：直接编辑（保存到覆盖层），id 保留内置 id
+    editingBuiltinId.value = app.source === 'builtin' ? app.id : '';
     form.id = app.source === 'local' ? (app.id || '') : '';
-    form.name = app.source === 'local' ? (app.name || '') : `${app.name || ''} 副本`;
+    form.name = app.name || '';
     form.category = businessCategories.some((c) => c.id === app.category) ? app.category : 'enterprise';
     form.icon = app.icon || 'rocket';
     form.color = app.color || '#2563eb';
@@ -895,6 +1002,7 @@ function openEditor(app) {
     form.preferredModel = app.preferredModel || '';
     form.skills = Array.isArray(app.skills) ? [...app.skills] : [];
   } else {
+    editingBuiltinId.value = '';
     resetForm();
   }
   editing.value = true;
@@ -902,6 +1010,7 @@ function openEditor(app) {
 
 function closeEditor() {
   editing.value = false;
+  editingBuiltinId.value = '';
 }
 
 function linesToArray(text) {
@@ -939,6 +1048,42 @@ function buildPayload() {
 async function saveApp(publish) {
   if (!form.name.trim()) {
     showToast('请填写应用名称', 'error');
+    return;
+  }
+  // 内置专家 → 存到覆盖层
+  if (editingBuiltinId.value) {
+    saving.value = true;
+    try {
+      const patch = {
+        name: form.name.trim(),
+        category: form.category,
+        icon: (form.icon || 'rocket').replace(/^fa-/, '').trim(),
+        color: form.color || '#2563eb',
+        tagline: form.tagline.trim(),
+        summary: form.summary.trim(),
+        bestFor: linesToArray(form.bestForText),
+        starters: linesToArray(form.startersText),
+        capabilities: form.capabilities,
+        workflow: form.workflow,
+        constraints: form.constraints,
+        riskNotice: form.riskNotice.trim(),
+        preferredModel: form.preferredModel.trim(),
+        skills: [...form.skills],
+      };
+      const res = await window.api?.aiApps?.builtinSave(editingBuiltinId.value, patch);
+      if (!res || !res.success) {
+        showToast(res?.error || '保存失败', 'error');
+        return;
+      }
+      await refreshBuiltinOverrides();
+      showToast('内置专家已更新');
+      editing.value = false;
+      editingBuiltinId.value = '';
+    } catch (e) {
+      showToast(e?.message || '保存失败', 'error');
+    } finally {
+      saving.value = false;
+    }
     return;
   }
   saving.value = true;
@@ -984,7 +1129,26 @@ async function togglePublish(app) {
 }
 
 async function removeApp(app) {
-  if (!app || app.source !== 'local') return;
+  if (!app) return;
+  // 内置专家：软删（可恢复）
+  if (app.source === 'builtin') {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm(`确定从广场移除内置专家「${app.name}」？可随时"恢复默认"找回。`)) return;
+    try {
+      const res = await window.api?.aiApps?.builtinDelete(app.id);
+      if (!res || !res.success) {
+        showToast(res?.error || '移除失败', 'error');
+        return;
+      }
+      await refreshBuiltinOverrides();
+      selected.value = null;
+      showToast('已移除，可在"恢复默认"找回');
+    } catch (e) {
+      showToast(e?.message || '移除失败', 'error');
+    }
+    return;
+  }
+  if (app.source !== 'local') return;
   // eslint-disable-next-line no-alert
   if (!window.confirm(`确定删除应用「${app.name}」？此操作不可恢复。`)) return;
   try {
@@ -998,6 +1162,42 @@ async function removeApp(app) {
     showToast('已删除');
   } catch (e) {
     showToast(e?.message || '删除失败', 'error');
+  }
+}
+
+// 恢复某内置专家到默认（清除覆盖 + 撤销软删）
+async function resetBuiltin(app) {
+  if (!app || app.source !== 'builtin') return;
+  // eslint-disable-next-line no-alert
+  if (!window.confirm(`确定把「${app.name}」恢复为默认？你对它的修改将被清除。`)) return;
+  try {
+    const res = await window.api?.aiApps?.builtinReset(app.id);
+    if (!res || !res.success) {
+      showToast(res?.error || '恢复失败', 'error');
+      return;
+    }
+    await refreshBuiltinOverrides();
+    // 详情抽屉里的对象换成恢复后的
+    selected.value = effectiveBuiltins.value.find((a) => a.id === app.id) || null;
+    showToast('已恢复默认');
+  } catch (e) {
+    showToast(e?.message || '恢复失败', 'error');
+  }
+}
+
+// 从回收站恢复被软删的内置专家
+async function restoreBuiltin(app) {
+  if (!app) return;
+  try {
+    const res = await window.api?.aiApps?.builtinReset(app.id);
+    if (!res || !res.success) {
+      showToast(res?.error || '恢复失败', 'error');
+      return;
+    }
+    await refreshBuiltinOverrides();
+    showToast(`已恢复「${app.name}」`);
+  } catch (e) {
+    showToast(e?.message || '恢复失败', 'error');
   }
 }
 
@@ -1289,6 +1489,7 @@ async function openAssetDir(type) {
 .src-badge--builtin { background: #eff6ff; color: #2563eb; }
 .src-badge--local   { background: #ecfdf5; color: #059669; }
 .src-badge--draft   { background: #fffbeb; color: #d97706; }
+.src-badge--edited  { background: #eef2ff; color: #4f46e5; }
 
 /* ── 编辑器表单 ── */
 .ed-label {

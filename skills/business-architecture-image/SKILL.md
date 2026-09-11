@@ -66,7 +66,7 @@ SDR数据基座：服务网关层{网关模块}；服务平台层{平台模块}�
 Windows 下调用时使用 UTF-8 环境变量，并固定尺寸和质量：
 
 ```bash
-PYTHONIOENCODING=utf-8 python C:/Users/lvyazhou/.product-lobster/skills/image-generator/generate_images.py \
+PYTHONIOENCODING=utf-8 python "<SKILL_DIR>/scripts/generate_images.py" \
   -p "{组装后的完整中文提示词}" \
   -s 1792x1024 -q high \
   -d "{输出目录}" -o "{文件名}.png"

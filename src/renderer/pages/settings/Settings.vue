@@ -43,11 +43,32 @@
           </div>
           <div>
             <label class="block text-sm font-medium text-slate-700 mb-1.5">模型 <span class="text-slate-400 font-normal">(可选)</span></label>
+            <div class="relative">
+              <select
+                v-model="modelSelect"
+                class="w-full appearance-none px-4 py-2.5 pr-10 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+              >
+                <option value="" disabled>请选择模型…</option>
+                <optgroup label="强 · 首选">
+                  <option v-for="m in COMMON_MODELS.filter(x => x.group === '强 · 首选')" :key="m.value" :value="m.value">{{ m.label }}</option>
+                </optgroup>
+                <optgroup label="快 · 日常">
+                  <option v-for="m in COMMON_MODELS.filter(x => x.group === '快 · 日常')" :key="m.value" :value="m.value">{{ m.label }}</option>
+                </optgroup>
+                <option :value="CUSTOM_MODEL">自定义（手动填写）…</option>
+              </select>
+              <i class="fa-solid fa-chevron-down text-xs text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+            </div>
             <input
-              v-model="model"
-              placeholder="deepseek/deepseek-v4-pro 或 gpt-4o（按网关支持的名称填写）"
-              class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+              v-if="isCustomModel"
+              v-model="customModel"
+              placeholder="按网关支持的名称填写，如 gpt-4o、qwen/qwen3-max"
+              class="w-full mt-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
             />
+            <p class="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-info text-slate-300"></i>
+              360 网关常用模型，均已验证可稳定驱动。用其他网关请选「自定义」。
+            </p>
           </div>
           <div class="flex items-center gap-3 pt-2">
             <button
@@ -137,11 +158,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { COMMON_MODELS, CUSTOM_MODEL, isCommonModel } from '../../constants/models.js';
 
 const apiKey = ref('');
 const baseUrl = ref('');
-const model = ref('');
+// 模型下拉状态:modelSelect = 下拉选中值(常用模型全名 或 自定义哨兵);
+// customModel = 选「自定义」时的手填值。model 为最终生效模型名(供保存逻辑用)。
+const modelSelect = ref('');
+const customModel = ref('');
+const isCustomModel = computed(() => modelSelect.value === CUSTOM_MODEL);
+const model = computed(() => (isCustomModel.value ? customModel.value.trim() : modelSelect.value.trim()));
 const showApiKey = ref(false);
 const hermesHome = ref('~/.product-lobster');
 const projectCount = ref(0);
@@ -194,7 +221,13 @@ function parseEnv(content) {
     } else if (key === 'OPENAI_BASE_URL' || key === 'BASE_URL' || key === 'API_BASE_URL') {
       baseUrl.value = val;
     } else if (key === 'HERMES_MODEL' || key === 'MODEL' || key === 'OPENAI_MODEL') {
-      model.value = val;
+      // 已配置的模型:在常用清单里 → 下拉选中它;否则 → 归到「自定义」并回填手填框。
+      if (isCommonModel(val)) {
+        modelSelect.value = val;
+      } else if (val) {
+        modelSelect.value = CUSTOM_MODEL;
+        customModel.value = val;
+      }
     }
   }
 }
@@ -212,8 +245,8 @@ function buildEnv() {
   if (baseUrl.value.trim()) {
     lines.push(`OPENAI_BASE_URL=${baseUrl.value.trim()}`);
   }
-  if (model.value.trim()) {
-    lines.push(`HERMES_MODEL=${model.value.trim()}`);
+  if (model.value) {
+    lines.push(`HERMES_MODEL=${model.value}`);
   }
   return lines.join('\n') + '\n';
 }
@@ -235,7 +268,7 @@ async function saveEnv() {
     const result = await window.api.hermes.writeEnv(content);
     if (result && result.success) {
       // 同步进 config.yaml 的 custom_providers[].api_key / base_url / 默认模型（hermes 选模型凭据与清单的事实来源）
-      await window.api.hermes.syncProviderKey(apiKey.value.trim(), baseUrl.value.trim(), model.value.trim());
+      await window.api.hermes.syncProviderKey(apiKey.value.trim(), baseUrl.value.trim(), model.value);
       // Restart hermes to pick up new key
       await window.api.hermes.restart();
       saveStatus.value = 'success';

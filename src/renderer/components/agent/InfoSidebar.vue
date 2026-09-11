@@ -113,6 +113,9 @@
             <i :class="skill.icon" class="text-[8px]"></i>
             {{ skill.label }}
           </span>
+          <div v-if="displaySkills.length === 0" class="text-[11px] text-slate-400 py-2 text-center w-full">
+            该专家未绑定技能
+          </div>
         </div>
       </AccordionSection>
 
