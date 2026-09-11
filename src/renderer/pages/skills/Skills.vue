@@ -68,15 +68,22 @@
           <button
             @click="refresh"
             :disabled="importing"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition"
+            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition cursor-pointer active:scale-95"
             title="重新扫描技能库"
           >
             <i class="fa-solid fa-rotate text-[11px]" :class="refreshing ? 'fa-spin' : ''"></i>刷新
           </button>
           <button
+            @click="openHub"
+            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition cursor-pointer active:scale-95"
+            title="从 360 SkillHub 搜索并安装技能"
+          >
+            <i class="fa-solid fa-cloud-arrow-down text-[11px]"></i>技能中心
+          </button>
+          <button
             @click="startImport"
             :disabled="importing"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12.5px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50"
+            class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12.5px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50 cursor-pointer active:scale-95"
           >
             <i class="fa-solid fa-file-zipper text-[11px]"></i>导入技能包
           </button>
@@ -186,7 +193,137 @@
       </div>
     </transition>
 
-    <!-- ── 导入进度弹框 ────────────────────────── -->
+    <!-- ── 技能中心(SkillHub)抽屉 ────────────────────────── -->
+    <transition name="drawer">
+      <div v-if="hubOpen" class="fixed inset-0 z-50">
+        <div class="absolute inset-0 bg-slate-900/40" @click="hubOpen = false"></div>
+        <aside class="absolute right-0 top-0 bottom-0 w-[1100px] max-w-[95vw] bg-white shadow-2xl flex flex-col">
+          <!-- Header -->
+          <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0 bg-gradient-to-br from-blue-500 to-blue-700">
+                <i class="fa-solid fa-cloud-arrow-down"></i>
+              </span>
+              <div class="min-w-0">
+                <div class="text-[13px] font-semibold text-slate-800 truncate">技能中心</div>
+                <div class="text-[11px] text-slate-400">从 360 SkillHub 搜索并安装技能</div>
+              </div>
+            </div>
+            <button @click="hubOpen = false" class="w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 transition cursor-pointer active:scale-95 shrink-0"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+
+          <!-- 两栏布局 -->
+          <div class="flex-1 min-h-0 flex">
+            <!-- 左侧:搜索 + 分类树 -->
+            <aside class="w-[200px] shrink-0 flex flex-col border-r border-slate-200/70 bg-white">
+              <div class="px-3 pt-3 pb-2.5 border-b border-slate-100 shrink-0">
+                <div class="relative">
+                  <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
+                  <input
+                    v-model="hubKeyword"
+                    type="text"
+                    placeholder="搜索技能…"
+                    class="w-full text-[12px] bg-slate-50 border border-transparent focus:bg-white focus:border-blue-400 rounded-md pl-7 pr-2.5 py-1.5 focus:outline-none transition"
+                  />
+                </div>
+              </div>
+              <div class="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+                <button
+                  v-for="cat in hubVisibleCategories"
+                  :key="cat.id"
+                  class="tree-node"
+                  :class="hubActiveCat === cat.id ? 'tree-node--active' : ''"
+                  @click="hubActiveCat = cat.id"
+                >
+                  <span class="tree-badge" :style="{ background: cat.color }">
+                    <i :class="'fa-solid fa-' + cat.icon + ' text-[10px]'"></i>
+                  </span>
+                  <span class="flex-1 text-left truncate">{{ cat.name }}</span>
+                </button>
+              </div>
+            </aside>
+
+            <!-- 右侧:卡片网格 + 分页 -->
+            <div class="flex-1 min-w-0 overflow-y-auto bg-slate-50/40">
+              <div class="px-5 py-4">
+                <!-- 结果头 -->
+                <div class="flex items-center gap-2 mb-3">
+                  <h2 class="text-[14px] font-bold text-slate-800">{{ hubCatName(hubActiveCat) }}</h2>
+                  <span class="text-[11.5px] text-slate-400">第 {{ hubPageNum }} 页 · 本页 {{ hubItems.length }} 项</span>
+                </div>
+
+                <!-- 加载中 -->
+                <div v-if="hubLoading && !hubItems.length" class="flex flex-col items-center justify-center py-24 text-slate-400">
+                  <div class="w-8 h-8 rounded-full border-2 border-blue-100 border-t-blue-500 animate-spin mb-3"></div>
+                  <span class="text-[12px]">搜索中…</span>
+                </div>
+
+                <!-- 空态 -->
+                <div v-else-if="!hubItems.length" class="flex flex-col items-center justify-center py-24 text-slate-300">
+                  <i class="fa-solid fa-inbox text-4xl mb-3"></i>
+                  <p class="text-[12.5px]">没有找到匹配的技能</p>
+                </div>
+
+                <!-- 卡片网格 -->
+                <div v-else class="hub-grid" :class="hubLoading ? 'opacity-50 pointer-events-none' : ''">
+                  <div v-for="item in hubItems" :key="item.slug" class="sk-card cursor-default">
+                    <div class="sk-card__accent" style="background:#2563eb"></div>
+                    <div class="flex items-center gap-2">
+                      <h3 class="text-[13px] font-semibold text-slate-800 truncate flex-1 min-w-0">{{ item.displayName || item.name }}</h3>
+                      <span v-if="item.version" class="text-[10px] text-slate-400 shrink-0">v{{ item.version }}</span>
+                    </div>
+                    <p class="text-[11.5px] text-slate-500 mt-2 leading-relaxed line-clamp-2">{{ item.summary || '——' }}</p>
+                    <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center flex-wrap gap-x-3 gap-y-1 text-[10.5px] text-slate-400">
+                      <span><i class="fa-solid fa-download mr-1"></i>{{ formatCount(item.downloads) }}</span>
+                      <span><i class="fa-solid fa-star mr-1 text-amber-400"></i>{{ item.stars ?? 0 }}</span>
+                      <span v-if="item.owner" class="truncate max-w-[90px]"><i class="fa-solid fa-user mr-1"></i>{{ item.owner }}</span>
+                      <span v-if="item.securityStatus === 'safe'" class="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 font-medium">
+                        <i class="fa-solid fa-shield-halved mr-0.5"></i>安全
+                      </span>
+                    </div>
+                    <div class="mt-3">
+                      <span
+                        v-if="isInstalled(item)"
+                        class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-slate-100 text-slate-400 cursor-default"
+                      >
+                        <i class="fa-solid fa-check text-[11px]"></i>已安装
+                      </span>
+                      <button
+                        v-else
+                        @click="installFromHub(item)"
+                        :disabled="!!hubInstalling"
+                        class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50 cursor-pointer active:scale-95"
+                      >
+                        <i class="fa-solid text-[11px]" :class="hubInstalling === item.slug ? 'fa-spinner fa-spin' : 'fa-download'"></i>安装
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 分页条:游标式上一页/下一页 -->
+                <div v-if="hubItems.length && (hubPrevCursors.length > 0 || hubNextCursor)" class="flex items-center justify-center gap-3 mt-6">
+                  <button
+                    class="pgn cursor-pointer active:scale-95"
+                    :disabled="hubPrevCursors.length === 0 || hubLoading"
+                    @click="hubPrevPage"
+                  >
+                    <i class="fa-solid fa-chevron-left text-[10px] mr-1"></i>上一页
+                  </button>
+                  <span class="text-[12px] text-slate-400">第 {{ hubPageNum }} 页</span>
+                  <button
+                    class="pgn cursor-pointer active:scale-95"
+                    :disabled="!hubNextCursor || hubLoading"
+                    @click="hubNextPage"
+                  >
+                    下一页<i class="fa-solid fa-chevron-right text-[10px] ml-1"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </transition>
     <transition name="fade">
       <div v-if="importing || importResult" class="fixed inset-0 z-[55] flex items-center justify-center">
         <div class="absolute inset-0 bg-slate-900/40"></div>
@@ -265,6 +402,37 @@ const progressPct = ref(0);
 const progressMsg = ref('');
 let offProgress = null;
 
+// 技能中心(SkillHub)状态 —— 服务端搜索/分类过滤 + 游标翻页
+const hubOpen = ref(false);
+const hubKeyword = ref('');
+const hubActiveCat = ref('all'); // 当前选中分类(走服务端 tag 过滤)
+const hubItems = ref([]);        // 当前页技能(翻页替换,不累积)
+const hubPrevCursors = ref([]);  // 游标栈:每页起始游标,用于"上一页"回退
+const hubNextCursor = ref(null); // 下一页游标(本页返回的 nextCursor)
+const hubPageNum = ref(1);       // 当前页码(仅显示用)
+const hubLoading = ref(false);
+const hubInstalling = ref(''); // 正在安装的 slug
+let hubDebounce = null;
+
+// 分类映射(API tag → 中文名 + 图标 + 颜色)。分类过滤走服务端 tag 参数
+const hubCategories = [
+  { id: 'all', name: '全部分类', icon: 'layer-group', color: '#64748b' },
+  { id: 'efficiency', name: '效率', icon: 'gauge-high', color: '#2563eb' },
+  { id: 'creativity', name: '创作', icon: 'wand-magic-sparkles', color: '#7c3aed' },
+  { id: 'knowledge', name: '知识', icon: 'book', color: '#0891b2' },
+  { id: 'search', name: '搜索', icon: 'magnifying-glass', color: '#0ea5e9' },
+  { id: 'marketing', name: '营销', icon: 'bullhorn', color: '#db2777' },
+  { id: 'development', name: '开发', icon: 'code', color: '#1d4ed8' },
+  { id: 'data', name: '数据', icon: 'chart-column', color: '#059669' },
+  { id: 'collaboration', name: '协作', icon: 'users', color: '#d97706' },
+  { id: 'automation', name: '自动化', icon: 'robot', color: '#4f46e5' },
+  { id: 'security', name: '安全', icon: 'shield-halved', color: '#dc2626' },
+  { id: 'lifestyle', name: '生活', icon: 'mug-hot', color: '#ea580c' },
+];
+function hubCatName(id) {
+  return hubCategories.find((c) => c.id === id)?.name || id;
+}
+
 async function loadManifest() {
   try {
     const res = await window.api.skills.getManifest();
@@ -327,6 +495,115 @@ function closeImport() {
   importResult.value = null;
   importError.value = '';
   progressPct.value = 0;
+}
+
+// ── 技能中心(SkillHub)──
+function openHub() {
+  hubOpen.value = true;
+  if (!hubItems.value.length) hubResetAndSearch();
+}
+
+// 加载一页(cursor 为 null 即第一页)。结果替换 hubItems,并记录 nextCursor 供翻页
+async function hubLoadPage(cursor) {
+  if (hubLoading.value) return;
+  hubLoading.value = true;
+  const q = hubKeyword.value.trim();
+  try {
+    const res = await window.api.skills.hubSearch(q, hubActiveCat.value, 24, cursor);
+    if (res && res.success) {
+      hubItems.value = res.items || [];
+      hubNextCursor.value = res.nextCursor || null;
+    } else {
+      hubItems.value = [];
+      hubNextCursor.value = null;
+    }
+  } catch (e) {
+    console.error('[skills] hub search failed', e);
+    hubItems.value = [];
+    hubNextCursor.value = null;
+  } finally {
+    hubLoading.value = false;
+  }
+}
+
+// 重新搜索:清空游标栈,回到第一页(关键词变化 / 切分类时调用)
+function hubResetAndSearch() {
+  hubPrevCursors.value = [];
+  hubPageNum.value = 1;
+  hubLoadPage(null);
+}
+
+// 下一页:把"进入下一页所用的游标"压栈,便于回退
+function hubNextPage() {
+  if (!hubNextCursor.value || hubLoading.value) return;
+  hubPrevCursors.value.push(hubNextCursor.value);
+  hubPageNum.value += 1;
+  hubLoadPage(hubNextCursor.value);
+}
+
+// 上一页:弹出当前页游标,用上一页的游标重新加载
+function hubPrevPage() {
+  if (hubPrevCursors.value.length === 0 || hubLoading.value) return;
+  hubPrevCursors.value.pop();           // 移除当前页游标
+  const prevCursor = hubPrevCursors.value.length
+    ? hubPrevCursors.value[hubPrevCursors.value.length - 1]
+    : null;                             // 栈空 → 回第一页
+  hubPageNum.value = Math.max(1, hubPageNum.value - 1);
+  hubLoadPage(prevCursor);
+}
+
+watch(hubKeyword, () => {
+  if (hubDebounce) clearTimeout(hubDebounce);
+  hubDebounce = setTimeout(() => { hubResetAndSearch(); }, 300);
+});
+watch(hubActiveCat, () => { hubResetAndSearch(); });
+
+// 展示全部预设分类(服务端过滤,前端无法预判哪个分类有货)
+const hubVisibleCategories = computed(() => hubCategories);
+
+function isInstalled(item) {
+  return skills.value.some((s) =>
+    s.id === item.slug ||
+    s.id === item.name ||
+    s.name === item.displayName ||
+    s.name === item.name
+  );
+}
+
+function formatCount(n) {
+  const v = Number(n) || 0;
+  if (v >= 10000) return (v / 10000).toFixed(1) + '万';
+  return String(v);
+}
+
+async function installFromHub(item) {
+  if (importing.value || hubInstalling.value) return;
+  importing.value = true;
+  importResult.value = null;
+  importError.value = '';
+  progressPct.value = 0;
+  progressMsg.value = '准备下载…';
+  hubInstalling.value = item.slug;
+  try {
+    const res = await window.api.skills.hubInstall(item);
+    if (res && res.success) {
+      progressPct.value = 100;
+      importResult.value = { skillId: res.skillId || item.displayName || item.name };
+      await loadManifest();
+      showToast(`技能「${item.displayName || item.name}」安装成功`);
+    } else {
+      importError.value = res?.error || '安装失败';
+      importResult.value = { skillId: '' };
+      showToast('安装失败:' + (res?.error || '未知错误'));
+    }
+  } catch (e) {
+    importError.value = e.message || String(e);
+    importResult.value = { skillId: '' };
+    showToast('安装失败:' + (e.message || e));
+  } finally {
+    importing.value = false;
+    hubInstalling.value = '';
+  }
 }
 
 const activeName = computed(() => {
@@ -457,12 +734,12 @@ async function deleteSkill(sk) {
 .pgn {
   min-width: 32px;
   height: 32px;
-  padding: 0 9px;
+  padding: 0 12px;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   background: #fff;
   color: #64748b;
-  font-size: 13px;
+  font-size: 12.5px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
@@ -579,6 +856,13 @@ async function deleteSkill(sk) {
   color: #fff;
   font-size: 18px;
   flex-shrink: 0;
+}
+
+/* 技能中心卡片网格 */
+.hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
 }
 
 .line-clamp-2 {

@@ -65,6 +65,25 @@
           </button>
         </div>
 
+        <!-- 平台技术库 -->
+        <div v-if="techItems.length" class="p-4 pb-2">
+          <div class="text-[12px] font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+            <i class="fa-solid fa-microchip text-indigo-500 text-[11px]"></i>平台技术库
+            <span class="text-[10px] text-slate-400 font-normal">{{ techItems.length }} 份 · 技术底座认知</span>
+          </div>
+          <button
+            v-for="it in techItems"
+            :key="it.file"
+            @click="select(it)"
+            class="w-full text-left px-3 py-2 rounded-lg mb-1 flex items-center gap-2.5 transition-colors cursor-pointer"
+            :class="isActive(it) ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'hover:bg-slate-50'"
+          >
+            <i :class="[it.type === 'docx' ? 'fa-solid fa-file-word text-blue-400' : 'fa-solid fa-file-lines text-indigo-500', 'text-[12px] shrink-0']"></i>
+            <span class="text-[12px] text-slate-700 flex-1 min-w-0 truncate">{{ it.title }}</span>
+            <span v-if="!it.previewable" class="text-[9px] px-1 py-0.5 rounded bg-slate-100 text-slate-400 shrink-0">Word</span>
+          </button>
+        </div>
+
         <!-- 交付物 -->
         <div v-if="deliverableItems.length" class="p-4 pt-2">
           <div class="text-[12px] font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
@@ -130,6 +149,7 @@ defineEmits(['back', 'coach']);
 
 const items = computed(() => props.stage.items || []);
 const knowledgeItems = computed(() => items.value.filter((i) => i.category === 'knowledge'));
+const techItems = computed(() => items.value.filter((i) => i.category === 'tech'));
 const deliverableItems = computed(() => items.value.filter((i) => i.category === 'deliverable'));
 const specItems = computed(() => items.value.filter((i) => i.category === 'spec' || i.category === 'other'));
 

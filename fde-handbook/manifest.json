@@ -45,11 +45,40 @@
           "type": "md",
           "category": "knowledge",
           "previewable": true
+        },
+        {
+          "file": "4-FDE技术基础【知识】.md",
+          "title": "FDE技术基础",
+          "type": "md",
+          "category": "tech",
+          "previewable": true
+        },
+        {
+          "file": "5-SDR数据基座【知识】.md",
+          "title": "SDR数据基座",
+          "type": "md",
+          "category": "tech",
+          "previewable": true
+        },
+        {
+          "file": "6-大数据能力与医疗数据中台【知识】.md",
+          "title": "大数据能力与医疗数据中台",
+          "type": "md",
+          "category": "tech",
+          "previewable": true
+        },
+        {
+          "file": "7-360AI企业智能体平台【知识】.md",
+          "title": "360AI企业智能体平台",
+          "type": "md",
+          "category": "tech",
+          "previewable": true
         }
       ],
       "counts": {
         "knowledge": 3,
-        "deliverable": 0
+        "deliverable": 0,
+        "tech": 4
       }
     },
     {

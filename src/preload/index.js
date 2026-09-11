@@ -62,6 +62,8 @@ const validInvokeChannels = new Set([
   'skills:open',
   'skills:import-zip',
   'skills:delete',
+  'skills:hub-search',
+  'skills:hub-install',
   // 环境自检 + 连通性
   'env:check',
   'env:test-connection',
@@ -222,6 +224,8 @@ contextBridge.exposeInMainWorld('api', {
     importZip() { return invoke('skills:import-zip'); },
     onImportProgress(handler) { return on('skills:import-progress', handler); },
     delete(skill) { return invoke('skills:delete', { skill }); },
+    hubSearch(query, tag, limit, cursor) { return invoke('skills:hub-search', { query, tag, limit, cursor }); },
+    hubInstall(item) { return invoke('skills:hub-install', { slug: item.slug, version: item.version, downloadUrl: item.downloadUrl }); },
   },
 
   // FDE 作战手册知识库(工作台)

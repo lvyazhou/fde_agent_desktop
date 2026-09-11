@@ -175,7 +175,7 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const isMaximized = ref(false);
-const appVersion = ref('v2.1.0');
+const appVersion = ref('v2.2.2');
 const licenseInfo = ref(null);
 const importing = ref(false);
 const importError = ref('');

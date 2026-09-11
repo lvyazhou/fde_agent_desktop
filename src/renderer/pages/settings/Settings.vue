@@ -145,7 +145,7 @@ const model = ref('');
 const showApiKey = ref(false);
 const hermesHome = ref('~/.product-lobster');
 const projectCount = ref(0);
-const appVersion = ref('2.0.0');
+const appVersion = ref('2.2.2');
 const saving = ref(false);
 const saveStatus = ref(''); // '' | 'success' | 'error'
 

@@ -459,7 +459,7 @@ async function initializeHermes() {
   try {
     const result = await acp.request('initialize', {
       protocolVersion: 1,
-      clientInfo: { name: 'prodesigner', version: '2.0.0' },
+      clientInfo: { name: 'prodesigner', version: '2.2.2' },
     });
     console.log('[main] hermes-acp initialized:', JSON.stringify(result).slice(0, 300));
     cachedCapabilities = result || {};
@@ -1453,6 +1453,161 @@ ipcMain.handle('handbook:delete', async (_event, { stage, file }) => {
 });
 
 // 导入标准技能 zip:选包 → 校验 → 解压 → 重生 manifest,分阶段回报进度
+// 从内存中的 zip buffer 安装技能：校验 SKILL.md → 推导 id → 解压到 SKILLS_DIR → 重建 manifest。
+// promptOverwrite=true 时重名弹框询问（本地导入用）；false 时静默覆盖（技能中心安装用）。
+async function installSkillFromZipBuffer(buffer, { fallbackId, emit, promptOverwrite = false } = {}) {
+  const noop = () => {};
+  const em = typeof emit === 'function' ? emit : noop;
+  const JSZip = require('jszip');
+  const zip = await JSZip.loadAsync(buffer);
+
+  // 校验:找到 SKILL.md(顶层或单一子目录内),且 frontmatter 含 name
+  em('validate', 35, '校验技能包结构…');
+  const norm = (p) => p.replace(/\\/g, '/');
+  const fileKeys = Object.keys(zip.files).filter((k) => !zip.files[k].dir);
+  let skillMdKey = null;
+  for (const k of fileKeys) {
+    if (/(^|\/)SKILL\.md$/i.test(norm(k))) { skillMdKey = k; break; }
+  }
+  if (!skillMdKey) {
+    return { success: false, error: '无效技能包:缺少 SKILL.md' };
+  }
+  const skillMdPath = norm(skillMdKey);
+  const parts = skillMdPath.split('/');
+  const rootPrefix = parts.length > 1 ? parts.slice(0, -1).join('/') + '/' : '';
+  let skillId = parts.length > 1 ? parts[parts.length - 2] : (fallbackId || 'imported-skill');
+  skillId = skillId.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^-+|-+$/g, '') || 'imported-skill';
+
+  const skillMdRaw = await zip.file(skillMdKey).async('string');
+  const fmMatch = skillMdRaw.replace(/\r\n?/g, '\n').match(/^---\s*\n([\s\S]*?)\n---/);
+  if (!fmMatch || !/^name:\s*\S+/m.test(fmMatch[1])) {
+    return { success: false, error: '无效技能包:SKILL.md 缺少 name 字段' };
+  }
+
+  const destDir = path.join(SKILLS_DIR, skillId);
+  if (fs.existsSync(destDir)) {
+    if (promptOverwrite) {
+      const { response } = await dialog.showMessageBox(mainWindow, {
+        type: 'question',
+        buttons: ['覆盖', '取消'],
+        defaultId: 1,
+        cancelId: 1,
+        title: '技能已存在',
+        message: `技能「${skillId}」已存在,是否覆盖?`,
+      });
+      if (response !== 0) return { success: false, canceled: true };
+    }
+    fs.rmSync(destDir, { recursive: true, force: true });
+  }
+
+  em('extract', 65, '解压技能文件…');
+  fs.mkdirSync(destDir, { recursive: true });
+  const fileEntries = Object.keys(zip.files).filter((k) => {
+    const n = norm(k);
+    if (zip.files[k].dir) return false;
+    return rootPrefix ? n.startsWith(rootPrefix) : true;
+  });
+  for (const key of fileEntries) {
+    const rel = rootPrefix ? norm(key).slice(rootPrefix.length) : norm(key);
+    if (!rel || rel.includes('..')) continue;
+    const outPath = path.join(destDir, rel);
+    if (!outPath.startsWith(destDir)) continue; // zip-slip 防护
+    fs.mkdirSync(path.dirname(outPath), { recursive: true });
+    fs.writeFileSync(outPath, await zip.file(key).async('nodebuffer'));
+  }
+
+  // 重生 manifest(调用 build 脚本,幂等)
+  em('manifest', 88, '更新技能清单…');
+  try {
+    const { execFileSync } = require('child_process');
+    const scriptPath = app.isPackaged
+      ? path.join(process.resourcesPath, 'scripts', 'build-skills-manifest.js')
+      : path.join(app.getAppPath(), 'scripts', 'build-skills-manifest.js');
+    if (fs.existsSync(scriptPath)) {
+      execFileSync(process.execPath, [scriptPath], {
+        env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+      });
+      const builtManifest = app.isPackaged
+        ? path.join(process.resourcesPath, 'skills', 'manifest.json')
+        : path.join(app.getAppPath(), 'skills', 'manifest.json');
+      if (fs.existsSync(builtManifest) && builtManifest !== path.join(SKILLS_DIR, 'manifest.json')) {
+        fs.copyFileSync(builtManifest, path.join(SKILLS_DIR, 'manifest.json'));
+      }
+    }
+  } catch (e) {
+    console.warn('[installSkillFromZipBuffer] manifest rebuild failed:', e.message);
+  }
+
+  em('done', 100, '导入完成');
+  return { success: true, skillId };
+}
+
+// 下载文件到内存 buffer，跟随 302 重定向（node http/https 不自动跟）。
+function downloadBuffer(urlStr, { maxRedirects = 5, onProgress } = {}) {
+  return new Promise((resolve, reject) => {
+    let u;
+    try { u = new URL(urlStr); } catch (e) { return reject(new Error('无效的下载地址')); }
+    const lib = u.protocol === 'http:' ? require('http') : require('https');
+    const req = lib.get(u, (res) => {
+      const { statusCode, headers } = res;
+      if (statusCode >= 300 && statusCode < 400 && headers.location) {
+        res.resume(); // 排空重定向响应体
+        if (maxRedirects <= 0) return reject(new Error('重定向次数过多'));
+        const next = new URL(headers.location, u).toString();
+        return resolve(downloadBuffer(next, { maxRedirects: maxRedirects - 1, onProgress }));
+      }
+      if (statusCode < 200 || statusCode >= 300) {
+        res.resume();
+        return reject(new Error(`下载失败:HTTP ${statusCode}`));
+      }
+      const total = parseInt(headers['content-length'] || '0', 10);
+      let received = 0;
+      const chunks = [];
+      res.on('data', (c) => {
+        chunks.push(c);
+        received += c.length;
+        if (total && typeof onProgress === 'function') onProgress(received, total);
+      });
+      res.on('end', () => resolve(Buffer.concat(chunks)));
+      res.on('error', reject);
+    });
+    req.on('error', reject);
+    req.setTimeout(120_000, () => { req.destroy(); reject(new Error('下载超时')); });
+  });
+}
+
+// 从 URL 拉取 JSON（GET），跟随重定向。
+function fetchJson(urlStr, { maxRedirects = 5 } = {}) {
+  return new Promise((resolve, reject) => {
+    let u;
+    try { u = new URL(urlStr); } catch (e) { return reject(new Error('无效的地址')); }
+    const lib = u.protocol === 'http:' ? require('http') : require('https');
+    const req = lib.get(u, { headers: { 'Accept': 'application/json' } }, (res) => {
+      const { statusCode, headers } = res;
+      if (statusCode >= 300 && statusCode < 400 && headers.location) {
+        res.resume();
+        if (maxRedirects <= 0) return reject(new Error('重定向次数过多'));
+        const next = new URL(headers.location, u).toString();
+        return resolve(fetchJson(next, { maxRedirects: maxRedirects - 1 }));
+      }
+      if (statusCode < 200 || statusCode >= 300) {
+        res.resume();
+        return reject(new Error(`请求失败:HTTP ${statusCode}`));
+      }
+      let raw = '';
+      res.setEncoding('utf8');
+      res.on('data', (c) => { raw += c; });
+      res.on('end', () => {
+        try { resolve(JSON.parse(raw)); }
+        catch (e) { reject(new Error('返回数据解析失败')); }
+      });
+      res.on('error', reject);
+    });
+    req.on('error', reject);
+    req.setTimeout(30_000, () => { req.destroy(); reject(new Error('请求超时')); });
+  });
+}
+
 ipcMain.handle('skills:import-zip', async () => {
   const emit = (phase, percent, message) => {
     try { mainWindow?.webContents.send('skills:import-progress', { phase, percent, message }); } catch (e) {}
@@ -1467,94 +1622,68 @@ ipcMain.handle('skills:import-zip', async () => {
 
     const zipPath = filePaths[0];
     emit('read', 10, '读取压缩包…');
-    const JSZip = require('jszip');
-    const zip = await JSZip.loadAsync(fs.readFileSync(zipPath));
-
-    // 校验:找到 SKILL.md(顶层或单一子目录内),且 frontmatter 含 name
-    emit('validate', 35, '校验技能包结构…');
-    const norm = (p) => p.replace(/\\/g, '/');
-    // zip 原始 key -> 归一化路径,只看非目录条目
-    const fileKeys = Object.keys(zip.files).filter((k) => !zip.files[k].dir);
-    let skillMdKey = null;
-    for (const k of fileKeys) {
-      if (/(^|\/)SKILL\.md$/i.test(norm(k))) { skillMdKey = k; break; }
-    }
-    if (!skillMdKey) {
-      return { success: false, error: '无效技能包:缺少 SKILL.md' };
-    }
-    const skillMdPath = norm(skillMdKey);
-    // 技能 id = SKILL.md 所在目录名;若在顶层则用 zip 文件名
-    const parts = skillMdPath.split('/');
-    const rootPrefix = parts.length > 1 ? parts.slice(0, -1).join('/') + '/' : '';
-    let skillId = parts.length > 1 ? parts[parts.length - 2]
-      : path.basename(zipPath, '.zip');
-    skillId = skillId.replace(/[^A-Za-z0-9._-]/g, '-').replace(/^-+|-+$/g, '') || 'imported-skill';
-
-    // 校验 frontmatter 含 name
-    const skillMdRaw = await zip.file(skillMdKey).async('string');
-    const fmMatch = skillMdRaw.replace(/\r\n?/g, '\n').match(/^---\s*\n([\s\S]*?)\n---/);
-    if (!fmMatch || !/^name:\s*\S+/m.test(fmMatch[1])) {
-      return { success: false, error: '无效技能包:SKILL.md 缺少 name 字段' };
-    }
-
-    // 重名冲突 → 询问覆盖 / 取消
-    const destDir = path.join(SKILLS_DIR, skillId);
-    if (fs.existsSync(destDir)) {
-      const { response } = await dialog.showMessageBox(mainWindow, {
-        type: 'question',
-        buttons: ['覆盖', '取消'],
-        defaultId: 1,
-        cancelId: 1,
-        title: '技能已存在',
-        message: `技能「${skillId}」已存在,是否覆盖?`,
-      });
-      if (response !== 0) return { success: false, canceled: true };
-      fs.rmSync(destDir, { recursive: true, force: true });
-    }
-
-    // 解压该技能目录下所有文件到 SKILLS_DIR/skillId
-    emit('extract', 65, '解压技能文件…');
-    fs.mkdirSync(destDir, { recursive: true });
-    const fileEntries = Object.keys(zip.files).filter((k) => {
-      const n = norm(k);
-      if (zip.files[k].dir) return false;
-      return rootPrefix ? n.startsWith(rootPrefix) : true;
+    return await installSkillFromZipBuffer(fs.readFileSync(zipPath), {
+      fallbackId: path.basename(zipPath, '.zip'),
+      emit,
+      promptOverwrite: true,
     });
-    for (const key of fileEntries) {
-      const rel = rootPrefix ? norm(key).slice(rootPrefix.length) : norm(key);
-      if (!rel || rel.includes('..')) continue;
-      const outPath = path.join(destDir, rel);
-      if (!outPath.startsWith(destDir)) continue; // zip-slip 防护
-      fs.mkdirSync(path.dirname(outPath), { recursive: true });
-      fs.writeFileSync(outPath, await zip.file(key).async('nodebuffer'));
-    }
+  } catch (err) {
+    emit('error', 100, err.message);
+    return { success: false, error: err.message };
+  }
+});
 
-    // 重生 manifest(调用 build 脚本,幂等)
-    emit('manifest', 88, '更新技能清单…');
-    try {
-      const { execFileSync } = require('child_process');
-      const scriptPath = app.isPackaged
-        ? path.join(process.resourcesPath, 'scripts', 'build-skills-manifest.js')
-        : path.join(app.getAppPath(), 'scripts', 'build-skills-manifest.js');
-      if (fs.existsSync(scriptPath)) {
-        execFileSync(process.execPath, [scriptPath], {
-          env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
-        });
-        // 脚本写到仓库 skills/,同步一份到运行时 SKILLS_DIR
-        const builtManifest = app.isPackaged
-          ? path.join(process.resourcesPath, 'skills', 'manifest.json')
-          : path.join(app.getAppPath(), 'skills', 'manifest.json');
-        if (fs.existsSync(builtManifest) && builtManifest !== path.join(SKILLS_DIR, 'manifest.json')) {
-          fs.copyFileSync(builtManifest, path.join(SKILLS_DIR, 'manifest.json'));
-        }
-      }
-    } catch (e) {
-      // 脚本不可用时不阻断导入(技能文件已落地),仅提示 manifest 未刷新
-      console.warn('[skills:import-zip] manifest rebuild failed:', e.message);
-    }
+// 技能中心：搜索
+ipcMain.handle('skills:hub-search', async (_event, { query, tag, limit, cursor } = {}) => {
+  try {
+    const url = new URL('https://skillhub.360.com/api/v1/skills');
+    if (query) url.searchParams.set('q', String(query));
+    if (tag && tag !== 'all') url.searchParams.set('tag', String(tag));
+    url.searchParams.set('limit', String(limit || 24));
+    if (cursor) url.searchParams.set('cursor', String(cursor));
+    const data = await fetchJson(url.toString());
+    const items = Array.isArray(data.items) ? data.items.map((it) => ({
+      slug: it.slug,
+      name: it.skillName || it.slug,
+      displayName: it.displayName || it.skillName || it.slug,
+      summary: it.summary_short || it.summary || '',
+      summaryFull: it.summary || '',
+      category: (it.tags && it.tags.category) || 'general',
+      sceneTags: (it.tags && it.tags.scene_tags) || [],
+      downloads: it.merged_downloads || 0,
+      stars: it.merged_stars || 0,
+      owner: it.ownerDisplayName || it.ownerHandle || '',
+      securityStatus: it.securityStatus || '',
+      license: it.license || (it.latestVersion && it.latestVersion.license) || '',
+      version: (it.latestVersion && it.latestVersion.version) || '',
+      downloadUrl: (it.latestVersion && it.latestVersion.downloadUrl) || '',
+    })) : [];
+    return { success: true, items, nextCursor: data.nextCursor || null };
+  } catch (err) {
+    return { success: false, error: err.message, items: [] };
+  }
+});
 
-    emit('done', 100, '导入完成');
-    return { success: true, skillId };
+// 技能中心：下载并安装
+ipcMain.handle('skills:hub-install', async (_event, { slug, version, downloadUrl } = {}) => {
+  const emit = (phase, percent, message) => {
+    try { mainWindow?.webContents.send('skills:import-progress', { phase, percent, message }); } catch (e) {}
+  };
+  try {
+    if (!downloadUrl) return { success: false, error: '缺少下载地址' };
+    emit('download', 15, '从技能中心下载…');
+    const buffer = await downloadBuffer(downloadUrl, {
+      onProgress: (recv, total) => {
+        const pct = 15 + Math.round((recv / total) * 30); // 15~45%
+        emit('download', Math.min(pct, 45), '下载中…');
+      },
+    });
+    emit('read', 50, '读取技能包…');
+    return await installSkillFromZipBuffer(buffer, {
+      fallbackId: slug || 'hub-skill',
+      emit,
+      promptOverwrite: false,
+    });
   } catch (err) {
     emit('error', 100, err.message);
     return { success: false, error: err.message };

@@ -9,7 +9,7 @@
         <div class="min-w-0">
           <div class="text-[13px] font-semibold text-slate-800 truncate">{{ item.title }}</div>
           <div class="text-[11px] text-slate-400">
-            <span :class="item.category === 'knowledge' ? 'text-emerald-600' : item.category === 'deliverable' ? 'text-blue-600' : 'text-slate-400'">
+            <span :class="item.category === 'knowledge' ? 'text-emerald-600' : item.category === 'deliverable' ? 'text-blue-600' : item.category === 'tech' ? 'text-indigo-600' : 'text-slate-400'">
               {{ categoryLabel }}
             </span>
             · {{ item.type.toUpperCase() }}
@@ -156,6 +156,7 @@ const categoryLabel = computed(() => ({
   knowledge: '知识',
   deliverable: '交付物',
   spec: '规范',
+  tech: '平台技术',
   other: '文档',
 }[props.item.category] || '文档'));
 
