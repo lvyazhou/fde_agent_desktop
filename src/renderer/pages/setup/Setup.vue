@@ -138,33 +138,6 @@
             />
             <p class="text-[11px] text-slate-400 mb-4">兼容 OpenAI 格式的接口地址。以 <code class="bg-slate-100 px-1 rounded">sk-ant-</code> 开头会按 Anthropic 处理。</p>
 
-            <label class="block text-[12px] font-medium text-slate-600 mb-1.5">模型</label>
-            <div class="relative mb-2">
-              <select
-                v-model="modelSelect"
-                class="w-full appearance-none px-3.5 py-2.5 pr-9 rounded-xl border border-slate-200 text-[13px] bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
-              >
-                <optgroup label="强 · 首选">
-                  <option v-for="m in COMMON_MODELS.filter(x => x.group === '强 · 首选')" :key="m.value" :value="m.value">{{ m.label }}</option>
-                </optgroup>
-                <optgroup label="快 · 日常">
-                  <option v-for="m in COMMON_MODELS.filter(x => x.group === '快 · 日常')" :key="m.value" :value="m.value">{{ m.label }}</option>
-                </optgroup>
-                <option :value="CUSTOM_MODEL">自定义（手动填写）…</option>
-              </select>
-              <i class="fa-solid fa-chevron-down text-[11px] text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
-            </div>
-            <input
-              v-if="isCustomModel"
-              v-model="customModel"
-              type="text"
-              placeholder="按你所选网关支持的名称填写，如 gpt-4o、qwen/qwen3-max"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 mb-2"
-            />
-            <p class="text-[11px] text-slate-400 mb-4">
-              以上为 360 网关（api.360.cn）常用模型。用其他网关请选「自定义」手动填写模型名。
-            </p>
-
             <!-- 测试结果 -->
             <div v-if="testResult" class="mb-4 p-3 rounded-xl text-[12px] flex items-start gap-2"
                  :class="testResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
@@ -180,7 +153,7 @@
               <div class="flex items-center gap-2">
                 <button
                   @click="testConn"
-                  :disabled="!apiKey.trim() || !model || testing"
+                  :disabled="!apiKey.trim() || testing"
                   class="text-[13px] px-4 py-2.5 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40"
                 >
                   <i class="fa-solid" :class="testing ? 'fa-spinner fa-spin' : 'fa-plug'"></i>
@@ -215,7 +188,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { COMMON_MODELS, DEFAULT_MODEL, CUSTOM_MODEL } from '../../constants/models.js';
+import { DEFAULT_MODEL } from '../../constants/models.js';
 
 const router = useRouter();
 const steps = ['软件授权', '环境自检', '配置 Key', '完成'];
@@ -335,12 +308,9 @@ const goNextFromCheck = () => {
 // --- 配置 Key ---
 const apiKey = ref('');
 const baseUrl = ref('https://api.360.cn/v1');
-// 模型下拉:默认选中常用清单里的默认模型;选「自定义」时用 customModel 手填。
-const modelSelect = ref(DEFAULT_MODEL);
-const customModel = ref('');
-const isCustomModel = computed(() => modelSelect.value === CUSTOM_MODEL);
-// 最终生效的模型名:自定义时取手填值,否则取下拉选中值。
-const model = computed(() => (isCustomModel.value ? customModel.value.trim() : modelSelect.value));
+// 首次引导不让用户选模型 —— 新用户不知道该选哪个。固定用默认模型(v4.1-flash)测试连接 +
+// 写进 config 的 model.default。以后想换,顶栏下拉/设置页随时切。
+const model = DEFAULT_MODEL;
 const testing = ref(false);
 const saving = ref(false);
 const testResult = ref(null);
@@ -349,7 +319,7 @@ const testConn = async () => {
   testing.value = true;
   testResult.value = null;
   try {
-    testResult.value = await window.api.env.testConnection({ apiKey: apiKey.value.trim(), baseUrl: baseUrl.value.trim(), model: model.value });
+    testResult.value = await window.api.env.testConnection({ apiKey: apiKey.value.trim(), baseUrl: baseUrl.value.trim(), model });
   } catch (e) {
     testResult.value = { ok: false, error: e.message || '测试失败' };
   } finally {
@@ -366,12 +336,12 @@ const saveAndFinish = async () => {
     if (key.startsWith('sk-ant-')) lines.push(`ANTHROPIC_API_KEY=${key}`);
     else lines.push(`OPENAI_API_KEY=${key}`);
     if (baseUrl.value.trim()) lines.push(`OPENAI_BASE_URL=${baseUrl.value.trim()}`);
-    if (model.value) lines.push(`HERMES_MODEL=${model.value}`);
+    // 不写 HERMES_MODEL 到 .env —— config.yaml 的 model.default 是模型的唯一真值。
     await window.api.hermes.writeEnv(lines.join('\n') + '\n');
     // 同步写进 config.yaml 的 custom_providers[].api_key / base_url / 默认模型 ——
     // hermes 选模型的事实来源是 config.yaml,只写 .env 不生效(占位符会一直被用),
     // 且模型清单要跟着网关走,否则顶栏下拉列的是别的网关不认的模型名。
-    await window.api.hermes.syncProviderKey(key, baseUrl.value.trim(), model.value);
+    await window.api.hermes.syncProviderKey(key, baseUrl.value.trim(), model);
     await window.api.hermes.restart();
     finishToApp();
   } catch (e) {

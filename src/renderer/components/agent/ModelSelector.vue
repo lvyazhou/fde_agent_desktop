@@ -78,6 +78,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import { COMMON_MODELS } from '../../constants/models.js';
 
 const props = defineProps({
   // 每项可为字符串，或 { model_id | id, name, description }
@@ -95,24 +96,10 @@ const searchRef = ref(null);
 // hermes 会把 360 全部 400+ 个模型（含视频/embedding/OCR/内部测试变体）一股脑返回。
 // 这里用「精选白名单」筛出干净的一线对话模型：按结尾模型名（去掉 provider 前缀）匹配。
 // 想加/删模型：改这个数组即可。顺序即展示顺序。
-const CURATED = [
-  'anthropic/claude-opus-4.8',
-  'anthropic/claude-opus-5',
-  'anthropic/claude-sonnet-5',
-  'anthropic/claude-haiku-4.5',
-  'anthropic/claude-fable-5',
-  'deepseek/deepseek-v4-pro',
-  'deepseek/deepseek-v4-flash',
-  'openai/gpt-5.5',
-  'openai/gpt-5.6-terra',
-  'openai/gpt-5.6-sol',
-  'moonshotai/kimi-k3',
-  'z-ai/glm-5.3',
-  'z-ai/glm-5.2',
-  'qwen/qwen3.8-max',
-  'minimax/MiniMax-M2.7-highspeed',
-  'minimax/MiniMax-M3',
-];
+// 白名单 = 共享常用模型清单（src/renderer/constants/models.js），与 Setup/Settings 同源，
+// 加减模型只改那一处。历史上这里曾硬编码一份 CURATED，跟 config 不同步导致
+// v4.1-flash 等新模型不显示、v4-flash 等已删模型残留（就是这个 bug 的根因）。
+const CURATED = COMMON_MODELS.map((m) => m.value);
 
 // 去掉 provider 前缀（openai-api:anthropic/claude-opus-4.8 → anthropic/claude-opus-4.8）
 function stripProvider(id) {

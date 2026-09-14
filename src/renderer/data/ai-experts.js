@@ -30,6 +30,7 @@ export const aiExperts = [
     slugPrefix: 'expert-image',
     displayOpening: '启动 AI 图像生成专家',
     capabilities: `- 将业务需求转为中英文生图提示词\n- 推荐构图、风格关键词、负面提示词\n- 指定渠道尺寸(电商主图/海报/公众号/社媒)\n- 迭代方向建议`,
+    skills: ['image-generator'],
   },
   {
     id: 'video-generation',
@@ -49,6 +50,7 @@ export const aiExperts = [
     slugPrefix: 'expert-video',
     displayOpening: '启动 AI 视频生成专家',
     capabilities: `- 从营销目标出发拆解视频脚本\n- 输出分镜表(画面描述+镜头语言+时长)\n- 撰写旁白/字幕\n- 生成视频生成模型提示词\n- 素材需求清单 + 发布平台建议`,
+    skills: ['video-generator', 'md-export'],
   },
 
   // ── 增长获客 ──
@@ -70,6 +72,7 @@ export const aiExperts = [
     slugPrefix: 'expert-lead',
     displayOpening: '启动获客线索专家',
     capabilities: `- 目标客户画像分析\n- 获客渠道推荐与评估\n- 触达话术/邮件/私信模板\n- 线索筛选字段与评分模型\n- 跟进节奏与转化指标`,
+    skills: ['brainstorming', 'md-export'],
   },
   {
     id: 'sales-script',
@@ -89,6 +92,7 @@ export const aiExperts = [
     slugPrefix: 'expert-sales',
     displayOpening: '启动销售话术专家',
     capabilities: `- 销售开场白和自我介绍模板\n- SPIN/FABE/BANT 需求挖掘话术\n- 常见异议处理话术\n- 逼单策略与时机判断\n- 销售复盘与改进建议`,
+    skills: ['brainstorming', 'md-export'],
   },
 
   // ── 交易运营 ──
@@ -110,6 +114,7 @@ export const aiExperts = [
     slugPrefix: 'expert-orders',
     displayOpening: '启动客户订单专家',
     capabilities: `- 订单全生命周期梳理\n- 交付异常处理 SOP\n- 客户沟通话术模板\n- 退换货/售后流程设计\n- 优先级判断与风险提醒`,
+    skills: ['md-export', 'product-doc-to-word'],
   },
   {
     id: 'operation-analysis',
@@ -129,6 +134,7 @@ export const aiExperts = [
     slugPrefix: 'expert-analysis',
     displayOpening: '启动经营分析专家',
     capabilities: `- 经营指标体系搭建(GMV/利润/流量/转化/复购…)\n- 数据看板设计\n- 下钻归因分析框架\n- 趋势预警与优化建议\n- 报告模板输出`,
+    skills: ['dashboard-generator', 'fireworks-tech-graph', 'md-export'],
   },
 
   // ── 企业服务 ──
@@ -150,6 +156,7 @@ export const aiExperts = [
     slugPrefix: 'expert-contract',
     displayOpening: '启动合同审查专家',
     capabilities: `- 风险条款识别(付款/交付/违约/知识产权/责任限制)\n- 缺失条款提醒\n- 模糊义务与歧义分析\n- 修订建议与替代措辞\n- 签署前确认问题清单`,
+    skills: ['contract-review', 'product-doc-to-word'],
     riskNotice: '本专家仅提供参考性分析，不能替代正式法律意见。重要合同请咨询专业律师。',
   },
   {
@@ -170,6 +177,7 @@ export const aiExperts = [
     slugPrefix: 'expert-enterprise',
     displayOpening: '启动企业场景顾问',
     capabilities: `- 业务流程可视化拆解\n- 痛点识别与优先级排序\n- AI 可落地场景地图\n- 数据/系统/工具依赖分析\n- 实施路径与里程碑规划\n- 价值评估与 ROI 框架`,
+    skills: ['business-architecture-image', 'fireworks-tech-graph', 'first-principles-critic', 'product-feature-spec'],
   },
 ];
 

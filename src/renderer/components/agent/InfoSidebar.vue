@@ -196,6 +196,7 @@ const skillMeta = {
   'collaborative-planning-board': { label: '协作规划', icon: 'fa-solid fa-chalkboard' },
   'first-principles-critic': { label: '第一性原理', icon: 'fa-solid fa-microscope' },
   'image-generator': { label: '图片生成', icon: 'fa-solid fa-image' },
+  'video-generator': { label: '视频生成', icon: 'fa-solid fa-film' },
   '360-ppt-generator': { label: 'PPT 生成', icon: 'fa-solid fa-file-powerpoint' },
   'business-architecture-image': { label: '商务架构图', icon: 'fa-solid fa-sitemap' },
   'dashboard-generator': { label: '大屏生成', icon: 'fa-solid fa-chart-line' },
@@ -203,13 +204,21 @@ const skillMeta = {
   'fireworks-tech-graph': { label: '技术图表', icon: 'fa-solid fa-diagram-project' },
   'md-export': { label: '文档导出', icon: 'fa-solid fa-file-export' },
   'product-doc-to-word': { label: '文档转 Word', icon: 'fa-solid fa-file-word' },
+  'contract-review': { label: '合同审查', icon: 'fa-solid fa-file-contract' },
 };
 
 const displaySkills = computed(() => {
-  // 优先使用动态扫描到的 skills，没有则降级到默认列表
-  const source = props.skills && props.skills.length > 0
-    ? props.skills
-    : [{ name: 'brainstorming' }, { name: 'product-feature-spec' }, { name: 'prototype-generator' }, { name: 'prototype-iterate' }];
+  const isAiApp = !!(props.projectMeta && props.projectMeta.aiApp && props.projectMeta.aiApp.id);
+  // AI 应用/专家会话：严格按传入的绑定技能展示（可能为空 → 显示"未绑定"）。
+  // 普通对话：优先用扫描到的技能，没有则降级到默认列表。
+  let source;
+  if (isAiApp) {
+    source = props.skills || [];
+  } else {
+    source = props.skills && props.skills.length > 0
+      ? props.skills
+      : [{ name: 'brainstorming' }, { name: 'product-feature-spec' }, { name: 'prototype-generator' }, { name: 'prototype-iterate' }];
+  }
 
   return source.map(s => {
     const name = s.name || s.key || s;
