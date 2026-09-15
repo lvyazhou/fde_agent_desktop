@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+:root{
+  --primary: 214 95% 44%; --background: 0 0% 100%; --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%; --border: 213 32% 88%;
+  --success: 160 84% 33%; --warning: 32 88% 40%; --danger: 352 68% 48%; --info: 214 15% 50%;
+  --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --background: 214 40% 11%; --foreground: 210 40% 94%; --muted-foreground: 213 22% 68%; --border: 213 28% 26%; --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%); --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%); }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.btn-pri{height:34px;padding:0 18px;border:0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 5px 12px hsl(var(--primary) / 18%)}
+.btn-ghost{height:32px;padding:0 14px;border:1px solid hsl(var(--border));border-radius:8px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:8px;margin-right:16px} .traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+.body-row{flex:1;display:flex;min-height:0}
+.side-rail{width:200px;flex-shrink:0;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset -1px 0 0 hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:14px 10px}
+.rail-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;margin-bottom:3px;transition:background .15s}
+.rail-item i{width:18px;text-align:center;font-size:15px}
+.rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
+.side-rail>.rail-sep:first-child{margin-top:2px}
+.rail-sep{margin:14px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+.kb-cat{width:180px;flex-shrink:0;border-right:1px solid hsl(var(--border) / 70%);padding:16px 10px;overflow-y:auto}
+.cat-item{padding:9px 12px;border-radius:8px;font-size:13px;cursor:pointer;color:hsl(var(--muted-foreground));display:flex;align-items:center;gap:9px;margin-bottom:2px}
+.cat-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.cat-item.on{background:hsl(var(--primary) / 10%);color:hsl(var(--primary));font-weight:500}
+.content{flex:1;overflow-y:auto;min-width:0} .pad{padding:18px 22px}
+.field{height:34px;padding:0 12px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background));font-size:13px;color:hsl(var(--foreground));outline:none}
+.field:focus{border-color:hsl(var(--primary))}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;font-size:12px;font-weight:600;color:hsl(var(--muted-foreground));text-align:left;background:hsl(var(--primary) / 4%);white-space:nowrap}
+td{padding:10px 14px;font-size:13px;border-top:1px solid hsl(var(--border) / 70%)}
+tbody tr{cursor:pointer} tbody tr:hover td{background:hsl(var(--primary) / 4%)}
+.cursor::after{content:'▋';animation:bk 1s steps(2) infinite;color:hsl(var(--primary))}
+@keyframes bk{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="kb()" x-init="init()">
+<div class="app-shell">
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground))">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+  <div class="body-row">
+    <nav class="side-rail">
+      <div class="rail-sep">经营驾驶舱</div>
+      <a class="rail-item" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
+      <a class="rail-item" href="audit.html"><i class="fa fa-shield-halved"></i>AI 行为审计</a>
+      <div class="rail-sep">统一工作台</div>
+      <a class="rail-item" href="chat.html"><i class="fa fa-comments"></i>智能对话</a>
+      <a class="rail-item" href="code.html"><i class="fa fa-code"></i>AI 代码模式</a>
+      <a class="rail-item" href="experts.html"><i class="fa fa-user-tie"></i>AI 专家广场</a>
+      <a class="rail-item active" href="knowledge.html"><i class="fa fa-book"></i>知识库</a>
+      <a class="rail-item" href="skills.html"><i class="fa fa-wand-magic-sparkles"></i>技能中心</a>
+      <div class="rail-sep">项目协作</div>
+      <a class="rail-item" href="project.html"><i class="fa fa-diagram-project"></i>项目工作台</a>
+      <div class="rail-sep">设置</div>
+      <a class="rail-item" href="settings.html"><i class="fa fa-gear"></i>系统设置</a>
+    </nav>
+
+    <!-- 分类树 -->
+    <div class="kb-cat msc">
+      <div class="text-[11px] font-semibold mb-2 px-2" style="color:hsl(var(--muted-foreground));letter-spacing:1px">知识分类</div>
+      <template x-for="c in cats" :key="c.key">
+        <div class="cat-item" :class="{'on':cat===c.key}" @click="cat=c.key;page=1">
+          <i class="fa w-4 text-[12px]" :class="c.icon"></i><span x-text="c.label"></span>
+          <span class="ml-auto text-[11px] num" x-text="countCat(c.key)"></span>
+        </div>
+      </template>
+    </div>
+
+    <div class="content msc">
+      <div class="pad space-y-4">
+
+        <!-- AI 检索问答 -->
+        <div class="card" style="padding:16px 18px">
+          <div class="flex items-center gap-2">
+            <i class="fa fa-wand-magic-sparkles" style="color:hsl(var(--primary))"></i>
+            <span class="text-[14px] font-semibold">问知识库</span>
+            <span class="text-[12px]" style="color:hsl(var(--muted-foreground))">基于企业私有文档，AI 直接给答案并标注来源</span>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <input class="field flex-1" x-model="q" @keydown.enter="askKb()" placeholder="如：骨科接骨板的临床优势有哪些？采购流程怎么走？">
+            <button class="btn-pri" @click="askKb()"><i class="fa fa-magnifying-glass mr-1.5" :class="asking?'fa-spin fa-spinner':''"></i>检索</button>
+          </div>
+          <div x-show="answer||asking" x-cloak class="mt-3 rounded-xl" style="background:hsl(var(--primary) / 5%);border:1px solid hsl(var(--primary) / 20%);padding:13px 15px">
+            <div class="flex items-start gap-2.5">
+              <img src="image/bot.png" onerror="botFallback(this)" class="w-7 h-7 rounded-lg object-cover flex-shrink-0">
+              <div class="flex-1 min-w-0">
+                <div class="text-[13px] leading-relaxed" :class="{'cursor':typing}" x-html="answer"></div>
+                <div x-show="!typing && sources.length" class="flex flex-wrap gap-1.5 mt-2.5">
+                  <span class="text-[11px]" style="color:hsl(var(--muted-foreground))">引用来源：</span>
+                  <template x-for="s in sources" :key="s">
+                    <span class="text-[11px] px-2 py-0.5 rounded cursor-pointer" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))" @click="showToast('打开文档：'+s,'info')"><i class="fa fa-file-lines mr-1"></i><span x-text="s"></span></span>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 文档列表 -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="flex items-center justify-between flex-wrap gap-2" style="padding:14px 18px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+            <span class="text-[15px] font-semibold">文档列表 <span class="text-[12px] font-normal" style="color:hsl(var(--muted-foreground))">共 <b class="num" x-text="filtered().length"></b> 篇</span></span>
+            <input class="field w-56" x-model.trim="kw" @input="page=1" placeholder="搜索文档名 / 上传人">
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>文档名</th><th>分类</th><th>上传人</th><th>更新日期</th><th style="text-align:right">被引用</th></tr></thead>
+              <tbody>
+                <template x-for="d in paged()" :key="d.id">
+                  <tr @click="openDoc(d)">
+                    <td><i class="fa fa-file-lines mr-2" style="color:hsl(var(--primary))"></i><span x-text="d.name"></span></td>
+                    <td><span class="tag primary" style="padding:1px 7px" x-text="catLabel(d.cat)"></span></td>
+                    <td style="color:hsl(var(--muted-foreground))" x-text="d.owner"></td>
+                    <td style="color:hsl(var(--muted-foreground))" class="num" x-text="d.date"></td>
+                    <td style="text-align:right" class="num" x-text="d.refs"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+            <div x-show="!filtered().length" class="py-12 text-center text-[13px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-inbox mr-1.5"></i>没有符合条件的文档</div>
+          </div>
+          <div class="flex items-center justify-between" style="padding:12px 18px;box-shadow:inset 0 1px 0 hsl(var(--border) / 70%)">
+            <span class="text-[12px]" style="color:hsl(var(--muted-foreground))">第 <b class="num" x-text="page"></b> / <b class="num" x-text="totalPages()"></b> 页</span>
+            <div class="flex items-center gap-1.5">
+              <button class="btn-ghost" style="min-width:32px;padding:0 8px" :disabled="page<=1" @click="page--"><i class="fa fa-chevron-left text-[11px]"></i></button>
+              <button class="btn-ghost" style="min-width:32px;padding:0 8px" :disabled="page>=totalPages()" @click="page++"><i class="fa fa-chevron-right text-[11px]"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 文档抽屉 -->
+<div x-show="drawerOpen" x-transition.opacity class="fixed inset-0 z-50" x-cloak>
+  <div class="absolute inset-0" style="background:hsl(0 0% 0% / 40%)" @click="drawerOpen=false"></div>
+  <aside class="absolute right-0 top-0 bottom-0 w-[460px] max-w-[94vw] overflow-y-auto msc"
+         style="background:hsl(var(--background));box-shadow:-6px 0 24px hsl(0 0% 0% / 12%)"
+         x-transition:enter="transition transform duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
+    <header class="h-12 px-5 flex items-center sticky top-0 z-10" style="background:hsl(var(--background));box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+      <span class="text-[14px] font-semibold">文档详情</span>
+      <button class="ml-auto w-7 h-7 rounded flex items-center justify-center text-[12px]" style="color:hsl(var(--muted-foreground))" @click="drawerOpen=false"><i class="fa fa-times"></i></button>
+    </header>
+    <div class="p-5 space-y-4" x-html="drawerContent"></div>
+  </aside>
+</div>
+
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':'primary')+'))'" x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function kb(){
+  return {
+    cat:'all', kw:'', page:1, pageSize:8,
+    q:'', asking:false, typing:false, answer:'', sources:[],
+    drawerOpen:false, drawerContent:'', toasts:[], _toastId:0,
+    cats:[
+      {key:'all',label:'全部',icon:'fa-layer-group'},
+      {key:'product',label:'产品资料',icon:'fa-box'},
+      {key:'case',label:'临床案例',icon:'fa-notes-medical'},
+      {key:'sales',label:'销售物料',icon:'fa-bullhorn'},
+      {key:'bid',label:'投标模板',icon:'fa-file-signature'},
+      {key:'rule',label:'规章制度',icon:'fa-scale-balanced'},
+      {key:'train',label:'培训材料',icon:'fa-graduation-cap'}
+    ],
+    docs:[
+      {id:1,name:'骨科接骨板产品说明书 V3',cat:'product',owner:'李蔓',date:'2025-09-02',refs:38},
+      {id:2,name:'省人民医院检验科中标案例',cat:'case',owner:'赵敏',date:'2025-08-28',refs:52},
+      {id:3,name:'三类医疗器械注册证目录',cat:'product',owner:'周颖',date:'2025-09-05',refs:26},
+      {id:4,name:'微创手术产品线宣传物料包',cat:'sales',owner:'李蔓',date:'2025-09-08',refs:19},
+      {id:5,name:'内镜中心信息化投标模板',cat:'bid',owner:'孙磊',date:'2025-08-20',refs:34},
+      {id:6,name:'新员工合规培训手册',cat:'train',owner:'人事部',date:'2025-07-15',refs:44},
+      {id:7,name:'采购合同标准范本',cat:'rule',owner:'法务部',date:'2025-06-30',refs:61},
+      {id:8,name:'检验试剂效期管理规范',cat:'rule',owner:'质量部',date:'2025-08-11',refs:23},
+      {id:9,name:'骨科耗材临床应用白皮书',cat:'case',owner:'周颖',date:'2025-09-10',refs:29},
+      {id:10,name:'销售话术手册（三甲医院）',cat:'sales',owner:'陈刚',date:'2025-09-01',refs:47},
+      {id:11,name:'医共体设备巡检标准流程',cat:'rule',owner:'工程部',date:'2025-08-05',refs:15},
+      {id:12,name:'竞品对比分析报告 2025Q3',cat:'case',owner:'李蔓',date:'2025-09-12',refs:31},
+      {id:13,name:'投标技术应答通用模板',cat:'bid',owner:'赵敏',date:'2025-07-28',refs:40},
+      {id:14,name:'产品培训 PPT（销售版）',cat:'train',owner:'市场部',date:'2025-08-18',refs:22},
+      {id:15,name:'医疗器械经营质量管理制度',cat:'rule',owner:'质量部',date:'2025-06-12',refs:18}
+    ],
+    kbAnswers:{
+      '骨科接骨板':{a:'根据《骨科接骨板产品说明书 V3》与《骨科耗材临床应用白皮书》，本司接骨板的临床优势主要有三点：<br>① 采用医用钛合金，生物相容性好、术后排异率低；<br>② 低切迹设计，减少软组织刺激；<br>③ 锁定加压孔兼容，适配多种骨折类型。',s:['骨科接骨板产品说明书 V3','骨科耗材临床应用白皮书']},
+      'default':{a:'根据企业知识库检索，已为您整理相关内容（演示回答）。实际接入后由自研大模型基于内部文档做 RAG 检索问答，答案会标注具体引用来源，且数据全程不出域、经网关审计。',s:['骨科接骨板产品说明书 V3','省人民医院检验科中标案例']}
+    },
+    init(){},
+    catLabel(k){ return (this.cats.find(c=>c.key===k)||{}).label||''; },
+    countCat(k){ return k==='all'?this.docs.length:this.docs.filter(d=>d.cat===k).length; },
+    filtered(){ let l=this.cat==='all'?this.docs:this.docs.filter(d=>d.cat===this.cat);
+      if(this.kw) l=l.filter(d=>d.name.includes(this.kw)||d.owner.includes(this.kw)); return l; },
+    totalPages(){ return Math.max(1,Math.ceil(this.filtered().length/this.pageSize)); },
+    paged(){ const s=(this.page-1)*this.pageSize; return this.filtered().slice(s,s+this.pageSize); },
+    askKb(){ const q=this.q.trim(); if(!q||this.asking) return; this.asking=true; this.answer=''; this.sources=[];
+      const hit = q.includes('接骨板')||q.includes('骨科') ? this.kbAnswers['骨科接骨板'] : this.kbAnswers['default'];
+      setTimeout(()=>{ this.asking=false; this.typing=true; this.sources=[]; let i=0; const full=hit.a;
+        const timer=setInterval(()=>{ i++; this.answer=full.slice(0,i);
+          if(i>=full.length){ clearInterval(timer); this.typing=false; this.sources=hit.s; } },12);
+      },800); },
+    openDoc(d){ this.drawerContent=`
+      <div class="text-[15px] font-semibold">${d.name}</div>
+      <div class="flex gap-2 flex-wrap text-[12px]"><span class="tag primary" style="padding:1px 7px">${this.catLabel(d.cat)}</span>
+        <span style="color:hsl(var(--muted-foreground))">上传人 ${d.owner}</span><span style="color:hsl(var(--muted-foreground))">更新 ${d.date}</span><span style="color:hsl(var(--muted-foreground))">被引用 ${d.refs} 次</span></div>
+      <div class="rounded-xl" style="background:hsl(var(--primary) / 6%);padding:12px">
+        <div class="text-[12px] font-semibold mb-1"><i class="fa fa-wand-magic-sparkles mr-1" style="color:hsl(var(--primary))"></i>AI 摘要</div>
+        <div class="text-[12.5px] leading-relaxed" style="color:hsl(var(--muted-foreground))">本文档由 AI 自动生成摘要（演示）：涵盖了该主题的关键要点、适用范围与注意事项，员工可在智能对话/专家广场中直接引用本文档内容进行问答，全程数据不出域。</div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button class="btn-pri" style="flex:1;height:34px" onclick="event.stopPropagation()"><i class="fa fa-comment-dots mr-1.5"></i>用它问 AI</button>
+        <button class="btn-ghost" style="flex:1;height:34px" onclick="event.stopPropagation()"><i class="fa fa-download mr-1.5"></i>下载</button>
+      </div>`;
+      this.drawerOpen=true; },
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

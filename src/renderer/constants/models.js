@@ -20,7 +20,6 @@ export const COMMON_MODELS = [
   { value: 'z-ai/glm-5.3',                    label: 'GLM-5.3',                      group: '快 · 日常' },
   { value: 'qwen/qwen3.8-max',                label: '通义千问 3.8 Max',            group: '快 · 日常' },
   { value: 'moonshotai/kimi-k3',              label: 'Kimi K3',                      group: '快 · 日常' },
-  { value: 'openai/gpt-5.6-terra',            label: 'GPT-5.6 Terra',                group: '快 · 日常' },
   { value: 'minimax/MiniMax-M3',              label: 'MiniMax M3',                    group: '快 · 日常' },
   { value: 'minimax/MiniMax-M2.7-highspeed',  label: 'MiniMax M2.7 高速',            group: '快 · 日常' },
 ];

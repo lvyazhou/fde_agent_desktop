@@ -10,7 +10,7 @@
       </div>
       <button
         @click="$emit('new-chat')"
-        class="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
+        class="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
       >
         <i class="fa-solid fa-plus text-xs"></i>
         开启新对话
@@ -38,8 +38,8 @@
           v-for="project in todayProjects"
           :key="project.slug"
           @click="$emit('select', project.slug)"
-          class="w-full text-left px-3 py-2 rounded-xl mb-0.5 transition-all flex items-center gap-2.5 cursor-pointer"
-          :class="project.slug === currentSlug ? 'bg-blue-50 border border-blue-100/60' : 'hover:bg-slate-50'"
+          class="w-full text-left px-3 py-2 rounded-lg mb-0.5 transition-all flex items-center gap-2.5 cursor-pointer"
+          :class="project.slug === currentSlug ? 'bg-slate-100' : 'hover:bg-slate-50'"
         >
           <!-- AI 应用专属彩色 Logo -->
           <span v-if="project.projectType === 'ai-app' && project.aiApp" class="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" :style="{ background: (project.aiApp.color || '#2563eb') + '14' }">
@@ -47,10 +47,10 @@
           </span>
           <!-- 普通对话图标 -->
           <span v-else class="w-4 shrink-0 flex items-center justify-center">
-            <i :class="phaseIcon(project.phase)" class="text-[11px]" :style="{ color: project.slug === currentSlug ? '#2563eb' : '#94a3b8' }"></i>
+            <i :class="phaseIcon(project.phase)" class="text-[11px]" :style="{ color: project.slug === currentSlug ? '#111827' : '#94a3b8' }"></i>
           </span>
-          <span class="flex-1 min-w-0 text-[13px] font-medium truncate" :class="project.slug === currentSlug ? 'text-blue-800' : 'text-slate-700'">{{ project.name }}</span>
-          <span v-if="project.slug === currentSlug" class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+          <span class="flex-1 min-w-0 text-[13px] font-medium truncate" :class="project.slug === currentSlug ? 'text-slate-900' : 'text-slate-700'">{{ project.name }}</span>
+          <span v-if="project.slug === currentSlug" class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>
         </button>
       </template>
 
@@ -61,8 +61,8 @@
           v-for="project in recentProjects"
           :key="project.slug"
           @click="$emit('select', project.slug)"
-          class="w-full text-left px-3 py-2 rounded-xl mb-0.5 transition-all flex items-center gap-2.5 cursor-pointer"
-          :class="project.slug === currentSlug ? 'bg-blue-50 border border-blue-100/60' : 'hover:bg-slate-50'"
+          class="w-full text-left px-3 py-2 rounded-lg mb-0.5 transition-all flex items-center gap-2.5 cursor-pointer"
+          :class="project.slug === currentSlug ? 'bg-slate-100' : 'hover:bg-slate-50'"
         >
           <span v-if="project.projectType === 'ai-app' && project.aiApp" class="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" :style="{ background: (project.aiApp.color || '#2563eb') + '14' }">
             <i :class="'fa-solid fa-' + (project.aiApp.icon || 'robot')" class="text-[11px]" :style="{ color: project.aiApp.color || '#2563eb' }"></i>
@@ -70,7 +70,7 @@
           <span v-else class="w-4 shrink-0 flex items-center justify-center">
             <i :class="phaseIcon(project.phase)" class="text-[11px] text-slate-400"></i>
           </span>
-          <span class="flex-1 min-w-0 text-[13px] truncate text-slate-600">{{ project.name }}</span>
+          <span class="flex-1 min-w-0 text-[13px] truncate" :class="project.slug === currentSlug ? 'text-slate-900 font-medium' : 'text-slate-600'">{{ project.name }}</span>
           <span class="text-[10px] text-slate-400 shrink-0">{{ formatDate(project.updatedAt || project.createdAt) }}</span>
         </button>
       </template>

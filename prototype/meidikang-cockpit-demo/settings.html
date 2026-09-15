@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系统设置 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root{
+  --primary: 214 95% 44%; --background: 0 0% 100%; --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%; --border: 213 32% 88%;
+  --success: 160 84% 33%; --warning: 32 88% 40%; --danger: 352 68% 48%; --info: 214 15% 50%;
+  --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --background: 214 40% 11%; --foreground: 210 40% 94%; --muted-foreground: 213 22% 68%; --border: 213 28% 26%; --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%); --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%); }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.success{color:hsl(var(--success));background:color-mix(in srgb,hsl(var(--success)) 12%,hsl(var(--background)))}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.tag.warning{color:hsl(var(--warning));background:color-mix(in srgb,hsl(var(--warning)) 14%,hsl(var(--background)))}
+.tag.danger{color:hsl(var(--danger));background:color-mix(in srgb,hsl(var(--danger)) 10%,hsl(var(--background)))}
+.btn-pri{height:32px;padding:0 16px;border:0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 5px 12px hsl(var(--primary) / 18%)}
+.btn-pri:disabled{opacity:.7;cursor:default}
+.btn-ghost{height:32px;padding:0 14px;border:1px solid hsl(var(--border));border-radius:8px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:8px;margin-right:16px} .traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+.body-row{flex:1;display:flex;min-height:0}
+.side-rail{width:200px;flex-shrink:0;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset -1px 0 0 hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:14px 10px}
+.rail-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;margin-bottom:3px;transition:background .15s}
+.rail-item i{width:18px;text-align:center;font-size:15px}
+.rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
+.rail-sep{margin:10px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+.content{flex:1;overflow-y:auto;min-width:0} .pad{padding:18px 22px}
+.sec-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;margin-bottom:11px}
+.sec-title .bar{width:3px;height:15px;border-radius:2px;background:hsl(var(--primary))}
+/* tab 下划线 */
+.seg-tab{position:relative;display:inline-flex;align-items:center;gap:8px;padding:9px 18px;font-size:14px;font-weight:600;color:hsl(var(--muted-foreground));cursor:pointer;border:0;background:transparent;transition:color .15s}
+.seg-tab:hover{color:hsl(var(--primary))}
+.seg-tab.active{color:hsl(var(--primary))}
+.seg-tab.active::after{content:"";position:absolute;left:14px;right:14px;bottom:-1px;height:3px;border-radius:3px 3px 0 0;background:hsl(var(--primary))}
+/* toggle 开关 */
+.tgl{position:relative;width:40px;height:22px;border-radius:11px;border:0;cursor:pointer;flex-shrink:0;transition:background .18s;background:hsl(var(--border))}
+.tgl.on{background:hsl(var(--primary))}
+.tgl:disabled{cursor:not-allowed;opacity:.85}
+.tgl .knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px hsl(0 0% 0% / 25%);transition:transform .18s}
+.tgl.on .knob{transform:translateX(18px)}
+/* 输入框 */
+.inp{height:34px;padding:0 11px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background));color:hsl(var(--foreground));font-size:13px;width:100%}
+.inp:focus{outline:0;border-color:hsl(var(--primary) / 60%);box-shadow:0 0 0 3px hsl(var(--primary) / 12%)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px;font-size:13px;font-weight:500;color:hsl(var(--primary));background:hsl(var(--primary) / 10%);border:1px solid hsl(var(--primary) / 22%)}
+.chip .x{cursor:pointer;opacity:.65;font-size:11px}
+.chip .x:hover{opacity:1}
+.row{display:flex;align-items:center;gap:12px;padding:12px 0}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="pageApp()" x-init="init()">
+<div class="app-shell">
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground))">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+  <div class="body-row">
+    <nav class="side-rail">
+      <div class="rail-sep">经营驾驶舱</div>
+      <a class="rail-item" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
+      <a class="rail-item" href="audit.html"><i class="fa fa-shield-halved"></i>AI 行为审计</a>
+      <div class="rail-sep">统一工作台</div>
+      <a class="rail-item" href="chat.html"><i class="fa fa-comments"></i>智能对话</a>
+      <a class="rail-item" href="code.html"><i class="fa fa-code"></i>AI 代码模式</a>
+      <a class="rail-item" href="experts.html"><i class="fa fa-user-tie"></i>AI 专家广场</a>
+      <a class="rail-item" href="knowledge.html"><i class="fa fa-book"></i>知识库</a>
+      <a class="rail-item" href="skills.html"><i class="fa fa-wand-magic-sparkles"></i>技能中心</a>
+      <div class="rail-sep">项目协作</div>
+      <a class="rail-item" href="project.html"><i class="fa fa-diagram-project"></i>项目工作台</a>
+      <div class="rail-sep">设置</div>
+      <a class="rail-item active" href="settings.html"><i class="fa fa-gear"></i>系统设置</a>
+      <div class="mt-auto card" style="padding:11px 12px">
+        <div class="text-[12px] flex items-center gap-2" style="color:hsl(var(--muted-foreground))">
+          <img src="image/bot.png" onerror="botFallback(this)" class="w-7 h-7 rounded-lg object-cover">
+          <div><div class="font-semibold" style="color:hsl(var(--foreground))">经营参谋</div><div>正在为您盯盘</div></div>
+        </div>
+      </div>
+    </nav>
+    <div class="content msc">
+      <div class="pad space-y-4">
+
+        <!-- tab 切换 -->
+        <div class="flex items-center gap-1" style="border-bottom:1px solid hsl(var(--border))">
+          <button class="seg-tab" :class="activeTab==='gateway'&&'active'" @click="activeTab='gateway'"><i class="fa fa-network-wired"></i>模型网关</button>
+          <button class="seg-tab" :class="activeTab==='rules'&&'active'" @click="activeTab='rules'"><i class="fa fa-shield"></i>合规管控</button>
+          <div class="ml-auto flex items-center gap-4 text-[12.5px] pr-1" style="color:hsl(var(--muted-foreground))">
+            <span class="flex items-center gap-1.5"><i class="fa fa-microchip" style="color:hsl(var(--primary))"></i>接入模型 <b class="num" style="color:hsl(var(--foreground))" x-text="models.length"></b></span>
+            <span class="flex items-center gap-1.5"><i class="fa fa-sitemap" style="color:hsl(var(--primary))"></i>授权部门 <b class="num" style="color:hsl(var(--foreground))" x-text="depts.length"></b></span>
+            <span class="flex items-center gap-1.5"><i class="fa fa-shield-halved" style="color:hsl(var(--success))"></i>生效规则 <b class="num" style="color:hsl(var(--foreground))" x-text="rules.filter(r=>r.on).length"></b>/<span class="num" x-text="rules.length"></span></span>
+          </div>
+        </div>
+
+        <!-- ============ Tab 1：网关设置 ============ -->
+        <div x-show="activeTab==='gateway'" class="space-y-4" x-cloak>
+
+          <!-- 接入模型管理 -->
+          <div class="card" style="padding:16px 18px">
+            <div class="sec-title"><span class="bar"></span>接入模型管理
+              <span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">所有对话/生成统一从网关分发到下列模型</span>
+              <button class="btn-ghost ml-auto" @click="showToast('接入向导演示：填写 Endpoint / API Key 即可上线新模型','info')"><i class="fa fa-plus mr-1"></i>接入新模型</button>
+            </div>
+            <div class="space-y-2">
+              <template x-for="m in models" :key="m.id">
+                <div class="flex items-center gap-3 py-2.5 px-3 rounded-lg" style="border:1px solid hsl(var(--border) / 70%);background:hsl(var(--primary) / 3%)">
+                  <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-white" style="background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 82%,black),hsl(var(--primary)))"><i class="fa" :class="m.icon"></i></div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="text-[14px] font-semibold" x-text="m.name"></span>
+                      <span class="tag" style="padding:1px 7px;color:hsl(var(--muted-foreground));background:hsl(var(--primary) / 7%)" x-text="m.access"></span>
+                    </div>
+                    <div class="text-[12px] mt-0.5" style="color:hsl(var(--muted-foreground))">每千 token <span class="num font-semibold" x-text="'¥'+m.price"></span></div>
+                  </div>
+                  <span class="tag" :class="m.enabled?'success':'danger'" x-text="m.enabled?'已启用':'已停用'"></span>
+                  <button class="tgl" :class="m.enabled&&'on'" @click="toggleModel(m)"><span class="knob"></span></button>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- 模型分发授权 -->
+          <div class="card" style="padding:16px 18px">
+            <div class="sec-title"><span class="bar"></span>模型分发授权
+              <span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">给部门 / 人员分配可用模型与专属网关地址，员工把地址填进客户端即可调用</span>
+              <button class="btn-ghost ml-auto" @click="showToast('新增分发演示：选择部门或人员，勾选可用模型，系统自动生成专属网关地址','info')"><i class="fa fa-plus mr-1"></i>新增分发</button>
+            </div>
+
+            <!-- 公共网关根地址 -->
+            <div class="flex items-center gap-2 mb-3 py-2 px-3 rounded-lg" style="border:1px dashed hsl(var(--border));background:hsl(var(--primary) / 3%)">
+              <i class="fa fa-link text-[12px]" style="color:hsl(var(--muted-foreground))"></i>
+              <span class="text-[12px]" style="color:hsl(var(--muted-foreground))">网关根地址</span>
+              <span class="text-[13px] font-medium num" x-text="gatewayBase"></span>
+              <span class="text-[12px]" style="color:hsl(var(--muted-foreground))">，各部门 / 人员在此之后追加专属令牌</span>
+            </div>
+
+            <div class="space-y-2">
+              <template x-for="d in depts" :key="d.id">
+                <div class="rounded-lg overflow-hidden" style="border:1px solid hsl(var(--border) / 70%)">
+                  <!-- 部门行 -->
+                  <div class="flex items-center gap-3 py-2.5 px-3 cursor-pointer" style="background:hsl(var(--primary) / 4%)" @click="toggleDept(d)">
+                    <i class="fa text-[12px] w-3" :class="expandedDept===d.id?'fa-chevron-down':'fa-chevron-right'" style="color:hsl(var(--muted-foreground))"></i>
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style="background:hsl(var(--primary) / 12%);color:hsl(var(--primary))"><i class="fa fa-people-group"></i></div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2">
+                        <span class="text-[14px] font-semibold" x-text="d.name"></span>
+                        <span class="text-[12px]" style="color:hsl(var(--muted-foreground))" x-text="'负责人 '+d.head+' · '+d.members.length+' 人'"></span>
+                      </div>
+                      <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <template x-for="mid in d.models" :key="mid">
+                          <span class="tag primary" style="padding:1px 7px" x-text="modelName(mid)"></span>
+                        </template>
+                      </div>
+                    </div>
+                    <div class="text-right flex-shrink-0">
+                      <div class="text-[12px]" style="color:hsl(var(--muted-foreground))">月配额</div>
+                      <div class="text-[13px] font-semibold num" x-text="'¥'+Number(d.budget).toLocaleString()"></div>
+                    </div>
+                  </div>
+
+                  <!-- 展开：部门专属网关 + 模型勾选 + 人员 -->
+                  <div x-show="expandedDept===d.id" class="px-3 pb-3 pt-1" style="border-top:1px solid hsl(var(--border) / 60%)">
+                    <!-- 部门专属网关地址 -->
+                    <div class="flex items-center gap-2 py-2 px-2.5 mt-2 rounded-lg" style="background:hsl(var(--background))">
+                      <span class="text-[12px] flex-shrink-0" style="color:hsl(var(--muted-foreground))">部门专属网关</span>
+                      <code class="text-[12.5px] flex-1 min-w-0 truncate" style="color:hsl(var(--primary))" x-text="deptGatewayUrl(d)"></code>
+                      <button class="btn-ghost flex-shrink-0" style="height:26px;padding:0 10px" @click="copyUrl(deptGatewayUrl(d))"><i class="fa fa-copy mr-1"></i>复制</button>
+                    </div>
+
+                    <!-- 部门可用模型勾选 -->
+                    <div class="mt-2">
+                      <div class="text-[12px] mb-1.5" style="color:hsl(var(--muted-foreground))">该部门可用模型</div>
+                      <div class="flex flex-wrap gap-2">
+                        <template x-for="m in models" :key="m.id">
+                          <button class="chip" :style="d.models.includes(m.id)?'':'opacity:.4;filter:grayscale(.6)'" @click="toggleDeptModel(d,m.id)">
+                            <i class="fa text-[10px]" :class="d.models.includes(m.id)?'fa-check':'fa-plus'"></i><span x-text="m.name"></span>
+                          </button>
+                        </template>
+                      </div>
+                    </div>
+
+                    <!-- 人员列表 -->
+                    <div class="mt-3">
+                      <div class="text-[12px] mb-1.5" style="color:hsl(var(--muted-foreground))">部门成员（默认继承部门权限，可单独授权 / 提额）</div>
+                      <div class="space-y-1.5">
+                        <template x-for="mem in d.members" :key="mem.id">
+                          <div class="py-2 px-2.5 rounded-lg" style="border:1px solid hsl(var(--border) / 60%)">
+                            <div class="flex items-center gap-2.5">
+                              <div class="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[12px] font-semibold" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))" x-text="mem.name[0]"></div>
+                              <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2">
+                                  <span class="text-[13px] font-medium" x-text="mem.name"></span>
+                                  <span class="text-[12px]" style="color:hsl(var(--muted-foreground))" x-text="mem.title"></span>
+                                  <span class="tag" :class="mem.mode==='extra'?'warning':''" :style="mem.mode==='extra'?'padding:1px 6px':'padding:1px 6px;color:hsl(var(--muted-foreground));background:hsl(var(--primary) / 7%)'" x-text="mem.mode==='extra'?'单独授权':'继承部门'"></span>
+                                </div>
+                                <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                                  <template x-for="mid in memberModels(d,mem)" :key="mid">
+                                    <span class="tag primary" style="padding:0 6px;font-size:11px" x-text="modelName(mid)"></span>
+                                  </template>
+                                  <span class="text-[11px]" style="color:hsl(var(--muted-foreground))" x-text="'· 月配额 ¥'+Number(memberBudget(d,mem)).toLocaleString()"></span>
+                                </div>
+                              </div>
+                              <button class="btn-ghost flex-shrink-0" style="height:26px;padding:0 10px" @click="setMemberMode(mem,d)" x-text="mem.mode==='extra'?'恢复继承':'单独授权'"></button>
+                            </div>
+
+                            <!-- 单独授权展开区 -->
+                            <div x-show="mem.mode==='extra'" class="mt-2 pt-2" style="border-top:1px dashed hsl(var(--border) / 70%)">
+                              <div class="flex items-center gap-2 py-1.5 px-2 rounded-lg mb-2" style="background:hsl(var(--background))">
+                                <span class="text-[11px] flex-shrink-0" style="color:hsl(var(--muted-foreground))">个人专属网关</span>
+                                <code class="text-[12px] flex-1 min-w-0 truncate" style="color:hsl(var(--primary))" x-text="memberGatewayUrl(d,mem)"></code>
+                                <button class="btn-ghost flex-shrink-0" style="height:24px;padding:0 9px" @click="copyUrl(memberGatewayUrl(d,mem))"><i class="fa fa-copy mr-1"></i>复制</button>
+                              </div>
+                              <div class="flex flex-wrap items-center gap-2">
+                                <span class="text-[11px]" style="color:hsl(var(--muted-foreground))">额外开放模型：</span>
+                                <template x-for="m in models" :key="m.id">
+                                  <button class="chip" style="padding:3px 8px;font-size:12px" :style="mem.models.includes(m.id)?'':'opacity:.4;filter:grayscale(.6)'" @click="toggleMemberModel(mem,m.id)">
+                                    <i class="fa text-[10px]" :class="mem.models.includes(m.id)?'fa-check':'fa-plus'"></i><span x-text="m.name"></span>
+                                  </button>
+                                </template>
+                              </div>
+                              <div class="flex items-center gap-2 mt-2">
+                                <span class="text-[11px]" style="color:hsl(var(--muted-foreground))">单独月配额</span>
+                                <span class="text-[12px]" style="color:hsl(var(--muted-foreground))">¥</span>
+                                <input class="inp num" style="height:28px;width:120px" type="text" x-model="mem.budget" placeholder="留空=继承部门">
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+
+            <div class="pt-3"><button class="btn-pri" :disabled="saving.distribute" @click="saveDistribute()"><template x-if="saving.distribute"><span class="spin"></span></template><span x-text="saving.distribute?'保存中…':'保存分发方案'"></span></button></div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <!-- 调用限额 -->
+            <div class="card" style="padding:16px 18px">
+              <div class="sec-title"><span class="bar"></span>调用限额</div>
+              <div class="space-y-3">
+                <div>
+                  <label class="text-[13px] font-medium">全公司月度预算上限</label>
+                  <div class="flex items-center gap-2 mt-1.5"><span class="text-[13px]" style="color:hsl(var(--muted-foreground))">¥</span><input class="inp num" type="text" x-model="quota.monthBudget"></div>
+                </div>
+                <div>
+                  <label class="text-[13px] font-medium">单人日调用上限</label>
+                  <div class="flex items-center gap-2 mt-1.5"><input class="inp num" type="text" x-model="quota.dailyPerUser"><span class="text-[13px]" style="color:hsl(var(--muted-foreground))">次</span></div>
+                </div>
+                <div>
+                  <label class="text-[13px] font-medium">单次最大 token</label>
+                  <div class="flex items-center gap-2 mt-1.5"><input class="inp num" type="text" x-model="quota.maxToken"><span class="text-[13px]" style="color:hsl(var(--muted-foreground))">token</span></div>
+                </div>
+                <div class="pt-1"><button class="btn-pri w-full" :disabled="saving.quota" @click="save('quota')"><template x-if="saving.quota"><span class="spin"></span></template><span x-text="saving.quota?'保存中…':'保存设置'"></span></button></div>
+              </div>
+            </div>
+
+            <!-- 数据安全 -->
+            <div class="card" style="padding:16px 18px">
+              <div class="sec-title"><span class="bar"></span>数据安全</div>
+              <div>
+                <template x-for="s in security" :key="s.key">
+                  <div class="row" :style="'border-bottom:1px solid hsl(var(--border) / 60%)'">
+                    <div class="flex-1 min-w-0">
+                      <div class="text-[13px] font-medium flex items-center gap-2">
+                        <span x-text="s.name"></span>
+                        <span class="tag danger" x-show="s.locked" style="padding:1px 6px">强制</span>
+                      </div>
+                      <div class="text-[12px] mt-0.5 leading-snug" style="color:hsl(var(--muted-foreground))" x-text="s.desc"></div>
+                    </div>
+                    <button class="tgl" :class="s.on&&'on'" :disabled="s.locked" @click="toggleSecurity(s)"><span class="knob"></span></button>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============ Tab 2：规则设置 ============ -->
+        <div x-show="activeTab==='rules'" class="space-y-4" x-cloak>
+
+          <!-- 合规风险规则 -->
+          <div class="card" style="padding:16px 18px">
+            <div class="sec-title"><span class="bar"></span>合规风险规则
+              <span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">命中即进入「AI 行为审计」，供领导复盘</span>
+            </div>
+            <div>
+              <template x-for="(r,i) in rules" :key="r.key">
+                <div class="row" :style="i<rules.length-1?'border-bottom:1px solid hsl(var(--border) / 60%)':''">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[13px] font-medium flex items-center gap-2">
+                      <span x-text="r.name"></span>
+                      <span class="tag" :class="r.level==='高'?'danger':'warning'" x-text="'风险 '+r.level"></span>
+                    </div>
+                    <div class="text-[12px] mt-0.5 leading-snug" style="color:hsl(var(--muted-foreground))" x-text="r.desc"></div>
+                  </div>
+                  <button class="tgl" :class="r.on&&'on'" @click="toggleRule(r)"><span class="knob"></span></button>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <!-- 敏感词库 -->
+            <div class="card" style="padding:16px 18px">
+              <div class="sec-title"><span class="bar"></span>敏感词库
+                <span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">出现即触发外流拦截</span>
+              </div>
+              <div class="flex flex-wrap gap-2 mb-3">
+                <template x-for="w in words" :key="w">
+                  <span class="chip"><span x-text="w"></span><i class="fa fa-xmark x" @click="removeWord(w)"></i></span>
+                </template>
+                <span x-show="!words.length" class="text-[12px]" style="color:hsl(var(--muted-foreground))">暂无敏感词，请在下方添加</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input class="inp" type="text" placeholder="输入敏感词，回车添加" x-model="newWord" @keydown.enter="addWord()">
+                <button class="btn-pri flex-shrink-0" @click="addWord()"><i class="fa fa-plus mr-1"></i>添加</button>
+              </div>
+            </div>
+
+            <!-- 风险阈值 -->
+            <div class="card" style="padding:16px 18px">
+              <div class="sec-title"><span class="bar"></span>风险阈值</div>
+              <div class="space-y-3">
+                <div>
+                  <label class="text-[13px] font-medium">非工作时间起始点</label>
+                  <div class="flex items-center gap-2 mt-1.5"><input class="inp num" type="text" x-model="threshold.offHour"><span class="text-[13px]" style="color:hsl(var(--muted-foreground))">起视为非工作时间</span></div>
+                </div>
+                <div>
+                  <label class="text-[13px] font-medium">单人日 token 突增阈值</label>
+                  <div class="flex items-center gap-2 mt-1.5"><input class="inp num" type="text" x-model="threshold.tokenSurge"><span class="text-[13px]" style="color:hsl(var(--muted-foreground))">超均值即告警</span></div>
+                </div>
+                <div>
+                  <label class="text-[13px] font-medium">无关内容占比告警线</label>
+                  <div class="flex items-center gap-2 mt-1.5"><input class="inp num" type="text" x-model="threshold.irrelevant"><span class="text-[13px]" style="color:hsl(var(--muted-foreground))">超此比例即提示</span></div>
+                </div>
+                <div class="pt-1"><button class="btn-pri w-full" :disabled="saving.threshold" @click="save('threshold')"><template x-if="saving.threshold"><span class="spin"></span></template><span x-text="saving.threshold?'保存中…':'保存'"></span></button></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':t.type==='error'?'danger':t.type==='warn'?'warning':'primary')+'))'"
+         x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function botFallback(el){ el.style.display='none'; }
+function pageApp(){
+  return {
+    activeTab:'gateway',
+    toasts:[], _toastId:0,
+    saving:{quota:false,threshold:false,distribute:false},
+    models:[
+      {id:'self',   name:'自研大模型', icon:'fa-microchip',      access:'私有化部署', price:'0.008', enabled:true},
+      {id:'deepseek',name:'DeepSeek',  icon:'fa-brain',          access:'API 接入',   price:'0.015', enabled:true},
+      {id:'doubao', name:'豆包',       icon:'fa-comment-dots',   access:'API 接入',   price:'0.012', enabled:true},
+    ],
+    gatewayBase:'https://ai-gw.meidikang.com/v1',
+    depts:[
+      { id:'rd', name:'研发部', head:'刘洋', token:'dept-rd', models:['self','deepseek'], budget:'28000',
+        members:[
+          { id:'u-ly', name:'刘洋', title:'研发负责人', token:'u-liuyang', mode:'inherit', models:[], budget:'' },
+          { id:'u-zy', name:'郑宇', title:'研发工程师', token:'u-zhengyu', mode:'inherit', models:[], budget:'' },
+        ] },
+      { id:'mkt', name:'市场部', head:'李蔓', token:'dept-mkt', models:['doubao','self'], budget:'16000',
+        members:[
+          { id:'u-lm', name:'李蔓', title:'市场专员', token:'u-liman', mode:'extra', models:['doubao','deepseek','self'], budget:'6000' },
+          { id:'u-zy2',name:'周颖', title:'市场专员', token:'u-zhouying', mode:'inherit', models:[], budget:'' },
+        ] },
+      { id:'sales', name:'销售部', head:'陈刚', token:'dept-sales', models:['self'], budget:'12000',
+        members:[
+          { id:'u-cg', name:'陈刚', title:'销售经理', token:'u-chengang', mode:'inherit', models:[], budget:'' },
+          { id:'u-wh', name:'王海', title:'销售经理', token:'u-wanghai', mode:'inherit', models:[], budget:'' },
+        ] },
+      { id:'presales', name:'售前部', head:'赵敏', token:'dept-presales', models:['self','deepseek'], budget:'14000',
+        members:[
+          { id:'u-zm', name:'赵敏', title:'售前顾问', token:'u-zhaomin', mode:'inherit', models:[], budget:'' },
+          { id:'u-sl', name:'孙磊', title:'售前顾问', token:'u-sunlei', mode:'inherit', models:[], budget:'' },
+        ] },
+      { id:'eng', name:'工程部', head:'吴强', token:'dept-eng', models:['self'], budget:'8000',
+        members:[
+          { id:'u-wq', name:'吴强', title:'实施工程师', token:'u-wuqiang', mode:'inherit', models:[], budget:'' },
+          { id:'u-fl', name:'冯磊', title:'实施工程师', token:'u-fenglei', mode:'inherit', models:[], budget:'' },
+        ] },
+    ],
+    expandedDept:'',
+    quota:{ monthBudget:'80000', dailyPerUser:'500', maxToken:'8000' },
+    security:[
+      {key:'mask',   name:'敏感数据自动脱敏', desc:'姓名/身份证/联系方式等在送入模型前自动打码',           on:true,  locked:false},
+      {key:'audit',  name:'外部模型调用审计留痕', desc:'凡调用 DeepSeek/豆包等外部模型，全量记录内容与用途', on:true,  locked:false},
+      {key:'noleave',name:'私有化数据不出域', desc:'医疗行业强制，患者/院方数据仅在自研私有化模型内处理', on:true,  locked:true},
+    ],
+    rules:[
+      {key:'irrelevant',name:'工作无关内容检测', desc:'检测小说创作、闲聊、副业等与本职工作无关的调用',       level:'中', on:true},
+      {key:'leak',      name:'敏感数据外流拦截', desc:'客户名单、报价单、病人信息发往外部模型时即时拦截',     level:'高', on:true},
+      {key:'abnormal',  name:'异常使用量告警',   desc:'非工作时间大量调用、单人 token 突增等异常行为告警',    level:'中', on:true},
+      {key:'topic',     name:'敏感话题合规',     desc:'政治敏感、违规违法、泄密词库命中即阻断并上报',         level:'高', on:true},
+    ],
+    words:['客户报价','采购清单','病人信息','院方联系人'],
+    newWord:'',
+    threshold:{ offHour:'21:00', tokenSurge:'150%', irrelevant:'20%' },
+
+    init(){ if(location.hash==='#rules') this.activeTab='rules'; },
+
+    toggleModel(m){ m.enabled=!m.enabled; this.showToast('「'+m.name+'」已'+(m.enabled?'启用':'停用'), m.enabled?'success':'warn'); },
+
+    modelName(id){ const m=this.models.find(x=>x.id===id); return m?m.name:id; },
+    toggleDept(d){ this.expandedDept = this.expandedDept===d.id ? '' : d.id; },
+    deptGatewayUrl(d){ return this.gatewayBase+'/'+d.token; },
+    memberGatewayUrl(d,mem){ return this.gatewayBase+'/'+(mem.mode==='extra'?mem.token:d.token); },
+    memberModels(d,mem){ return mem.mode==='extra' ? mem.models : d.models; },
+    memberBudget(d,mem){ return mem.mode==='extra' && mem.budget ? mem.budget : d.budget; },
+    copyUrl(url){ (navigator.clipboard?.writeText(url)||Promise.resolve()).then(()=>this.showToast('网关地址已复制：'+url,'success')).catch(()=>this.showToast('复制失败，请手动选择','warn')); },
+    toggleDeptModel(d,mid){ const i=d.models.indexOf(mid); if(i>=0){ if(d.models.length<=1){ this.showToast('至少保留一个可用模型','warn'); return; } d.models.splice(i,1); } else d.models.push(mid); },
+    setMemberMode(mem,d){ if(mem.mode==='inherit'){ mem.mode='extra'; mem.models=[...d.models]; mem.budget=''; this.showToast('「'+mem.name+'」改为单独授权，可在下方增减模型/提额','info'); } else { mem.mode='inherit'; this.showToast('「'+mem.name+'」已恢复继承部门默认','info'); } },
+    toggleMemberModel(mem,mid){ if(mem.mode!=='extra') return; const i=mem.models.indexOf(mid); if(i>=0) mem.models.splice(i,1); else mem.models.push(mid); },
+    saveDistribute(){ this.save('distribute'); },
+    toggleSecurity(s){ if(s.locked){ this.showToast('该项为医疗行业强制要求，不可关闭','warn'); return; } s.on=!s.on; this.showToast('「'+s.name+'」已'+(s.on?'开启':'关闭'), s.on?'success':'warn'); },
+    toggleRule(r){ r.on=!r.on; this.showToast('规则「'+r.name+'」已'+(r.on?'启用':'停用'), r.on?'success':'warn'); },
+
+    addWord(){ const w=(this.newWord||'').trim(); if(!w){ return; } if(this.words.includes(w)){ this.showToast('「'+w+'」已存在','warn'); this.newWord=''; return; } this.words.push(w); this.newWord=''; this.showToast('已添加敏感词「'+w+'」','success'); },
+    removeWord(w){ this.words=this.words.filter(x=>x!==w); this.showToast('已移除敏感词「'+w+'」','info'); },
+
+    save(kind){ if(this.saving[kind]) return; this.saving[kind]=true; setTimeout(()=>{ this.saving[kind]=false; this.showToast('已保存','success'); }, 800); },
+
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

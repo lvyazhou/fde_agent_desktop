@@ -705,6 +705,16 @@ function deliveryCardHtml(fp, resolvedMeta) {
 const IMG_EXTS = 'png|jpg|jpeg|gif|svg|webp|bmp|ico';
 const FILE_EXTS = 'pdf|html|htm|xlsx|xls|csv|doc|docx|ppt|pptx|zip|rar|7z|gz|tar|mp3|mp4|wav|mov|avi|txt|md|json|js|ts|css|py|java|go|rs|sh|vue';
 
+// 只有"正经交付物"才转成可下载卡片:文档 / 表格 / 演示 / 网页 / 压缩包 / 音视频 / md。
+// 代码与参数文件(js/ts/py/json/css/sh/vue…)保持行内代码样式,不转卡片
+// —— 它们通常是正文里顺带提到的参数/脚本,做成卡片既鸡肋又占地方。
+const CARD_EXTS_SET = new Set([
+  'pdf', 'doc', 'docx', 'xls', 'xlsx', 'csv', 'ppt', 'pptx',
+  'html', 'htm', 'md', 'txt',
+  'zip', 'rar', '7z', 'gz', 'tar',
+  'mp3', 'wav', 'mp4', 'mov', 'avi',
+]);
+
 const renderAssistantContent = (content) => {
   if (!content) return '';
   try {
@@ -725,6 +735,8 @@ const renderAssistantContent = (content) => {
         if (!isAbsolute && !resolvedFiles.has(fp)) return null;
         return imgTag(fp);
       }
+      // 代码/参数类扩展名不转卡片,交给 marked 渲染成行内代码。
+      if (!CARD_EXTS_SET.has(ext)) return null;
       if (!resolvedFiles.has(fp)) return null; // 未解析到的非图片文件 → 不转卡片
       return card(fp);
     };
@@ -741,6 +753,13 @@ const renderAssistantContent = (content) => {
     };
 
     let processed = content;
+    // 0. 反引号包裹的路径 `deliverables/中文名.md` —— 优先处理并连反引号一起吃掉,
+    //    否则占位符会被 marked 包进 <code>,卡片 HTML 落在 <code> 里就坏了。
+    //    这也是"md 只显示成一行代码文本、没转卡片"的主因(中文名 + 反引号)。
+    processed = processed.replace(
+      new RegExp('`\\s*((?:[\\w.\\-\\u4e00-\\u9fff]+\\/)*[\\w.\\-\\u4e00-\\u9fff]+\\.(' + ALL_EXTS + '))\\s*`', 'gi'),
+      (m, fp) => ph(fp) ?? m
+    );
     // 1. MEDIA: prefix
     processed = processed.replace(
       new RegExp(`MEDIA:([^\\s\\n]+\\.(${ALL_EXTS}))`, 'gi'),
@@ -751,14 +770,16 @@ const renderAssistantContent = (content) => {
       new RegExp(`(?:^|\\n)[ \\t]*(?:\`)?(\\/[^\\s\`]+\\.(${ALL_EXTS}))(?:\`)?[ \\t]*(?:\\n|$)`, 'gim'),
       (m, fp) => { const id = ph(fp); return id == null ? m : '\n' + id + '\n'; }
     );
-    // 3. Inline absolute paths (e.g. inside table cells)
+    // 3. Inline absolute paths (e.g. inside table cells)。字符类含 CJK,
+    //    否则中文名文件(如 /x/带货方案.md)会漏配 → 不转卡片。
     processed = processed.replace(
       new RegExp(`(?<![\\w/:.])(\\/[^\\s\`<>|]+\\.(${ALL_EXTS}))(?![\\w/])`, 'gi'),
       (m, fp) => ph(fp) ?? m
     );
-    // 4. Relative paths like assets/foo.png, output/report.pdf
+    // 4. Relative paths like assets/foo.png, output/report.pdf、deliverables/中文名.md
+    //    字符类含中文(一-鿿),否则中文文件名会断在汉字处漏配。
     processed = processed.replace(
-      new RegExp(`(?<![\\w/:.])((?:[\\w.-]+\\/)+[\\w.-]+\\.(${ALL_EXTS}))(?![\\w/])`, 'gi'),
+      new RegExp(`(?<![\\w/:.\\u4e00-\\u9fff])((?:[\\w.\\-\\u4e00-\\u9fff]+\\/)+[\\w.\\-\\u4e00-\\u9fff]+\\.(${ALL_EXTS}))(?![\\w/])`, 'gi'),
       (m, fp) => ph(fp) ?? m
     );
     // 5. Markdown image syntax (only images)
@@ -906,39 +927,38 @@ defineExpose({ scrollToBottom, scrollToMessage });
 :deep(.chat-delivery-card) {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  width: 320px;
-  max-width: 100%;
-  padding: 10px 12px;
-  border-radius: 12px;
+  gap: 8px;
+  max-width: 340px;
+  padding: 6px 8px 6px 7px;
+  border-radius: 10px;
   background: #ffffff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid #e8e8e4;
   cursor: pointer;
   transition: border-color 0.15s, box-shadow 0.15s;
-  margin: 6px 4px 6px 0;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  margin: 5px 4px 5px 0;
+  vertical-align: middle;
 }
 :deep(.chat-delivery-card:hover) {
-  border-color: #93c5fd;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+  border-color: #cbd5e1;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
 :deep(.chat-delivery-icon) {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-size: 15px;
+  font-size: 12px;
 }
 :deep(.chat-delivery-main) {
-  flex: 1;
   min-width: 0;
+  max-width: 200px;
 }
 :deep(.chat-delivery-name) {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12.5px;
+  font-weight: 500;
   color: #1e293b;
   white-space: nowrap;
   overflow: hidden;
@@ -946,15 +966,15 @@ defineExpose({ scrollToBottom, scrollToMessage });
   line-height: 1.3;
 }
 :deep(.chat-delivery-meta) {
-  font-size: 11px;
-  color: #94a3b8;
-  margin-top: 2px;
+  font-size: 10.5px;
+  color: #9ca3af;
+  margin-top: 1px;
 }
 :deep(.chat-delivery-thumb) {
-  width: 48px;
-  height: 48px;
+  width: 34px;
+  height: 34px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 7px;
   border: 1px solid #e2e8f0;
   flex-shrink: 0;
 }
@@ -962,16 +982,16 @@ defineExpose({ scrollToBottom, scrollToMessage });
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   border: none;
   background: transparent;
-  color: #94a3b8;
+  color: #b0b7c3;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s, color 0.15s;
-  font-size: 12px;
+  font-size: 11px;
 }
 :deep(.chat-delivery-action:hover) {
   background: #f1f5f9;

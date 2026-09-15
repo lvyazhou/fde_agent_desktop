@@ -1,6 +1,6 @@
 delete process.env.ELECTRON_RUN_AS_NODE;
 
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, Menu } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -10,6 +10,10 @@ const AcpClient = require('./acp-client.js');
 const licenseVerifier = require('./license/verifier.js');
 const licenseStore = require('./license/store.js');
 const licenseFingerprint = require('./license/fingerprint.js');
+
+// 统一应用名（菜单栏、关于、macOS 顶栏、任务栏）。
+// 打包后来自 package.json 的 productName；开发态 app.name 默认是 "Electron"，这里显式覆盖。
+app.setName('FDE产设大师');
 
 let mainWindow;
 let splashWindow;
@@ -379,7 +383,9 @@ function startHermes() {
   const command = resolveHermesAcpCommand();
   console.log(`[main] Starting hermes-acp: ${command}`);
 
-  hermesProcess = spawn(command, [], {
+  // 用局部 proc 持有本次 spawn 的子进程；exit/error 回调里以 `hermesProcess === proc`
+  // 守卫，避免「旧进程延迟到达的 exit 事件」误清掉重启后新建的 acp/hermesProcess。
+  const proc = spawn(command, [], {
     stdio: ['pipe', 'pipe', 'pipe'],
     cwd: PRODUCT_LOBSTER_HOME,
     env: {
@@ -402,20 +408,23 @@ function startHermes() {
     },
     ...(process.platform === 'win32' ? { windowsHide: true } : {}),
   });
+  hermesProcess = proc;
 
-  hermesProcess.on('error', (err) => {
+  proc.on('error', (err) => {
     console.error('[main] Failed to start hermes-acp:', err.message);
+    if (hermesProcess !== proc) return; // 旧进程的事件，别碰当前活动引擎
     hermesReady = false;
   });
 
-  hermesProcess.on('exit', (code, signal) => {
+  proc.on('exit', (code, signal) => {
     console.log(`[main] hermes-acp exited (code=${code}, signal=${signal})`);
+    if (hermesProcess !== proc) return; // 旧进程延迟到达的 exit，不能清掉新引擎
     hermesProcess = null;
     acp = null;
     hermesReady = false;
   });
 
-  acp = new AcpClient(hermesProcess);
+  acp = new AcpClient(proc);
 
   // Forward server notifications to renderer (include method name and sessionId for routing)
   acp.onNotification((notification) => {
@@ -522,19 +531,69 @@ async function initializeHermes() {
 
 async function stopHermes() {
   console.log('[main] Stopping hermes-acp...');
-  if (acp) {
+  // 先把要停的引用取到局部，并立刻让出全局：这样 startHermes 随后新建的
+  // 进程天然满足 `hermesProcess === proc` 守卫，旧进程延迟到达的 exit 不会误伤新引擎。
+  const dyingAcp = acp;
+  const dying = hermesProcess;
+  acp = null;
+  hermesProcess = null;
+  hermesReady = false;
+
+  if (dyingAcp) {
     try {
-      await acp.shutdown();
+      await dyingAcp.shutdown(); // 内含 3s SIGKILL 兜底
     } catch (err) {
       console.error('[main] Error shutting down hermes-acp:', err.message);
     }
   }
-  // 兜底：即使 acp 为 null，也确保子进程被杀掉，避免残留僵尸进程与新进程抢 stdio
-  if (hermesProcess) {
-    try { hermesProcess.kill('SIGKILL'); } catch (_) { /* ignore */ }
+  // 确保旧子进程真的退出后再返回，避免新旧进程抢 stdio。
+  if (dying && dying.exitCode == null && dying.signalCode == null) {
+    try { dying.kill('SIGKILL'); } catch (_) { /* ignore */ }
+    await new Promise((resolve) => {
+      if (dying.exitCode != null || dying.signalCode != null) return resolve();
+      const t = setTimeout(resolve, 3000); // 兜底：最坏等 3s
+      dying.once('exit', () => { clearTimeout(t); resolve(); });
+    });
   }
-  acp = null;
-  hermesProcess = null;
+}
+
+// 原子重启：stop → start → initialize，失败最多重试 `retries` 次。
+// 返回 true 表示重启后引擎已就绪（hermesReady 且 acp 非 null）。
+async function restartHermes(retries = 1) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      await stopHermes();
+      startHermes();
+      await initializeHermes();
+      if (hermesReady && acp) return true;
+    } catch (err) {
+      console.error(`[main] restartHermes attempt ${attempt} failed:`, err && err.message);
+    }
+    if (attempt < retries) {
+      console.warn('[main] restartHermes: 未就绪，重试一次…');
+    }
+  }
+  return hermesReady && !!acp;
+}
+
+// 兜底自愈：发消息前若引擎未连接，先尝试拉起一次，让「再发一次」就能恢复，
+// 而不必重启整个 app。返回 true 表示已就绪。
+async function ensureHermesReady() {
+  if (acp && hermesReady) return true;
+  console.warn('[main] ensureHermesReady: 引擎未就绪，尝试重连…');
+  try {
+    if (!hermesProcess) {
+      // 进程已不在：直接拉起并初始化。
+      startHermes();
+      await initializeHermes();
+    } else {
+      // 进程还在但握手失败/状态可疑：走干净的原子重启，避免在坏连接上重试。
+      await restartHermes(1);
+    }
+  } catch (err) {
+    console.error('[main] ensureHermesReady failed:', err && err.message);
+  }
+  return !!acp && hermesReady;
 }
 
 // ---------------------------------------------------------------------------
@@ -754,6 +813,104 @@ async function loadRenderer(win) {
     return;
   }
   await win.loadFile(path.join(__dirname, '..', '..', 'dist', 'renderer', 'index.html'));
+}
+
+// 中文应用菜单。Electron 默认菜单是全英文的（File/Edit/View/Window/Help），
+// 这里替换成中文模板；应用名统一用 app.name（= package.json productName「FDE产设大师」）。
+function buildAppMenu() {
+  const appName = app.name;
+  const isMac = process.platform === 'darwin';
+
+  const template = [];
+
+  if (isMac) {
+    template.push({
+      label: appName,
+      submenu: [
+        { role: 'about', label: `关于 ${appName}` },
+        { type: 'separator' },
+        { role: 'services', label: '服务' },
+        { type: 'separator' },
+        { role: 'hide', label: `隐藏 ${appName}` },
+        { role: 'hideOthers', label: '隐藏其他' },
+        { role: 'unhide', label: '全部显示' },
+        { type: 'separator' },
+        { role: 'quit', label: `退出 ${appName}` },
+      ],
+    });
+  }
+
+  template.push({
+    label: '编辑',
+    submenu: [
+      { role: 'undo', label: '撤销' },
+      { role: 'redo', label: '重做' },
+      { type: 'separator' },
+      { role: 'cut', label: '剪切' },
+      { role: 'copy', label: '复制' },
+      { role: 'paste', label: '粘贴' },
+      ...(isMac
+        ? [
+            { role: 'pasteAndMatchStyle', label: '粘贴并匹配格式' },
+            { role: 'delete', label: '删除' },
+            { role: 'selectAll', label: '全选' },
+          ]
+        : [
+            { role: 'delete', label: '删除' },
+            { type: 'separator' },
+            { role: 'selectAll', label: '全选' },
+          ]),
+    ],
+  });
+
+  template.push({
+    label: '视图',
+    submenu: [
+      { role: 'reload', label: '重新加载' },
+      { role: 'forceReload', label: '强制重新加载' },
+      { role: 'toggleDevTools', label: '开发者工具' },
+      { type: 'separator' },
+      { role: 'resetZoom', label: '实际大小' },
+      { role: 'zoomIn', label: '放大' },
+      { role: 'zoomOut', label: '缩小' },
+      { type: 'separator' },
+      { role: 'togglefullscreen', label: '全屏' },
+    ],
+  });
+
+  template.push({
+    label: '窗口',
+    submenu: [
+      { role: 'minimize', label: '最小化' },
+      { role: 'zoom', label: '缩放' },
+      ...(isMac
+        ? [
+            { type: 'separator' },
+            { role: 'front', label: '前置全部窗口' },
+          ]
+        : [{ role: 'close', label: '关闭' }]),
+    ],
+  });
+
+  template.push({
+    label: '帮助',
+    submenu: [
+      {
+        label: `关于 ${appName}`,
+        click: () => {
+          dialog.showMessageBox(mainWindow || undefined, {
+            type: 'info',
+            title: `关于 ${appName}`,
+            message: appName,
+            detail: `版本 ${app.getVersion()}\n\nFDE 项目经理五阶段作战工作台`,
+            buttons: ['确定'],
+          });
+        },
+      },
+    ],
+  });
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
 function createWindow() {
@@ -2125,7 +2282,9 @@ ipcMain.handle('code:write-file', async (_event, { id, relPath, content } = {}) 
 // 代码工作区对话：cwd = 工作区目录，mode:'default'(每次写文件都要用户确认)。
 ipcMain.handle('code:prompt', async (_event, { id, text, attachments } = {}) => {
   try {
-    if (!acp) throw new Error('Hermes ACP not connected');
+    if (!acp || !hermesReady) {
+      if (!(await ensureHermesReady())) throw new Error('Hermes ACP not connected');
+    }
     const list = readCodeWorkspaces();
     const workspace = list.find((w) => w.id === id);
     if (!workspace) throw new Error('workspace not found');
@@ -2415,11 +2574,12 @@ ipcMain.handle('hermes:set-model', async (_event, { slug, modelId }) => {
   try {
     const persisted = writeConfigModel(modelId);   // 内部会剥掉 openai-api: 等前缀，存裸名
     if (!persisted) return { success: false, error: '写入 config.yaml 失败' };
-    // 重启 hermes 让新模型生效（provider=custom 路由到 360）
-    await stopHermes();
-    startHermes();
-    await new Promise((r) => setTimeout(r, 300)); // 给新进程一点启动时间
-    await initializeHermes();
+    // 重启 hermes 让新模型生效（provider=custom 路由到 360）。
+    // 带就绪确认 + 一次重试：初始化失败不静默变砖，让前端能提示重试。
+    const ok = await restartHermes(1);
+    if (!ok || !hermesReady || !acp) {
+      return { success: false, error: '引擎重启后初始化失败，请重试切换模型' };
+    }
     // 重启后所有旧 sessionId 在新进程里已失效：清掉每个项目的 sessionId，
     // 下次发消息时 hermes:prompt 会自动 session/new 重建（带项目上下文恢复）。
     try {
@@ -2568,7 +2728,9 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
   try {
     let meta = readProjectMeta(slug);
     if (!meta) throw new Error(`Project "${slug}" not found`);
-    if (!acp) throw new Error('Hermes ACP not connected');
+    if (!acp || !hermesReady) {
+      if (!(await ensureHermesReady())) throw new Error('Hermes ACP not connected');
+    }
 
     // Auto-recover session if missing
     if (!meta.sessionId) {
@@ -3290,6 +3452,7 @@ function parseSkillFrontMatter(content) {
 
 app.whenReady().then(async () => {
   ensureDirs();
+  buildAppMenu();
   startPrototypeServer();
 
   // Show splash

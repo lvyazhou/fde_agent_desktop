@@ -178,6 +178,7 @@ const selectProject = async (slug) => {
     if (data) {
       currentMeta.value = data;
       currentProjectName.value = data.name || slug;
+      resolveAppSkills();  // 老会话缺 skills 时按内置定义回填，避免技能区回退全局库
       if (data.messages && data.messages.length > 0) {
         const reqMsgs = data.messages.filter(m => m.tab !== 'iterate');
         if (reqMsgs.length) {
@@ -886,13 +887,33 @@ const startAiAppSession = async (appId, source) => {
 const savingMemory = ref(false);
 const isAiAppSession = computed(() => !!(currentMeta.value && currentMeta.value.aiApp && currentMeta.value.aiApp.id));
 
+// 老会话回填：早期创建的内置专家会话，其落盘 aiApp 快照里没有 skills 字段。
+// 这里按 aiApp.id 从当前内置定义(叠加覆盖层)补出一份技能名单，避免回退到全局库。
+const fallbackAppSkills = ref(null);
+const resolveAppSkills = async () => {
+  fallbackAppSkills.value = null;
+  const app = currentMeta.value?.aiApp;
+  // 快照已带 skills，或不是内置会话，无需回填
+  if (!app || !app.id || Array.isArray(app.skills)) return;
+  if (app.source && app.source !== 'builtin') return;
+  const builtin = findBuiltinAiAppById(app.id);
+  if (!builtin) return;
+  const merged = await applyBuiltinOverride(builtin);
+  if (Array.isArray(merged?.skills)) fallbackAppSkills.value = merged.skills;
+};
+
 // 右侧「技能」面板展示的技能列表：
-// - AI 应用/专家会话：只显示该专家绑定的技能（currentMeta.aiApp.skills），
+// - AI 应用/专家会话：只显示该专家绑定的技能（currentMeta.aiApp.skills，
+//   老会话缺失时用内置定义回填的 fallbackAppSkills），
 //   并尽量从本地扫描结果补全 label/图标；扫描不到的仍按名称展示。
+//   若两者都拿不到，视为「未绑定技能」返回空，绝不回退到全局技能库。
 // - 普通对话：显示全部本地技能（原行为）。
 const sidebarSkills = computed(() => {
-  const bound = currentMeta.value?.aiApp?.skills;
-  if (isAiAppSession.value && Array.isArray(bound)) {
+  if (isAiAppSession.value) {
+    const bound = Array.isArray(currentMeta.value?.aiApp?.skills)
+      ? currentMeta.value.aiApp.skills
+      : fallbackAppSkills.value;
+    if (!Array.isArray(bound)) return [];
     return bound.map((name) => {
       const hit = skills.value.find((s) => (s.name || s.key || s) === name);
       return hit || { name };

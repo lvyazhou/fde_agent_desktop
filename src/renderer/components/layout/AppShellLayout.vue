@@ -160,8 +160,8 @@ const navGroups = [
   {
     label: 'AI 助手',
     items: [
-      { to: '/chat', label: '智能对话', icon: 'fa-solid fa-comments', match: (p) => p === '/chat' },
-      { to: '/code', label: '代码', icon: 'fa-solid fa-code', match: (p) => p.startsWith('/code') },
+      { to: '/chat', label: 'AI 智能对话', icon: 'fa-solid fa-comments', match: (p) => p === '/chat' },
+      { to: '/code', label: 'AI 代码模式', icon: 'fa-solid fa-code', match: (p) => p.startsWith('/code') },
       { to: '/apps', label: 'AI 应用广场', icon: 'fa-solid fa-store', match: (p) => p === '/apps' || p === '/experts' },
     ],
   },
@@ -169,8 +169,8 @@ const navGroups = [
     label: '资源',
     items: [
       { to: '/projects', label: '项目列表', icon: 'fa-solid fa-folder-open', match: (p) => p.startsWith('/projects') },
-      { to: '/knowledge', label: '知识库', icon: 'fa-solid fa-book-open', match: (p) => p === '/knowledge' },
-      { to: '/skills', label: '技能', icon: 'fa-solid fa-brain', match: (p) => p === '/skills' },
+      { to: '/knowledge', label: '知识中心', icon: 'fa-solid fa-book-open', match: (p) => p === '/knowledge' },
+      { to: '/skills', label: '技能中心', icon: 'fa-solid fa-brain', match: (p) => p === '/skills' },
     ],
   },
 ];

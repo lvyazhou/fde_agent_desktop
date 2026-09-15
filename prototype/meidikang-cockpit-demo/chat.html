@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>智能对话 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+:root{
+  --primary: 214 95% 44%; --background: 0 0% 100%; --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%; --border: 213 32% 88%;
+  --success: 160 84% 33%; --warning: 32 88% 40%; --danger: 352 68% 48%; --info: 214 15% 50%;
+  --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --background: 214 40% 11%; --foreground: 210 40% 94%; --muted-foreground: 213 22% 68%; --border: 213 28% 26%; --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%); --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%); }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.btn-pri{height:32px;padding:0 16px;border:0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 5px 12px hsl(var(--primary) / 18%)}
+.btn-ghost{height:32px;padding:0 14px;border:1px solid hsl(var(--border));border-radius:8px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:8px;margin-right:16px} .traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+.body-row{flex:1;display:flex;min-height:0}
+.side-rail{width:200px;flex-shrink:0;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset -1px 0 0 hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:14px 10px}
+.rail-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;margin-bottom:3px;transition:background .15s}
+.rail-item i{width:18px;text-align:center;font-size:15px}
+.rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
+.side-rail>.rail-sep:first-child{margin-top:2px}
+.rail-sep{margin:14px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+/* 聊天三栏 */
+.chat-list{width:240px;flex-shrink:0;border-right:1px solid hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:12px 10px;overflow-y:auto}
+.conv{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground))}
+.conv:hover{background:hsl(var(--primary) / 6%)} .conv.active{background:hsl(var(--primary) / 10%);color:hsl(var(--primary));font-weight:500}
+.qchip{padding:8px 11px;border-radius:9px;border:1px solid hsl(var(--border));font-size:12.5px;cursor:pointer;color:hsl(var(--foreground));background:hsl(var(--background))}
+.qchip:hover{border-color:hsl(var(--primary) / 50%);background:hsl(var(--primary) / 5%)}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.msgs{flex:1;overflow-y:auto;padding:20px 26px}
+.bubble-ai{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.7}
+.bubble-user{background:hsl(var(--primary));color:#fff;border-radius:12px;padding:10px 14px;font-size:13.5px;line-height:1.6;max-width:78%}
+.composer{border-top:1px solid hsl(var(--border) / 70%);padding:14px 26px}
+.cbox{border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--background));padding:10px 12px}
+.cbox:focus-within{border-color:hsl(var(--primary) / 55%)}
+textarea{width:100%;border:0;outline:0;resize:none;background:transparent;color:hsl(var(--foreground));font-size:13.5px;font-family:inherit}
+.cursor::after{content:'▋';animation:bk 1s steps(2) infinite;color:hsl(var(--primary))}
+@keyframes bk{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="chat()" x-init="init()">
+<div class="app-shell">
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground))">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+  <div class="body-row">
+    <nav class="side-rail">
+      <div class="rail-sep">经营驾驶舱</div>
+      <a class="rail-item" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
+      <a class="rail-item" href="audit.html"><i class="fa fa-shield-halved"></i>AI 行为审计</a>
+      <div class="rail-sep">统一工作台</div>
+      <a class="rail-item active" href="chat.html"><i class="fa fa-comments"></i>智能对话</a>
+      <a class="rail-item" href="code.html"><i class="fa fa-code"></i>AI 代码模式</a>
+      <a class="rail-item" href="experts.html"><i class="fa fa-user-tie"></i>AI 专家广场</a>
+      <a class="rail-item" href="knowledge.html"><i class="fa fa-book"></i>知识库</a>
+      <a class="rail-item" href="skills.html"><i class="fa fa-wand-magic-sparkles"></i>技能中心</a>
+      <div class="rail-sep">项目协作</div>
+      <a class="rail-item" href="project.html"><i class="fa fa-diagram-project"></i>项目工作台</a>
+      <div class="rail-sep">设置</div>
+      <a class="rail-item" href="settings.html"><i class="fa fa-gear"></i>系统设置</a>
+    </nav>
+
+    <!-- 会话列表 -->
+    <div class="chat-list msc">
+      <button class="btn-pri w-full mb-3" @click="newChat()"><i class="fa fa-plus mr-1.5"></i>新对话</button>
+      <div class="text-[11px] font-semibold mb-1.5 px-1" style="color:hsl(var(--muted-foreground));letter-spacing:1px">常问的</div>
+      <div class="space-y-1.5 mb-3">
+        <template x-for="q in presets" :key="q">
+          <div class="qchip truncate" :title="q" @click="ask(q)" x-text="q"></div>
+        </template>
+      </div>
+      <div class="text-[11px] font-semibold mb-1.5 px-1" style="color:hsl(var(--muted-foreground));letter-spacing:1px">近期对话</div>
+      <template x-for="c in convs" :key="c.id">
+        <div class="conv" :class="{'active':c.id===curId}" @click="switchConv(c.id)">
+          <i class="fa fa-message text-[12px] flex-shrink-0"></i>
+          <span class="truncate flex-1" :title="c.title" x-text="c.title"></span>
+        </div>
+      </template>
+    </div>
+
+    <!-- 对话主区 -->
+    <div class="chat-main">
+      <div class="flex items-center gap-2 px-6 py-2.5" style="box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+        <img src="image/bot.png" onerror="botFallback(this)" class="w-6 h-6 rounded-lg object-cover">
+        <span class="text-[13px] font-semibold">美迪康经营助手</span>
+        <span class="tag primary" style="padding:1px 7px">自研大模型</span>
+        <span class="ml-auto text-[12px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-shield-halved mr-1"></i>经网关审计 · 数据不出域</span>
+      </div>
+
+      <div class="msgs msc" x-ref="msgs">
+        <!-- 空状态 -->
+        <div x-show="!messages.length" class="h-full flex flex-col items-center justify-center text-center">
+          <img src="image/bot.png" onerror="botFallback(this)" class="w-16 h-16 rounded-2xl object-cover mb-4">
+          <div class="text-[18px] font-bold">我是美迪康经营助手</div>
+          <div class="text-[13px] mt-1.5 mb-5" style="color:hsl(var(--muted-foreground))">问答、写材料、查经营数据，都可以交给我</div>
+          <div class="grid grid-cols-2 gap-2.5 max-w-[560px]">
+            <template x-for="q in presets" :key="q">
+              <div class="qchip text-left" @click="ask(q)" x-text="q"></div>
+            </template>
+          </div>
+        </div>
+        <!-- 消息流 -->
+        <div class="space-y-4">
+          <template x-for="(m,i) in messages" :key="i">
+            <div>
+              <div x-show="m.role==='user'" class="flex justify-end"><div class="bubble-user" x-text="m.text"></div></div>
+              <div x-show="m.role==='ai'" class="flex justify-start gap-2.5">
+                <img src="image/bot.png" onerror="botFallback(this)" class="w-8 h-8 rounded-lg object-cover flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                  <div class="bubble-ai" :class="{'cursor':m.typing}" x-html="m.shown"></div>
+                  <div x-show="!m.typing" class="flex gap-3 mt-1.5 text-[12px]" style="color:hsl(var(--muted-foreground))">
+                    <span class="cursor-pointer hover:text-[color:hsl(var(--primary))]" @click="showToast('已反馈：有用','success')"><i class="fa fa-thumbs-up"></i></span>
+                    <span class="cursor-pointer hover:text-[color:hsl(var(--primary))]" @click="copy(m)"><i class="fa fa-copy"></i> 复制</span>
+                    <span class="cursor-pointer hover:text-[color:hsl(var(--primary))]" @click="regen(i)"><i class="fa fa-rotate"></i> 重新生成</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <div class="composer">
+        <div class="cbox flex items-end gap-2">
+          <textarea rows="1" x-model="draft" @keydown.enter.prevent="send()" placeholder="给经营助手发消息…（Enter 发送）" style="max-height:120px"></textarea>
+          <button class="btn-pri flex-shrink-0" style="height:34px" :disabled="replying" @click="send()"><i class="fa fa-paper-plane"></i></button>
+        </div>
+        <div class="text-[11px] mt-1.5 text-center" style="color:hsl(var(--muted-foreground))">内容由 AI 生成，仅供参考 · 所有调用经网关审计留痕</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':t.type==='error'?'danger':'primary')+'))'"
+         x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function chat(){
+  return {
+    presets:['本月各部门 AI 成本花了多少？','帮我写一份骨科新品发布会通知','售前方案卡点，帮我起草一封协调邮件','总结本周经营驾驶舱要点'],
+    convs:[
+      {id:1,title:'本月部门成本分析'},
+      {id:2,title:'骨科发布会通知草稿'},
+      {id:3,title:'三甲医院采购决策链梳理'}
+    ],
+    curId:0,
+    messages:[],
+    draft:'', replying:false,
+    toasts:[], _toastId:0, _mid:0,
+    answers:{
+      '本月各部门 AI 成本花了多少？':'本月全公司 AI 折算成本 <b>¥68,420</b>，环比下降 6.4%。按部门看：<br>· 研发部 ¥24,680（36%，代码模式为主）<br>· 市场部 ¥15,020（22%）<br>· 销售部 ¥11,240（16%）<br>· 售前部 ¥9,860（14%）<br>· 工程部 ¥7,620（11%）<br><br>成本下降主要因为把通用问答切换到了自研大模型（单价更低）。需要我导出明细吗？',
+      'default':'好的，我已经理解您的需求。基于平台沉淀的经营数据与知识库，我为您整理如下：<br><br>这是一段演示回答，实际接入后会由自研大模型结合企业私有数据实时生成，并经网关审计留痕、数据不出域。您可以继续追问，或让我把结果导出成文档。'
+    },
+    init(){},
+    newChat(){ this.messages=[]; this.curId=0; },
+    switchConv(id){ this.curId=id; this.messages=[]; const c=this.convs.find(x=>x.id===id); if(c){ this.pushUser('（继续会话）'+c.title); this.pushAI(this.answers['default']); } },
+    ask(q){ this.draft=q; this.send(); },
+    send(){ const t=this.draft.trim(); if(!t||this.replying) return; this.draft=''; this.pushUser(t);
+      if(this.curId===0 && this.convs.every(c=>c.title!==t)){ const id=Date.now(); this.convs.unshift({id,title:t.slice(0,16)}); this.curId=id; }
+      this.pushAI(this.answers[t]||this.answers['default']); },
+    pushUser(text){ this.messages.push({role:'user',text}); this.scroll(); },
+    pushAI(full){ this.replying=true; this.messages.push({role:'ai',full,shown:'',typing:true}); const idx=this.messages.length-1; this.stream(idx); },
+    stream(idx){ let i=0; const full=this.messages[idx].full;
+      const timer=setInterval(()=>{ i++; this.messages[idx].shown=full.slice(0,i); this.scroll();
+        if(i>=full.length){ clearInterval(timer); this.messages[idx].typing=false; this.replying=false; } },12); },
+    regen(i){ if(this.replying) return; const m=this.messages[i]; m.shown=''; m.typing=true; this.replying=true; this.stream(i); },
+    copy(m){ this.showToast('已复制到剪贴板','success'); },
+    scroll(){ this.$nextTick(()=>{ const el=this.$refs.msgs; if(el) el.scrollTop=el.scrollHeight; }); },
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

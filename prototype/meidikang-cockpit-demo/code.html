@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 代码模式 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+:root{
+  --primary: 214 95% 44%; --background: 0 0% 100%; --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%; --border: 213 32% 88%;
+  --success: 160 84% 33%; --warning: 32 88% 40%; --danger: 352 68% 48%; --info: 214 15% 50%;
+  --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+  --code-bg: 218 40% 13%;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --background: 214 40% 11%; --foreground: 210 40% 94%; --muted-foreground: 213 22% 68%; --border: 213 28% 26%; --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%); --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%); --code-bg: 218 45% 9%; }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.tag.success{color:hsl(var(--success));background:color-mix(in srgb,hsl(var(--success)) 12%,hsl(var(--background)))}
+.btn-pri{height:30px;padding:0 14px;border:0;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:500;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 4px 10px hsl(var(--primary) / 18%)}
+.btn-ghost{height:30px;padding:0 12px;border:1px solid hsl(var(--border));border-radius:7px;cursor:pointer;font-size:12.5px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:8px;margin-right:16px} .traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+.body-row{flex:1;display:flex;min-height:0}
+.side-rail{width:200px;flex-shrink:0;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset -1px 0 0 hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:14px 10px}
+.rail-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;margin-bottom:3px;transition:background .15s}
+.rail-item i{width:18px;text-align:center;font-size:15px}
+.rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
+.side-rail>.rail-sep:first-child{margin-top:2px}
+.rail-sep{margin:14px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+/* 文件树 */
+.file-tree{width:168px;flex-shrink:0;border-right:1px solid hsl(var(--border) / 70%);padding:12px 8px;overflow-y:auto}
+.f-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:7px;font-size:12.5px;cursor:pointer;color:hsl(var(--muted-foreground))}
+.f-item:hover{background:hsl(var(--primary) / 6%)} .f-item.on{background:hsl(var(--primary) / 10%);color:hsl(var(--primary));font-weight:500}
+.f-item.indent{margin-left:16px}
+/* 中间：AI 对话 */
+.chat-col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid hsl(var(--border) / 70%)}
+.chat-hd{display:flex;align-items:center;gap:8px;padding:9px 16px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.chat-flow{flex:1;overflow-y:auto;padding:16px 18px}
+.qchip{padding:8px 11px;border-radius:9px;border:1px solid hsl(var(--border));font-size:12.5px;cursor:pointer;color:hsl(var(--foreground));background:hsl(var(--background))}
+.qchip:hover{border-color:hsl(var(--primary) / 50%);background:hsl(var(--primary) / 5%)}
+.bubble-ai{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;padding:11px 13px;font-size:13px;line-height:1.7}
+.bubble-user{background:hsl(var(--primary));color:#fff;border-radius:12px;padding:9px 13px;font-size:13px;line-height:1.6;max-width:82%}
+.ai-note{margin-top:8px;padding-top:8px;border-top:1px dashed hsl(var(--border))}
+.cbox{border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--background));padding:9px 11px}
+.cbox:focus-within{border-color:hsl(var(--primary) / 55%)}
+.cbox textarea{width:100%;border:0;outline:0;resize:none;background:transparent;color:hsl(var(--foreground));font-size:13px;font-family:inherit;max-height:120px}
+/* 右侧：可视化代码窗口 */
+.code-main{width:38%;min-width:340px;max-width:560px;flex-shrink:0;display:flex;flex-direction:column;min-height:0}
+.code-tabbar{display:flex;align-items:center;gap:10px;padding:8px 14px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.code-view{flex:1;overflow:auto;background:hsl(var(--code-bg));padding:14px 0}
+.code-line{display:flex;font-family:'SF Mono',Menlo,Consolas,monospace;font-size:12.5px;line-height:1.7}
+.ln{width:44px;flex-shrink:0;text-align:right;padding-right:14px;color:hsl(210 20% 45%);user-select:none}
+.lc{color:hsl(210 30% 82%);white-space:pre}
+.lc .kw{color:hsl(214 90% 72%)} .lc .cm{color:hsl(160 30% 55%)} .lc .st{color:hsl(32 80% 68%)} .lc .fn{color:hsl(280 60% 75%)}
+.code-line.new{background:hsl(var(--success) / 14%)}
+/* 项目入口页 */
+.entry-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;align-items:center;padding:56px 24px}
+.entry-card{width:280px;background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:16px;box-shadow:var(--shadow-card);padding:26px 22px;cursor:pointer;transition:transform .18s,border-color .18s,box-shadow .18s;text-align:center}
+.entry-card:hover{transform:translateY(-4px);border-color:hsl(var(--primary) / 55%);box-shadow:0 14px 30px hsl(var(--primary) / 16%)}
+.entry-ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 14px}
+.recent-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border:1px solid hsl(var(--border));border-radius:11px;background:hsl(var(--background));cursor:pointer;transition:border-color .15s,background .15s}
+.recent-item:hover{border-color:hsl(var(--primary) / 50%);background:hsl(var(--primary) / 4%)}
+/* 弹窗 */
+.modal-mask{position:fixed;inset:0;background:hsl(0 0% 0% / 42%);backdrop-filter:blur(2px);z-index:9000;display:flex;align-items:center;justify-content:center;padding:24px}
+.modal{width:440px;max-width:100%;background:hsl(var(--background));border:1px solid hsl(var(--border));border-radius:16px;box-shadow:0 24px 60px hsl(0 0% 0% / 28%);overflow:hidden}
+.modal-hd{display:flex;align-items:center;padding:15px 20px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.modal-bd{padding:18px 20px}
+.modal-ft{display:flex;justify-content:flex-end;gap:10px;padding:13px 20px;box-shadow:inset 0 1px 0 hsl(var(--border) / 70%)}
+.fld{margin-bottom:14px} .fld>label{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px}
+.inp{width:100%;height:36px;border:1px solid hsl(var(--border));border-radius:9px;background:hsl(var(--background));color:hsl(var(--foreground));padding:0 12px;font-size:13.5px;font-family:inherit;outline:0}
+.inp:focus{border-color:hsl(var(--primary) / 55%)}
+.tpl-item{display:flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid hsl(var(--border));border-radius:9px;font-size:12.5px;cursor:pointer;color:hsl(var(--muted-foreground))}
+.tpl-item.on{border-color:hsl(var(--primary) / 55%);background:hsl(var(--primary) / 8%);color:hsl(var(--primary));font-weight:600}
+.field{width:100%;padding:8px 11px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background));font-size:12.5px;color:hsl(var(--foreground));outline:none;font-family:inherit;resize:none}
+.field:focus{border-color:hsl(var(--primary))}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="codeApp()" x-init="init()">
+<div class="app-shell">
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground))">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+  <div class="body-row">
+    <nav class="side-rail">
+      <div class="rail-sep">经营驾驶舱</div>
+      <a class="rail-item" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
+      <a class="rail-item" href="audit.html"><i class="fa fa-shield-halved"></i>AI 行为审计</a>
+      <div class="rail-sep">统一工作台</div>
+      <a class="rail-item" href="chat.html"><i class="fa fa-comments"></i>智能对话</a>
+      <a class="rail-item active" href="code.html"><i class="fa fa-code"></i>AI 代码模式</a>
+      <a class="rail-item" href="experts.html"><i class="fa fa-user-tie"></i>AI 专家广场</a>
+      <a class="rail-item" href="knowledge.html"><i class="fa fa-book"></i>知识库</a>
+      <a class="rail-item" href="skills.html"><i class="fa fa-wand-magic-sparkles"></i>技能中心</a>
+      <div class="rail-sep">项目协作</div>
+      <a class="rail-item" href="project.html"><i class="fa fa-diagram-project"></i>项目工作台</a>
+      <div class="rail-sep">设置</div>
+      <a class="rail-item" href="settings.html"><i class="fa fa-gear"></i>系统设置</a>
+    </nav>
+
+    <!-- ========== 第一步：项目入口页 ========== -->
+    <div class="entry-wrap msc" x-show="stage==='entry'" x-cloak>
+      <div class="w-full" style="max-width:720px">
+        <div class="text-center mb-1"><div class="text-[22px] font-bold">AI 代码模式</div></div>
+        <div class="text-center text-[13px] mb-8" style="color:hsl(var(--muted-foreground))">新建一个项目，或导入已有项目，让 AI 帮你在项目里写代码 · 全程经网关审计留痕</div>
+        <div class="flex gap-5 justify-center">
+          <div class="entry-card" @click="openNew()">
+            <div class="entry-ico" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))"><i class="fa fa-plus"></i></div>
+            <div class="text-[15px] font-semibold">新建项目</div>
+            <div class="text-[12px] mt-1.5" style="color:hsl(var(--muted-foreground))">从空白或模板创建一个新的代码项目</div>
+          </div>
+          <div class="entry-card" @click="openImport()">
+            <div class="entry-ico" style="background:hsl(var(--success) / 12%);color:hsl(var(--success))"><i class="fa fa-folder-open"></i></div>
+            <div class="text-[15px] font-semibold">导入已有项目</div>
+            <div class="text-[12px] mt-1.5" style="color:hsl(var(--muted-foreground))">选择本地文件夹或 Git 仓库导入</div>
+          </div>
+        </div>
+
+        <div class="mt-9" x-show="recents.length">
+          <div class="text-[12px] font-semibold mb-2.5" style="color:hsl(var(--muted-foreground))"><i class="fa fa-clock-rotate-left mr-1.5"></i>最近项目</div>
+          <div class="space-y-2">
+            <template x-for="p in recents" :key="p.id">
+              <div class="recent-item" @click="openProject(p)">
+                <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))"><i class="fa" :class="p.icon||'fa-diagram-project'"></i></div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[13px] font-medium truncate" x-text="p.name"></div>
+                  <div class="text-[11px]" style="color:hsl(var(--muted-foreground))"><span x-text="p.path"></span> · <span x-text="p.updated"></span></div>
+                </div>
+                <span class="tag primary" style="padding:1px 8px" x-text="p.lang"></span>
+                <i class="fa fa-chevron-right text-[11px]" style="color:hsl(var(--muted-foreground))"></i>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== 第二步：编程页（文件树 / 对话 / 代码窗口） ========== -->
+    <!-- 文件树 -->
+    <div class="file-tree msc" x-show="stage==='ide'" x-cloak>
+      <button class="btn-ghost w-full mb-2.5" style="justify-content:center;display:flex;align-items:center" @click="backToEntry()"><i class="fa fa-arrow-left mr-1.5"></i>返回项目</button>
+      <div class="text-[11px] font-semibold mb-2 px-2 flex items-center gap-1.5" style="color:hsl(var(--muted-foreground))"><i class="fa fa-folder-open" style="color:hsl(var(--primary))"></i><span x-text="project.name"></span></div>
+      <div class="f-item"><i class="fa fa-folder text-[11px]" style="width:14px"></i>src</div>
+      <template x-for="f in files" :key="f.key">
+        <div class="f-item indent" :class="{'on':cur===f.key}" @click="cur=f.key">
+          <i class="fa fa-file-code text-[11px]" style="width:14px" :style="cur===f.key?'color:hsl(var(--primary))':''"></i><span x-text="f.name"></span>
+        </div>
+      </template>
+      <div class="f-item"><i class="fa fa-file text-[11px]" style="width:14px"></i>package.json</div>
+      <div class="f-item"><i class="fa fa-file-lines text-[11px]" style="width:14px"></i>README.md</div>
+    </div>
+
+    <!-- 中间：AI 对话气泡流 -->
+    <div class="chat-col" x-show="stage==='ide'" x-cloak>
+      <div class="chat-hd">
+        <img src="image/bot.png" onerror="botFallback(this)" class="w-6 h-6 rounded-lg object-cover">
+        <span class="text-[13px] font-semibold">AI 编程助手</span>
+        <span class="ml-auto text-[12px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-shield-halved mr-1"></i>产出经网关审计 · 数据不出域</span>
+      </div>
+      <div class="chat-flow msc" x-ref="flow">
+        <!-- 空态：欢迎 + 快捷指令 -->
+        <div x-show="!messages.length" class="h-full flex flex-col items-center justify-center text-center">
+          <img src="image/bot.png" onerror="botFallback(this)" class="w-12 h-12 rounded-2xl object-cover mb-3">
+          <div class="text-[15px] font-bold">让 AI 帮你写这个项目</div>
+          <div class="text-[12.5px] mt-1 mb-4" style="color:hsl(var(--muted-foreground))">用自然语言描述需求，AI 会修改右侧代码并高亮改动</div>
+          <div class="grid grid-cols-2 gap-2.5" style="max-width:460px">
+            <template x-for="q in quicks" :key="q"><div class="qchip text-left" @click="ask(q)" x-text="q"></div></template>
+          </div>
+        </div>
+        <!-- 气泡流 -->
+        <div class="space-y-4">
+          <template x-for="(m,i) in messages" :key="i">
+            <div>
+              <div x-show="m.role==='user'" class="flex justify-end"><div class="bubble-user" x-text="m.text"></div></div>
+              <div x-show="m.role==='ai'" class="flex justify-start gap-2.5">
+                <img src="image/bot.png" onerror="botFallback(this)" class="w-8 h-8 rounded-lg object-cover flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                  <div class="bubble-ai">
+                    <div :class="{'cursor':m.typing}" x-html="m.shown"></div>
+                    <div class="ai-note" x-show="!m.typing && m.points && m.points.length">
+                      <template x-for="p in m.points" :key="p">
+                        <div class="text-[12px] flex items-start gap-1.5 mb-1" style="color:hsl(var(--muted-foreground))"><i class="fa fa-check text-[10px] mt-1" style="color:hsl(var(--success))"></i><span x-text="p"></span></div>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+      <div style="border-top:1px solid hsl(var(--border) / 70%);padding:12px 18px">
+        <div class="cbox flex items-end gap-2">
+          <textarea rows="1" x-model="prompt" @keydown.enter.prevent="askAi()" placeholder="让 AI 改这段代码…（如：加异常处理）"></textarea>
+          <button class="btn-pri flex-shrink-0" style="height:34px" :disabled="busy" @click="askAi()"><i class="fa fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右侧：可视化代码窗口 -->
+    <div class="code-main" x-show="stage==='ide'" x-cloak>
+      <div class="code-tabbar">
+        <i class="fa fa-file-code text-[12px]" style="color:hsl(var(--primary))"></i>
+        <span class="text-[13px] font-medium" x-text="files.find(f=>f.key===cur)?.name"></span>
+        <span class="tag success" style="padding:1px 7px" x-show="generated"><i class="fa fa-check text-[9px]"></i>AI 已生成</span>
+        <div class="ml-auto flex gap-2">
+          <button class="btn-pri" :disabled="busy" @click="genCode()"><i class="fa mr-1" :class="busy&&act==='gen'?'fa-spinner fa-spin':'fa-wand-magic-sparkles'"></i>AI 生成</button>
+          <button class="btn-ghost" :disabled="busy" @click="refactor()"><i class="fa mr-1" :class="busy&&act==='ref'?'fa-spinner fa-spin':'fa-arrows-rotate'"></i>AI 重构</button>
+        </div>
+      </div>
+      <div class="code-view msc" x-ref="code">
+        <template x-for="(line,i) in curLines()" :key="i">
+          <div class="code-line" :class="{'new':line.isNew}">
+            <span class="ln" x-text="i+1"></span><span class="lc" x-html="line.html"></span>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新建 / 导入项目 弹窗 -->
+<div class="modal-mask" x-show="modal" x-cloak @keydown.escape.window="modal=null">
+  <div class="modal" @click.outside="modal=null">
+    <div class="modal-hd">
+      <span class="text-[15px] font-semibold" x-text="modal==='new'?'新建项目':'导入已有项目'"></span>
+      <button class="btn-ghost ml-auto" style="height:26px;padding:0 8px" @click="modal=null"><i class="fa fa-xmark"></i></button>
+    </div>
+    <!-- 新建 -->
+    <div class="modal-bd" x-show="modal==='new'">
+      <div class="fld">
+        <label>项目名称</label>
+        <input class="inp" x-model="form.name" placeholder="如：试剂管理系统">
+      </div>
+      <div class="fld" style="margin-bottom:2px">
+        <label>项目模板</label>
+        <div class="grid grid-cols-2 gap-2">
+          <template x-for="t in templates" :key="t.key">
+            <div class="tpl-item" :class="{'on':form.tpl===t.key}" @click="form.tpl=t.key">
+              <i class="fa" :class="t.icon"></i><span x-text="t.label"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+    <!-- 导入 -->
+    <div class="modal-bd" x-show="modal==='import'">
+      <div class="fld">
+        <label>导入方式</label>
+        <div class="grid grid-cols-2 gap-2">
+          <div class="tpl-item" :class="{'on':form.imp==='local'}" @click="form.imp='local'"><i class="fa fa-folder"></i>本地文件夹</div>
+          <div class="tpl-item" :class="{'on':form.imp==='git'}" @click="form.imp='git'"><i class="fa fa-code-branch"></i>Git 仓库</div>
+        </div>
+      </div>
+      <div class="fld" x-show="form.imp==='local'" style="margin-bottom:2px">
+        <label>本地路径</label>
+        <div class="flex gap-2">
+          <input class="inp flex-1" x-model="form.path" placeholder="~/projects/…">
+          <button class="btn-ghost" @click="form.path='~/projects/'+(form.name||'imported-project')">选择…</button>
+        </div>
+      </div>
+      <div class="fld" x-show="form.imp==='git'" style="margin-bottom:2px">
+        <label>仓库地址</label>
+        <input class="inp" x-model="form.git" placeholder="https://git.meidikang.com/…​.git">
+      </div>
+    </div>
+    <div class="modal-ft">
+      <button class="btn-ghost" @click="modal=null">取消</button>
+      <button class="btn-pri" @click="confirmModal()"><i class="fa fa-check mr-1.5"></i><span x-text="modal==='new'?'创建并进入':'导入并进入'"></span></button>
+    </div>
+  </div>
+</div>
+
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':'primary')+'))'" x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function codeApp(){
+  const H=(s)=>s; // 代码高亮辅助：直接给带 span 的 html
+  return {
+    stage:'entry', modal:null,
+    project:{name:''}, form:{name:'',tpl:'blank',imp:'local',path:'',git:''},
+    templates:[
+      {key:'blank',label:'空白项目',icon:'fa-file'},
+      {key:'node',label:'Node 服务',icon:'fa-node-js'},
+      {key:'vue',label:'Vue 前端',icon:'fa-code'},
+      {key:'py',label:'Python 脚本',icon:'fa-python'}
+    ],
+    recents:[
+      {id:'p1',name:'试剂管理系统',path:'~/projects/reagent',lang:'Node.js',updated:'今天 09:12',icon:'fa-flask'},
+      {id:'p2',name:'设备巡检小程序',path:'~/projects/inspect',lang:'Vue',updated:'昨天 17:40',icon:'fa-clipboard-check'},
+      {id:'p3',name:'经营数据看板',path:'~/projects/dashboard',lang:'Python',updated:'09-12',icon:'fa-chart-line'}
+    ],
+    cur:'effiry', busy:false, act:'', generated:false, prompt:'', _cur:'',
+    messages:[],
+    quicks:['给 checkExpiry 补充空数据与异常处理','把 daysLeft 提取成公共函数','这段并发扣减库存有没有问题？','给这个文件加单元测试'],
+    toasts:[], _toastId:0,
+    files:[
+      {key:'effiry',name:'effiry-alert.js'},
+      {key:'inv',name:'inventory.js'},
+      {key:'gw',name:'api/gateway.js'}
+    ],
+    code:{
+      effiry:[
+        {html:'<span class="cm">// 试剂效期预警定时任务</span>'},
+        {html:'<span class="kw">import</span> { db } <span class="kw">from</span> <span class="st">\'./db\'</span>'},
+        {html:'<span class="kw">import</span> { notify } <span class="kw">from</span> <span class="st">\'./notify\'</span>'},
+        {html:''},
+        {html:'<span class="cm">// 每天 08:00 扫描近效期试剂</span>'},
+        {html:'<span class="kw">export async function</span> <span class="fn">checkExpiry</span>() {'},
+        {html:'  <span class="kw">const</span> items = <span class="kw">await</span> db.<span class="fn">query</span>('},
+        {html:'    <span class="st">"SELECT * FROM reagent WHERE expiry_date &lt; NOW() + INTERVAL 30 DAY"</span>'},
+        {html:'  )'},
+        {html:'  <span class="kw">for</span> (<span class="kw">const</span> it <span class="kw">of</span> items) {'},
+        {html:'    <span class="kw">const</span> days = <span class="fn">daysLeft</span>(it.expiry_date)'},
+        {html:'    <span class="kw">const</span> level = days &lt;= <span class="st">7</span> ? <span class="st">\'urgent\'</span> : <span class="st">\'warn\'</span>'},
+        {html:'    <span class="kw">await</span> <span class="fn">notify</span>({ item: it.name, days, level })'},
+        {html:'  }'},
+        {html:'}'}
+      ],
+      inv:[
+        {html:'<span class="cm">// 库存扣减（含并发控制）</span>'},
+        {html:'<span class="kw">export async function</span> <span class="fn">deduct</span>(id, qty) {'},
+        {html:'  <span class="kw">return</span> db.<span class="fn">transaction</span>(<span class="kw">async</span> (t) => {'},
+        {html:'    <span class="kw">const</span> row = <span class="kw">await</span> t.<span class="fn">lockRow</span>(<span class="st">\'stock\'</span>, id)'},
+        {html:'    <span class="kw">if</span> (row.qty &lt; qty) <span class="kw">throw new</span> <span class="fn">Error</span>(<span class="st">\'库存不足\'</span>)'},
+        {html:'    <span class="kw">await</span> t.<span class="fn">update</span>(<span class="st">\'stock\'</span>, id, { qty: row.qty - qty })'},
+        {html:'  })'},
+        {html:'}'}
+      ],
+      gw:[
+        {html:'<span class="cm">// AI 网关调用封装（所有 AI 请求必经此处）</span>'},
+        {html:'<span class="kw">export async function</span> <span class="fn">callAI</span>(prompt, model) {'},
+        {html:'  <span class="kw">return</span> <span class="fn">fetch</span>(<span class="st">\'/gateway/v1/chat\'</span>, {'},
+        {html:'    method: <span class="st">\'POST\'</span>,'},
+        {html:'    headers: { <span class="st">\'X-Audit\'</span>: <span class="st">\'on\'</span> },'},
+        {html:'    body: <span class="fn">JSON.stringify</span>({ prompt, model })'},
+        {html:'  })'},
+        {html:'}'}
+      ]
+    },
+    _extra:[],
+    init(){},
+    // —— 第一步：项目入口 ——
+    openNew(){ this.form={name:'',tpl:'blank',imp:'local',path:'',git:''}; this.modal='new'; },
+    openImport(){ this.form={name:'',tpl:'blank',imp:'local',path:'',git:''}; this.modal='import'; },
+    confirmModal(){
+      if(this.modal==='new'){
+        const name=this.form.name.trim(); if(!name){ this.showToast('请填写项目名称'); return; }
+        this.enterIde({name, path:'~/projects/'+name}); this.showToast('项目已创建','success');
+      } else {
+        const name=this.form.name.trim()|| (this.form.imp==='git' ? (this.form.git.split('/').pop()||'').replace(/\.git$/,'') : (this.form.path.split('/').pop()||'imported-project')) || '导入的项目';
+        const path=this.form.imp==='git'?this.form.git:(this.form.path||('~/projects/'+name));
+        this.enterIde({name, path}); this.showToast('项目已导入','success');
+      }
+      this.modal=null;
+    },
+    openProject(p){ this.enterIde({name:p.name, path:p.path}); },
+    enterIde(proj){ this.project=proj; this.stage='ide'; this.cur='effiry'; this.messages=[]; this.generated=false; this._cur=''; this._extra=[]; },
+    backToEntry(){ this.stage='entry'; this.messages=[]; },
+    // —— 第二步：代码 & 对话 ——
+    curLines(){ return (this.code[this.cur]||[]).concat(this._cur===this.cur?this._extra:[]); },
+    scrollCode(){ this.$nextTick(()=>{ const el=this.$refs.code; if(el) el.scrollTop=el.scrollHeight; }); },
+    scrollFlow(){ this.$nextTick(()=>{ const el=this.$refs.flow; if(el) el.scrollTop=el.scrollHeight; }); },
+    // 往对话流推一条 AI 气泡（打字机效果），可带要点
+    pushAi(text, points){
+      this.messages.push({role:'ai',full:text,shown:'',typing:true,points:points||[]});
+      const idx=this.messages.length-1; this.scrollFlow();
+      let i=0; const full=text;
+      const timer=setInterval(()=>{ i++; this.messages[idx].shown=full.slice(0,i); this.scrollFlow();
+        if(i>=full.length){ clearInterval(timer); this.messages[idx].typing=false; this.busy=false; this.scrollFlow(); } },14);
+    },
+    genCode(){ if(this.busy) return; this.busy=true; this.act='gen';
+      this.messages.push({role:'user',text:'为 '+this.files.find(f=>f.key===this.cur).name+' 生成缺失的空数据与异常处理'}); this.scrollFlow();
+      setTimeout(()=>{ this._cur=this.cur; this._extra=[
+        {html:'',isNew:true},
+        {html:'<span class="cm">// —— AI 生成：补充空数据与异常处理 ——</span>',isNew:true},
+        {html:'<span class="kw">if</span> (!items || items.length === <span class="st">0</span>) {',isNew:true},
+        {html:'  <span class="fn">console</span>.<span class="fn">log</span>(<span class="st">\'无近效期试剂\'</span>)',isNew:true},
+        {html:'  <span class="kw">return</span>',isNew:true},
+        {html:'}',isNew:true}
+      ];
+        this.generated=true; this.act=''; this.scrollCode();
+        this.pushAi('已为 <b>'+this.files.find(f=>f.key===this.cur).name+'</b> 生成代码，共新增 6 行（已在右侧高亮）。',
+          ['补充了空数据判断，避免空指针','增加了日志输出便于排查','产出已记录到网关审计日志']);
+        this.showToast('已生成 6 行代码','success');
+      },1200); },
+    refactor(){ if(this.busy) return; this.busy=true; this.act='ref';
+      this.messages.push({role:'user',text:'重构 '+this.files.find(f=>f.key===this.cur).name}); this.scrollFlow();
+      setTimeout(()=>{ this.act='';
+        this.pushAi('已重构 <b>'+this.files.find(f=>f.key===this.cur).name+'</b>，逻辑不变、可读性更好。',
+          ['提取公共函数 daysLeft()，减少重复','统一异常处理，抛出可读错误','变量命名规范化']);
+        this.showToast('已优化：提取公共函数、补充异常处理','success');
+      },1200); },
+    ask(q){ this.prompt=q; this.askAi(); },
+    askAi(){ const p=this.prompt.trim(); if(!p||this.busy) return; this.busy=true; this.prompt='';
+      this.messages.push({role:'user',text:p}); this.scrollFlow();
+      setTimeout(()=>{
+        this.pushAi('已按您的要求「'+p+'」调整了 <b>'+this.files.find(f=>f.key===this.cur).name+'</b>，改动已在右侧高亮，可直接查看。',
+          ['已按要求「'+p+'」调整代码','改动已高亮，可在编辑器查看','产出经网关审计留痕']);
+        this.showToast('AI 已完成修改','success'); },1100); },
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

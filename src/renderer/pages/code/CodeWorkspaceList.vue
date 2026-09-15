@@ -94,16 +94,50 @@
         </div>
       </div>
     </div>
+
+    <!-- 新建项目：项目名输入弹窗（Electron 不支持浏览器 prompt()，用应用内弹窗代替） -->
+    <div
+      v-if="showNameDialog"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
+      @click.self="cancelNameDialog"
+    >
+      <div class="w-[420px] max-w-[90vw] bg-white rounded-2xl shadow-xl border border-slate-100 p-6">
+        <h3 class="text-base font-semibold text-slate-800 mb-1">新建项目</h3>
+        <p class="text-xs text-slate-500 mb-4">给项目起个名字，下一步选择父目录，会在里面建一个同名文件夹。</p>
+        <input
+          ref="nameInputEl"
+          v-model="newName"
+          type="text"
+          placeholder="例如：my-app（留空则自动命名）"
+          class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
+          @keydown.enter="confirmNameDialog"
+          @keydown.esc="cancelNameDialog"
+        />
+        <div class="flex items-center justify-end gap-2 mt-5">
+          <button
+            @click="cancelNameDialog"
+            class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors"
+          >取消</button>
+          <button
+            @click="confirmNameDialog"
+            class="px-4 py-2 rounded-xl text-sm font-medium bg-blue-700 hover:bg-blue-800 text-white transition-colors shadow-sm shadow-blue-700/20"
+          >选择父目录…</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const workspaces = ref([]);
 const loading = ref(true);
+const showNameDialog = ref(false);
+const newName = ref('');
+const nameInputEl = ref(null);
 
 const refresh = async () => {
   loading.value = true;
@@ -127,11 +161,21 @@ const openFolder = async () => {
   } catch (e) { alert('打开失败：' + e.message); }
 };
 
-const createWorkspace = async () => {
-  const name = prompt('新项目名称（会在你选择的父目录里建一个同名文件夹）：', '');
-  if (name === null) return; // 用户取消
+const createWorkspace = () => {
+  newName.value = '';
+  showNameDialog.value = true;
+  nextTick(() => nameInputEl.value?.focus());
+};
+
+const cancelNameDialog = () => {
+  showNameDialog.value = false;
+};
+
+const confirmNameDialog = async () => {
+  const name = newName.value.trim();
+  showNameDialog.value = false;
   try {
-    const res = await window.api.code.createWorkspace(name.trim());
+    const res = await window.api.code.createWorkspace(name);
     if (res && res.canceled) return;
     if (res && res.error) { alert(res.error); return; }
     if (res && res.workspace) router.push(`/code/${res.workspace.id}`);

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技能中心 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+:root{
+  --primary: 214 95% 44%; --background: 0 0% 100%; --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%; --border: 213 32% 88%;
+  --success: 160 84% 33%; --warning: 32 88% 40%; --danger: 352 68% 48%; --info: 214 15% 50%;
+  --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --background: 214 40% 11%; --foreground: 210 40% 94%; --muted-foreground: 213 22% 68%; --border: 213 28% 26%; --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%); --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%); }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.btn-pri{height:32px;padding:0 16px;border:0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 5px 12px hsl(var(--primary) / 18%)}
+.btn-ghost{height:32px;padding:0 14px;border:1px solid hsl(var(--border));border-radius:8px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.field{width:100%;padding:9px 12px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background));font-size:13px;color:hsl(var(--foreground));outline:none;font-family:inherit;resize:vertical}
+.field:focus{border-color:hsl(var(--primary))}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:8px;margin-right:16px} .traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+.body-row{flex:1;display:flex;min-height:0}
+.side-rail{width:200px;flex-shrink:0;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset -1px 0 0 hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:14px 10px}
+.rail-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;margin-bottom:3px;transition:background .15s}
+.rail-item i{width:18px;text-align:center;font-size:15px}
+.rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
+.side-rail>.rail-sep:first-child{margin-top:2px}
+.rail-sep{margin:14px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+.content{flex:1;overflow-y:auto;min-width:0} .pad{padding:18px 22px}
+.chip{padding:6px 14px;border-radius:20px;border:1px solid hsl(var(--border));font-size:13px;cursor:pointer;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.chip.on{background:hsl(var(--primary));color:#fff;border-color:hsl(var(--primary))}
+.sk-card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:14px;box-shadow:var(--shadow-card);padding:16px;display:flex;flex-direction:column;transition:transform .18s,border-color .18s,box-shadow .18s}
+.sk-card:hover{transform:translateY(-4px);border-color:hsl(var(--primary) / 55%);box-shadow:0 12px 24px hsl(var(--primary) / 14%)}
+.sk-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 82%,black),hsl(var(--primary)))}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="skills()" x-init="init()">
+<div class="app-shell">
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground))">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+  <div class="body-row">
+    <nav class="side-rail">
+      <div class="rail-sep">经营驾驶舱</div>
+      <a class="rail-item" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
+      <a class="rail-item" href="audit.html"><i class="fa fa-shield-halved"></i>AI 行为审计</a>
+      <div class="rail-sep">统一工作台</div>
+      <a class="rail-item" href="chat.html"><i class="fa fa-comments"></i>智能对话</a>
+      <a class="rail-item" href="code.html"><i class="fa fa-code"></i>AI 代码模式</a>
+      <a class="rail-item" href="experts.html"><i class="fa fa-user-tie"></i>AI 专家广场</a>
+      <a class="rail-item" href="knowledge.html"><i class="fa fa-book"></i>知识库</a>
+      <a class="rail-item active" href="skills.html"><i class="fa fa-wand-magic-sparkles"></i>技能中心</a>
+      <div class="rail-sep">项目协作</div>
+      <a class="rail-item" href="project.html"><i class="fa fa-diagram-project"></i>项目工作台</a>
+      <div class="rail-sep">设置</div>
+      <a class="rail-item" href="settings.html"><i class="fa fa-gear"></i>系统设置</a>
+    </nav>
+
+    <div class="content msc">
+      <div class="pad space-y-4">
+        <div class="flex items-center gap-2 flex-wrap">
+          <template x-for="c in cats" :key="c.key"><div class="chip" :class="{'on':cat===c.key}" @click="cat=c.key" x-text="c.label"></div></template>
+        </div>
+        <div class="grid grid-cols-4 gap-3.5">
+          <template x-for="s in filtered()" :key="s.name">
+            <div class="sk-card">
+              <div class="flex items-center justify-between">
+                <div class="sk-ico"><i class="fa" :class="s.icon"></i></div>
+                <span class="text-[11px] num" style="color:hsl(var(--muted-foreground))"><i class="fa fa-bolt mr-0.5"></i><span x-text="s.uses"></span> 次</span>
+              </div>
+              <div class="text-[14px] font-semibold mt-3" x-text="s.name"></div>
+              <div class="text-[12px] mt-1 leading-snug flex-1" style="color:hsl(var(--muted-foreground))" x-text="s.desc"></div>
+              <button class="btn-pri mt-3" @click="run(s)"><i class="fa fa-play mr-1.5"></i>运行</button>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 运行抽屉 -->
+<div x-show="open" x-transition.opacity class="fixed inset-0 z-50" x-cloak>
+  <div class="absolute inset-0" style="background:hsl(0 0% 0% / 40%)" @click="!running && (open=false)"></div>
+  <aside class="absolute right-0 top-0 bottom-0 w-[500px] max-w-[94vw] overflow-y-auto msc"
+         style="background:hsl(var(--background));box-shadow:-6px 0 24px hsl(0 0% 0% / 12%)"
+         x-transition:enter="transition transform duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
+    <header class="h-12 px-5 flex items-center sticky top-0 z-10" style="background:hsl(var(--background));box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+      <span class="flex items-center gap-2 text-[14px] font-semibold"><i class="fa" :class="cur.icon" style="color:hsl(var(--primary))"></i><span x-text="cur.name"></span></span>
+      <button class="ml-auto w-7 h-7 rounded flex items-center justify-center text-[12px]" style="color:hsl(var(--muted-foreground))" @click="!running && (open=false)"><i class="fa fa-times"></i></button>
+    </header>
+    <div class="p-5 space-y-4">
+      <!-- 参数输入 -->
+      <div x-show="stage==='input'">
+        <div class="text-[12px] mb-1.5" style="color:hsl(var(--muted-foreground))" x-text="cur.inputLabel"></div>
+        <textarea class="field" rows="4" x-model="input"></textarea>
+        <button class="btn-pri w-full mt-3" @click="start()"><i class="fa fa-wand-magic-sparkles mr-1.5"></i>开始执行</button>
+      </div>
+      <!-- 执行过程 -->
+      <div x-show="stage==='running'||stage==='done'">
+        <div class="rounded-xl" style="background:hsl(var(--primary) / 5%);border:1px solid hsl(var(--primary) / 20%);padding:13px 15px">
+          <div class="text-[12px] font-semibold mb-2.5"><i class="fa fa-gears mr-1" style="color:hsl(var(--primary))"></i>智能体执行过程</div>
+          <div class="space-y-2.5">
+            <template x-for="(st,i) in steps" :key="i">
+              <div class="flex items-start gap-2.5">
+                <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5"
+                      :style="st.done?'background:hsl(var(--success));color:#fff':st.active?'background:hsl(var(--primary));color:#fff':'background:hsl(var(--border));color:hsl(var(--muted-foreground))'">
+                  <i class="fa" :class="st.done?'fa-check':st.active?'fa-spinner fa-spin':'fa-circle'" style="font-size:9px"></i>
+                </span>
+                <div class="text-[13px] pt-0.5" :style="st.done||st.active?'color:hsl(var(--foreground))':'color:hsl(var(--muted-foreground))'" x-text="st.label"></div>
+              </div>
+            </template>
+          </div>
+        </div>
+        <!-- 产出 -->
+        <div x-show="stage==='done'" x-transition class="mt-4">
+          <div class="text-[13px] font-semibold mb-2"><i class="fa fa-file-lines mr-1.5" style="color:hsl(var(--primary))"></i>产出预览</div>
+          <div class="rounded-xl text-[12.5px] leading-relaxed" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:13px 15px;white-space:pre-line" x-html="output"></div>
+          <div class="flex gap-2 mt-3">
+            <button class="btn-pri" style="flex:1" @click="showToast('已导出（演示）','success')"><i class="fa fa-download mr-1.5"></i>下载</button>
+            <button class="btn-ghost" style="flex:1" @click="start()"><i class="fa fa-rotate mr-1.5"></i>重新生成</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':'primary')+'))'" x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function skills(){
+  return {
+    cat:'all',
+    cats:[{key:'all',label:'全部'},{key:'doc',label:'文档'},{key:'report',label:'汇报'},{key:'design',label:'设计'},{key:'data',label:'数据'}],
+    list:[
+      {name:'生成 PPT',icon:'fa-file-powerpoint',cat:'report',uses:328,desc:'把要点做成汇报 PPT',inputLabel:'输入汇报主题与要点',demo:'骨科新品发布会',
+        steps:['理解需求','生成大纲','智能配图与排版','产出 PPT'],out:'<b>《骨科新品发布会》PPT 大纲</b>\n1. 封面：微创时代 · 骨科新品发布\n2. 市场背景与临床痛点\n3. 新品三大核心优势\n4. 临床数据与案例\n5. 价格与采购政策\n6. 合作与答疑\n共 6 页，已套用企业模板。'},
+      {name:'写工作周报',icon:'fa-file-lines',cat:'report',uses:512,desc:'汇总本周工作生成周报',inputLabel:'输入本周主要工作',demo:'完成效期预警模块编码、对接采集网关、修复库存并发问题',
+        steps:['归纳本周工作','分类整理','套用周报模板','产出周报'],out:'<b>本周工作周报</b>\n【本周完成】\n· 试剂效期预警模块编码完成并自测\n· 检验设备数据采集网关联调\n· 修复库存扣减并发问题\n【下周计划】\n· 预警模块上线灰度\n· 补充单元测试覆盖'},
+      {name:'做架构图',icon:'fa-diagram-project',cat:'design',uses:146,desc:'描述转架构图',inputLabel:'描述你要画的架构',demo:'AI 网关 + 统一工作台 + 老板驾驶舱三层',
+        steps:['解析结构','布局节点','绘制连线','产出 SVG'],out:'<b>架构图已生成（演示）</b>\n┌ 老板经营驾驶舱\n├ 统一 AI 工作台\n└ AI 网关（卡口）\n可下载 SVG / PNG。'},
+      {name:'生成功能清单',icon:'fa-list-check',cat:'doc',uses:98,desc:'需求转产品功能清单',inputLabel:'描述产品需求',demo:'试剂管理系统',
+        steps:['拆解需求','归纳功能模块','生成清单','产出文档'],out:'<b>试剂管理系统 · 功能清单</b>\n1. 库存管理 2. 效期预警 3. 采购计划\n4. 出入库记录 5. 盘点 6. 报表\n已生成 Markdown + Word。'},
+      {name:'会议纪要整理',icon:'fa-microphone-lines',cat:'doc',uses:274,desc:'录音/文字转纪要',inputLabel:'粘贴会议记录或上传录音',demo:'周一销售例会记录…',
+        steps:['识别发言','提炼要点','提取待办','产出纪要'],out:'<b>销售例会纪要</b>\n【结论】华东区 Q4 聚焦三甲医院\n【待办】\n· 陈刚：本周回访重点客户\n· 赵敏：完成省医院方案'},
+      {name:'导出 PDF 文档',icon:'fa-file-pdf',cat:'doc',uses:187,desc:'内容一键排版成 PDF',inputLabel:'粘贴要导出的内容',demo:'行业舆情简报正文…',
+        steps:['读取内容','排版美化','生成 PDF','完成'],out:'<b>PDF 已生成（演示）</b>\n行业舆情简报_2025-09.pdf\n已套用企业品牌样式，可下载。'},
+      {name:'竞品对比表',icon:'fa-table-columns',cat:'data',uses:112,desc:'多竞品对比表生成',inputLabel:'输入对比的产品与维度',demo:'我司 vs A厂 vs B厂，骨科接骨板',
+        steps:['收集参数','对齐维度','生成对比表','产出'],out:'<b>竞品对比表（演示）</b>\n维度｜我司｜A厂｜B厂\n材质｜钛合金｜钢｜钛\n切迹｜低｜中｜低\n价格｜中｜高｜中'},
+      {name:'投标应答生成',icon:'fa-file-signature',cat:'doc',uses:89,desc:'技术需求自动应答',inputLabel:'粘贴招标技术需求',demo:'检验科 LIS 系统技术要求…',
+        steps:['解析需求条目','匹配产品能力','生成应答','产出'],out:'<b>投标技术应答（演示）</b>\n逐条应答已生成，标注"完全满足/部分满足"，并附证明材料清单。'},
+      {name:'客户拜访计划',icon:'fa-route',cat:'report',uses:76,desc:'生成拜访路线与话术',inputLabel:'输入本周要拜访的客户',demo:'华东区 3 家三甲医院',
+        steps:['整理客户','规划路线','匹配话术','产出计划'],out:'<b>本周拜访计划（演示）</b>\n周二 省人民医院（赵敏方案跟进）\n周四 市中心医院（流水线验收）\n附各家决策人与话术要点。'},
+      {name:'数据周报',icon:'fa-chart-line',cat:'data',uses:134,desc:'经营数据转图文报告',inputLabel:'选择统计范围',demo:'本周经营数据',
+        steps:['拉取数据','生成图表','撰写解读','产出报告'],out:'<b>经营数据周报（演示）</b>\n本周 AI 调用 12.8 万次、成本 ¥6.8 万（↓6.4%）。\n研发部占比最高，售前方案卡点需关注。'}
+    ],
+    open:false, cur:{}, input:'', stage:'input', running:false, steps:[], output:'',
+    toasts:[], _toastId:0,
+    init(){},
+    filtered(){ return this.cat==='all'?this.list:this.list.filter(s=>s.cat===this.cat); },
+    run(s){ this.cur=s; this.input=s.demo; this.stage='input'; this.steps=[]; this.output=''; this.open=true; },
+    start(){ this.running=true; this.stage='running'; this.output='';
+      this.steps=this.cur.steps.map(l=>({label:l,active:false,done:false}));
+      this.step(0); },
+    step(idx){ if(idx>=this.steps.length){ this.running=false; this.stage='done'; this.output=this.cur.out; return; }
+      this.steps[idx].active=true;
+      setTimeout(()=>{ this.steps[idx].active=false; this.steps[idx].done=true; this.step(idx+1); },700); },
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

@@ -101,19 +101,45 @@ a {
   text-decoration: none;
 }
 
-/* Thin scrollbar for sidebars */
+/* 全局细滚动条:整个 app 默认就是纤细半透明的,避免任何区域出现粗大的
+   系统默认滚动条(Electron/Chromium only,::-webkit-* 稳定可用)。 */
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  /* 用透明边框把滑块"收窄",视觉更细、贴边不顶到内容 */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.45);
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Thin scrollbar for sidebars(更纤细,给侧栏/树用) */
 .scrollbar-thin::-webkit-scrollbar {
   width: 4px;
+  height: 4px;
 }
 .scrollbar-thin::-webkit-scrollbar-track {
   background: transparent;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
-  border-radius: 2px;
+  background: rgba(148, 163, 184, 0.25);
+  border-radius: 999px;
+  border: none;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(148, 163, 184, 0.45);
 }
 
 /* Hidden scrollbar */

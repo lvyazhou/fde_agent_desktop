@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>项目工作台 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+:root{
+  --primary: 214 95% 44%; --background: 0 0% 100%; --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%; --border: 213 32% 88%;
+  --success: 160 84% 33%; --warning: 32 88% 40%; --danger: 352 68% 48%; --info: 214 15% 50%;
+  --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --background: 214 40% 11%; --foreground: 210 40% 94%; --muted-foreground: 213 22% 68%; --border: 213 28% 26%; --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%); --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%); }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.success{color:hsl(var(--success));background:color-mix(in srgb,hsl(var(--success)) 12%,hsl(var(--background)))}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.tag.warning{color:hsl(var(--warning));background:color-mix(in srgb,hsl(var(--warning)) 14%,hsl(var(--background)))}
+.tag.danger{color:hsl(var(--danger));background:color-mix(in srgb,hsl(var(--danger)) 10%,hsl(var(--background)))}
+.btn-pri{height:32px;padding:0 16px;border:0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 5px 12px hsl(var(--primary) / 18%)}
+.btn-ghost{height:32px;padding:0 14px;border:1px solid hsl(var(--border));border-radius:8px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:8px;margin-right:16px} .traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+.body-row{flex:1;display:flex;min-height:0}
+.side-rail{width:200px;flex-shrink:0;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset -1px 0 0 hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:14px 10px}
+.rail-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;margin-bottom:3px;transition:background .15s}
+.rail-item i{width:18px;text-align:center;font-size:15px}
+.rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
+.side-rail>.rail-sep:first-child{margin-top:2px}
+.rail-sep{margin:14px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+.content{flex:1;overflow-y:auto;min-width:0} .pad{padding:18px 22px}
+.sec-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;margin-bottom:11px}
+.sec-title .bar{width:3px;height:15px;border-radius:2px;background:hsl(var(--primary))}
+.prog{height:6px;border-radius:3px;background:hsl(var(--primary) / 12%);overflow:hidden}
+.prog>i{display:block;height:100%;border-radius:3px;background:hsl(var(--primary))}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;font-size:12px;font-weight:600;color:hsl(var(--muted-foreground));text-align:left;background:hsl(var(--primary) / 4%);white-space:nowrap}
+td{padding:10px 14px;font-size:13px;border-top:1px solid hsl(var(--border) / 70%)}
+tbody tr{cursor:pointer} tbody tr:hover td{background:hsl(var(--primary) / 4%)}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="proj()" x-init="init()">
+<div class="app-shell">
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground))">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+  <div class="body-row">
+    <nav class="side-rail">
+      <div class="rail-sep">经营驾驶舱</div>
+      <a class="rail-item" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
+      <a class="rail-item" href="audit.html"><i class="fa fa-shield-halved"></i>AI 行为审计</a>
+      <div class="rail-sep">统一工作台</div>
+      <a class="rail-item" href="chat.html"><i class="fa fa-comments"></i>智能对话</a>
+      <a class="rail-item" href="code.html"><i class="fa fa-code"></i>AI 代码模式</a>
+      <a class="rail-item" href="experts.html"><i class="fa fa-user-tie"></i>AI 专家广场</a>
+      <a class="rail-item" href="knowledge.html"><i class="fa fa-book"></i>知识库</a>
+      <a class="rail-item" href="skills.html"><i class="fa fa-wand-magic-sparkles"></i>技能中心</a>
+      <div class="rail-sep">项目协作</div>
+      <a class="rail-item active" href="project.html"><i class="fa fa-diagram-project"></i>项目工作台</a>
+      <div class="rail-sep">设置</div>
+      <a class="rail-item" href="settings.html"><i class="fa fa-network-wired"></i>网关设置</a>
+      <a class="rail-item" href="settings.html#rules"><i class="fa fa-shield"></i>规则设置</a>
+    </nav>
+
+    <div class="content msc">
+      <div class="pad space-y-5">
+        <div>
+          <div class="text-[20px] font-bold">项目工作台</div>
+          <div class="text-[12.5px] mt-0.5" style="color:hsl(var(--muted-foreground))">跨部门项目协作 · 从市场到工程，一条链把工作串起来，看每个项目卡在哪一棒</div>
+        </div>
+
+        <!-- 协同流程图 -->
+        <div class="card" style="padding:16px 18px">
+          <div class="sec-title"><span class="bar"></span>跨部门协同流<span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">点某一棒可筛选该阶段项目</span>
+            <span x-show="stageFilter" class="tag primary ml-2 cursor-pointer" style="padding:1px 8px" @click="stageFilter=''">筛选：<span x-text="stageFilter"></span> ✕</span>
+          </div>
+          <div class="flex items-stretch gap-1">
+            <template x-for="(n,i) in flow" :key="n.dept">
+              <div class="flex items-center" :class="i<flow.length-1?'flex-1':''">
+                <div class="rounded-xl flex-1 cursor-pointer transition-transform hover:-translate-y-0.5" @click="toggleStage(n.dept)"
+                     :style="'padding:12px;border:1.5px solid '+(stageFilter===n.dept?'hsl(var(--primary))':n.status==='block'?'hsl(var(--danger))':n.status==='wait'?'hsl(var(--warning))':'hsl(var(--border))')+';background:'+(n.status==='block'?'color-mix(in srgb,hsl(var(--danger)) 8%,hsl(var(--background)))':n.status==='wait'?'color-mix(in srgb,hsl(var(--warning)) 8%,hsl(var(--background)))':'var(--card-bg)')">
+                  <div class="flex items-center gap-2">
+                    <i class="fa" :class="n.icon" :style="'color:'+(n.status==='block'?'hsl(var(--danger))':n.status==='wait'?'hsl(var(--warning))':'hsl(var(--primary))')"></i>
+                    <span class="font-semibold text-[13px]" x-text="n.dept"></span>
+                    <span class="tag ml-auto" :class="n.status==='block'?'danger':n.status==='wait'?'warning':'primary'" style="padding:1px 6px"
+                          x-text="n.status==='block'?'卡点':n.status==='wait'?'等待':'正常'"></span>
+                  </div>
+                  <div class="text-[12px] mt-1.5" style="color:hsl(var(--muted-foreground))"><span x-text="n.label"></span> · <span class="num font-semibold" style="color:hsl(var(--foreground))" x-text="n.count"></span></div>
+                  <div class="text-[11px] mt-1 leading-snug" :style="n.status==='block'?'color:hsl(var(--danger))':'color:hsl(var(--muted-foreground))'" x-text="n.note"></div>
+                </div>
+                <i class="fa fa-angle-right mx-1 text-[15px]" x-show="i<flow.length-1" style="color:hsl(var(--muted-foreground))"></i>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 项目列表 -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="flex items-center justify-between flex-wrap gap-2" style="padding:14px 18px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+            <span class="text-[15px] font-semibold">项目列表 <span class="text-[12px] font-normal" style="color:hsl(var(--muted-foreground))">共 <b class="num" x-text="filtered().length"></b> 个 · <b class="num" style="color:hsl(var(--danger))" x-text="blockCount()"></b> 个卡点</span></span>
+            <div class="flex items-center gap-2">
+              <input class="btn-ghost" style="width:200px" x-model.trim="kw" placeholder="搜索项目名 / 负责人">
+              <a href="project-new.html" class="btn-pri" style="display:inline-flex;align-items:center;text-decoration:none"><i class="fa fa-plus mr-1.5"></i>新建项目</a>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>项目</th><th>金额</th><th>负责人</th><th>当前阶段</th><th style="width:150px">进度</th><th style="text-align:center">状态</th><th>最近更新</th></tr></thead>
+              <tbody>
+                <template x-for="p in filtered()" :key="p.id">
+                  <tr @click="openProject(p)">
+                    <td>
+                      <div class="font-medium text-[13px]" x-text="p.name"></div>
+                      <div class="text-[11px] num" style="color:hsl(var(--muted-foreground))" x-text="p.id"></div>
+                    </td>
+                    <td class="num" x-text="p.amount"></td>
+                    <td x-text="p.owner"></td>
+                    <td><span class="tag primary" style="padding:1px 8px" x-text="p.stage"></span></td>
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <div class="prog flex-1"><i :style="'width:'+p.progress+'%'+(p.status==='block'?';background:hsl(var(--danger))':p.status==='warn'?';background:hsl(var(--warning))':p.status==='done'?';background:hsl(var(--success))':'')"></i></div>
+                        <span class="text-[11px] num" style="color:hsl(var(--muted-foreground))" x-text="p.progress+'%'"></span>
+                      </div>
+                    </td>
+                    <td style="text-align:center"><span class="tag" :class="stTag(p.status)" style="padding:1px 8px" x-text="stText(p.status)"></span></td>
+                    <td class="num" style="color:hsl(var(--muted-foreground))" x-text="p.updated"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+            <div x-show="!filtered().length" class="py-12 text-center text-[13px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-inbox mr-1.5"></i>没有符合条件的项目</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 项目详情抽屉：全链时间线 -->
+<div x-show="drawerOpen" x-transition.opacity class="fixed inset-0 z-50" x-cloak>
+  <div class="absolute inset-0" style="background:hsl(0 0% 0% / 40%)" @click="drawerOpen=false"></div>
+  <aside class="absolute right-0 top-0 bottom-0 w-[480px] max-w-[94vw] overflow-y-auto msc"
+         style="background:hsl(var(--background));box-shadow:-6px 0 24px hsl(0 0% 0% / 12%)"
+         x-transition:enter="transition transform duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
+    <header class="h-12 px-5 flex items-center sticky top-0 z-10" style="background:hsl(var(--background));box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+      <span class="text-[14px] font-semibold">项目全链详情</span>
+      <button class="ml-auto w-7 h-7 rounded flex items-center justify-center text-[12px]" style="color:hsl(var(--muted-foreground))" @click="drawerOpen=false"><i class="fa fa-times"></i></button>
+    </header>
+    <div class="p-5 space-y-4" x-show="cur.id">
+      <div>
+        <div class="text-[15px] font-semibold" x-text="cur.name"></div>
+        <div class="flex gap-2 flex-wrap mt-1.5 text-[12px]">
+          <span class="num" style="color:hsl(var(--muted-foreground))" x-text="cur.id"></span>
+          <span style="color:hsl(var(--muted-foreground))">金额 <b style="color:hsl(var(--foreground))" x-text="cur.amount"></b></span>
+          <span style="color:hsl(var(--muted-foreground))">负责人 <b style="color:hsl(var(--foreground))" x-text="cur.owner"></b></span>
+          <span class="tag" :class="stTag(cur.status)" style="padding:1px 7px" x-text="stText(cur.status)"></span>
+        </div>
+        <div class="text-[12px] mt-2 rounded-lg" x-show="cur.status==='block'" style="background:hsl(var(--danger) / 8%);color:hsl(var(--danger));padding:8px 11px"><i class="fa fa-triangle-exclamation mr-1"></i><span x-text="cur.note"></span></div>
+      </div>
+      <div>
+        <div class="text-[13px] font-semibold mb-3"><i class="fa fa-timeline mr-1.5" style="color:hsl(var(--primary))"></i>跨部门流转时间线</div>
+        <div style="position:relative;padding-left:20px">
+          <div style="position:absolute;left:6px;top:6px;bottom:6px;width:1.5px;background:hsl(var(--border))"></div>
+          <template x-for="(s,i) in cur.timeline" :key="i">
+            <div style="position:relative;padding-bottom:16px">
+              <span style="position:absolute;left:-20px;top:2px;width:13px;height:13px;border-radius:50%;display:flex;align-items:center;justify-content:center"
+                    :style="'background:'+(s.done?'hsl(var(--success))':s.active?'hsl(var(--primary))':'hsl(var(--border))')">
+                <i class="fa text-white" :class="s.done?'fa-check':s.active?'fa-spinner fa-spin':''" style="font-size:7px"></i>
+              </span>
+              <div class="flex items-center gap-2">
+                <span class="font-semibold text-[13px]" x-text="s.stage"></span>
+                <span class="text-[11px]" style="color:hsl(var(--muted-foreground))" x-text="s.owner!=='—'?('· '+s.owner):''"></span>
+                <span class="tag ml-auto" :class="s.done?'success':s.active?'primary':'' " style="padding:0 6px;font-size:11px" x-show="s.done||s.active" x-text="s.done?'已完成':'进行中'"></span>
+                <span class="text-[11px] num" style="color:hsl(var(--muted-foreground))" x-text="s.date!=='—'?s.date:''"></span>
+              </div>
+              <div class="text-[12px] mt-1 leading-snug" :style="s.active?'color:hsl(var(--foreground))':'color:hsl(var(--muted-foreground))'" x-text="s.desc"></div>
+            </div>
+          </template>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button class="btn-pri" style="flex:1;height:34px" @click="showToast('已催办当前环节负责人','success')"><i class="fa fa-bell mr-1.5"></i>催办当前环节</button>
+        <button class="btn-ghost" style="flex:1;height:34px" @click="showToast('已发起跨部门协调','success')"><i class="fa fa-people-arrows mr-1.5"></i>发起协调</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':'primary')+'))'" x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function proj(){
+  return {
+    flow:[], stages:[], projects:[], stageFilter:'', kw:'',
+    drawerOpen:false, cur:{}, toasts:[], _toastId:0,
+    async init(){ try{ const r=await fetch('data/projects.json'); const d=await r.json(); this.flow=d.flow; this.stages=d.stages; this.projects=d.projects; }
+      catch(e){ this.showToast('数据加载失败，请用本地服务打开','error'); } },
+    toggleStage(s){ this.stageFilter = this.stageFilter===s ? '' : s; },
+    filtered(){ let l=this.projects; if(this.stageFilter) l=l.filter(p=>p.stage===this.stageFilter);
+      if(this.kw) l=l.filter(p=>p.name.includes(this.kw)||p.owner.includes(this.kw)); return l; },
+    blockCount(){ return this.projects.filter(p=>p.status==='block').length; },
+    stTag(s){ return s==='done'?'success':s==='normal'?'primary':s==='warn'?'warning':'danger'; },
+    stText(s){ return s==='done'?'已交付':s==='normal'?'正常':s==='warn'?'需关注':'卡点'; },
+    openProject(p){ this.cur=p; this.drawerOpen=true; },
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

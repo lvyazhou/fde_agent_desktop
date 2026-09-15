@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 专家广场 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+:root{
+  --primary: 214 95% 44%; --background: 0 0% 100%; --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%; --border: 213 32% 88%;
+  --success: 160 84% 33%; --warning: 32 88% 40%; --danger: 352 68% 48%; --info: 214 15% 50%;
+  --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --background: 214 40% 11%; --foreground: 210 40% 94%; --muted-foreground: 213 22% 68%; --border: 213 28% 26%; --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%); --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%); }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.btn-pri{height:32px;padding:0 16px;border:0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 5px 12px hsl(var(--primary) / 18%)}
+.btn-ghost{height:32px;padding:0 14px;border:1px solid hsl(var(--border));border-radius:8px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:8px;margin-right:16px} .traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+.body-row{flex:1;display:flex;min-height:0}
+.side-rail{width:200px;flex-shrink:0;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset -1px 0 0 hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:14px 10px}
+.rail-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;margin-bottom:3px;transition:background .15s}
+.rail-item i{width:18px;text-align:center;font-size:15px}
+.rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
+.side-rail>.rail-sep:first-child{margin-top:2px}
+.rail-sep{margin:14px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+.content{flex:1;overflow-y:auto;min-width:0} .pad{padding:18px 22px}
+.chip{padding:6px 14px;border-radius:20px;border:1px solid hsl(var(--border));font-size:13px;cursor:pointer;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.chip.on{background:hsl(var(--primary));color:#fff;border-color:hsl(var(--primary))}
+.ex-card{position:relative;background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:14px;box-shadow:var(--shadow-card);padding:16px;display:flex;flex-direction:column;transition:transform .18s,border-color .18s,box-shadow .18s}
+.ex-card:hover{transform:translateY(-4px);border-color:hsl(var(--primary) / 55%);box-shadow:0 12px 24px hsl(var(--primary) / 14%)}
+.ex-card .card-acts{position:absolute;top:10px;right:10px;display:flex;gap:5px;opacity:0;transition:opacity .15s}
+.ex-card:hover .card-acts{opacity:1}
+.icon-btn{width:26px;height:26px;border:1px solid hsl(var(--border));border-radius:7px;background:hsl(var(--background));color:hsl(var(--muted-foreground));cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.icon-btn:hover{color:hsl(var(--primary));border-color:hsl(var(--primary) / 50%)}
+.icon-btn.danger:hover{color:hsl(var(--danger));border-color:hsl(var(--danger) / 50%)}
+.bind-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:2px 7px;border-radius:6px}
+.bind-tag.kb{background:hsl(var(--info) / 12%);color:hsl(var(--info))}
+.bind-tag.sk{background:hsl(var(--success) / 12%);color:hsl(var(--success))}
+/* 编辑器抽屉 */
+.drawer-mask{position:fixed;inset:0;background:hsl(0 0% 0% / 38%);backdrop-filter:blur(2px);z-index:9000}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:460px;max-width:92vw;display:flex;flex-direction:column;background:hsl(var(--background));box-shadow:-14px 0 44px hsl(0 0% 0% / 24%);border-left:1px solid hsl(var(--border));z-index:9001}
+.drawer-hd{display:flex;align-items:center;padding:16px 20px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.drawer-bd{flex:1;padding:18px 20px;overflow-y:auto}
+.drawer-ft{display:flex;justify-content:flex-end;gap:10px;padding:14px 20px;box-shadow:inset 0 1px 0 hsl(var(--border) / 70%)}
+.fld{margin-bottom:15px}
+.fld>label{display:block;font-size:12.5px;font-weight:600;margin-bottom:6px}
+.inp{width:100%;height:36px;border:1px solid hsl(var(--border));border-radius:9px;background:hsl(var(--background));color:hsl(var(--foreground));padding:0 12px;font-size:13.5px;font-family:inherit;outline:0}
+.inp:focus{border-color:hsl(var(--primary) / 55%)}
+textarea.inp{height:auto;padding:9px 12px;resize:vertical}
+.pick{display:flex;flex-wrap:wrap;gap:7px;max-height:150px;overflow-y:auto;border:1px solid hsl(var(--border));border-radius:9px;padding:9px}
+.pick-item{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;padding:5px 11px;border-radius:8px;border:1px solid hsl(var(--border));cursor:pointer;color:hsl(var(--muted-foreground));background:hsl(var(--background));transition:all .12s}
+.pick-item.on{background:hsl(var(--primary) / 10%);border-color:hsl(var(--primary) / 55%);color:hsl(var(--primary));font-weight:600}
+.badge-min{font-size:11px;padding:1px 6px;border-radius:5px;background:hsl(var(--warning) / 14%);color:hsl(var(--warning));font-weight:600}
+/* 对话视图 */
+.qchip{padding:8px 11px;border-radius:9px;border:1px solid hsl(var(--border));font-size:12.5px;cursor:pointer;color:hsl(var(--foreground));background:hsl(var(--background))}
+.qchip:hover{border-color:hsl(var(--primary) / 50%);background:hsl(var(--primary) / 5%)}
+.bubble-ai{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.7}
+.bubble-user{background:hsl(var(--primary));color:#fff;border-radius:12px;padding:10px 14px;font-size:13.5px;line-height:1.6;max-width:78%}
+.cbox{border:1px solid hsl(var(--border));border-radius:12px;background:hsl(var(--background));padding:10px 12px}
+.cbox:focus-within{border-color:hsl(var(--primary) / 55%)}
+textarea{width:100%;border:0;outline:0;resize:none;background:transparent;color:hsl(var(--foreground));font-size:13.5px;font-family:inherit}
+.cursor::after{content:'▋';animation:bk 1s steps(2) infinite;color:hsl(var(--primary))}
+@keyframes bk{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="experts()" x-init="init()">
+<div class="app-shell">
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground))">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+  <div class="body-row">
+    <nav class="side-rail">
+      <div class="rail-sep">经营驾驶舱</div>
+      <a class="rail-item" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
+      <a class="rail-item" href="audit.html"><i class="fa fa-shield-halved"></i>AI 行为审计</a>
+      <div class="rail-sep">统一工作台</div>
+      <a class="rail-item" href="chat.html"><i class="fa fa-comments"></i>智能对话</a>
+      <a class="rail-item" href="code.html"><i class="fa fa-code"></i>AI 代码模式</a>
+      <a class="rail-item active" href="experts.html"><i class="fa fa-user-tie"></i>AI 专家广场</a>
+      <a class="rail-item" href="knowledge.html"><i class="fa fa-book"></i>知识库</a>
+      <a class="rail-item" href="skills.html"><i class="fa fa-wand-magic-sparkles"></i>技能中心</a>
+      <div class="rail-sep">项目协作</div>
+      <a class="rail-item" href="project.html"><i class="fa fa-diagram-project"></i>项目工作台</a>
+      <div class="rail-sep">设置</div>
+      <a class="rail-item" href="settings.html"><i class="fa fa-gear"></i>系统设置</a>
+    </nav>
+
+    <!-- 卡片墙视图 -->
+    <div class="content msc" x-show="view==='grid'">
+      <div class="pad space-y-4">
+        <div class="flex items-center gap-2 flex-wrap">
+          <template x-for="c in cats" :key="c.key">
+            <div class="chip" :class="{'on':cat===c.key}" @click="cat=c.key" x-text="c.label"></div>
+          </template>
+          <button class="btn-pri ml-auto" @click="openEditor(null)"><i class="fa fa-plus mr-1.5"></i>新建专家</button>
+        </div>
+        <div x-show="hidden.length" class="flex items-center gap-2 text-[12px] flex-wrap" style="color:hsl(var(--muted-foreground))">
+          <i class="fa fa-eye-slash"></i><span x-text="'已隐藏 '+hidden.length+' 个内置专家：'"></span>
+          <template x-for="h in hidden" :key="h">
+            <button class="btn-ghost" style="height:26px;padding:0 10px" @click="restore(h)"><i class="fa fa-rotate-left mr-1"></i><span x-text="h"></span></button>
+          </template>
+        </div>
+        <div class="grid grid-cols-3 gap-3.5">
+          <template x-for="e in filtered()" :key="e.name">
+            <div class="ex-card">
+              <div class="card-acts">
+                <button class="icon-btn" title="编辑" @click.stop="openEditor(e)"><i class="fa fa-pen"></i></button>
+                <button class="icon-btn danger" title="删除" @click.stop="removeExpert(e)"><i class="fa fa-trash"></i></button>
+              </div>
+              <div class="flex items-start gap-3">
+                <img src="image/bot.png" onerror="botFallback(this)" class="w-11 h-11 rounded-xl object-cover flex-shrink-0">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[14.5px] font-semibold" x-text="e.name"></span>
+                    <span class="tag primary" style="padding:1px 6px" x-text="catLabel(e.cat)"></span>
+                    <span x-show="e.custom" class="badge-min">自建</span>
+                  </div>
+                  <div class="text-[12px] mt-1 leading-snug" style="color:hsl(var(--muted-foreground))" x-text="e.role"></div>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-1.5 mt-3">
+                <template x-for="s in e.skills" :key="s">
+                  <span class="text-[11px] px-2 py-0.5 rounded" style="background:hsl(var(--primary) / 8%);color:hsl(var(--primary))" x-text="s"></span>
+                </template>
+              </div>
+              <div x-show="(e.kb&&e.kb.length)||(e.tools&&e.tools.length)" class="flex flex-wrap gap-1.5 mt-2">
+                <template x-for="k in (e.kb||[])" :key="'kb'+k">
+                  <span class="bind-tag kb"><i class="fa fa-book"></i><span x-text="kbName(k)"></span></span>
+                </template>
+                <template x-for="t in (e.tools||[])" :key="'sk'+t">
+                  <span class="bind-tag sk"><i class="fa fa-wand-magic-sparkles"></i><span x-text="t"></span></span>
+                </template>
+              </div>
+              <button class="btn-pri mt-3.5" @click="open(e)"><i class="fa fa-comment-dots mr-1.5"></i>开始对话</button>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- 对话视图 -->
+    <div class="flex-1 flex flex-col min-w-0" x-show="view==='chat'" x-cloak>
+      <div class="flex items-center gap-2 px-6 py-2.5" style="box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+        <button class="btn-ghost" style="height:30px;padding:0 10px" @click="view='grid'"><i class="fa fa-arrow-left mr-1"></i>返回</button>
+        <img src="image/bot.png" onerror="botFallback(this)" class="w-6 h-6 rounded-lg object-cover ml-1">
+        <span class="text-[13px] font-semibold" x-text="cur.name"></span>
+        <span class="tag primary" style="padding:1px 7px" x-text="cur.name?catLabel(cur.cat):''"></span>
+        <span class="ml-auto text-[12px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-shield-halved mr-1"></i>经网关审计 · 数据不出域</span>
+      </div>
+      <div class="flex-1 overflow-y-auto msc" style="padding:20px 26px" x-ref="msgs">
+        <div x-show="!messages.length" class="h-full flex flex-col items-center justify-center text-center">
+          <img src="image/bot.png" onerror="botFallback(this)" class="w-14 h-14 rounded-2xl object-cover mb-3">
+          <div class="text-[16px] font-bold" x-text="cur.name"></div>
+          <div class="text-[12.5px] mt-1 mb-4" style="color:hsl(var(--muted-foreground))" x-text="cur.role"></div>
+          <div class="grid grid-cols-2 gap-2.5 max-w-[540px]">
+            <template x-for="q in (cur.quick||[])" :key="q"><div class="qchip text-left" @click="ask(q)" x-text="q"></div></template>
+          </div>
+        </div>
+        <div class="space-y-4">
+          <template x-for="(m,i) in messages" :key="i">
+            <div>
+              <div x-show="m.role==='user'" class="flex justify-end"><div class="bubble-user" x-text="m.text"></div></div>
+              <div x-show="m.role==='ai'" class="flex justify-start gap-2.5">
+                <img src="image/bot.png" onerror="botFallback(this)" class="w-8 h-8 rounded-lg object-cover flex-shrink-0">
+                <div class="flex-1 min-w-0"><div class="bubble-ai" :class="{'cursor':m.typing}" x-html="m.shown"></div></div>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+      <div style="border-top:1px solid hsl(var(--border) / 70%);padding:14px 26px">
+        <div class="cbox flex items-end gap-2">
+          <textarea rows="1" x-model="draft" @keydown.enter.prevent="send()" placeholder="给专家发消息…（Enter 发送）" style="max-height:120px"></textarea>
+          <button class="btn-pri flex-shrink-0" style="height:34px" :disabled="replying" @click="send()"><i class="fa fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新建 / 编辑专家 抽屉 -->
+<template x-if="editing">
+<div>
+  <div class="drawer-mask" @click="editing=false" x-transition.opacity></div>
+  <div class="drawer" @keydown.escape.window="editing=false"
+       x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+       x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">
+    <div class="drawer-hd">
+      <span class="text-[15px] font-semibold" x-text="form.orig?'编辑专家':'新建专家'"></span>
+      <button class="icon-btn ml-auto" @click="editing=false"><i class="fa fa-xmark"></i></button>
+    </div>
+    <div class="drawer-bd msc">
+      <div class="flex gap-3">
+        <div class="fld flex-1">
+          <label>专家名称</label>
+          <input class="inp" x-model="form.name" placeholder="如：产品设计专家">
+        </div>
+        <div class="fld" style="width:130px">
+          <label>所属分类</label>
+          <select class="inp" x-model="form.cat">
+            <template x-for="c in cats.filter(c=>c.key!=='all')" :key="c.key">
+              <option :value="c.key" x-text="c.label"></option>
+            </template>
+          </select>
+        </div>
+      </div>
+      <div class="fld">
+        <label>职责简介</label>
+        <textarea class="inp" rows="2" x-model="form.role" placeholder="一句话说明这个专家能做什么"></textarea>
+      </div>
+      <div class="fld">
+        <label>擅长技能标签 <span style="font-weight:400;color:hsl(var(--muted-foreground))">（逗号分隔）</span></label>
+        <input class="inp" x-model="form.skillsText" placeholder="如：原型设计, 交互规范, 竞品分析">
+      </div>
+      <div class="fld">
+        <label><i class="fa fa-book mr-1" style="color:hsl(var(--info))"></i>绑定知识库 <span class="text-[11px]" style="color:hsl(var(--muted-foreground))" x-text="'已选 '+form.kb.length"></span></label>
+        <div class="pick msc">
+          <template x-for="k in kbDocs" :key="k.id">
+            <div class="pick-item" :class="{'on':form.kb.includes(k.id)}" @click="toggle(form.kb,k.id)">
+              <i class="fa" :class="form.kb.includes(k.id)?'fa-check-square':'fa-square'"></i><span x-text="k.name"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+      <div class="fld" style="margin-bottom:2px">
+        <label><i class="fa fa-wand-magic-sparkles mr-1" style="color:hsl(var(--success))"></i>绑定技能 <span class="text-[11px]" style="color:hsl(var(--muted-foreground))" x-text="'已选 '+form.tools.length"></span></label>
+        <div class="pick msc">
+          <template x-for="s in skillItems" :key="s">
+            <div class="pick-item" :class="{'on':form.tools.includes(s)}" @click="toggle(form.tools,s)">
+              <i class="fa" :class="form.tools.includes(s)?'fa-check-square':'fa-square'"></i><span x-text="s"></span>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-ft">
+      <button class="btn-ghost" @click="editing=false">取消</button>
+      <button class="btn-pri" @click="saveExpert()"><i class="fa fa-check mr-1.5"></i>保存</button>
+    </div>
+  </div>
+</div>
+</template>
+
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':'primary')+'))'" x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function experts(){
+  return {
+    view:'grid', cat:'all', editing:false,
+    cats:[{key:'all',label:'全部'},{key:'market',label:'市场'},{key:'sales',label:'销售'},{key:'pre',label:'售前'},{key:'rd',label:'研发'},{key:'common',label:'通用'}],
+    // 可绑定的知识库（与 knowledge.html 一致）
+    kbDocs:[
+      {id:1,name:'骨科接骨板产品说明书 V3'},{id:2,name:'省人民医院检验科中标案例'},{id:3,name:'三类医疗器械注册证目录'},
+      {id:4,name:'微创手术产品线宣传物料包'},{id:5,name:'内镜中心信息化投标模板'},{id:6,name:'新员工合规培训手册'},
+      {id:7,name:'采购合同标准范本'},{id:8,name:'检验试剂效期管理规范'},{id:9,name:'骨科耗材临床应用白皮书'},
+      {id:10,name:'销售话术手册（三甲医院）'},{id:11,name:'医共体设备巡检标准流程'},{id:12,name:'竞品对比分析报告 2025Q3'},
+      {id:13,name:'投标技术应答通用模板'},{id:14,name:'产品培训 PPT（销售版）'},{id:15,name:'医疗器械经营质量管理制度'}
+    ],
+    // 可绑定的技能（与 skills.html 一致）
+    skillItems:['生成 PPT','写工作周报','做架构图','生成功能清单','会议纪要整理','导出 PDF 文档','竞品对比表','投标应答生成','客户拜访计划','数据周报'],
+    baseList:[
+      {name:'获客线索专家',cat:'market',role:'挖掘医院采购意向、生成线索清单',skills:['线索挖掘','意向研判','清单生成'],quick:['帮我梳理华东区近期有采购意向的三甲医院','生成一份骨科耗材的目标客户清单']},
+      {name:'销售话术专家',cat:'sales',role:'三甲医院跟单话术、异议处理',skills:['跟单话术','异议处理','逼单'],quick:['客户嫌价格高，怎么回应？','三甲医院采购科的开场话术怎么说']},
+      {name:'招投标方案专家',cat:'pre',role:'检验科/内镜中心方案撰写、技术应答',skills:['方案撰写','技术应答','评分点'],quick:['起草省人民医院检验科解决方案框架','招标技术需求应答要点有哪些']},
+      {name:'营销文案专家',cat:'market',role:'新品发布、公众号、宣传物料',skills:['文案','公众号','物料'],quick:['写一条骨科新品发布会的邀请函','给微创手术产品线想 5 个宣传标题']},
+      {name:'合同审查专家',cat:'common',role:'采购合同风险点、条款提取',skills:['风险点','条款提取','合规'],quick:['帮我看这份采购合同有哪些风险条款','提取合同里的付款与验收条款']},
+      {name:'竞品分析专家',cat:'market',role:'竞品对比、市场情报',skills:['竞品对比','情报','SWOT'],quick:['对比我司与竞品的骨科接骨板','做一张竞品功能对比表']},
+      {name:'客户回访专家',cat:'sales',role:'流失预警回访、满意度跟进',skills:['回访','流失预警','满意度'],quick:['重点客户 60 天没下单，怎么回访','设计一套客户满意度回访话术']},
+      {name:'会议纪要专家',cat:'common',role:'录音转纪要、待办提取',skills:['纪要','待办','摘要'],quick:['把这段会议记录整理成纪要','从纪要里提取待办事项和负责人']},
+      {name:'周报日报专家',cat:'common',role:'一键生成工作周报',skills:['周报','日报','汇总'],quick:['根据本周工作生成一份周报','把这些要点整理成日报']},
+      // 研发专家
+      {name:'产品设计专家',cat:'rd',role:'需求转原型、交互与产品方案设计',skills:['原型设计','交互规范','需求拆解'],kb:[3,15],tools:['生成功能清单','做架构图'],quick:['把「试剂效期预警」需求转成产品功能清单','帮我设计一套库存预警的交互流程']},
+      {name:'开发专家',cat:'rd',role:'技术方案、编码实现与代码评审',skills:['架构设计','编码实现','代码评审'],kb:[15],tools:['做架构图','导出 PDF 文档'],quick:['给效期预警模块设计一个技术方案','这段并发扣减库存的代码有什么问题']},
+      {name:'测试专家',cat:'rd',role:'测试用例设计、缺陷分析与回归',skills:['用例设计','缺陷分析','自动化'],tools:['生成功能清单'],quick:['给注册审核流程写一套测试用例','根据这个需求列出边界与异常场景']},
+      {name:'需求分析专家',cat:'rd',role:'业务调研、需求梳理与PRD撰写',skills:['需求梳理','PRD撰写','流程建模'],tools:['生成功能清单','会议纪要整理'],quick:['把这段访谈整理成需求条目','帮我梳理试剂管理系统的核心业务流程']}
+    ],
+    list:[], hidden:[],
+    form:{orig:null,name:'',cat:'rd',role:'',skillsText:'',kb:[],tools:[]},
+    cur:{}, messages:[], draft:'', replying:false, toasts:[], _toastId:0,
+    STORE:'meidikang_experts_v1',
+    init(){ this.load(); },
+    // —— 持久化：合并内置 + 覆盖 + 自建 - 隐藏 ——
+    load(){
+      let saved={overrides:{},custom:[],hidden:[]};
+      try{ const raw=localStorage.getItem(this.STORE); if(raw) saved=Object.assign(saved,JSON.parse(raw)); }catch(e){}
+      this.hidden=saved.hidden||[];
+      const merged=this.baseList
+        .filter(e=>!this.hidden.includes(e.name))
+        .map(e=>Object.assign({},e,saved.overrides[e.name]||{}));
+      this.list=merged.concat((saved.custom||[]).map(e=>Object.assign({custom:true},e)));
+    },
+    persist(){
+      // 收集：自建专家 + 内置改动（override）
+      const cust=this.list.filter(e=>e.custom).map(e=>{const{custom,...r}=e;return r;});
+      const ovr={};
+      this.list.filter(e=>!e.custom).forEach(e=>{
+        const base=this.baseList.find(b=>b.name===e.name); if(!base) return;
+        const diff={}; ['role','cat','skills','kb','tools','quick'].forEach(k=>{ if(JSON.stringify(e[k])!==JSON.stringify(base[k])) diff[k]=e[k]; });
+        if(Object.keys(diff).length) ovr[e.name]=diff;
+      });
+      try{ localStorage.setItem(this.STORE, JSON.stringify({overrides:ovr,custom:cust,hidden:this.hidden})); }catch(e){}
+    },
+    catLabel(k){ return (this.cats.find(c=>c.key===k)||{}).label||''; },
+    kbName(id){ return (this.kbDocs.find(k=>k.id===id)||{}).name||('#'+id); },
+    filtered(){ return this.cat==='all'?this.list:this.list.filter(e=>e.cat===this.cat); },
+    toggle(arr,v){ const i=arr.indexOf(v); if(i>=0) arr.splice(i,1); else arr.push(v); },
+    // —— 新建 / 编辑 ——
+    openEditor(e){
+      if(e){ this.form={orig:e, name:e.name, cat:e.cat, role:e.role||'', skillsText:(e.skills||[]).join(', '), kb:[...(e.kb||[])], tools:[...(e.tools||[])]}; }
+      else { this.form={orig:null, name:'', cat:'rd', role:'', skillsText:'', kb:[], tools:[]}; }
+      this.editing=true;
+    },
+    saveExpert(){
+      const name=this.form.name.trim();
+      if(!name){ this.showToast('请填写专家名称'); return; }
+      const dup=this.list.find(x=>x.name===name && x!==this.form.orig);
+      if(dup){ this.showToast('已存在同名专家'); return; }
+      const skills=this.form.skillsText.split(/[，,、]/).map(s=>s.trim()).filter(Boolean);
+      const data={ name, cat:this.form.cat, role:this.form.role.trim(),
+        skills, kb:[...this.form.kb], tools:[...this.form.tools],
+        quick:(this.form.orig&&this.form.orig.quick)||['介绍一下你能帮我做什么','给我一个使用示例'] };
+      if(this.form.orig){ Object.assign(this.form.orig, data); this.showToast('已保存修改','success'); }
+      else { this.list.push(Object.assign({custom:true}, data)); this.showToast('新专家已创建','success'); }
+      this.persist(); this.editing=false;
+    },
+    removeExpert(e){
+      if(!confirm('确定删除专家「'+e.name+'」？')) return;
+      if(e.custom){ this.list=this.list.filter(x=>x!==e); this.showToast('已删除自建专家','success'); }
+      else { this.hidden.push(e.name); this.list=this.list.filter(x=>x!==e); this.showToast('已隐藏内置专家（可恢复）','success'); }
+      this.persist();
+    },
+    restore(name){ this.hidden=this.hidden.filter(h=>h!==name); this.persist(); this.load(); this.showToast('已恢复','success'); },
+    // —— 对话 ——
+    open(e){ this.cur=e; this.messages=[]; this.view='chat'; },
+    ask(q){ this.draft=q; this.send(); },
+    send(){ const t=this.draft.trim(); if(!t||this.replying) return; this.draft=''; this.messages.push({role:'user',text:t}); this.scroll();
+      const kbTxt=(this.cur.kb&&this.cur.kb.length)?`已挂载知识库 ${this.cur.kb.length} 篇`:'企业知识库';
+      const skTxt=(this.cur.tools&&this.cur.tools.length)?`并可调用技能【${this.cur.tools.join('、')}】`:'';
+      const ans=`<b>${this.cur.name}</b>已为您研判，先给结论。<br><br>这是一段演示回答——实际接入后由自研大模型结合${kbTxt}（${this.cur.role}）实时生成${skTxt}，并经网关审计留痕、数据不出域。您可继续追问，或让我把结果导出成文档。`;
+      this.messages.push({role:'ai',full:ans,shown:'',typing:true}); const idx=this.messages.length-1; this.replying=true; this.stream(idx); },
+    stream(idx){ let i=0; const full=this.messages[idx].full;
+      const timer=setInterval(()=>{ i++; this.messages[idx].shown=full.slice(0,i); this.scroll();
+        if(i>=full.length){ clearInterval(timer); this.messages[idx].typing=false; this.replying=false; } },12); },
+    scroll(){ this.$nextTick(()=>{ const el=this.$refs.msgs; if(el) el.scrollTop=el.scrollHeight; }); },
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

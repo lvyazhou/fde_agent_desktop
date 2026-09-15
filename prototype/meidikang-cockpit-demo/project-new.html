@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新建项目 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+:root{
+  --primary: 214 95% 44%; --background: 0 0% 100%; --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%; --border: 213 32% 88%;
+  --success: 160 84% 33%; --warning: 32 88% 40%; --danger: 352 68% 48%; --info: 214 15% 50%;
+  --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --background: 214 40% 11%; --foreground: 210 40% 94%; --muted-foreground: 213 22% 68%; --border: 213 28% 26%; --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%); --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%); }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.tag.warning{color:hsl(var(--warning));background:color-mix(in srgb,hsl(var(--warning)) 14%,hsl(var(--background)))}
+.btn-pri{height:36px;padding:0 20px;border:0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 5px 12px hsl(var(--primary) / 18%)}
+.btn-ghost{height:36px;padding:0 16px;border:1px solid hsl(var(--border));border-radius:8px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.btn-pri:disabled,.btn-ghost:disabled{opacity:.4;cursor:not-allowed}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:8px;margin-right:16px} .traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+/* 顶部返回条 */
+.topbar{height:52px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 22px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+/* 步骤条 */
+.steps{display:flex;align-items:center;padding:18px 26px;gap:6px}
+.step{display:flex;align-items:center;gap:9px;flex:1}
+.step-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;border:2px solid hsl(var(--border));color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.step.done .step-dot{background:hsl(var(--success));border-color:hsl(var(--success));color:#fff}
+.step.active .step-dot{background:hsl(var(--primary));border-color:hsl(var(--primary));color:#fff}
+.step-txt{font-size:13px;color:hsl(var(--muted-foreground))}
+.step.active .step-txt,.step.done .step-txt{color:hsl(var(--foreground));font-weight:600}
+.step-line{flex:1;height:2px;background:hsl(var(--border));border-radius:1px;min-width:20px}
+.step.done .step-line{background:hsl(var(--success))}
+.wrap{flex:1;display:flex;min-height:0;padding:0 26px 22px;gap:16px}
+.form-col{flex:1;overflow-y:auto;min-width:0}
+.ai-col{width:340px;flex-shrink:0;display:flex;flex-direction:column}
+.field{width:100%;padding:9px 12px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background));font-size:13px;color:hsl(var(--foreground));outline:none;font-family:inherit;resize:vertical}
+.field:focus{border-color:hsl(var(--primary))}
+.flabel{font-size:12.5px;font-weight:600;margin-bottom:6px;display:block}
+.bubble-ai{background:hsl(var(--background));border:1px solid hsl(var(--border));border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.65}
+.bubble-user{background:hsl(var(--primary));color:#fff;border-radius:10px;padding:8px 11px;font-size:12.5px;line-height:1.5;max-width:80%}
+.qchip{padding:6px 10px;border-radius:8px;border:1px solid hsl(var(--border));font-size:12px;cursor:pointer;color:hsl(var(--foreground));background:hsl(var(--background))}
+.qchip:hover{border-color:hsl(var(--primary) / 50%);background:hsl(var(--primary) / 5%)}
+.cursor::after{content:'▋';animation:bk 1s steps(2) infinite;color:hsl(var(--primary))}
+@keyframes bk{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="wizard()" x-init="init()">
+<div class="app-shell">
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground))">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+
+  <!-- 返回条 -->
+  <div class="topbar">
+    <a href="project.html" class="btn-ghost" style="display:inline-flex;align-items:center;text-decoration:none"><i class="fa fa-arrow-left mr-1.5"></i>返回项目工作台</a>
+    <div>
+      <div class="text-[16px] font-bold">新建项目 · 协作流程向导</div>
+      <div class="text-[11.5px]" style="color:hsl(var(--muted-foreground))">按 市场 → 销售 → 售前 → 研发 → 工程 五步走，每步由对应 AI 专家协助完成</div>
+    </div>
+    <div class="ml-auto text-[12px]" style="color:hsl(var(--muted-foreground))">第 <b class="num" style="color:hsl(var(--primary))" x-text="step+1"></b> / 5 步</div>
+  </div>
+
+  <!-- 步骤条 -->
+  <div class="steps">
+    <template x-for="(s,i) in steps" :key="i">
+      <template x-if="true">
+        <div class="flex items-center" :class="i<steps.length-1?'flex-1':''" style="gap:6px">
+          <div class="step" :class="{'done':i<step,'active':i===step}" style="flex:none;cursor:pointer" @click="i<=maxReached && (step=i)">
+            <div class="step-dot"><span x-show="i>=step" x-text="i+1"></span><i class="fa fa-check" x-show="i<step" x-cloak></i></div>
+            <div><div class="step-txt" x-text="s.dept"></div><div class="text-[11px]" style="color:hsl(var(--muted-foreground))" x-text="s.label"></div></div>
+          </div>
+          <div class="step-line" :class="{'done':i<step}" x-show="i<steps.length-1"></div>
+        </div>
+      </template>
+    </template>
+  </div>
+
+  <!-- 主体：表单 + AI 专家 -->
+  <div class="wrap">
+    <!-- 表单列 -->
+    <div class="form-col msc">
+      <div class="card" style="padding:18px 20px">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center text-white" style="background:hsl(var(--primary))"><i class="fa" :class="cur().icon"></i></div>
+          <div>
+            <div class="text-[15px] font-semibold" x-text="cur().dept + ' · ' + cur().label"></div>
+            <div class="text-[11.5px]" style="color:hsl(var(--muted-foreground))" x-text="cur().hint"></div>
+          </div>
+          <button class="btn-pri ml-auto" style="height:32px" :disabled="genning" @click="genForm()">
+            <i class="fa mr-1.5" :class="genning?'fa-spinner fa-spin':'fa-wand-magic-sparkles'"></i>AI 一键生成
+          </button>
+        </div>
+        <div class="space-y-3.5">
+          <template x-for="f in cur().fields" :key="f.key">
+            <div>
+              <label class="flabel" x-text="f.label"></label>
+              <textarea x-show="f.area" class="field" rows="2" x-model="form[step][f.key]" :placeholder="f.ph"></textarea>
+              <input x-show="!f.area" class="field" x-model="form[step][f.key]" :placeholder="f.ph">
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- 底部导航按钮 -->
+      <div class="flex items-center gap-3 mt-4">
+        <button class="btn-ghost" :disabled="step===0" @click="prev()"><i class="fa fa-arrow-left mr-1.5"></i>上一步</button>
+        <div class="ml-auto flex gap-3">
+          <a href="project.html" class="btn-ghost" style="display:inline-flex;align-items:center;text-decoration:none">存草稿并退出</a>
+          <button class="btn-pri" x-show="step<4" @click="next()">下一步 · <span x-text="steps[step+1] ? steps[step+1].dept : ''"></span><i class="fa fa-arrow-right ml-1.5"></i></button>
+          <button class="btn-pri" x-show="step===4" @click="submit()"><i class="fa fa-check mr-1.5"></i>完成创建项目</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI 专家列 -->
+    <div class="ai-col">
+      <div class="card" style="padding:0;flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div class="flex items-center gap-2.5 px-4 py-3" style="box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+          <img src="image/bot.png" onerror="botFallback(this)" class="w-8 h-8 rounded-lg object-cover">
+          <div><div class="text-[13px] font-semibold" x-text="cur().expert"></div><div class="text-[11px]" style="color:hsl(var(--success))"><span class="inline-block w-1.5 h-1.5 rounded-full mr-1" style="background:hsl(var(--success))"></span>在线协助本环节</div></div>
+        </div>
+        <div class="flex-1 overflow-y-auto msc p-3.5 space-y-3" x-ref="chat">
+          <template x-for="(m,i) in msgs" :key="i">
+            <div>
+              <div x-show="m.role==='user'" class="flex justify-end"><div class="bubble-user" x-text="m.text"></div></div>
+              <div x-show="m.role==='ai'" class="flex gap-2">
+                <img src="image/bot.png" onerror="botFallback(this)" class="w-6 h-6 rounded-md object-cover flex-shrink-0">
+                <div class="bubble-ai flex-1 min-w-0" :class="{'cursor':m.typing}" x-html="m.shown"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+        <div class="p-3" style="box-shadow:inset 0 1px 0 hsl(var(--border) / 70%)">
+          <div class="flex flex-wrap gap-1.5 mb-2">
+            <template x-for="q in cur().quick" :key="q"><div class="qchip" @click="ask(q)" x-text="q"></div></template>
+          </div>
+          <div class="flex gap-2">
+            <input class="field" x-model="draft" @keydown.enter="ask(draft)" :placeholder="'问'+cur().expert+'…'">
+            <button class="btn-pri" style="height:auto;padding:0 14px" :disabled="replying" @click="ask(draft)"><i class="fa fa-paper-plane"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':'primary')+'))'" x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function wizard(){
+  return {
+    step:0, maxReached:0, draft:'', replying:false, genning:false,
+    toasts:[], _toastId:0,
+    steps:[
+      { dept:'市场', label:'获客线索', icon:'fa-bullhorn', expert:'获客线索专家', hint:'录入项目来源与客户信息，AI 帮你判断机会价值',
+        fields:[
+          {key:'name',label:'项目名称',ph:'如：省人民医院检验科整体解决方案'},
+          {key:'hospital',label:'目标客户 / 医院',ph:'如：省人民医院'},
+          {key:'source',label:'线索来源',ph:'如：行业展会 / 老客户转介绍 / 招标公告'},
+          {key:'amount',label:'预估金额',ph:'如：480 万'}
+        ],
+        quick:['帮我判断这个线索的价值','这类医院采购一般走什么流程'],
+        genned:{name:'省人民医院检验科整体解决方案',hospital:'省人民医院',source:'招标公告 + 老客户转介绍',amount:'480 万'},
+        aiWelcome:'我是获客线索专家。把客户和来源填进去，我会帮你研判这个机会的价值与成单概率。也可以点「AI 一键生成」，我按典型案例先填一版。',
+        aiGen:'已按典型高价值机会为你填好表单：<br>· 判断为 <b>A 类机会</b>（三甲医院、预算充足）<br>· 建议尽快转入销售跟单阶段<br>· 关注竞品是否已介入' },
+      { dept:'销售', label:'商机跟单', icon:'fa-handshake', expert:'销售话术专家', hint:'梳理决策链与跟单策略，AI 帮你制定推进打法',
+        fields:[
+          {key:'chain',label:'决策链',area:true,ph:'如：检验科主任（使用方）→ 采购科（流程）→ 分管院长（拍板）'},
+          {key:'time',label:'预计采购时间',ph:'如：2025 Q4'},
+          {key:'compete',label:'竞争态势',ph:'如：竞品 A 已接触采购科'},
+          {key:'strategy',label:'跟单策略',area:true,ph:'如：先攻临床科室建立技术认可，再推动采购'}
+        ],
+        quick:['决策链里谁最关键','竞品已介入，我该怎么打'],
+        genned:{chain:'检验科主任（使用方，重技术）→ 采购科（走流程）→ 分管副院长（最终拍板）',time:'2025 Q4',compete:'竞品 A 已接触采购科，价格略低',strategy:'先由售前做技术方案攻下检验科主任，建立技术壁垒；再通过老客户关系触达分管院长。'},
+        aiWelcome:'我是销售话术专家。把决策链和竞争情况告诉我，我帮你定跟单策略和关键话术。',
+        aiGen:'已为你梳理决策链与打法：<br>· 关键人是<b>检验科主任</b>（技术认可决定成败）<br>· 竞品打价格，我们打<b>技术+服务</b>差异化<br>· 建议本周安排售前技术交流' },
+      { dept:'售前', label:'方案输出', icon:'fa-file-signature', expert:'招投标方案专家', hint:'确定需求与方案要点，AI 帮你生成方案初稿',
+        fields:[
+          {key:'demand',label:'客户需求要点',area:true,ph:'如：检验科 LIS 系统 + 流水线，要求与 HIS 打通'},
+          {key:'solution',label:'方案要点',area:true,ph:'如：整体检验信息化，含设备+软件+实施'},
+          {key:'difficulty',label:'技术难点',ph:'如：与院内 HIS 系统的接口对接'}
+        ],
+        quick:['帮我生成方案大纲','这个技术难点怎么应答'],
+        genned:{demand:'检验科 LIS 系统 + 自动化流水线，要求与院内 HIS/EMR 打通，支持危急值自动上报',solution:'提供"设备+LIS软件+数据网关+现场实施"整体方案，分三期交付',difficulty:'与院内既有 HIS 系统的标准化接口对接、历史数据迁移'},
+        aiWelcome:'我是招投标方案专家。填入需求要点，我可以生成方案大纲、技术应答，并标注评分关键点。',
+        aiGen:'已生成方案要点（初稿）：<br>· 整体方案分<b>设备/软件/网关/实施</b>四块<br>· 技术难点：HIS 接口——建议用标准 HL7/FHIR 协议应答<br>· ⚠️ 此环节是当前跨部门流转的<b>常见卡点</b>，请尽快与研发对齐技术边界' },
+      { dept:'研发', label:'技术实现', icon:'fa-microchip', expert:'技术评估专家', hint:'评估技术选型与工期，AI 帮你识别工期与资源风险',
+        fields:[
+          {key:'tech',label:'技术选型',area:true,ph:'如：数据采集网关 + LIS 对接中间件'},
+          {key:'period',label:'工期评估',ph:'如：45 个工作日'},
+          {key:'resource',label:'资源需求',ph:'如：2 名后端 + 1 名实施工程师'}
+        ],
+        quick:['这个工期合理吗','有哪些技术风险'],
+        genned:{tech:'数据采集网关（自研）+ LIS 对接中间件 + HL7 接口适配层',period:'45 个工作日（含联调）',resource:'2 名后端工程师 + 1 名数据工程师，联调阶段需现场支持'},
+        aiWelcome:'我是技术评估专家。填入技术方案，我帮你评估工期是否现实、有哪些技术与资源风险。',
+        aiGen:'已完成技术评估：<br>· 选型可行，建议复用现有采集网关<br>· ⚠️ <b>工期风险</b>：45 天偏紧，HIS 接口联调不确定性大，建议预留 1 周缓冲<br>· 资源：联调期需现场工程师，注意与工程部排期协调' },
+      { dept:'工程', label:'交付实施', icon:'fa-helmet-safety', expert:'交付实施专家', hint:'制定实施计划与验收标准，AI 帮你排里程碑',
+        fields:[
+          {key:'plan',label:'实施计划',area:true,ph:'如：进场→安装→联调→培训→验收'},
+          {key:'milestone',label:'交付里程碑',area:true,ph:'如：M1 设备到场 / M2 联调完成 / M3 验收'},
+          {key:'accept',label:'验收标准',ph:'如：系统稳定运行 30 天，危急值上报准确率 100%'}
+        ],
+        quick:['帮我排实施里程碑','验收标准怎么定'],
+        genned:{plan:'设备进场 → 硬件安装 → 系统部署 → 与 HIS 联调 → 科室培训 → 试运行 → 正式验收',milestone:'M1 设备到场(第2周) / M2 联调完成(第6周) / M3 培训完成(第7周) / M4 验收(第9周)',accept:'系统连续稳定运行 30 天，危急值自动上报准确率 100%，检验报告出具时间缩短 30%'},
+        aiWelcome:'我是交付实施专家。填入实施要点，我帮你排里程碑、定验收标准，确保项目顺利落地。',
+        aiGen:'已排定实施计划与里程碑：<br>· 4 个里程碑，总工期约 9 周<br>· 验收标准量化到"稳定运行 30 天 + 危急值准确率 100%"<br>· 建议培训环节提前介入，降低上线阻力' }
+    ],
+    form:[{},{},{},{},{}],
+    msgs:[],
+    init(){ this.enter(); },
+    cur(){ return this.steps[this.step]; },
+    enter(){ this.msgs=[]; this.pushAI(this.cur().aiWelcome); },
+    genForm(){ if(this.genning) return; this.genning=true;
+      setTimeout(()=>{ const g=this.cur().genned; Object.keys(g).forEach(k=>{ this.form[this.step][k]=g[k]; });
+        this.genning=false; this.pushAI(this.cur().aiGen); this.showToast('AI 已生成本步内容','success'); },1300); },
+    ask(q){ q=(q||'').trim(); if(!q||this.replying) return; this.draft=''; this.msgs.push({role:'user',text:q}); this.scroll();
+      this.pushAI('针对「'+q+'」——'+this.cur().expert+'为你解答（演示）：结合本项目情况与企业知识库，建议如上表所填方向推进；需要我直接把要点写进表单吗？'); },
+    prev(){ if(this.step>0){ this.step--; this.enter(); } },
+    next(){ if(!this.form[this.step].name && this.step===0){ /* 允许空，演示 */ } this.step++; this.maxReached=Math.max(this.maxReached,this.step); this.enter(); },
+    submit(){ this.showToast('项目已创建，进入协作流转','success'); setTimeout(()=>{ location.href='project.html'; },1200); },
+    pushAI(full){ this.replying=true; this.msgs.push({role:'ai',full,shown:'',typing:true}); const idx=this.msgs.length-1; this.stream(idx); },
+    stream(idx){ let i=0; const full=this.msgs[idx].full;
+      const timer=setInterval(()=>{ i++; this.msgs[idx].shown=full.slice(0,i); this.scroll();
+        if(i>=full.length){ clearInterval(timer); this.msgs[idx].typing=false; this.replying=false; } },10); },
+    scroll(){ this.$nextTick(()=>{ const el=this.$refs.chat; if(el) el.scrollTop=el.scrollHeight; }); },
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

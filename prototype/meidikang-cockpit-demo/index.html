@@ -70,7 +70,8 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
 .rail-item i{width:18px;text-align:center;font-size:15px}
 .rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
 .rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
-.rail-sep{margin:10px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+.side-rail>.rail-sep:first-child{margin-top:2px}
+.rail-sep{margin:14px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
 
 .content{flex:1;overflow-y:auto;min-width:0}
 .pad{padding:18px 22px}
@@ -97,11 +98,19 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
   <div class="body-row">
     <!-- 左侧竖直导航 -->
     <nav class="side-rail">
+      <div class="rail-sep">经营驾驶舱</div>
       <a class="rail-item active" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
-      <a class="rail-item" href="workbench.html"><i class="fa fa-grip"></i>统一工作台</a>
-      <a class="rail-item" href="gateway.html"><i class="fa fa-network-wired"></i>AI 网关 · 成本</a>
-      <div class="rail-sep">系统</div>
-      <a class="rail-item" @click="showToast('设置模块为演示占位','info')"><i class="fa fa-gear"></i>设置</a>
+      <a class="rail-item" href="audit.html"><i class="fa fa-shield-halved"></i>AI 行为审计</a>
+      <div class="rail-sep">统一工作台</div>
+      <a class="rail-item" href="chat.html"><i class="fa fa-comments"></i>智能对话</a>
+      <a class="rail-item" href="code.html"><i class="fa fa-code"></i>AI 代码模式</a>
+      <a class="rail-item" href="experts.html"><i class="fa fa-user-tie"></i>AI 专家广场</a>
+      <a class="rail-item" href="knowledge.html"><i class="fa fa-book"></i>知识库</a>
+      <a class="rail-item" href="skills.html"><i class="fa fa-wand-magic-sparkles"></i>技能中心</a>
+      <div class="rail-sep">项目协作</div>
+      <a class="rail-item" href="project.html"><i class="fa fa-diagram-project"></i>项目工作台</a>
+      <div class="rail-sep">设置</div>
+      <a class="rail-item" href="settings.html"><i class="fa fa-gear"></i>系统设置</a>
       <div class="mt-auto card" style="padding:11px 12px">
         <div class="text-[12px] flex items-center gap-2" style="color:hsl(var(--muted-foreground))">
           <img src="image/bot.png" onerror="botFallback(this)" class="w-7 h-7 rounded-lg object-cover">
@@ -114,12 +123,8 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
     <div class="content msc">
       <div class="pad space-y-5">
 
-        <!-- 页头 -->
-        <div class="flex items-end justify-between flex-wrap gap-3">
-          <div>
-            <div class="text-[20px] font-bold">经营驾驶舱</div>
-            <div class="text-[12.5px] mt-0.5" style="color:hsl(var(--muted-foreground))">谁在做什么 · 做到哪了 · 质量如何 · 卡在哪里 · 需你介入</div>
-          </div>
+        <!-- 页头（大标题已去除，仅保留操作条） -->
+        <div class="flex items-center justify-end flex-wrap gap-3">
           <div class="flex items-center gap-3">
             <!-- 时间筛选条 -->
             <div class="flex items-center rounded-lg overflow-hidden" style="border:1px solid hsl(var(--border));background:hsl(var(--background))">
@@ -136,6 +141,22 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
           <i class="fa fa-calendar-day" style="color:hsl(var(--primary))"></i>
           当前统计范围：<b style="color:hsl(var(--foreground))" x-text="rangeLabel()"></b>
           <span x-text="'（'+rangeHint()+'）'"></span>
+        </div>
+
+        <!-- 部门成本大盘 -->
+        <div class="grid grid-cols-3 gap-4">
+          <div class="card" style="padding:15px 17px">
+            <div class="sec-title" style="font-size:14px"><span class="bar"></span>AI 成本趋势<span class="text-[11.5px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">近 7 天(元)</span></div>
+            <div id="costTrend" style="height:150px"></div>
+          </div>
+          <div class="card" style="padding:15px 17px">
+            <div class="sec-title" style="font-size:14px"><span class="bar"></span>各部门成本排行</div>
+            <div id="costDept" style="height:150px"></div>
+          </div>
+          <div class="card" style="padding:15px 17px">
+            <div class="sec-title" style="font-size:14px"><span class="bar"></span>按模型分布</div>
+            <div id="costModel" style="height:150px"></div>
+          </div>
         </div>
 
         <!-- ① 经营/效率指标 -->
@@ -307,6 +328,25 @@ function cockpit(){
       catch(e){ this.showToast('数据加载失败，请用本地服务打开','error'); return; }
       this.attentions = this.data.attentions.slice();
       this._kpiBase = this.data.kpis.map(k=>({...k}));
+      this.$nextTick(()=>this.renderCostCharts());
+    },
+    renderCostCharts(){
+      const cb = this.data.costBoard; if(!cb) return;
+      const C=window.TC_COLORS, E=window.TC_ECHARTS;
+      const t=echarts.init(document.getElementById('costTrend'));
+      t.setOption({ tooltip:E.tooltip(), grid:E.grid({left:44,top:14,bottom:22}),
+        xAxis:{type:'category',data:cb.trendDays,...E.axis()}, yAxis:{type:'value',...E.axis()},
+        series:[{type:'line',smooth:true,data:cb.trendCost,itemStyle:{color:C.primary},areaStyle:{color:C.palette[5]},lineStyle:{width:2.5}}]});
+      const d=echarts.init(document.getElementById('costDept'));
+      const dd=[...cb.byDept].sort((a,b)=>a.cost-b.cost);
+      d.setOption({ tooltip:E.tooltip({formatter:p=>p[0].name+'：¥'+window.TC_FMT.thousands(p[0].value)}), grid:E.grid({left:56,top:8,bottom:16,right:44}),
+        xAxis:{type:'value',...E.axis({axisLabel:{show:false}}),splitLine:{show:false}}, yAxis:{type:'category',data:dd.map(x=>x.dept),...E.axis({splitLine:{show:false}})},
+        series:[{type:'bar',data:dd.map((x,i)=>({value:x.cost,itemStyle:{color:C.palette[i],borderRadius:[0,4,4,0]}})),barWidth:'54%',label:{show:true,position:'right',formatter:p=>'¥'+window.TC_FMT.thousands(p.value),fontSize:10,color:C.textSub}}]});
+      const m=echarts.init(document.getElementById('costModel'));
+      m.setOption({ tooltip:{trigger:'item',formatter:'{b}: {d}%'},
+        series:[{type:'pie',radius:['50%','76%'],center:['50%','50%'],label:{formatter:'{b}\n{d}%',fontSize:10,color:C.textSub},
+          data:cb.byModel.map((x,i)=>({name:x.model,value:x.pct,itemStyle:{color:C.palette[i]}}))}]});
+      window.addEventListener('resize',()=>{t.resize();d.resize();m.resize();});
     },
     rangeCfg(){ return {today:{f:0.045,label:'今日',hint:'实时累计到当前时刻'},week:{f:0.24,label:'本周',hint:'周一至今'},month:{f:1,label:'本月',hint:'9 月 1 日至今'},quarter:{f:2.9,label:'本季度',hint:'第三季度累计'}}[this.range]; },
     rangeLabel(){ return this.rangeCfg().label; },
