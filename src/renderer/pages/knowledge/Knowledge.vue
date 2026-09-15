@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full min-h-0 kb-bg">
     <!-- ── 左侧:五阶段分类树 ────────────────────────── -->
-    <aside class="kb-tree shrink-0 flex flex-col bg-white/95 backdrop-blur border-r border-slate-200/70">
+    <aside class="kb-tree shrink-0 flex flex-col border-r">
       <div class="px-3 pt-3.5 pb-2.5 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-2.5">
           <span class="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
@@ -557,12 +557,9 @@ function openProjectDoc(pj, item) {
 
 <style scoped>
 .kb-bg {
-  background:
-    radial-gradient(900px 500px at 100% 0%, rgba(37, 99, 235, 0.06), transparent 60%),
-    radial-gradient(700px 400px at 0% 100%, rgba(14, 165, 233, 0.05), transparent 55%),
-    #f4f7fb;
+  background: var(--color-content-bg);
 }
-.kb-tree { width: 240px; }
+.kb-tree { width: 240px; background: #ffffff !important; border-color: var(--color-sidebar-border) !important; }
 
 /* 自适应卡片网格:列数随宽度自动增减(最小 260px 一列),窄屏 2 列宽屏可到 4-5 列 */
 .kb-grid {
@@ -600,13 +597,12 @@ function openProjectDoc(pj, item) {
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.15s;
 }
-.tree-node:hover { background: #f0f5ff; color: #2563eb; }
+.tree-node:hover { background: var(--color-sidebar-elevated); color: #111827; }
 .tree-node:hover .tree-badge { transform: scale(1.06); }
 .tree-node--active {
-  background: linear-gradient(90deg, #e8f1ff, #f3f8ff);
-  color: #1d4ed8;
+  background: var(--color-sidebar-elevated);
+  color: #111827;
   font-weight: 600;
-  box-shadow: inset 3px 0 0 #2563eb;
 }
 
 .tree-badge {
@@ -633,7 +629,7 @@ function openProjectDoc(pj, item) {
   padding: 1px 7px;
   flex-shrink: 0;
 }
-.tree-node--active .tree-count { color: #2563eb; background: #dbeafe; }
+.tree-node--active .tree-count { color: #111827; background: #dcdcd8; }
 
 /* 统计卡片 */
 .stat-card {

@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white rounded-[24px] border border-dashed border-slate-200 p-10 text-center shadow-card">
+  <div class="bg-white rounded-2xl border border-dashed border-slate-200 p-10 text-center shadow-card">
     <div class="w-16 h-16 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl text-slate-300 mx-auto mb-4">
       <i :class="icon"></i>
     </div>

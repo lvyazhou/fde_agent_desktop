@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>经营驾驶舱 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+:root{
+  --primary: 214 95% 44%;
+  --background: 0 0% 100%;
+  --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%;
+  --border: 213 32% 88%;
+  --success: 160 84% 33%;
+  --warning: 32 88% 40%;
+  --danger:  352 68% 48%;
+  --info:    214 15% 50%;
+  --card-bg: linear-gradient(110deg,
+      color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%,
+      hsl(var(--background)) 58%,
+      color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --background: 214 40% 11%;  --foreground: 210 40% 94%;
+    --muted-foreground: 213 22% 68%;  --border: 213 28% 26%;  --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg,
+        color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%,
+        hsl(var(--background)) 58%,
+        color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%);
+    --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%);
+  }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.success{color:hsl(var(--success));background:color-mix(in srgb,hsl(var(--success)) 12%,hsl(var(--background)))}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.tag.warning{color:hsl(var(--warning));background:color-mix(in srgb,hsl(var(--warning)) 14%,hsl(var(--background)))}
+.tag.danger{color:hsl(var(--danger));background:color-mix(in srgb,hsl(var(--danger)) 10%,hsl(var(--background)))}
+.btn-pri{height:32px;padding:0 16px;border:0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 5px 12px hsl(var(--primary) / 18%)}
+.btn-ghost{height:32px;padding:0 14px;border:1px solid hsl(var(--border));border-radius:8px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+
+/* ===== 桌面客户端外壳 ===== */
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%);-webkit-app-region:drag}
+.traffic{display:flex;gap:8px;margin-right:16px}
+.traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:hsl(var(--foreground))}
+.title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+.body-row{flex:1;display:flex;min-height:0}
+
+/* 左侧竖直导航 */
+.side-rail{width:200px;flex-shrink:0;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset -1px 0 0 hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:14px 10px}
+.rail-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;margin-bottom:3px;transition:background .15s}
+.rail-item i{width:18px;text-align:center;font-size:15px}
+.rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
+.rail-sep{margin:10px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+
+.content{flex:1;overflow-y:auto;min-width:0}
+.pad{padding:18px 22px}
+.sec-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;margin-bottom:11px}
+.sec-title .bar{width:3px;height:15px;border-radius:2px;background:hsl(var(--primary))}
+.prog{height:6px;border-radius:3px;background:hsl(var(--primary) / 12%);overflow:hidden}
+.prog>i{display:block;height:100%;border-radius:3px;background:hsl(var(--primary))}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="cockpit()" x-init="init()">
+<div class="app-shell">
+
+  <!-- 窗口标题栏 -->
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground));-webkit-app-region:no-drag">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+
+  <div class="body-row">
+    <!-- 左侧竖直导航 -->
+    <nav class="side-rail">
+      <a class="rail-item active" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
+      <a class="rail-item" href="workbench.html"><i class="fa fa-grip"></i>统一工作台</a>
+      <a class="rail-item" href="gateway.html"><i class="fa fa-network-wired"></i>AI 网关 · 成本</a>
+      <div class="rail-sep">系统</div>
+      <a class="rail-item" @click="showToast('设置模块为演示占位','info')"><i class="fa fa-gear"></i>设置</a>
+      <div class="mt-auto card" style="padding:11px 12px">
+        <div class="text-[12px] flex items-center gap-2" style="color:hsl(var(--muted-foreground))">
+          <img src="image/bot.png" onerror="botFallback(this)" class="w-7 h-7 rounded-lg object-cover">
+          <div><div class="font-semibold" style="color:hsl(var(--foreground))">经营参谋</div><div>正在为您盯盘</div></div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <div class="content msc">
+      <div class="pad space-y-5">
+
+        <!-- 页头 -->
+        <div class="flex items-end justify-between flex-wrap gap-3">
+          <div>
+            <div class="text-[20px] font-bold">经营驾驶舱</div>
+            <div class="text-[12.5px] mt-0.5" style="color:hsl(var(--muted-foreground))">谁在做什么 · 做到哪了 · 质量如何 · 卡在哪里 · 需你介入</div>
+          </div>
+          <div class="flex items-center gap-3">
+            <!-- 时间筛选条 -->
+            <div class="flex items-center rounded-lg overflow-hidden" style="border:1px solid hsl(var(--border));background:hsl(var(--background))">
+              <template x-for="r in ranges" :key="r.key">
+                <button class="text-[12.5px] px-3" style="height:32px;border:0;cursor:pointer;transition:background .15s"
+                        :style="range===r.key?'background:hsl(var(--primary));color:#fff':'background:transparent;color:hsl(var(--muted-foreground))'"
+                        @click="setRange(r.key)" x-text="r.label"></button>
+              </template>
+            </div>
+            <button class="btn-ghost" @click="refresh()"><i class="fa fa-rotate mr-1.5" :class="refreshing?'fa-spin':''"></i>刷新</button>
+          </div>
+        </div>
+        <div class="text-[12px] -mt-2 flex items-center gap-1.5" style="color:hsl(var(--muted-foreground))">
+          <i class="fa fa-calendar-day" style="color:hsl(var(--primary))"></i>
+          当前统计范围：<b style="color:hsl(var(--foreground))" x-text="rangeLabel()"></b>
+          <span x-text="'（'+rangeHint()+'）'"></span>
+        </div>
+
+        <!-- ① 经营/效率指标 -->
+        <div class="grid grid-cols-6 gap-3">
+          <template x-for="k in data.kpis" :key="k.key">
+            <div class="card cursor-pointer transition-transform hover:-translate-y-0.5" style="padding:13px 14px" @click="drillKpi(k)">
+              <div class="flex items-center justify-between">
+                <span class="text-[12px]" style="color:hsl(var(--muted-foreground))" x-text="k.label"></span>
+                <i class="fa" :class="k.icon" style="color:hsl(var(--primary))"></i>
+              </div>
+              <div class="flex items-baseline gap-1.5 mt-2">
+                <span class="text-[22px] font-bold num" x-text="fmt(k)"></span>
+                <span class="text-[11px]" x-text="k.unit" style="color:hsl(var(--muted-foreground))"></span>
+              </div>
+              <div class="text-[11.5px] mt-1 num" :style="'color:hsl(var(--'+(k.up?'success':'danger')+'))'">
+                <i class="fa" :class="k.up?'fa-arrow-up':'fa-arrow-down'"></i> <span x-text="Math.abs(k.delta)+'%'"></span>
+                <span style="color:hsl(var(--muted-foreground))"> 环比</span>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- ② 各部门任务进展 -->
+        <div class="card" style="padding:16px 18px">
+          <div class="sec-title"><span class="bar"></span>各部门任务进展<span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">部门泳道 · 谁在做什么、做到哪了</span></div>
+          <div class="grid grid-cols-5 gap-3">
+            <template x-for="d in data.departments" :key="d.name">
+              <div class="rounded-xl" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:11px">
+                <div class="flex items-center justify-between mb-2.5">
+                  <span class="flex items-center gap-2 font-semibold text-[13.5px]"><i class="fa" :class="d.icon" style="color:hsl(var(--primary))"></i><span x-text="d.name"></span></span>
+                  <span class="tag" :class="d.score>=85?'success':'warning'" x-text="d.score+'分'"></span>
+                </div>
+                <div class="space-y-2">
+                  <template x-for="t in d.tasks" :key="t.name">
+                    <div class="rounded-lg cursor-pointer" style="background:hsl(var(--background));border:1px solid hsl(var(--border));padding:8px 9px" @click="drillTask(d,t)">
+                      <div class="flex items-start justify-between gap-1.5">
+                        <span class="text-[12px] leading-snug" x-text="t.name"></span>
+                        <span class="tag flex-shrink-0" :class="statusTag(t.status)" style="padding:1px 6px" x-text="statusText(t.status)"></span>
+                      </div>
+                      <div class="flex items-center gap-1.5 mt-1 text-[11px]" style="color:hsl(var(--muted-foreground))">
+                        <i class="fa fa-user text-[9px]"></i><span x-text="t.owner"></span>
+                        <span class="ml-auto num" x-text="t.progress+'%'"></span>
+                      </div>
+                      <div class="prog mt-1"><i :style="'width:'+t.progress+'%'+(t.status==='block'?';background:hsl(var(--danger))':t.status==='warn'?';background:hsl(var(--warning))':'')"></i></div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- ③ 跨部门协同流 -->
+        <div class="card" style="padding:16px 18px">
+          <div class="sec-title"><span class="bar"></span>跨部门协同流<span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">把各部门工作串起来，看哪一棒卡住</span></div>
+          <div class="flex items-stretch gap-1">
+            <template x-for="(n,i) in data.flow" :key="n.dept">
+              <div class="flex items-center" :class="i<data.flow.length-1?'flex-1':''">
+                <div class="rounded-xl flex-1 cursor-pointer transition-transform hover:-translate-y-0.5" @click="drillFlow(n)"
+                     :style="'padding:12px;border:1.5px solid '+(n.status==='block'?'hsl(var(--danger))':n.status==='wait'?'hsl(var(--warning))':'hsl(var(--border))')+';background:'+(n.status==='block'?'color-mix(in srgb,hsl(var(--danger)) 8%,hsl(var(--background)))':n.status==='wait'?'color-mix(in srgb,hsl(var(--warning)) 8%,hsl(var(--background)))':'var(--card-bg)')">
+                  <div class="flex items-center gap-2">
+                    <i class="fa" :class="n.icon" :style="'color:'+(n.status==='block'?'hsl(var(--danger))':n.status==='wait'?'hsl(var(--warning))':'hsl(var(--primary))')"></i>
+                    <span class="font-semibold text-[13px]" x-text="n.dept"></span>
+                    <span class="tag ml-auto" :class="n.status==='block'?'danger':n.status==='wait'?'warning':'primary'" style="padding:1px 6px"
+                          x-text="n.status==='block'?'卡点':n.status==='wait'?'等待':'正常'"></span>
+                  </div>
+                  <div class="text-[12px] mt-1.5" style="color:hsl(var(--muted-foreground))"><span x-text="n.label"></span> · <span class="num font-semibold" style="color:hsl(var(--foreground))" x-text="n.count"></span></div>
+                  <div class="text-[11px] mt-1 leading-snug" :style="n.status==='block'?'color:hsl(var(--danger))':'color:hsl(var(--muted-foreground))'" x-text="n.note"></div>
+                </div>
+                <i class="fa fa-angle-right mx-1 text-[15px]" x-show="i<data.flow.length-1" style="color:hsl(var(--muted-foreground))"></i>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+          <!-- ④ 需老板介入事项 -->
+          <div class="card col-span-2" style="padding:16px 18px">
+            <div class="sec-title">
+              <span class="bar"></span>需老板介入事项
+              <span class="tag danger ml-1" style="padding:1px 7px" x-text="attentions.length + ' 项待处理'"></span>
+              <span class="text-[11.5px] font-normal ml-auto flex items-center gap-1.5" style="color:hsl(var(--muted-foreground))"><img src="image/bot.png" onerror="botFallback(this)" class="w-4 h-4 rounded object-cover">经营参谋主动推送</span>
+            </div>
+            <div class="space-y-2.5">
+              <template x-for="a in attentions" :key="a.title">
+                <div class="rounded-xl" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:12px 13px">
+                  <div class="flex items-start gap-2">
+                    <span class="tag flex-shrink-0 mt-0.5" :class="a.level" style="padding:2px 7px" x-text="a.level==='danger'?'高':'中'"></span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-[13.5px] font-semibold leading-snug" x-text="a.title"></div>
+                      <div class="text-[12px] mt-1.5 leading-relaxed" style="color:hsl(var(--muted-foreground))">
+                        <i class="fa fa-lightbulb mr-1" style="color:hsl(var(--warning))"></i><b style="color:hsl(var(--foreground))">为什么需要你：</b><span x-text="a.why"></span>
+                      </div>
+                      <div class="text-[12px] mt-1" style="color:hsl(var(--muted-foreground))"><i class="fa fa-flag mr-1" style="color:hsl(var(--primary))"></i><b style="color:hsl(var(--foreground))">建议动作：</b><span x-text="a.action"></span></div>
+                      <div class="mt-2 flex gap-2">
+                        <button class="btn-pri" style="height:28px;padding:0 12px;font-size:12px" @click="handleAttention(a)"><i class="fa fa-bolt mr-1"></i><span x-text="a.cta"></span></button>
+                        <button class="btn-ghost" style="height:28px;padding:0 12px;font-size:12px" @click="dismiss(a)">已知悉</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+              <div x-show="!attentions.length" class="text-center py-8 text-[13px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-circle-check mr-1.5" style="color:hsl(var(--success))"></i>暂无需您介入的事项，一切进展正常</div>
+            </div>
+          </div>
+
+          <!-- ⑤ 工作质量评估 -->
+          <div class="card" style="padding:16px 18px">
+            <div class="sec-title"><span class="bar"></span>工作质量评估</div>
+            <div class="text-[11.5px] mb-3" style="color:hsl(var(--muted-foreground))">AI 对各部门产出自动打分（防"假完成"）</div>
+            <div class="space-y-3">
+              <template x-for="q in data.quality" :key="q.dept">
+                <div class="cursor-pointer" @click="drillQuality(q)">
+                  <div class="flex items-center justify-between text-[12.5px] mb-1">
+                    <span x-text="q.dept"></span>
+                    <span class="num font-semibold" :style="q.level==='low'?'color:hsl(var(--danger))':'color:hsl(var(--foreground))'" x-text="q.score + '分'"></span>
+                  </div>
+                  <div class="prog"><i :style="'width:'+q.score+'%'+(q.level==='low'?';background:hsl(var(--danger))':'')"></i></div>
+                  <div class="text-[11px] mt-1" :style="q.level==='low'?'color:hsl(var(--danger))':'color:hsl(var(--muted-foreground))'">
+                    <i class="fa" :class="q.level==='low'?'fa-triangle-exclamation':'fa-circle-check'"></i> <span x-text="q.note"></span>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 右侧抽屉 -->
+<div x-show="drawerOpen" x-transition.opacity class="fixed inset-0 z-50" x-cloak>
+  <div class="absolute inset-0" style="background:hsl(0 0% 0% / 40%)" @click="drawerOpen=false"></div>
+  <aside class="absolute right-0 top-0 bottom-0 w-[460px] max-w-[94vw] overflow-y-auto msc"
+         style="background:hsl(var(--background));box-shadow:-6px 0 24px hsl(0 0% 0% / 12%)"
+         x-transition:enter="transition transform duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+         x-transition:leave="transition transform duration-300" x-transition:leave-start="translate-x-0" x-transition:leave-end="translate-x-full">
+    <header class="h-12 px-5 flex items-center sticky top-0 z-10" style="background:hsl(var(--background));box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+      <span class="text-[14px] font-semibold" x-text="drawerTitle"></span>
+      <button class="ml-auto w-7 h-7 rounded flex items-center justify-center text-[12px]" style="color:hsl(var(--muted-foreground))" @click="drawerOpen=false"><i class="fa fa-times"></i></button>
+    </header>
+    <div class="p-5 space-y-4" x-html="drawerContent"></div>
+  </aside>
+</div>
+
+<!-- Toast -->
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':t.type==='error'?'danger':t.type==='warn'?'warning':'primary')+'))'"
+         x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function cockpit(){
+  return {
+    data:{kpis:[],departments:[],flow:[],attentions:[],quality:[]},
+    attentions:[],
+    _kpiBase:[],
+    range:'month',
+    ranges:[{key:'today',label:'今日'},{key:'week',label:'本周'},{key:'month',label:'本月'},{key:'quarter',label:'本季度'}],
+    drawerOpen:false, drawerTitle:'', drawerContent:'',
+    toasts:[], _toastId:0, refreshing:false,
+    async init(){
+      try{ const r = await fetch('data/cockpit.json'); this.data = await r.json(); }
+      catch(e){ this.showToast('数据加载失败，请用本地服务打开','error'); return; }
+      this.attentions = this.data.attentions.slice();
+      this._kpiBase = this.data.kpis.map(k=>({...k}));
+    },
+    rangeCfg(){ return {today:{f:0.045,label:'今日',hint:'实时累计到当前时刻'},week:{f:0.24,label:'本周',hint:'周一至今'},month:{f:1,label:'本月',hint:'9 月 1 日至今'},quarter:{f:2.9,label:'本季度',hint:'第三季度累计'}}[this.range]; },
+    rangeLabel(){ return this.rangeCfg().label; },
+    rangeHint(){ return this.rangeCfg().hint; },
+    setRange(k){
+      if(this.range===k) return;
+      this.range=k; const f=this.rangeCfg().f;
+      // KPI 数值按时间范围缩放（百分比类不缩放）
+      this.data.kpis = this._kpiBase.map(k0=>{
+        const pctLike = (k0.unit==='%');
+        return {...k0, value: pctLike ? k0.value : Math.round(k0.value*f* (k0.value<100?10:1))/(k0.value<100?10:1) };
+      });
+      this.showToast('已切换统计范围：'+this.rangeCfg().label,'info');
+    },
+    fmt(k){ return k.value >= 10000 ? window.TC_FMT.thousands(k.value) : k.value; },
+    statusTag(s){ return s==='done'?'success':s==='normal'?'primary':s==='warn'?'warning':'danger'; },
+    statusText(s){ return s==='done'?'已完成':s==='normal'?'正常':s==='warn'?'预警':'卡点'; },
+    refresh(){ this.refreshing=true; setTimeout(()=>{ this.refreshing=false; this.showToast('数据已刷新','success'); },900); },
+    drillKpi(k){ this.openDrawer(k.label, `
+      <div class="text-[13px]" style="color:hsl(var(--muted-foreground))">${k.desc}</div>
+      <div class="rounded-xl mt-1" style="background:hsl(var(--primary) / 6%);padding:16px;text-align:center">
+        <div class="text-[32px] font-bold num">${this.fmt(k)} <span class="text-[14px]">${k.unit}</span></div>
+        <div class="text-[13px] mt-1 num" style="color:hsl(var(--${k.up?'success':'danger'}))">${k.up?'↑':'↓'} ${Math.abs(k.delta)}% 环比上月</div>
+      </div>
+      <div class="text-[12px]" style="color:hsl(var(--muted-foreground))">数据来源：AI 网关自动计量，实时归集到各部门与个人。</div>`); },
+    drillTask(d,t){ this.openDrawer('任务详情', `
+      <div class="text-[15px] font-semibold">${t.name}</div>
+      <div class="flex gap-4 text-[13px]"><span style="color:hsl(var(--muted-foreground))">部门</span><b>${d.name}</b><span style="color:hsl(var(--muted-foreground))">负责人</span><b>${t.owner}</b></div>
+      <div><div class="flex justify-between text-[12px] mb-1"><span style="color:hsl(var(--muted-foreground))">当前进度</span><b class="num">${t.progress}%</b></div>
+        <div class="prog"><i style="width:${t.progress}%"></i></div></div>
+      <div class="rounded-xl" style="background:hsl(var(--primary) / 6%);padding:12px">
+        <div class="text-[12px] font-semibold mb-1"><i class="fa fa-robot mr-1" style="color:hsl(var(--primary))"></i>智能体研判</div>
+        <div class="text-[12px]" style="color:hsl(var(--muted-foreground))">状态「${this.statusText(t.status)}」。${t.status==='block'?'该任务已停滞、阻塞下游，建议尽快协调。':t.status==='warn'?'进度偏慢，存在延期风险，建议关注。':'进展正常，无需干预。'}</div>
+      </div>`); },
+    drillFlow(n){ this.openDrawer(n.dept+' · 协同流转', `
+      <div class="text-[13px]">${n.label} · 当前 <b class="num">${n.count}</b> 项</div>
+      <div class="rounded-xl" style="background:hsl(var(--${n.status==='block'?'danger':n.status==='wait'?'warning':'primary'}) / 8%);padding:12px">
+        <div class="text-[12px]" style="color:hsl(var(--foreground))">${n.note}</div>
+      </div>
+      ${n.status==='block'?'<div class="text-[12px]" style="color:hsl(var(--muted-foreground))">这一棒卡住会连累后面所有环节——这正是"经营驾驶舱"要让您一眼看到的：不是单看某部门做没做完，而是看接力棒有没有顺畅传下去。</div>':'<div class="text-[12px]" style="color:hsl(var(--muted-foreground))">该环节流转正常。</div>'}`); },
+    drillQuality(q){ this.openDrawer(q.dept+' · 质量评估', `
+      <div class="rounded-xl" style="background:hsl(var(--primary) / 6%);padding:16px;text-align:center">
+        <div class="text-[36px] font-bold num" style="color:hsl(var(--${q.level==='low'?'danger':'success'}))">${q.score}</div>
+        <div class="text-[12px]" style="color:hsl(var(--muted-foreground))">AI 综合质量评分</div>
+      </div>
+      <div class="text-[13px]"><b>评价：</b>${q.note}</div>
+      ${q.level==='low'?'<div class="rounded-xl" style="background:hsl(var(--danger) / 8%);padding:12px"><div class="text-[12px] font-semibold" style="color:hsl(var(--danger))"><i class="fa fa-triangle-exclamation mr-1"></i>低分产出提示</div><div class="text-[12px] mt-1" style="color:hsl(var(--muted-foreground))">检测到 2 份方案缺少报价与实施周期，建议退回补充后再提交客户。</div></div>':'<div class="text-[12px]" style="color:hsl(var(--muted-foreground))">产出质量达标，无异常。</div>'}`); },
+    handleAttention(a){ this.showToast('已发起：'+a.cta+'，通知相关负责人','success'); this.dismiss(a); },
+    dismiss(a){ this.attentions = this.attentions.filter(x=>x.title!==a.title); },
+    openDrawer(t,c){ this.drawerTitle=t; this.drawerContent=c; this.drawerOpen=true; },
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

@@ -22,16 +22,109 @@
     { "model": "DeepSeek", "pct": 31, "cost": 26800, "note": "复杂推理、代码生成" },
     { "model": "豆包", "pct": 17, "cost": 20220, "note": "文案创意、多模态" }
   ],
+  "riskOverview": [
+    { "key": "irrelevant", "label": "工作无关内容", "icon": "fa-mug-hot", "count": 3, "desc": "调用内容与本职工作无关（写小说、闲聊、兼职副业等）" },
+    { "key": "leak", "label": "敏感数据外流", "icon": "fa-shield-halved", "count": 1, "desc": "客户名单/报价/病人信息等发给外部模型" },
+    { "key": "abnormal", "label": "异常使用量", "icon": "fa-chart-line", "count": 2, "desc": "非工作时间大量调用 / token 突增 / 疑似脚本刷接口" },
+    { "key": "sensitive", "label": "敏感话题合规", "icon": "fa-gavel", "count": 1, "desc": "涉及违规、泄密或政治敏感等合规红线内容" }
+  ],
   "detail": [
-    { "id": 1, "dept": "研发部", "user": "刘洋", "app": "代码模式", "model": "DeepSeek", "calls": 1840, "tokens": 9820000, "cost": 13240 },
-    { "id": 2, "dept": "研发部", "user": "郑宇", "app": "代码模式", "model": "DeepSeek", "calls": 1120, "tokens": 6180000, "cost": 8360 },
-    { "id": 3, "dept": "市场部", "user": "李蔓", "app": "专家广场", "model": "豆包", "calls": 2260, "tokens": 5240000, "cost": 7080 },
-    { "id": 4, "dept": "市场部", "user": "周颖", "app": "技能中心", "model": "豆包", "calls": 1480, "tokens": 3620000, "cost": 4890 },
-    { "id": 5, "dept": "销售部", "user": "陈刚", "app": "通用对话", "model": "自研大模型", "calls": 3120, "tokens": 4180000, "cost": 3760 },
-    { "id": 6, "dept": "销售部", "user": "王海", "app": "专家广场", "model": "自研大模型", "calls": 1960, "tokens": 2840000, "cost": 2560 },
-    { "id": 7, "dept": "售前部", "user": "赵敏", "app": "专家广场", "model": "DeepSeek", "calls": 980, "tokens": 4360000, "cost": 5880 },
-    { "id": 8, "dept": "售前部", "user": "孙磊", "app": "知识库", "model": "自研大模型", "calls": 640, "tokens": 1820000, "cost": 1640 },
-    { "id": 9, "dept": "工程部", "user": "吴强", "app": "通用对话", "model": "自研大模型", "calls": 1240, "tokens": 1680000, "cost": 1510 },
-    { "id": 10, "dept": "工程部", "user": "冯磊", "app": "知识库", "model": "自研大模型", "calls": 720, "tokens": 980000, "cost": 880 }
+    { "id": 1, "dept": "研发部", "user": "刘洋", "app": "代码模式", "model": "DeepSeek", "calls": 1840, "tokens": 9820000, "cost": 13240,
+      "workSummary": "试剂管理系统效期预警模块编码、代码重构与联调",
+      "compliance": "normal", "offWorkPct": 4,
+      "risks": [],
+      "timeline": [
+        { "date": "09-14", "items": [
+          { "time": "09:12", "app": "代码模式", "title": "生成效期预警定时任务框架代码", "tag": "work" },
+          { "time": "10:40", "app": "代码模式", "title": "重构库存扣减逻辑，修复并发问题", "tag": "work" },
+          { "time": "14:20", "app": "通用对话", "title": "查询 Cron 表达式写法", "tag": "work" },
+          { "time": "16:05", "app": "代码模式", "title": "为预警模块补充单元测试", "tag": "work" }
+        ]},
+        { "date": "09-13", "items": [
+          { "time": "09:30", "app": "代码模式", "title": "对接检验设备数据采集接口", "tag": "work" },
+          { "time": "15:10", "app": "知识库", "title": "检索网关协议对接文档", "tag": "work" }
+        ]}
+      ] },
+    { "id": 2, "dept": "研发部", "user": "郑宇", "app": "代码模式", "model": "DeepSeek", "calls": 1120, "tokens": 6180000, "cost": 8360,
+      "workSummary": "检验设备数据采集网关协议对接、调试脚本生成",
+      "compliance": "warn", "offWorkPct": 22,
+      "risks": [
+        { "type": "abnormal", "level": "warning", "title": "非工作时间调用占比 22%", "detail": "近 7 天有 3 个夜间时段（23:00 后）出现连续高频调用，单时段最高 180 次，疑似批量测试或脚本刷用。" }
+      ],
+      "timeline": [
+        { "date": "09-14", "items": [
+          { "time": "09:45", "app": "代码模式", "title": "调试数据采集网关握手协议", "tag": "work" },
+          { "time": "14:30", "app": "代码模式", "title": "生成设备联调测试脚本", "tag": "work" },
+          { "time": "23:18", "app": "代码模式", "title": "夜间连续调用 180 次（疑似脚本刷用）", "tag": "abnormal" },
+          { "time": "23:52", "app": "代码模式", "title": "夜间高频调用持续", "tag": "abnormal" }
+        ]},
+        { "date": "09-13", "items": [
+          { "time": "10:20", "app": "代码模式", "title": "网关协议字段映射编码", "tag": "work" },
+          { "time": "01:07", "app": "代码模式", "title": "凌晨批量调用（异常时段）", "tag": "abnormal" }
+        ]}
+      ] },
+    { "id": 3, "dept": "市场部", "user": "李蔓", "app": "专家广场", "model": "豆包", "calls": 2260, "tokens": 5240000, "cost": 7080,
+      "workSummary": "骨科新品发布会文案、邀请函、宣传视频脚本创作",
+      "compliance": "danger", "offWorkPct": 31,
+      "risks": [
+        { "type": "irrelevant", "level": "danger", "title": "疑似用于个人副业写作", "detail": "检测到 42 次调用主题为「都市言情小说续写」「短视频带货脚本（美妆类）」，与骨科市场岗位无关，累计消耗 68 万 token。" },
+        { "type": "abnormal", "level": "warning", "title": "token 消耗为同岗位 2.1 倍", "detail": "月 token 消耗显著高于市场部其他成员，主要由无关内容贡献。" }
+      ],
+      "timeline": [
+        { "date": "09-14", "items": [
+          { "time": "09:20", "app": "专家广场", "title": "撰写骨科新品发布会邀请函", "tag": "work" },
+          { "time": "11:05", "app": "专家广场", "title": "都市言情小说第 12 章续写", "tag": "irrelevant" },
+          { "time": "14:15", "app": "专家广场", "title": "微创手术产品线宣传脚本", "tag": "work" },
+          { "time": "15:40", "app": "专家广场", "title": "美妆带货短视频脚本（个人副业）", "tag": "irrelevant" },
+          { "time": "17:30", "app": "专家广场", "title": "小说人物设定扩写", "tag": "irrelevant" }
+        ]},
+        { "date": "09-13", "items": [
+          { "time": "10:10", "app": "专家广场", "title": "行业月度舆情简报文案", "tag": "work" },
+          { "time": "16:22", "app": "专家广场", "title": "言情小说番外创作", "tag": "irrelevant" }
+        ]}
+      ] },
+    { "id": 4, "dept": "市场部", "user": "周颖", "app": "技能中心", "model": "豆包", "calls": 1480, "tokens": 3620000, "cost": 4890,
+      "workSummary": "行业舆情简报生成、月报 PDF 导出、竞品资料整理",
+      "compliance": "normal", "offWorkPct": 6,
+      "risks": [] },
+    { "id": 5, "dept": "销售部", "user": "陈刚", "app": "通用对话", "model": "自研大模型", "calls": 3120, "tokens": 4180000, "cost": 3760,
+      "workSummary": "三甲医院采购决策链梳理、客户跟单话术、回访纪要",
+      "compliance": "normal", "offWorkPct": 9,
+      "risks": [] },
+    { "id": 6, "dept": "销售部", "user": "王海", "app": "专家广场", "model": "自研大模型", "calls": 1960, "tokens": 2840000, "cost": 2560,
+      "workSummary": "经销商返利政策测算、招投标文件要点提取",
+      "compliance": "normal", "offWorkPct": 7,
+      "risks": [] },
+    { "id": 7, "dept": "售前部", "user": "赵敏", "app": "专家广场", "model": "DeepSeek", "calls": 980, "tokens": 4360000, "cost": 5880,
+      "workSummary": "省人民医院检验科解决方案撰写、投标技术应答",
+      "compliance": "danger", "offWorkPct": 12,
+      "risks": [
+        { "type": "leak", "level": "danger", "title": "敏感数据发往外部模型", "detail": "1 次调用将含「客户完整采购清单、报价明细、院方联系人」的文档粘贴给外部模型 DeepSeek，触发数据外流拦截规则，已由网关自动脱敏并告警。" }
+      ],
+      "timeline": [
+        { "date": "09-14", "items": [
+          { "time": "09:35", "app": "专家广场", "title": "省人民医院检验科方案框架撰写", "tag": "work" },
+          { "time": "11:20", "app": "专家广场", "title": "粘贴客户采购清单+报价发往外部模型", "tag": "leak" },
+          { "time": "14:50", "app": "专家广场", "title": "投标技术应答文档润色", "tag": "work" },
+          { "time": "16:40", "app": "知识库", "title": "检索同类医院中标案例", "tag": "work" }
+        ]},
+        { "date": "09-13", "items": [
+          { "time": "10:05", "app": "专家广场", "title": "检验科需求调研纪要整理", "tag": "work" }
+        ]}
+      ] },
+    { "id": 8, "dept": "售前部", "user": "孙磊", "app": "知识库", "model": "自研大模型", "calls": 640, "tokens": 1820000, "cost": 1640,
+      "workSummary": "网关协议对接文档检索、内镜中心方案资料查询",
+      "compliance": "normal", "offWorkPct": 5,
+      "risks": [] },
+    { "id": 9, "dept": "工程部", "user": "吴强", "app": "通用对话", "model": "自研大模型", "calls": 1240, "tokens": 1680000, "cost": 1510,
+      "workSummary": "检验流水线现场实施记录、设备验收文档整理",
+      "compliance": "warn", "offWorkPct": 3,
+      "risks": [
+        { "type": "sensitive", "level": "warning", "title": "命中合规敏感词", "detail": "2 次调用内容命中合规词库（涉及对第三方厂商的负面不实评价），已标记待人工复核，未造成外发。" }
+      ] },
+    { "id": 10, "dept": "工程部", "user": "冯磊", "app": "知识库", "model": "自研大模型", "calls": 720, "tokens": 980000, "cost": 880,
+      "workSummary": "县域医共体设备巡检手册查询、验收标准检索",
+      "compliance": "normal", "offWorkPct": 4,
+      "risks": [] }
   ]
 }

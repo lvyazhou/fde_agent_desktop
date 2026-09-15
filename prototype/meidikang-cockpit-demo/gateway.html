@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI网关·成本 - 美迪康一体化AI办公平台</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<script src="js/charts.js"></script>
+<style>
+:root{
+  --primary: 214 95% 44%; --background: 0 0% 100%; --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%; --border: 213 32% 88%;
+  --success: 160 84% 33%; --warning: 32 88% 40%; --danger: 352 68% 48%; --info: 214 15% 50%;
+  --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 3%, hsl(var(--background))) 100%);
+  --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
+  --shadow-card: 0 4px 14px hsl(var(--primary) / 7%);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --background: 214 40% 11%; --foreground: 210 40% 94%; --muted-foreground: 213 22% 68%; --border: 213 28% 26%; --success: 158 60% 45%;
+    --card-bg: linear-gradient(110deg, color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0%, hsl(var(--background)) 58%, color-mix(in srgb, hsl(var(--primary)) 8%, hsl(var(--background))) 100%);
+    --chrome-bg: color-mix(in srgb, hsl(var(--background)) 74%, hsl(var(--primary)) 8%); --shadow-card: 0 4px 14px hsl(0 0% 0% / 25%); }
+}
+@media (prefers-reduced-motion: reduce){ *{transition:none!important;animation:none!important} }
+*{box-sizing:border-box}
+body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(var(--foreground)); height:100vh; overflow:hidden;
+  background: linear-gradient(100deg, hsl(var(--primary) / 12%) 0%, hsl(var(--primary) / 4%) 38%, transparent 62%, hsl(var(--primary) / 4%) 100%) fixed hsl(var(--background)); }
+.num{font-variant-numeric:tabular-nums}
+.msc::-webkit-scrollbar{width:6px;height:6px} .msc::-webkit-scrollbar-thumb{background:hsl(var(--border));border-radius:3px}
+.card{background:var(--card-bg);border:1px solid hsl(var(--border));border-radius:12px;box-shadow:var(--shadow-card)}
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:12px;font-weight:600;white-space:nowrap}
+.tag.primary{color:hsl(var(--primary));background:hsl(var(--primary) / 10%)}
+.tag.success{color:hsl(var(--success));background:color-mix(in srgb,hsl(var(--success)) 12%,hsl(var(--background)))}
+.btn-ghost{height:32px;padding:0 14px;border:1px solid hsl(var(--border));border-radius:8px;cursor:pointer;font-size:13px;color:hsl(var(--muted-foreground));background:hsl(var(--background))}
+.app-shell{height:100vh;display:flex;flex-direction:column}
+.title-bar{height:40px;flex-shrink:0;display:flex;align-items:center;padding:0 14px;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.35);box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.traffic{display:flex;gap:8px;margin-right:16px} .traffic i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.traffic .c-close{background:#ff5f57} .traffic .c-min{background:#febc2e} .traffic .c-max{background:#28c840}
+.title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
+.body-row{flex:1;display:flex;min-height:0}
+.side-rail{width:200px;flex-shrink:0;background:var(--chrome-bg);backdrop-filter:blur(14px) saturate(1.3);box-shadow:inset -1px 0 0 hsl(var(--border) / 70%);display:flex;flex-direction:column;padding:14px 10px}
+.rail-item{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;font-size:13.5px;color:hsl(var(--muted-foreground));text-decoration:none;cursor:pointer;margin-bottom:3px;transition:background .15s}
+.rail-item i{width:18px;text-align:center;font-size:15px}
+.rail-item:hover{background:hsl(var(--primary) / 6%);color:hsl(var(--primary))}
+.rail-item.active{background:hsl(var(--primary) / 12%);color:hsl(var(--primary));font-weight:600}
+.rail-sep{margin:10px 12px 6px;font-size:11px;color:hsl(var(--muted-foreground));opacity:.7;letter-spacing:1px}
+.content{flex:1;overflow-y:auto;min-width:0} .pad{padding:18px 22px}
+.sec-title{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:600;margin-bottom:11px}
+.sec-title .bar{width:3px;height:15px;border-radius:2px;background:hsl(var(--primary))}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;font-size:12px;font-weight:600;color:hsl(var(--muted-foreground));text-align:left;background:hsl(var(--primary) / 4%);white-space:nowrap}
+td{padding:10px 14px;font-size:13px;border-top:1px solid hsl(var(--border) / 70%)}
+tbody tr{cursor:pointer} tbody tr:hover td{background:hsl(var(--primary) / 4%)}
+[x-cloak]{display:none!important}
+</style>
+</head>
+<body x-data="gw()" x-init="init()">
+<div class="app-shell">
+  <div class="title-bar">
+    <div class="traffic"><i class="c-close"></i><i class="c-min"></i><i class="c-max"></i></div>
+    <div class="app-name"><img src="image/icon.png" onerror="botFallback(this)">美迪康一体化 AI 办公平台</div>
+    <div class="ml-auto flex items-center gap-4 text-[12px]" style="color:hsl(var(--muted-foreground))">
+      <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full" style="background:hsl(var(--success))"></span>智能体在线</span>
+      <span><i class="fa fa-user-circle mr-1"></i>王总 · 董事长</span>
+    </div>
+  </div>
+  <div class="body-row">
+    <nav class="side-rail">
+      <a class="rail-item" href="index.html"><i class="fa fa-gauge-high"></i>经营驾驶舱</a>
+      <a class="rail-item" href="workbench.html"><i class="fa fa-grip"></i>统一工作台</a>
+      <a class="rail-item active" href="gateway.html"><i class="fa fa-network-wired"></i>AI 网关 · 成本</a>
+      <div class="rail-sep">系统</div>
+      <a class="rail-item" @click="showToast('设置模块为演示占位','info')"><i class="fa fa-gear"></i>设置</a>
+      <div class="mt-auto card" style="padding:11px 12px">
+        <div class="text-[12px] flex items-center gap-2" style="color:hsl(var(--muted-foreground))">
+          <img src="image/bot.png" onerror="botFallback(this)" class="w-7 h-7 rounded-lg object-cover">
+          <div><div class="font-semibold" style="color:hsl(var(--foreground))">经营参谋</div><div>正在为您盯盘</div></div>
+        </div>
+      </div>
+    </nav>
+    <div class="content msc">
+      <div class="pad space-y-5">
+        <div class="flex items-end justify-between">
+          <div>
+            <div class="text-[20px] font-bold">AI 网关 · 成本与行为审计</div>
+            <div class="text-[12.5px] mt-0.5" style="color:hsl(var(--muted-foreground))">所有 AI 调用必经网关 · 钱花在哪、每人做了什么、有没有违规，一屏看清</div>
+          </div>
+          <button class="btn-ghost" @click="exportData()"><i class="fa fa-download mr-1.5" :class="exporting?'fa-spin fa-spinner':''"></i>导出成本明细</button>
+        </div>
+
+        <!-- 汇总卡 -->
+        <div class="grid grid-cols-4 gap-3">
+          <template x-for="s in summary" :key="s.label">
+            <div class="card" style="padding:14px 16px">
+              <div class="text-[12px]" style="color:hsl(var(--muted-foreground))" x-text="s.label"></div>
+              <div class="text-[22px] font-bold num mt-1.5" x-text="s.value"></div>
+              <div class="text-[11.5px] mt-1 num" :style="'color:hsl(var(--'+(s.up?'success':'danger')+'))'">
+                <i class="fa" :class="s.up?'fa-arrow-up':'fa-arrow-down'"></i> <span x-text="Math.abs(s.delta)+'%'"></span> <span style="color:hsl(var(--muted-foreground))">环比</span>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- 趋势 + 模型分布 -->
+        <div class="grid grid-cols-3 gap-4">
+          <div class="card col-span-2" style="padding:16px 18px">
+            <div class="sec-title"><span class="bar"></span>Token 用量与成本趋势<span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">近 14 天</span></div>
+            <div id="trendChart" style="height:260px"></div>
+          </div>
+          <div class="card" style="padding:16px 18px">
+            <div class="sec-title"><span class="bar"></span>按模型分布</div>
+            <div id="modelChart" style="height:200px"></div>
+            <div class="space-y-1.5 mt-2">
+              <template x-for="m in byModel" :key="m.model">
+                <div class="text-[11.5px] flex items-start gap-1.5" style="color:hsl(var(--muted-foreground))">
+                  <i class="fa fa-circle text-[7px] mt-1" style="color:hsl(var(--primary))"></i>
+                  <span><b style="color:hsl(var(--foreground))" x-text="m.model"></b> · <span x-text="m.note"></span></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- 部门排行 -->
+        <div class="card" style="padding:16px 18px">
+          <div class="sec-title"><span class="bar"></span>各部门 Token 消耗排行</div>
+          <div id="deptChart" style="height:200px"></div>
+        </div>
+
+        <!-- 风险概览 -->
+        <div class="card" style="padding:16px 18px">
+          <div class="sec-title"><span class="bar"></span>行为风险概览<span class="text-[11.5px] font-normal ml-auto flex items-center gap-1.5" style="color:hsl(var(--muted-foreground))"><img src="image/bot.png" onerror="botFallback(this)" class="w-4 h-4 rounded object-cover">合规智能体在每次调用时自动研判</span></div>
+          <div class="grid grid-cols-4 gap-3">
+            <template x-for="r in riskOverview" :key="r.key">
+              <div class="rounded-xl cursor-pointer transition-transform hover:-translate-y-0.5" style="border:1px solid hsl(var(--border));padding:13px 14px" :style="r.count>0?'background:color-mix(in srgb,hsl(var(--danger)) 5%,hsl(var(--background)))':'background:hsl(var(--primary) / 4%)'" @click="riskFilter=r.key;page=1;showToast('已筛选：'+r.label,'info')">
+                <div class="flex items-center justify-between">
+                  <span class="w-8 h-8 rounded-lg flex items-center justify-center" :style="r.count>0?'background:color-mix(in srgb,hsl(var(--danger)) 12%,hsl(var(--background)));color:hsl(var(--danger))':'background:hsl(var(--primary) / 10%);color:hsl(var(--primary))'"><i class="fa" :class="r.icon"></i></span>
+                  <span class="text-[26px] font-bold num" :style="r.count>0?'color:hsl(var(--danger))':'color:hsl(var(--foreground))'" x-text="r.count"></span>
+                </div>
+                <div class="text-[13px] font-semibold mt-2" x-text="r.label"></div>
+                <div class="text-[11px] mt-0.5 leading-snug" style="color:hsl(var(--muted-foreground))" x-text="r.desc"></div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- 人员行为审计明细 -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="flex items-center justify-between flex-wrap gap-2" style="padding:14px 18px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+            <div class="sec-title" style="margin:0"><span class="bar"></span>人员行为审计<span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">每人做了什么、消耗多少、有没有违规——点行看详情</span></div>
+            <div class="flex items-center gap-2">
+              <span x-show="riskFilter" class="tag danger cursor-pointer" style="padding:2px 8px" @click="riskFilter='';page=1"><i class="fa fa-filter text-[10px]"></i> <span x-text="riskLabel(riskFilter)"></span> ✕</span>
+              <select class="btn-ghost" style="padding:0 10px" x-model="deptFilter" @change="page=1">
+                <option value="">全部部门</option>
+                <template x-for="d in depts" :key="d"><option :value="d" x-text="d"></option></template>
+              </select>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr><th>成员</th><th>部门</th><th>主要工作内容</th><th style="text-align:right">调用次数</th><th style="text-align:right">Token</th><th style="text-align:right">成本(元)</th><th style="text-align:center">合规</th></tr></thead>
+              <tbody>
+                <template x-for="r in paged()" :key="r.id">
+                  <tr @click="drill(r)">
+                    <td>
+                      <div class="flex items-center gap-2">
+                        <span class="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-semibold flex-shrink-0" style="background:hsl(var(--primary) / 10%);color:hsl(var(--primary))" x-text="r.user.slice(0,1)"></span>
+                        <span x-text="r.user"></span>
+                      </div>
+                    </td>
+                    <td style="color:hsl(var(--muted-foreground))" x-text="r.dept"></td>
+                    <td style="max-width:220px"><span class="block truncate text-[12.5px]" style="color:hsl(var(--muted-foreground))" :title="r.workSummary" x-text="r.workSummary"></span></td>
+                    <td style="text-align:right" class="num" x-text="fmt(r.calls)"></td>
+                    <td style="text-align:right" class="num" x-text="(r.tokens/10000).toFixed(0)+' 万'"></td>
+                    <td style="text-align:right" class="num font-semibold" x-text="'¥'+fmt(r.cost)"></td>
+                    <td style="text-align:center">
+                      <span class="tag" :class="compTag(r.compliance)" style="padding:2px 8px" x-text="compText(r)"></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex items-center justify-between" style="padding:12px 18px;box-shadow:inset 0 1px 0 hsl(var(--border) / 70%)">
+            <span class="text-[12px]" style="color:hsl(var(--muted-foreground))">共 <b class="num" x-text="filtered().length"></b> 人 · <b class="num" style="color:hsl(var(--danger))" x-text="riskyCount()"></b> 人存在风险</span>
+            <div class="flex items-center gap-1.5">
+              <button class="btn-ghost" style="min-width:32px;padding:0 8px" :disabled="page<=1" @click="page--"><i class="fa fa-chevron-left text-[11px]"></i></button>
+              <span class="text-[12px] num px-2" x-text="page + ' / ' + totalPages()"></span>
+              <button class="btn-ghost" style="min-width:32px;padding:0 8px" :disabled="page>=totalPages()" @click="page++"><i class="fa fa-chevron-right text-[11px]"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 抽屉 -->
+<div x-show="drawerOpen" x-transition.opacity class="fixed inset-0 z-50" x-cloak>
+  <div class="absolute inset-0" style="background:hsl(0 0% 0% / 40%)" @click="drawerOpen=false"></div>
+  <aside class="absolute right-0 top-0 bottom-0 w-[440px] max-w-[94vw] overflow-y-auto msc"
+         style="background:hsl(var(--background));box-shadow:-6px 0 24px hsl(0 0% 0% / 12%)"
+         x-transition:enter="transition transform duration-300" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0">
+    <header class="h-12 px-5 flex items-center sticky top-0 z-10" style="background:hsl(var(--background));box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)">
+      <span class="text-[14px] font-semibold" x-text="drawerTitle"></span>
+      <button class="ml-auto w-7 h-7 rounded flex items-center justify-center text-[12px]" style="color:hsl(var(--muted-foreground))" @click="drawerOpen=false"><i class="fa fa-times"></i></button>
+    </header>
+    <div class="p-5 space-y-4" x-html="drawerContent"></div>
+  </aside>
+</div>
+
+<!-- Toast -->
+<div class="fixed top-12 right-5 z-[9999] space-y-2">
+  <template x-for="t in toasts" :key="t.id">
+    <div class="px-4 py-2.5 rounded-lg text-white text-[13px]" style="box-shadow:0 6px 18px hsl(0 0% 0% / 18%)"
+         :style="'background:hsl(var(--'+(t.type==='success'?'success':t.type==='error'?'danger':t.type==='warn'?'warning':'primary')+'))'"
+         x-text="t.message" x-show="!t.removing" x-transition></div>
+  </template>
+</div>
+
+<script>
+function gw(){
+  return {
+    summary:[], trend:{}, byDept:[], byModel:[], detail:[], riskOverview:[],
+    deptFilter:'', riskFilter:'', page:1, pageSize:7, exporting:false,
+    drawerOpen:false, drawerTitle:'', drawerContent:'', toasts:[], _toastId:0,
+    get depts(){ return [...new Set(this.detail.map(r=>r.dept))]; },
+    async init(){
+      try{ const r=await fetch('data/gateway.json'); const d=await r.json();
+        this.summary=d.summary; this.trend=d.trend; this.byDept=d.byDept; this.byModel=d.byModel; this.detail=d.detail; this.riskOverview=d.riskOverview||[];
+      }catch(e){ this.showToast('数据加载失败，请用本地服务打开','error'); return; }
+      this.$nextTick(()=>this.renderCharts());
+    },
+    fmt(v){ return window.TC_FMT.thousands(v); },
+    riskLabel(k){ const m=this.riskOverview.find(x=>x.key===k); return m?m.label:''; },
+    filtered(){
+      let list = this.deptFilter ? this.detail.filter(r=>r.dept===this.deptFilter) : this.detail;
+      if(this.riskFilter) list = list.filter(r=>(r.risks||[]).some(x=>x.type===this.riskFilter));
+      return list;
+    },
+    riskyCount(){ return this.detail.filter(r=>(r.risks||[]).length>0).length; },
+    compTag(c){ return c==='normal'?'success':c==='warn'?'warning':'danger'; },
+    compText(r){ const n=(r.risks||[]).length; return r.compliance==='normal'?'正常':(n+' 项风险'); },
+    totalPages(){ return Math.max(1, Math.ceil(this.filtered().length/this.pageSize)); },
+    paged(){ const s=(this.page-1)*this.pageSize; return this.filtered().slice(s,s+this.pageSize); },
+    renderCharts(){
+      const C=window.TC_COLORS, E=window.TC_ECHARTS;
+      const t=echarts.init(document.getElementById('trendChart'));
+      t.setOption({ tooltip:E.tooltip(), legend:E.legend({data:['Token(万)','成本(元)']}), grid:E.grid({right:52}),
+        xAxis:{type:'category',data:this.trend.days,...E.axis()},
+        yAxis:[{type:'value',name:'Token(万)',...E.axis()},{type:'value',name:'成本',...E.axis({splitLine:{show:false}})}],
+        series:[
+          {name:'Token(万)',type:'line',smooth:true,data:this.trend.tokens,itemStyle:{color:C.primary},areaStyle:{color:C.palette[5]},lineStyle:{width:2.5}},
+          {name:'成本(元)',type:'line',smooth:true,yAxisIndex:1,data:this.trend.cost,itemStyle:{color:C.palette[2]},lineStyle:{width:2,type:'dashed'}}
+        ]});
+      const m=echarts.init(document.getElementById('modelChart'));
+      m.setOption({ tooltip:{trigger:'item',formatter:'{b}: {d}%'},
+        series:[{type:'pie',radius:['52%','78%'],center:['50%','50%'],avoidLabelOverlap:true,
+          label:{formatter:'{b}\n{d}%',fontSize:11,color:C.textSub},
+          data:this.byModel.map((x,i)=>({name:x.model,value:x.pct,itemStyle:{color:C.palette[i]}}))}]});
+      const d=echarts.init(document.getElementById('deptChart'));
+      const dd=[...this.byDept].sort((a,b)=>a.tokens-b.tokens);
+      d.setOption({ tooltip:E.tooltip({formatter:p=>p[0].name+'：'+window.TC_FMT.thousands(p[0].value)+' （'+dd[p[0].dataIndex].pct+'%）'}), grid:E.grid({left:70}),
+        xAxis:{type:'value',...E.axis()}, yAxis:{type:'category',data:dd.map(x=>x.dept),...E.axis({splitLine:{show:false}})},
+        series:[{type:'bar',data:dd.map((x,i)=>({value:x.tokens,itemStyle:{color:C.palette[i],borderRadius:[0,4,4,0]}})),barWidth:'52%',
+          label:{show:true,position:'right',formatter:p=>window.TC_FMT.thousands(p.value),fontSize:11,color:C.textSub}}]});
+      window.addEventListener('resize',()=>{t.resize();m.resize();d.resize();});
+    },
+    drill(r){ this.drawerTitle=r.user+' · 行为审计';
+      const risksHtml = (r.risks||[]).length ? (r.risks||[]).map(x=>{
+        const c = x.level==='danger'?'danger':'warning';
+        return `<div class="rounded-xl" style="background:color-mix(in srgb,hsl(var(--${c})) 7%,hsl(var(--background)));border:1px solid color-mix(in srgb,hsl(var(--${c})) 30%,hsl(var(--background)));padding:11px 12px">
+          <div class="flex items-center gap-2"><span class="tag ${c}" style="padding:1px 7px">${x.level==='danger'?'高危':'关注'}</span><b class="text-[13px]">${x.title}</b></div>
+          <div class="text-[12px] mt-1.5 leading-relaxed" style="color:hsl(var(--muted-foreground))">${x.detail}</div>
+        </div>`; }).join('') :
+        `<div class="rounded-xl text-center" style="background:hsl(var(--success) / 8%);padding:16px"><i class="fa fa-circle-check text-[22px]" style="color:hsl(var(--success))"></i><div class="text-[13px] mt-1.5" style="color:hsl(var(--success))">该成员行为合规，未发现风险</div></div>`;
+      this.drawerContent=`
+        <div class="rounded-xl" style="background:hsl(var(--primary) / 6%);padding:12px">
+          <div class="text-[12px]" style="color:hsl(var(--muted-foreground))">主要工作内容（合规智能体自动归纳）</div>
+          <div class="text-[13.5px] font-medium mt-1">${r.workSummary}</div>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="rounded-lg" style="background:hsl(var(--primary) / 5%);padding:10px"><div class="text-[11px]" style="color:hsl(var(--muted-foreground))">调用次数</div><div class="text-[16px] font-bold num">${this.fmt(r.calls)}</div></div>
+          <div class="rounded-lg" style="background:hsl(var(--primary) / 5%);padding:10px"><div class="text-[11px]" style="color:hsl(var(--muted-foreground))">Token</div><div class="text-[16px] font-bold num">${(r.tokens/10000).toFixed(0)}万</div></div>
+          <div class="rounded-lg" style="background:hsl(var(--primary) / 5%);padding:10px"><div class="text-[11px]" style="color:hsl(var(--muted-foreground))">成本</div><div class="text-[16px] font-bold num" style="color:hsl(var(--primary))">¥${this.fmt(r.cost)}</div></div>
+        </div>
+        <div class="flex items-center justify-between text-[12px]" style="color:hsl(var(--muted-foreground))">
+          <span>常用应用：<b style="color:hsl(var(--foreground))">${r.app}</b></span>
+          <span>主用模型：<b style="color:hsl(var(--foreground))">${r.model}</b></span>
+          <span>非工作时段占比：<b style="color:hsl(var(--${r.offWorkPct>=20?'danger':r.offWorkPct>=10?'warning':'foreground'}))">${r.offWorkPct}%</b></span>
+        </div>
+        <div class="text-[13px] font-semibold pt-1"><i class="fa fa-clock-rotate-left mr-1.5" style="color:hsl(var(--primary))"></i>每日工作时间线</div>
+        ${this.timelineHtml(r)}
+        <div class="text-[13px] font-semibold pt-1"><i class="fa fa-shield-halved mr-1.5" style="color:hsl(var(--primary))"></i>合规风险研判</div>
+        ${risksHtml}
+        ${(r.risks||[]).length?`<div class="flex gap-2 pt-1"><button class="btn-pri" style="flex:1;height:34px" onclick="event.stopPropagation()">通知本人核实</button><button class="btn-ghost" style="flex:1;height:34px" onclick="event.stopPropagation()">标记已复核</button></div>`:''}
+        <div class="text-[11.5px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-lock mr-1"></i>仅展示行为摘要与风险标签，不留存调用原文；数据不出域，符合医疗行业合规要求。</div>`;
+      this.drawerOpen=true; },
+    timelineHtml(r){
+      let days = r.timeline;
+      if(!days || !days.length){ days = [{ date:'09-14', items:[{ time:'—', app:r.app, title:r.workSummary, tag:'work' }] }]; }
+      const tagColor = t => t==='work'?'primary':t==='leak'||t==='sensitive'||t==='irrelevant'?'danger':'warning';
+      const tagText = t => ({work:'工作',irrelevant:'无关',leak:'外流',abnormal:'异常',sensitive:'敏感'})[t]||'工作';
+      return days.map(d=>`
+        <div class="rounded-xl" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:11px 13px">
+          <div class="text-[12px] font-semibold mb-2" style="color:hsl(var(--muted-foreground))"><i class="fa fa-calendar-day mr-1"></i>${d.date}</div>
+          <div style="position:relative;padding-left:14px">
+            <div style="position:absolute;left:3px;top:4px;bottom:4px;width:1.5px;background:hsl(var(--border))"></div>
+            ${d.items.map(it=>{ const c=tagColor(it.tag); return `
+              <div style="position:relative;padding-bottom:10px">
+                <span style="position:absolute;left:-14px;top:4px;width:7px;height:7px;border-radius:50%;background:hsl(var(--${c}));box-shadow:0 0 0 2px hsl(var(--background))"></span>
+                <div class="flex items-center gap-2">
+                  <span class="num text-[12px] font-semibold" style="color:hsl(var(--foreground))">${it.time}</span>
+                  <span class="tag ${c}" style="padding:0 6px;font-size:11px">${tagText(it.tag)}</span>
+                  <span class="text-[11px]" style="color:hsl(var(--muted-foreground))">${it.app}</span>
+                </div>
+                <div class="text-[12.5px] mt-0.5 leading-snug" style="color:${it.tag==='work'?'hsl(var(--foreground))':'hsl(var(--'+c+'))'}">${it.title}</div>
+              </div>`; }).join('')}
+          </div>
+        </div>`).join('');
+    },
+    exportData(){ this.exporting=true; setTimeout(()=>{ this.exporting=false; this.showToast('成本明细已导出（演示）','success'); },1000); },
+    showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});
+      setTimeout(()=>{ const t=this.toasts.find(x=>x.id===id); if(t)t.removing=true; setTimeout(()=>{this.toasts=this.toasts.filter(x=>x.id!==id)},300); },2500); }
+  };
+}
+</script>
+</body>
+</html>

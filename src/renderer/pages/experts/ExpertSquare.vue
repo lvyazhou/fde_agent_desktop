@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full min-h-0 es-bg">
     <!-- ── 左侧:应用分类树 ────────────────────────── -->
-    <aside class="es-tree shrink-0 flex flex-col bg-white/95 backdrop-blur border-r border-slate-200/70">
+    <aside class="es-tree shrink-0 flex flex-col border-r">
       <div class="px-3 pt-3.5 pb-2.5 border-b border-slate-100">
         <div class="flex items-center gap-2 mb-2.5">
           <span class="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
@@ -1322,12 +1322,9 @@ async function openAssetDir(type) {
 
 <style scoped>
 .es-bg {
-  background:
-    radial-gradient(900px 500px at 100% 0%, rgba(37, 99, 235, 0.06), transparent 60%),
-    radial-gradient(700px 400px at 0% 100%, rgba(14, 165, 233, 0.05), transparent 55%),
-    #f4f7fb;
+  background: var(--color-content-bg);
 }
-.es-tree { width: 240px; }
+.es-tree { width: 240px; background: #ffffff !important; border-color: var(--color-sidebar-border) !important; }
 
 .es-grid {
   display: grid;
@@ -1365,14 +1362,13 @@ async function openAssetDir(type) {
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.15s;
 }
-.tree-node:hover { background: #f0f5ff; color: #2563eb; }
+.tree-node:hover { background: var(--color-sidebar-elevated); color: #111827; }
 .tree-node:hover .tree-badge { transform: scale(1.06); }
 .tree-node:active { transform: scale(0.97); }
 .tree-node--active {
-  background: linear-gradient(90deg, #e8f1ff, #f3f8ff);
-  color: #1d4ed8;
+  background: var(--color-sidebar-elevated);
+  color: #111827;
   font-weight: 600;
-  box-shadow: inset 3px 0 0 #2563eb;
 }
 .tree-badge {
   width: 20px;
@@ -1394,7 +1390,7 @@ async function openAssetDir(type) {
   padding: 1px 7px;
   flex-shrink: 0;
 }
-.tree-node--active .tree-count { color: #2563eb; background: #dbeafe; }
+.tree-node--active .tree-count { color: #111827; background: #dcdcd8; }
 
 .stat-card {
   display: flex;

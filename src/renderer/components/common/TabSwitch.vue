@@ -1,12 +1,12 @@
 <template>
-  <div class="inline-flex bg-[#e2e8e5] rounded-full p-1 border border-slate-200/70">
+  <div class="inline-flex bg-slate-100 rounded-full p-1 border border-slate-200/70">
     <button
       v-for="tab in tabs"
       :key="tab.value"
       class="px-4 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5"
       :class="modelValue === tab.value
         ? 'bg-white text-slate-900 shadow-sm'
-        : 'text-slate-600 hover:text-slate-900'"
+        : 'text-slate-500 hover:text-slate-900'"
       @click="$emit('update:modelValue', tab.value)"
     >
       {{ tab.label }}

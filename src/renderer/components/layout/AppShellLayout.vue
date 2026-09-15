@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen h-screen flex flex-col bg-[#f5f7fa] font-sans text-slate-800 antialiased overflow-hidden">
+  <div class="app-root">
     <!-- 授权到期遮罩:过了 expire_at(缓冲期/硬过期)或授权异常 → 全屏阻断,必须导入新授权 -->
     <div v-if="licenseBlock" class="license-overlay">
       <div class="license-overlay-drag"></div>
@@ -19,145 +19,16 @@
       </div>
     </div>
 
-    <!-- Top nav bar (52px, draggable) -->
-    <header class="app-header h-[52px] flex items-center justify-between pl-4 pr-2 shrink-0 select-none drag-region relative z-20">
-      <!-- Left: Logo + brand + nav links -->
-      <div class="flex items-center gap-4 min-w-0 lg:gap-6">
-        <!-- Logo + brand -->
-        <div class="flex items-center gap-3 shrink-0">
-          <img src="../../assets/logo.png" alt="Logo" class="brand-logo-img w-8 h-8 rounded-xl object-cover shrink-0" />
-          <div class="flex flex-col leading-none">
-            <span class="font-semibold text-slate-800 text-[13px] tracking-tight">FDE产品设计</span>
-            <span class="brand-subtitle text-[10px] text-slate-400 mt-0.5 tracking-wide">五阶段作战工作台</span>
-          </div>
-        </div>
-
-        <!-- Divider -->
-        <div class="h-5 w-px bg-slate-200/70 shrink-0 hidden md:block"></div>
-
-        <!-- Nav links —— 优先级分层:窄屏按 p2 → p1 顺序收起文字,仅留图标+tooltip,永不换行 -->
-        <nav class="nav-bar no-drag">
-          <RouterLink
-            to="/"
-            class="nav-link"
-            :class="isHomeRoute ? 'nav-link--active' : ''"
-            title="FDE 工作台"
-          >
-            <i class="fa-solid fa-table-columns text-[11px]"></i>
-            <span class="nav-label nav-p0">FDE 工作台</span>
-          </RouterLink>
-          <RouterLink
-            to="/project-spec"
-            class="nav-link"
-            :class="isProjectSpecRoute ? 'nav-link--active' : ''"
-            title="FDE 项目规范"
-          >
-            <i class="fa-solid fa-clipboard-list text-[11px]"></i>
-            <span class="nav-label nav-p2">FDE 项目规范</span>
-          </RouterLink>
-          <RouterLink
-            to="/training"
-            class="nav-link"
-            :class="isTrainingRoute ? 'nav-link--active' : ''"
-            title="FDE 培训教程"
-          >
-            <i class="fa-solid fa-graduation-cap text-[11px]"></i>
-            <span class="nav-label nav-p2">FDE 培训教程</span>
-          </RouterLink>
-          <RouterLink
-            to="/chat"
-            class="nav-link"
-            :class="isChatRoute ? 'nav-link--active' : ''"
-            title="智能对话"
-          >
-            <i class="fa-solid fa-comments text-[11px]"></i>
-            <span class="nav-label nav-p1">智能对话</span>
-          </RouterLink>
-          <RouterLink
-            to="/code"
-            class="nav-link"
-            :class="isCodeRoute ? 'nav-link--active' : ''"
-            title="代码"
-          >
-            <i class="fa-solid fa-code text-[11px]"></i>
-            <span class="nav-label nav-p1">代码</span>
-          </RouterLink>
-          <RouterLink
-            to="/apps"
-            class="nav-link"
-            :class="isExpertsRoute ? 'nav-link--active' : ''"
-            title="AI应用广场"
-          >
-            <i class="fa-solid fa-store text-[11px]"></i>
-            <span class="nav-label nav-p1">AI应用广场</span>
-          </RouterLink>
-          <RouterLink
-            to="/projects"
-            class="nav-link"
-            :class="isProjectsRoute ? 'nav-link--active' : ''"
-            title="项目列表"
-          >
-            <i class="fa-solid fa-folder-open text-[11px]"></i>
-            <span class="nav-label nav-p1">项目列表</span>
-          </RouterLink>
-          <RouterLink
-            to="/knowledge"
-            class="nav-link"
-            :class="isKnowledgeRoute ? 'nav-link--active' : ''"
-            title="知识库"
-          >
-            <i class="fa-solid fa-book-open text-[11px]"></i>
-            <span class="nav-label nav-p2">知识库</span>
-          </RouterLink>
-          <RouterLink
-            to="/skills"
-            class="nav-link"
-            :class="isSkillsRoute ? 'nav-link--active' : ''"
-            title="技能"
-          >
-            <i class="fa-solid fa-brain text-[11px]"></i>
-            <span class="nav-label nav-p2">技能</span>
-          </RouterLink>
-          <RouterLink
-            to="/settings"
-            class="nav-link"
-            :class="isSettingsRoute ? 'nav-link--active' : ''"
-            title="设置"
-          >
-            <i class="fa-solid fa-gear text-[11px]"></i>
-            <span class="nav-label nav-p1">设置</span>
-          </RouterLink>
-        </nav>
+    <!-- 极简顶条:仅可拖拽区 + 窗口控制(Electron frameless 必需),高 36px -->
+    <header class="app-titlebar drag-region">
+      <div class="titlebar-left no-drag">
+        <button class="rail-collapse-top" :title="collapsed ? '展开侧栏' : '收起侧栏'" @click="collapsed = !collapsed">
+          <i class="fa-solid" :class="collapsed ? 'fa-angles-right' : 'fa-angles-left'"></i>
+        </button>
       </div>
-
-      <!-- Right: status strip + license + window controls (fixed, never shrinks) -->
-      <div class="flex items-center no-drag text-slate-600 shrink-0">
-        <!-- 状态指示条:系统运行 · AI 引擎 · 时钟 · 版本 -->
-        <div class="status-strip">
-          <span class="status-item status-sys" title="系统运行中">
-            <span class="status-dot dot-green"></span>
-            <span class="status-text">系统运行中</span>
-          </span>
-          <span class="status-sep status-sys-sep"></span>
-          <span class="status-item" :title="engineTitle">
-            <span class="status-dot" :class="engineDotCls"></span>
-            <span class="status-text">{{ engineText }}</span>
-          </span>
-          <span class="status-sep status-clock-sep"></span>
-          <span class="status-clock font-mono">{{ clock }}</span>
-          <span class="version-pill font-mono">{{ appVersionShort }}</span>
-        </div>
-
-        <span
-          v-if="licenseChip"
-          class="license-chip ml-2"
-          :class="licenseChip.cls"
-          :title="licenseChip.title"
-        >
-          <i class="fa-solid fa-shield-halved text-[9px]"></i>
-          <span class="truncate max-w-[140px]">{{ licenseChip.text }}</span>
-        </span>
-        <div class="h-5 w-px bg-slate-200/70 mx-1.5"></div>
+      <div class="titlebar-right no-drag">
+        <span class="titlebar-clock font-mono">{{ clock }}</span>
+        <div class="titlebar-divider"></div>
         <button @click="minimizeWindow" class="win-btn" title="最小化">
           <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
         </button>
@@ -171,15 +42,70 @@
       </div>
     </header>
 
-    <!-- Main content (no sidebar, just RouterView) -->
-    <main class="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
-      <RouterView />
-    </main>
+    <!-- 主体:深色左侧栏 + 浅色内容区 -->
+    <div class="app-body">
+      <!-- 深色左侧导航栏(可折叠) -->
+      <aside class="rail" :class="{ 'rail--collapsed': collapsed }">
+        <!-- 品牌 -->
+        <div class="rail-brand">
+          <img src="../../assets/logo.png" alt="Logo" class="rail-logo" />
+          <div v-if="!collapsed" class="rail-brand-text">
+            <span class="rail-brand-name">FDE 产品设计</span>
+            <span class="rail-brand-sub">五阶段作战工作台</span>
+          </div>
+        </div>
+
+        <!-- 导航(分组) -->
+        <nav class="rail-nav scrollbar-thin">
+          <div v-for="group in navGroups" :key="group.label" class="rail-group">
+            <div v-if="!collapsed" class="rail-group-label">{{ group.label }}</div>
+            <RouterLink
+              v-for="item in group.items"
+              :key="item.to"
+              :to="item.to"
+              class="rail-link"
+              :class="item.match(route.path) ? 'rail-link--active' : ''"
+              :title="collapsed ? item.label : ''"
+            >
+              <i :class="item.icon" class="rail-ico"></i>
+              <span v-if="!collapsed" class="rail-label">{{ item.label }}</span>
+            </RouterLink>
+          </div>
+        </nav>
+
+        <!-- 底部:引擎状态 + 授权 + 设置 -->
+        <div class="rail-footer">
+          <div class="rail-status" :class="collapsed ? 'rail-status--mini' : ''" :title="engineTitle">
+            <span class="status-dot" :class="engineDotCls"></span>
+            <span v-if="!collapsed" class="rail-status-text">{{ engineText }}</span>
+          </div>
+          <div v-if="!collapsed && licenseChip" class="rail-license" :class="licenseChip.cls" :title="licenseChip.title">
+            <i class="fa-solid fa-shield-halved text-[9px]"></i>
+            <span class="truncate">{{ licenseChip.text }}</span>
+          </div>
+          <RouterLink
+            to="/settings"
+            class="rail-link rail-link--settings"
+            :class="isSettingsRoute ? 'rail-link--active' : ''"
+            :title="collapsed ? '设置' : ''"
+          >
+            <i class="fa-solid fa-gear rail-ico"></i>
+            <span v-if="!collapsed" class="rail-label">设置</span>
+            <span v-if="!collapsed" class="rail-version font-mono">{{ appVersionShort }}</span>
+          </RouterLink>
+        </div>
+      </aside>
+
+      <!-- 浅色内容区 -->
+      <main class="app-content">
+        <RouterView />
+      </main>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
@@ -214,16 +140,40 @@ const engineTitle = computed(() =>
   : '正在检测 AI 引擎状态…'
 );
 
-const isHomeRoute = computed(() => route.path === '/');
-const isProjectSpecRoute = computed(() => route.path === '/project-spec');
-const isTrainingRoute = computed(() => route.path === '/training');
-const isChatRoute = computed(() => route.path === '/chat');
-const isCodeRoute = computed(() => route.path.startsWith('/code'));
-const isExpertsRoute = computed(() => route.path === '/experts' || route.path === '/apps');
-const isProjectsRoute = computed(() => route.path.startsWith('/projects'));
-const isKnowledgeRoute = computed(() => route.path === '/knowledge');
-const isSkillsRoute = computed(() => route.path === '/skills');
 const isSettingsRoute = computed(() => route.path === '/settings');
+
+// 侧栏折叠状态(持久化到 localStorage,重开保留用户偏好)
+const collapsed = ref(false);
+try { collapsed.value = localStorage.getItem('rail-collapsed') === '1'; } catch { /* ignore */ }
+watch(collapsed, (v) => { try { localStorage.setItem('rail-collapsed', v ? '1' : '0'); } catch { /* ignore */ } });
+
+// 左侧导航:分三组。match 决定高亮(startsWith 处理 /code/:id、/projects/:slug 等子路由)。
+const navGroups = [
+  {
+    label: '工作台',
+    items: [
+      { to: '/', label: 'FDE 工作台', icon: 'fa-solid fa-table-columns', match: (p) => p === '/' },
+      { to: '/project-spec', label: 'FDE 项目规范', icon: 'fa-solid fa-clipboard-list', match: (p) => p === '/project-spec' },
+      { to: '/training', label: 'FDE 培训教程', icon: 'fa-solid fa-graduation-cap', match: (p) => p === '/training' },
+    ],
+  },
+  {
+    label: 'AI 助手',
+    items: [
+      { to: '/chat', label: '智能对话', icon: 'fa-solid fa-comments', match: (p) => p === '/chat' },
+      { to: '/code', label: '代码', icon: 'fa-solid fa-code', match: (p) => p.startsWith('/code') },
+      { to: '/apps', label: 'AI 应用广场', icon: 'fa-solid fa-store', match: (p) => p === '/apps' || p === '/experts' },
+    ],
+  },
+  {
+    label: '资源',
+    items: [
+      { to: '/projects', label: '项目列表', icon: 'fa-solid fa-folder-open', match: (p) => p.startsWith('/projects') },
+      { to: '/knowledge', label: '知识库', icon: 'fa-solid fa-book-open', match: (p) => p === '/knowledge' },
+      { to: '/skills', label: '技能', icon: 'fa-solid fa-brain', match: (p) => p === '/skills' },
+    ],
+  },
+];
 
 // 顶栏授权徽章:客户名 + 有效期(永久/剩余天数/缓冲期)
 const licenseChip = computed(() => {
@@ -477,240 +427,156 @@ const closeWindow = () => {
   -webkit-app-region: no-drag;
 }
 
-/* Header material: soft frosted surface with a subtle gradient + depth */
-.app-header {
-  background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.03),
-    0 4px 16px rgba(15, 23, 42, 0.035);
-  backdrop-filter: saturate(1.4) blur(6px);
-}
-/* Thin accent line at the very top for a premium finish */
-.app-header::after {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 2px;
-  background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 45%, transparent 90%);
-  opacity: 0.9;
+/* ===================================================================
+   新布局:深色左侧栏 + 浅色内容区(Codex/Linear 式)
+   =================================================================== */
+.app-root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-content-bg);
+  color: #1e293b;
+  font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Brand logo: 真实 logo 图片,hover 轻微放大 */
-.brand-logo-img {
-  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
-  transition: transform 0.25s ease;
-}
-.brand-logo-img:hover {
-  transform: translateY(-1px) scale(1.03);
-}
-
-/* Nav bar: 单一容器,永不换行;弹性吸收,右侧固定 */
-.nav-bar {
+/* 极简顶条:36px,承载窗口拖拽 + 控制按钮 + 时钟(浅色,与侧栏同底) */
+.app-titlebar {
+  height: 36px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 2px;
+  justify-content: space-between;
+  padding: 0 6px 0 10px;
+  background: var(--color-sidebar);
+  border-bottom: 1px solid var(--color-sidebar-border);
+  position: relative;
+  z-index: 30;
+}
+.titlebar-left, .titlebar-right { display: inline-flex; align-items: center; gap: 4px; }
+.rail-collapse-top {
+  width: 26px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px; color: var(--color-sidebar-text); font-size: 11px;
+  transition: background 0.15s, color 0.15s;
+}
+.rail-collapse-top:hover { background: var(--color-sidebar-elevated); color: var(--color-sidebar-text-strong); }
+.titlebar-clock {
+  font-size: 11.5px; color: var(--color-sidebar-muted); letter-spacing: 0.02em; padding: 0 6px;
+}
+.titlebar-divider { width: 1px; height: 14px; background: var(--color-sidebar-border); margin: 0 2px; }
+
+/* 主体两栏 */
+.app-body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
+
+/* 浅灰白左侧栏 */
+.rail {
+  width: 236px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-sidebar);
+  border-right: 1px solid var(--color-sidebar-border);
+  transition: width 0.18s ease;
+  overflow: hidden;
+}
+.rail--collapsed { width: 60px; }
+
+/* 品牌 */
+.rail-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px 12px;
+  min-height: 56px;
+}
+.rail--collapsed .rail-brand { padding: 14px 0 12px; justify-content: center; }
+.rail-logo {
+  width: 30px; height: 30px; border-radius: 9px; object-fit: cover; flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+.rail-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.rail-brand-name { font-size: 13.5px; font-weight: 600; color: var(--color-sidebar-text-strong); white-space: nowrap; }
+.rail-brand-sub { font-size: 10px; color: var(--color-sidebar-muted); margin-top: 2px; white-space: nowrap; }
+
+/* 导航 */
+.rail-nav { flex: 1; overflow-y: auto; padding: 6px 10px; }
+.rail--collapsed .rail-nav { padding: 6px 8px; }
+.rail-group { margin-bottom: 12px; }
+.rail-group-label {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--color-sidebar-muted); padding: 6px 10px 4px;
+}
+.rail-link {
+  display: flex; align-items: center; gap: 11px;
+  padding: 8px 11px; margin-bottom: 1px;
+  border-radius: 8px; position: relative;
+  font-size: 13px; color: var(--color-sidebar-text);
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
+}
+.rail--collapsed .rail-link { justify-content: center; padding: 9px 0; }
+.rail-ico { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; color: var(--color-sidebar-muted); transition: color 0.15s; }
+.rail-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+.rail-link:hover { background: var(--color-sidebar-elevated); color: var(--color-sidebar-text-strong); }
+.rail-link:hover .rail-ico { color: var(--color-sidebar-text); }
+/* 选中态:淡灰底块(Codex 式,无蓝、无竖条) */
+.rail-link--active {
+  background: var(--color-sidebar-elevated);
+  color: var(--color-sidebar-text-strong); font-weight: 500;
+}
+.rail-link--active .rail-ico { color: var(--color-sidebar-active); }
+
+/* 底部区 */
+.rail-footer {
+  border-top: 1px solid var(--color-sidebar-border);
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.rail--collapsed .rail-footer { padding: 8px; align-items: center; }
+.rail-status {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 11px; font-size: 12px; color: var(--color-sidebar-text);
+}
+.rail-status--mini { padding: 6px 0; justify-content: center; }
+.rail-status-text { white-space: nowrap; }
+.rail-license {
+  display: flex; align-items: center; gap: 5px;
+  margin: 0 4px 2px; padding: 4px 10px; border-radius: 7px;
+  font-size: 11px; font-weight: 500;
+}
+.rail-license .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+.rail-license.lic-gray { color: #64748b; background: rgba(148, 163, 184, 0.14); }
+.rail-license.lic-amber { color: #b45309; background: #fffbeb; }
+.rail-license.lic-red { color: #b91c1c; background: #fef2f2; }
+.rail-link--settings { margin-bottom: 0; }
+.rail-version {
+  font-size: 10px; color: var(--color-sidebar-muted); margin-left: auto;
+}
+
+/* 纯白内容区 */
+.app-content {
+  flex: 1;
   min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-content-bg);
 }
 
-/* Nav links */
-.nav-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
-  border-radius: 0.6rem;
-  font-size: 12.5px;
-  color: #64748b;
-  position: relative;
-  transition: color 0.2s ease, background 0.2s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.nav-link :deep(i),
-.nav-link i {
-  color: #94a3b8;
-  transition: color 0.2s ease;
-}
-.nav-link:hover {
-  color: #334155;
-  background: rgba(241, 245, 249, 0.9);
-}
-.nav-link:hover i {
-  color: #64748b;
-}
-.nav-link--active {
-  color: #1d4ed8;
-  font-weight: 600;
-  background: linear-gradient(180deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.09) 100%);
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.16);
-}
-.nav-link--active i {
-  color: #2563eb;
-}
-/* Active underline indicator */
-.nav-link--active::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -1px;
-  width: 16px;
-  height: 2px;
-  border-radius: 2px;
-  transform: translateX(-50%);
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
-}
+/* 状态点(rail-status 复用) */
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; position: relative; }
+.dot-blue { background: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16); }
+.dot-amber { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.16); }
+.dot-gray { background: #cbd5e1; box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.16); }
 
-/* Status strip: 系统运行 · AI 引擎 · 时钟 · 版本 —— 浅色圆角胶囊容器 */
-.status-strip {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow:
-    0 1px 2px rgba(15, 23, 42, 0.03),
-    0 2px 6px rgba(15, 23, 42, 0.03);
-}
-.status-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  white-space: nowrap;
-}
-.status-text { color: #475569; }
-.status-sep {
-  width: 1px;
-  height: 14px;
-  background: rgba(226, 232, 240, 0.9);
-}
-.status-clock {
-  font-size: 12px;
-  color: #64748b;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-/* 版本胶囊:深蓝,与 logo 同色调 */
-.version-pill {
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  padding: 4px 10px;
-  border-radius: 999px;
-  color: #ffffff;
-  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-  box-shadow: 0 1px 3px rgba(29, 78, 216, 0.35);
-  white-space: nowrap;
-}
-
-/* 状态点 */
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  position: relative;
-}
-.dot-green {
-  background: #22c55e;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16);
-}
-.dot-green::after {
-  content: '';
-  position: absolute;
-  inset: -3px;
-  border-radius: 50%;
-  border: 1px solid rgba(34, 197, 94, 0.35);
-  animation: status-pulse 2.4s ease-out infinite;
-}
-.dot-blue {
-  background: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
-}
-.dot-amber {
-  background: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.16);
-}
-.dot-gray {
-  background: #cbd5e1;
-  box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.16);
-}
-@keyframes status-pulse {
-  0% { opacity: 0.7; transform: scale(0.8); }
-  70% { opacity: 0; transform: scale(1.6); }
-  100% { opacity: 0; transform: scale(1.6); }
-}
-
-/* License badge */
-.license-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 3px 9px;
-  border-radius: 999px;
-  max-width: 200px;
-  cursor: default;
-}
-.license-chip.lic-gray { color: #64748b; background: rgba(241, 245, 249, 0.9); border: 1px solid rgba(226, 232, 240, 0.9); }
-.license-chip.lic-amber { color: #b45309; background: #fffbeb; border: 1px solid #fde68a; }
-.license-chip.lic-red { color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; }
-
-/* Window controls */
+/* Window controls(顶条内,浅底深字) */
 .win-btn {
-  width: 30px;
-  height: 30px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.55rem;
-  color: #64748b;
+  width: 28px; height: 26px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 6px; color: var(--color-sidebar-text);
   transition: background 0.18s ease, color 0.18s ease;
 }
-.win-btn:hover {
-  background: rgba(241, 245, 249, 0.95);
-  color: #0f172a;
-}
-.win-btn--close:hover {
-  background: #ef4444;
-  color: #ffffff;
-}
-
-/* =====================================================================
-   Responsive topbar —— 分层降级,杜绝换行:
-   导航文字按 p0(核心) → p1 → p2(次要) 顺序,在窗口变窄时渐次收起为
-   纯图标(悬停 tooltip 的 title 已在模板里),状态条与品牌副标题同步精简。
-   ===================================================================== */
-@media (max-width: 1520px) {
-  /* 品牌副标题收起 */
-  .brand-subtitle { display: none; }
-  /* 状态条:"系统运行中 + 时钟" 收起,仅留 AI 引擎 + 版本 */
-  .status-sys, .status-sys-sep, .status-clock, .status-clock-sep { display: none; }
-  /* 次要导航(p2)收起文字 → 纯图标 */
-  .nav-p2 { display: none; }
-}
-
-@media (max-width: 1380px) {
-  /* 次级导航(p1)收起文字 → 纯图标 */
-  .nav-p1 { display: none; }
-}
-
-@media (max-width: 1180px) {
-  /* 授权徽章收窄 */
-  .license-chip { max-width: 110px; }
-}
-
-@media (max-width: 1080px) {
-  /* 核心(p0)也收起文字 → 全图标导航,单行稳定 */
-  .nav-p0 { display: none; }
-  .brand-logo-img { width: 30px; height: 30px; }
-  /* 状态条进一步紧凑:版本胶囊去掉 */
-  .version-pill { display: none; }
-}
+.win-btn:hover { background: var(--color-sidebar-elevated); color: #111827; }
+.win-btn--close:hover { background: #ef4444; color: #ffffff; }
 </style>

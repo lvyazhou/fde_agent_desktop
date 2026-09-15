@@ -57,6 +57,22 @@
   --shadow-card: 0 8px 24px rgba(15, 23, 42, 0.06);
   --shadow-float: 0 12px 32px rgba(37, 99, 235, 0.14);
   --radius-4xl: 2rem;
+
+  /* --- 浅灰白侧边栏调色板(Codex 式:浅灰白侧栏 + 纯白内容区)--- */
+  --color-sidebar: #f7f7f5;          /* 侧栏主底(暖浅灰白) */
+  --color-sidebar-elevated: #ececea; /* 选中/hover 的淡灰底块 */
+  --color-sidebar-border: #e8e8e4;   /* 侧栏与内容区分隔线 */
+  --color-sidebar-text: #4b5563;     /* 侧栏常态文字 */
+  --color-sidebar-text-strong: #111827; /* 侧栏高亮文字(选中项) */
+  --color-sidebar-muted: #9ca3af;    /* 分组小标题 / 次要文字 */
+  --color-sidebar-active: #2563eb;   /* 图标点缀强调(品牌蓝,克制使用) */
+
+  /* --- 内容区背景(全站统一,收编 #f4f7fb/#f5f7fa/#f8fafc 三套)--- */
+  --color-content-bg: #ffffff;
+
+  /* --- 统一圆角基准(收编 rounded-2xl/xl/[24px] 三套)--- */
+  --radius-card: 14px;   /* 卡片统一圆角 */
+  --radius-control: 9px; /* 按钮/输入/小控件 */
 }
 
 :root {
