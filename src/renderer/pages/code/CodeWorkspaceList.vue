@@ -1,0 +1,160 @@
+<template>
+  <div class="flex-1 overflow-y-auto p-8">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-slate-800">代码工作区</h1>
+        <p class="text-sm text-slate-500 mt-1">打开任意本地文件夹，让 AI 直接在里面读写代码 —— 改动前给你看 diff、由你确认</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button
+          @click="createWorkspace"
+          class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
+        >
+          <i class="fa-solid fa-folder-plus text-xs"></i>
+          <span>新建项目</span>
+        </button>
+        <button
+          @click="openFolder"
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-700/20"
+        >
+          <i class="fa-solid fa-folder-open text-xs"></i>
+          <span>打开文件夹</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <div class="flex items-center gap-3 text-slate-400">
+        <i class="fa-solid fa-spinner fa-spin"></i>
+        <span class="text-sm">加载中...</span>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="workspaces.length === 0" class="flex flex-col items-center justify-center py-20">
+      <div class="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-6">
+        <i class="fa-solid fa-code text-3xl text-blue-500"></i>
+      </div>
+      <h3 class="text-lg font-semibold text-slate-700 mb-2">还没有代码工作区</h3>
+      <p class="text-sm text-slate-500 mb-6 text-center max-w-md">
+        打开一个已有的代码仓库，或新建一个空项目。AI 会在这个文件夹里读文件、写代码、改 bug —— 每次写入前都会把 diff 交给你确认。
+      </p>
+      <div class="flex items-center gap-3">
+        <button
+          @click="openFolder"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-700/20"
+        >
+          <i class="fa-solid fa-folder-open text-xs"></i>
+          <span>打开一个文件夹</span>
+        </button>
+        <button
+          @click="createWorkspace"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
+        >
+          <i class="fa-solid fa-folder-plus text-xs"></i>
+          <span>新建项目</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      <div
+        v-for="ws in workspaces"
+        :key="ws.id"
+        class="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all cursor-pointer"
+        @click="openWorkspace(ws.id)"
+      >
+        <div class="absolute top-3 right-3 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+          <button
+            @click.stop="removeWorkspace(ws)"
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+            title="从列表移除（不删磁盘文件）"
+          >
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
+        </div>
+        <div class="p-5">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+              <i class="fa-solid fa-folder-tree text-blue-700"></i>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-medium">
+              <i class="fa-solid fa-code text-[10px]"></i>
+              代码工作区
+            </span>
+          </div>
+          <h3 class="text-base font-semibold text-slate-800 mb-1 truncate">{{ ws.name }}</h3>
+          <p class="text-xs text-slate-400 mb-1 truncate" :title="ws.path">
+            <i class="fa-regular fa-folder mr-1"></i>{{ ws.path }}
+          </p>
+          <p class="text-xs text-slate-400">最近打开：{{ formatDate(ws.lastOpenedAt || ws.createdAt) }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+const workspaces = ref([]);
+const loading = ref(true);
+
+const refresh = async () => {
+  loading.value = true;
+  try {
+    if (!window.api?.code) { workspaces.value = []; return; }
+    workspaces.value = (await window.api.code.listWorkspaces()) || [];
+  } catch (e) {
+    console.error('[CodeWorkspaceList] list failed:', e);
+    workspaces.value = [];
+  } finally {
+    loading.value = false;
+  }
+};
+
+const openFolder = async () => {
+  try {
+    const res = await window.api.code.openFolder();
+    if (res && res.canceled) return;
+    if (res && res.error) { alert(res.error); return; }
+    if (res && res.workspace) router.push(`/code/${res.workspace.id}`);
+  } catch (e) { alert('打开失败：' + e.message); }
+};
+
+const createWorkspace = async () => {
+  const name = prompt('新项目名称（会在你选择的父目录里建一个同名文件夹）：', '');
+  if (name === null) return; // 用户取消
+  try {
+    const res = await window.api.code.createWorkspace(name.trim());
+    if (res && res.canceled) return;
+    if (res && res.error) { alert(res.error); return; }
+    if (res && res.workspace) router.push(`/code/${res.workspace.id}`);
+  } catch (e) { alert('新建失败：' + e.message); }
+};
+
+const openWorkspace = (id) => router.push(`/code/${id}`);
+
+const removeWorkspace = async (ws) => {
+  if (!confirm(`从列表移除「${ws.name}」？\n\n只是从代码工作区列表里移除，磁盘上的文件不会被删除。`)) return;
+  try {
+    await window.api.code.removeWorkspace(ws.id);
+    await refresh();
+  } catch (e) { alert('移除失败：' + e.message); }
+};
+
+const formatDate = (iso) => {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  } catch { return iso; }
+};
+
+onMounted(refresh);
+</script>

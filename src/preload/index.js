@@ -12,6 +12,16 @@ const validInvokeChannels = new Set([
   'fs:save-local-file',
   'fs:read-local-file-data-uri',
   'fs:get-home-dir',
+  // 「代码」模式(Codex 式)
+  'code:list-workspaces',
+  'code:open-folder',
+  'code:create-workspace',
+  'code:remove-workspace',
+  'code:get-workspace',
+  'code:list-tree',
+  'code:read-file',
+  'code:write-file',
+  'code:prompt',
   'hermes:list-projects',
   'hermes:create-project',
   'hermes:load-project',
@@ -204,12 +214,37 @@ contextBridge.exposeInMainWorld('api', {
     setConfigModel(modelId) { return invoke('hermes:set-config-model', { modelId }); },
     listSessions(cursor, cwd) { return invoke('hermes:list-sessions', { cursor, cwd }); },
     forkSession(slug) { return invoke('hermes:fork-session', { slug }); },
-    respondPermission(requestId, result) { return invoke('hermes:permission-respond', { requestId, result }); },
+    respondPermission(requestId, approved, optionId) { return invoke('hermes:permission-respond', { requestId, approved, optionId }); },
     browseSkills(query) { return invoke('hermes:browse-skills', { query }); },
     generateSuggestions(userMessage, aiResponse) { return invoke('hermes:generate-suggestions', { userMessage, aiResponse }); },
     resolveFileRef(slug, ref) { return invoke('hermes:resolve-file-ref', { slug, ref }); },
     onSessionUpdate(handler) { return on('hermes:session-update', handler); },
     onPermissionRequest(handler) { return on('hermes:permission-request', handler); },
+  },
+
+  // 「代码」模式(Codex 式)：工作区 = 磁盘上任意文件夹
+  code: {
+    listWorkspaces() { return invoke('code:list-workspaces'); },
+    openFolder() { return invoke('code:open-folder'); },
+    createWorkspace(name) { return invoke('code:create-workspace', { name }); },
+    removeWorkspace(id) { return invoke('code:remove-workspace', { id }); },
+    getWorkspace(id) { return invoke('code:get-workspace', { id }); },
+    listTree(id) { return invoke('code:list-tree', { id }); },
+    readFile(id, relPath) { return invoke('code:read-file', { id, relPath }); },
+    writeFile(id, relPath, content) { return invoke('code:write-file', { id, relPath, content }); },
+    prompt(id, text, attachments) {
+      // 同 hermes.prompt：摊平 Vue reactive 附件，避免 structured-clone 失败。
+      const clean = Array.isArray(attachments)
+        ? attachments.map((a) => ({
+            type: a && a.type,
+            name: a && a.name,
+            media_type: a && a.media_type,
+            ...(a && typeof a.text === 'string' ? { text: a.text } : {}),
+            ...(a && a.data ? { data: a.data } : {}),
+          }))
+        : attachments;
+      return invoke('code:prompt', { id, text, attachments: clean });
+    },
   },
 
   // File system

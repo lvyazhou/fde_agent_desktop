@@ -23,6 +23,10 @@ let currentModelId = '';     // 当前会话模型 id（来自 session/new 的 m
 let cachedCapabilities = {}; // Cached ACP capabilities
 let hermesReady = false;     // ACP 是否已连接且 initialize 成功(供环境自检读取)
 
+// 待用户裁决的权限请求(编辑确认 / 危险命令确认)。key = requestId，
+// value = { resolve } —— 渲染层通过 hermes:permission-respond 回传裁决后 resolve。
+const pendingPermissions = new Map();
+
 // ---------------------------------------------------------------------------
 // Data directories
 // ---------------------------------------------------------------------------
@@ -38,6 +42,12 @@ const AI_APPS_MEMORY_DIR = path.join(AI_APPS_DIR, 'memory');
 // 内置专家覆盖层：{ overrides: { [builtinId]: {…被改字段} }, deleted: [builtinId…] }
 // 不改源码 ai-experts.js，前端合并 内置定义 + 覆盖 = 最终展示，可随时恢复默认。
 const AI_APPS_BUILTIN_OVERRIDES_FILE = path.join(AI_APPS_DIR, 'builtin-overrides.json');
+
+// 「代码」模式(Codex 式)的工作区登记表。工作区 ≠ FDE 项目：它指向磁盘上
+// 任意一个文件夹(用户导入的代码仓 / 新建的空工程)，agent 在原地读写，
+// 不进 PROJECTS_DIR。登记表只存指针，不拷贝文件。
+// 结构：[{ id, name, path(绝对路径), sessionId, lastOpenedAt, createdAt }]
+const CODE_WORKSPACES_JSON = path.join(PRODUCT_LOBSTER_HOME, 'code-workspaces.json');
 
 // --- config.yaml model persistence -----------------------------------------
 // config.yaml 是 hermes 选择模型的唯一事实来源（cli.py 明确不读 LLM_MODEL/OPENAI_MODEL 环境变量）。
@@ -420,32 +430,53 @@ function startHermes() {
     }
   });
 
-  // Register reverse RPC handler: permission requests from hermes
+  // Register reverse RPC handler: permission requests from hermes.
+  // 引擎在「default」模式下(代码工作区用它)会在每次写文件前发来 request_permission，
+  // toolCall.content 里带 {type:'diff', path, oldText, newText}。我们把它转给渲染层，
+  // 由 diff 确认弹窗裁决。ACP 期望的返回体是 { outcome:{ outcome:'selected', optionId } }
+  // (批准) 或 { outcome:{ outcome:'cancelled' } }(拒绝，引擎据此不写文件)。
   acp.onRequest('request_permission', async (params) => {
+    // 判断是不是「编辑确认」——带 diff 内容块，或 toolCall.kind === 'edit'。
+    const tc = (params && (params.toolCall || params.tool_call)) || {};
+    const content = Array.isArray(tc.content) ? tc.content : [];
+    const isEdit = tc.kind === 'edit' || content.some((c) => c && c.type === 'diff');
+    // 默认放行选项(引擎给的 options 里第一个 allow_* 的 id)。
+    const options = Array.isArray(params && params.options) ? params.options : [];
+    const allowOpt = options.find((o) => o && String(o.kind || '').startsWith('allow')) || options.find((o) => o && o.optionId === 'allow_once');
+    const allowId = (allowOpt && (allowOpt.optionId || allowOpt.option_id)) || 'allow_once';
+    const selected = (optionId) => ({ outcome: { outcome: 'selected', optionId } });
+    const cancelled = () => ({ outcome: { outcome: 'cancelled' } });
+
     if (mainWindow && !mainWindow.isDestroyed()) {
-      // Forward to renderer and wait for user response
       return new Promise((resolve) => {
-        const requestId = `perm_${Date.now()}`;
-        mainWindow.webContents.send('hermes:permission-request', { requestId, ...params });
-
-        // Listen for renderer's response
-        const handler = (_event, response) => {
-          if (response.requestId === requestId) {
-            ipcMain.removeHandler('hermes:permission-response-' + requestId);
-            resolve(response.result);
-          }
+        const requestId = `perm_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        let settled = false;
+        const finish = (result) => {
+          if (settled) return;
+          settled = true;
+          pendingPermissions.delete(requestId);
+          resolve(result);
         };
-        ipcMain.handle('hermes:permission-response-' + requestId, handler);
+        pendingPermissions.set(requestId, {
+          resolve: (decision) => {
+            // decision: { approved:bool, optionId? }
+            if (decision && decision.approved) finish(selected(decision.optionId || allowId));
+            else finish(cancelled());
+          },
+        });
+        mainWindow.webContents.send('hermes:permission-request', { requestId, isEdit, ...params });
 
-        // Timeout: auto-allow after 30s if user doesn't respond
+        // 非编辑类(危险命令)保留 30s 自动放行的旧行为，避免命令类卡死；
+        // 编辑类必须由用户明确裁决——不自动放行，只兜一个很长的超时防止永久挂起。
+        const ms = isEdit ? 600_000 : 30_000;
         setTimeout(() => {
-          ipcMain.removeHandler('hermes:permission-response-' + requestId);
-          resolve({ permission: 'allow_once' });
-        }, 30000);
+          if (settled) return;
+          finish(isEdit ? cancelled() : selected(allowId));
+        }, ms);
       });
     }
-    // If no window, auto-allow
-    return { permission: 'allow_once' };
+    // If no window, auto-allow non-edits, deny edits.
+    return isEdit ? cancelled() : selected(allowId);
   });
 }
 
@@ -531,6 +562,52 @@ function resolveProjectPath(slug, ...rest) {
   }
   return normalized;
 }
+
+// ---------------------------------------------------------------------------
+// 「代码」模式(Codex 式) —— 工作区登记表读写 + 路径解析
+// ---------------------------------------------------------------------------
+
+function readCodeWorkspaces() {
+  try {
+    if (!fs.existsSync(CODE_WORKSPACES_JSON)) return [];
+    const raw = fs.readFileSync(CODE_WORKSPACES_JSON, 'utf-8');
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    console.error('[main] readCodeWorkspaces failed:', e.message);
+    return [];
+  }
+}
+
+function writeCodeWorkspaces(list) {
+  try {
+    if (!fs.existsSync(PRODUCT_LOBSTER_HOME)) fs.mkdirSync(PRODUCT_LOBSTER_HOME, { recursive: true });
+    fs.writeFileSync(CODE_WORKSPACES_JSON, JSON.stringify(list, null, 2), 'utf-8');
+  } catch (e) {
+    console.error('[main] writeCodeWorkspaces failed:', e.message);
+  }
+}
+
+function findCodeWorkspace(id) {
+  return readCodeWorkspaces().find((w) => w.id === id) || null;
+}
+
+// 解析工作区内的相对路径为绝对路径，并做路径逃逸守卫(照抄 resolveProjectPath 的做法)。
+function resolveWorkspacePath(workspace, relPath) {
+  const root = path.resolve(workspace.path);
+  const resolved = path.resolve(path.join(root, relPath || '.'));
+  if (resolved !== root && !resolved.startsWith(root + path.sep)) {
+    throw new Error('Path traversal detected');
+  }
+  return resolved;
+}
+
+// 代码工作区文件树扫描：跳过体量大 / 无意义的目录，限制总条数防止巨仓卡死。
+const CODE_TREE_IGNORE_DIRS = new Set([
+  '.git', 'node_modules', 'dist', 'build', '.next', '.nuxt', '.venv', 'venv',
+  '__pycache__', '.idea', '.vscode', '.cache', 'target', 'out', '.gradle',
+]);
+const CODE_TREE_MAX_ENTRIES = 5000;
 
 // ---------------------------------------------------------------------------
 // Project type inference — 区分"智能对话"与"FDE 项目"
@@ -1891,6 +1968,196 @@ ipcMain.handle('hermes:list-projects', async (_event, options) => {
   }
 });
 
+// ===========================================================================
+// 「代码」模式(Codex 式) —— IPC handlers
+// 工作区 = 磁盘上任意文件夹；session 的 cwd 指向该文件夹，agent 在原地读写。
+// 用 mode:'default' 让引擎在每次写文件前发 request_permission(带 diff)。
+// ===========================================================================
+
+// 列出已登记工作区，顺带剔除磁盘上已不存在的路径(移动/删除后自愈)。
+ipcMain.handle('code:list-workspaces', async () => {
+  const list = readCodeWorkspaces();
+  const alive = list.filter((w) => w && w.path && fs.existsSync(w.path));
+  if (alive.length !== list.length) writeCodeWorkspaces(alive);
+  return alive.slice().sort((a, b) => (b.lastOpenedAt || b.createdAt || '').localeCompare(a.lastOpenedAt || a.createdAt || ''));
+});
+
+// 打开(导入)一个已有文件夹 → 登记为工作区。按绝对路径去重。
+ipcMain.handle('code:open-folder', async () => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: '选择要用代码模式打开的文件夹',
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (res.canceled || !res.filePaths || !res.filePaths.length) return { canceled: true };
+  const folder = res.filePaths[0];
+  const list = readCodeWorkspaces();
+  const existing = list.find((w) => path.resolve(w.path) === path.resolve(folder));
+  const now = new Date().toISOString();
+  if (existing) {
+    existing.lastOpenedAt = now;
+    writeCodeWorkspaces(list);
+    return { workspace: existing };
+  }
+  const workspace = {
+    id: `ws_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name: path.basename(folder) || folder,
+    path: folder,
+    sessionId: null,
+    createdAt: now,
+    lastOpenedAt: now,
+  };
+  list.push(workspace);
+  writeCodeWorkspaces(list);
+  return { workspace };
+});
+
+// 新建工作区：选父目录 + 名字 → 建空文件夹 → 登记。
+ipcMain.handle('code:create-workspace', async (_event, { name } = {}) => {
+  const res = await dialog.showOpenDialog(mainWindow, {
+    title: '选择新项目所在的父目录',
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (res.canceled || !res.filePaths || !res.filePaths.length) return { canceled: true };
+  const parent = res.filePaths[0];
+  const folderName = (name && String(name).trim()) || `project-${Date.now()}`;
+  const folder = path.join(parent, folderName);
+  try {
+    if (fs.existsSync(folder)) {
+      // 已存在同名目录：直接当作导入(不覆盖)。
+    } else {
+      fs.mkdirSync(folder, { recursive: true });
+    }
+  } catch (e) {
+    return { error: `新建目录失败：${e.message}` };
+  }
+  const list = readCodeWorkspaces();
+  const existing = list.find((w) => path.resolve(w.path) === path.resolve(folder));
+  const now = new Date().toISOString();
+  if (existing) { existing.lastOpenedAt = now; writeCodeWorkspaces(list); return { workspace: existing }; }
+  const workspace = {
+    id: `ws_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+    name: folderName,
+    path: folder,
+    sessionId: null,
+    createdAt: now,
+    lastOpenedAt: now,
+  };
+  list.push(workspace);
+  writeCodeWorkspaces(list);
+  return { workspace };
+});
+
+// 从登记表移除工作区(不删磁盘文件)。
+ipcMain.handle('code:remove-workspace', async (_event, { id } = {}) => {
+  const list = readCodeWorkspaces();
+  const next = list.filter((w) => w.id !== id);
+  writeCodeWorkspaces(next);
+  return { success: true };
+});
+
+ipcMain.handle('code:get-workspace', async (_event, { id } = {}) => {
+  const w = findCodeWorkspace(id);
+  return w ? { workspace: w } : { error: 'workspace not found' };
+});
+
+// 递归列出工作区文件树(嵌套结构)。跳过大目录，限制总条数。
+ipcMain.handle('code:list-tree', async (_event, { id } = {}) => {
+  const workspace = findCodeWorkspace(id);
+  if (!workspace) return { success: false, error: 'workspace not found' };
+  if (!fs.existsSync(workspace.path)) return { success: false, error: '目录不存在' };
+  let count = 0;
+  const walk = (absDir, relPrefix) => {
+    let items;
+    try { items = fs.readdirSync(absDir, { withFileTypes: true }); }
+    catch { return []; }
+    const dirs = [];
+    const files = [];
+    for (const item of items) {
+      if (count >= CODE_TREE_MAX_ENTRIES) break;
+      const rel = relPrefix ? `${relPrefix}/${item.name}` : item.name;
+      if (item.isDirectory()) {
+        if (CODE_TREE_IGNORE_DIRS.has(item.name)) continue;
+        count++;
+        dirs.push({ name: item.name, isDirectory: true, relPath: rel, children: walk(path.join(absDir, item.name), rel) });
+      } else {
+        count++;
+        files.push({ name: item.name, isDirectory: false, relPath: rel });
+      }
+    }
+    dirs.sort((a, b) => a.name.localeCompare(b.name));
+    files.sort((a, b) => a.name.localeCompare(b.name));
+    return [...dirs, ...files];
+  };
+  return { success: true, tree: walk(workspace.path, ''), truncated: count >= CODE_TREE_MAX_ENTRIES };
+});
+
+// 读工作区内某个文件(文本)。
+ipcMain.handle('code:read-file', async (_event, { id, relPath } = {}) => {
+  const workspace = findCodeWorkspace(id);
+  if (!workspace) return { success: false, error: 'workspace not found' };
+  try {
+    const abs = resolveWorkspacePath(workspace, relPath);
+    const stat = fs.statSync(abs);
+    if (stat.isDirectory()) return { success: false, error: '这是一个目录' };
+    // 二进制/超大文件不当文本读，前端据 error 提示。
+    if (stat.size > 2 * 1024 * 1024) return { success: false, error: '文件过大，暂不预览', tooLarge: true };
+    const content = fs.readFileSync(abs, 'utf-8');
+    return { success: true, content, path: abs };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// 供 diff 弹窗读取旧内容用(与 code:read-file 同，但语义更明确)。
+ipcMain.handle('code:write-file', async (_event, { id, relPath, content } = {}) => {
+  const workspace = findCodeWorkspace(id);
+  if (!workspace) return { success: false, error: 'workspace not found' };
+  try {
+    const abs = resolveWorkspacePath(workspace, relPath);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, content ?? '', 'utf-8');
+    return { success: true, path: abs };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// 代码工作区对话：cwd = 工作区目录，mode:'default'(每次写文件都要用户确认)。
+ipcMain.handle('code:prompt', async (_event, { id, text, attachments } = {}) => {
+  try {
+    if (!acp) throw new Error('Hermes ACP not connected');
+    const list = readCodeWorkspaces();
+    const workspace = list.find((w) => w.id === id);
+    if (!workspace) throw new Error('workspace not found');
+    if (!fs.existsSync(workspace.path)) throw new Error('工作区目录不存在');
+
+    // 会话缺失/失效 → 用工作区目录为 cwd 重建，并设 default 模式启用逐次编辑确认。
+    if (!workspace.sessionId) {
+      const newSession = await acp.request('session/new', { cwd: workspace.path, mcpServers: [] });
+      captureModelsFromSession(newSession);
+      workspace.sessionId = newSession && newSession.sessionId ? newSession.sessionId : null;
+      if (workspace.sessionId) {
+        await acp.request('session/set_mode', { sessionId: workspace.sessionId, modeId: 'default' }).catch(() => {});
+      }
+      workspace.lastOpenedAt = new Date().toISOString();
+      writeCodeWorkspaces(list);
+    }
+
+    // 二进制附件落到工作区的 .uploads/ 目录(与代码分开，方便忽略)。
+    const uploadsDir = path.join(workspace.path, '.uploads');
+    const promptBlocks = buildPromptBlocks(text, attachments, uploadsDir);
+
+    const result = await acp.request('session/prompt', {
+      sessionId: workspace.sessionId,
+      prompt: promptBlocks,
+    }, 3_600_000); // 60 min timeout
+    return result;
+  } catch (err) {
+    console.error(`[main] code:prompt FAILED: ${err && err.message}`);
+    throw new Error(`Prompt failed: ${err.message}`);
+  }
+});
+
 ipcMain.handle('hermes:create-project', async (_event, params) => {
   const { name, requirement, slug: customSlug, projectType: requestedType, expert, aiApp } = params || {};
   try {
@@ -2214,13 +2481,14 @@ ipcMain.handle('hermes:fork-session', async (_event, { slug }) => {
 });
 
 // Feature 9: Permission response (renderer → main for permission approval)
-ipcMain.handle('hermes:permission-respond', async (_event, { requestId, result }) => {
-  // The actual response routing is handled via dynamic handlers in the onRequest callback
-  // This channel is used as a fallback for the renderer to send responses
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    mainWindow.webContents.send('hermes:permission-resolved', { requestId, result });
+ipcMain.handle('hermes:permission-respond', async (_event, { requestId, approved, optionId } = {}) => {
+  // 渲染层的 diff 确认弹窗回传裁决 → resolve 对应的挂起权限请求。
+  const pending = pendingPermissions.get(requestId);
+  if (pending) {
+    pending.resolve({ approved: !!approved, optionId });
+    return { success: true };
   }
-  return { success: true };
+  return { success: false, error: 'no such pending permission' };
 });
 
 // Feature 12: Skills market browsing
@@ -2259,6 +2527,43 @@ ipcMain.handle('hermes:browse-skills', async (_event, { query }) => {
   }
 });
 
+// 把「文本 + 附件(图片/文件)」转成 ACP prompt content blocks。
+// hermes:prompt(FDE 项目) 与 code:prompt(代码工作区) 共用同一套转换逻辑：
+//   - 图片 → 内联 base64 image block(视觉路径)
+//   - 纯文本文件 → 内联 resource(text)，服务端拼进 prompt
+//   - 二进制文档 → 落盘到 uploadsDir 再发 resource_link，服务端读盘提取文本
+// uploadsDir 是二进制附件的落点(绝对路径)；调用方负责给出一个可写目录。
+function buildPromptBlocks(text, attachments, uploadsDir) {
+  const promptBlocks = [{ type: 'text', text }];
+  if (attachments && Array.isArray(attachments)) {
+    for (const att of attachments) {
+      if (att.type === 'image' && att.data) {
+        const mime = att.media_type || 'image/png';
+        promptBlocks.push({ type: 'image', data: att.data, mimeType: mime, media_type: mime });
+      } else if (att.type === 'file') {
+        const mimeType = att.media_type || 'application/octet-stream';
+        if (typeof att.text === 'string') {
+          const uri = `file:///${encodeURIComponent(att.name || 'attachment')}`;
+          promptBlocks.push({ type: 'resource', resource: { uri, mimeType, text: att.text } });
+        } else if (att.data) {
+          try {
+            const safeName = (att.name || `attachment-${Date.now()}`).replace(/[/\\]/g, '_');
+            if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+            const diskPath = path.join(uploadsDir, safeName);
+            fs.writeFileSync(diskPath, Buffer.from(att.data, 'base64'));
+            const fileUri = `file://${diskPath}`;
+            promptBlocks.push({ type: 'resource_link', uri: fileUri, name: safeName, mimeType });
+          } catch (e) {
+            console.error(`[main] failed to persist binary attachment ${att.name}: ${e.message}`);
+            promptBlocks.push({ type: 'text', text: `（附件「${att.name}」处理失败，未能读取：${e.message}）` });
+          }
+        }
+      }
+    }
+  }
+  return promptBlocks;
+}
+
 ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
   try {
     let meta = readProjectMeta(slug);
@@ -2281,46 +2586,8 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
     }
 
     // Build prompt content blocks (text + optional images / files)
-    // ACP content-block fields are camelCase (mimeType). We also keep media_type
-    // on image blocks for backward-compat with older render paths.
-    const promptBlocks = [{ type: 'text', text }];
-    if (attachments && Array.isArray(attachments)) {
-      for (const att of attachments) {
-        if (att.type === 'image' && att.data) {
-          // Images go through as inline base64 → the ACP server emits an
-          // image_url part so vision models can see them directly.
-          const mime = att.media_type || 'image/png';
-          promptBlocks.push({ type: 'image', data: att.data, mimeType: mime, media_type: mime });
-        } else if (att.type === 'file') {
-          const mimeType = att.media_type || 'application/octet-stream';
-          if (typeof att.text === 'string') {
-            // Plain-text files: inline the decoded text directly as an
-            // embedded resource (the server splices it into the prompt).
-            const uri = `file:///${encodeURIComponent(att.name || 'attachment')}`;
-            promptBlocks.push({ type: 'resource', resource: { uri, mimeType, text: att.text } });
-          } else if (att.data) {
-            // Binary documents (docx/pdf/xlsx/…): DO NOT inline the base64 blob.
-            // The agent would try to Read the fake URI path and hang. Instead we
-            // write the bytes to the project's uploads/ dir and send a
-            // resource_link to the REAL on-disk path — the ACP server then reads
-            // and extracts the document's text server-side.
-            try {
-              const safeName = (att.name || `attachment-${Date.now()}`).replace(/[/\\]/g, '_');
-              const uploadsDir = resolveProjectPath(slug, 'uploads');
-              if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-              const diskPath = path.join(uploadsDir, safeName);
-              fs.writeFileSync(diskPath, Buffer.from(att.data, 'base64'));
-              const fileUri = `file://${diskPath}`;
-              promptBlocks.push({ type: 'resource_link', uri: fileUri, name: safeName, mimeType });
-            } catch (e) {
-              console.error(`[main] failed to persist binary attachment ${att.name}: ${e.message}`);
-              // Fall back to a text note so the user's turn still goes through.
-              promptBlocks.push({ type: 'text', text: `（附件「${att.name}」处理失败，未能读取：${e.message}）` });
-            }
-          }
-        }
-      }
-    }
+    // 共用 buildPromptBlocks；二进制附件落到项目的 uploads/ 目录。
+    const promptBlocks = buildPromptBlocks(text, attachments, resolveProjectPath(slug, 'uploads'));
 
     // [debug] 多模态附件排查：打印附件概况与 block 详情
     if (Array.isArray(attachments) && attachments.length > 0) {
@@ -2334,7 +2601,7 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
     const result = await acp.request('session/prompt', {
       sessionId: meta.sessionId,
       prompt: promptBlocks,
-    }, 600_000); // 10 min timeout
+    }, 3_600_000); // 60 min timeout
 
 
     // Refresh outputs after AI may have written files

@@ -1,0 +1,87 @@
+{
+  "kpis": [
+    { "key": "calls", "label": "本月 AI 调用量", "value": 128640, "unit": "次", "delta": 18.6, "up": true, "icon": "fa-bolt", "desc": "全公司经平台发起的 AI 调用总次数，环比上月增长" },
+    { "key": "tokens", "label": "Token 消耗", "value": 4.82, "unit": "亿", "delta": 12.3, "up": true, "icon": "fa-coins", "desc": "全公司本月累计消耗 token，含输入与输出" },
+    { "key": "cost", "label": "折算成本", "value": 68420, "unit": "元", "delta": -6.4, "up": false, "icon": "fa-sack-dollar", "desc": "按各模型单价折算的本月 AI 成本，因切换低价模型环比下降" },
+    { "key": "usage", "label": "全员 AI 使用率", "value": 87, "unit": "%", "delta": 9.2, "up": true, "icon": "fa-users-gear", "desc": "过去 7 天登录并实际使用平台的员工占全员比例" },
+    { "key": "collab", "label": "跨部门协同任务", "value": 34, "unit": "个", "delta": 21.4, "up": true, "icon": "fa-diagram-project", "desc": "当前进行中、涉及两个及以上部门接力的任务数" },
+    { "key": "efficiency", "label": "人效提升估算", "value": 2140, "unit": "工时", "delta": 15.8, "up": true, "icon": "fa-gauge-high", "desc": "本月 AI 替代的重复性工作，折算节省的人工工时" }
+  ],
+  "departments": [
+    {
+      "name": "市场部", "icon": "fa-bullhorn", "score": 91,
+      "tasks": [
+        { "name": "Q4 骨科耗材新品发布会策划", "owner": "李蔓", "progress": 78, "status": "normal" },
+        { "name": "医疗器械行业月度舆情简报", "owner": "周颖", "progress": 100, "status": "done" },
+        { "name": "微创手术产品线宣传视频脚本", "owner": "李蔓", "progress": 45, "status": "warn" }
+      ]
+    },
+    {
+      "name": "销售部", "icon": "fa-handshake", "score": 88,
+      "tasks": [
+        { "name": "三甲医院采购意向跟单（华东区）", "owner": "陈刚", "progress": 62, "status": "normal" },
+        { "name": "经销商季度返利政策测算", "owner": "王海", "progress": 90, "status": "normal" },
+        { "name": "重点客户流失预警回访", "owner": "陈刚", "progress": 30, "status": "warn" }
+      ]
+    },
+    {
+      "name": "售前部", "icon": "fa-file-signature", "score": 72,
+      "tasks": [
+        { "name": "省人民医院检验科整体解决方案", "owner": "赵敏", "progress": 40, "status": "block" },
+        { "name": "内镜中心信息化投标技术方案", "owner": "孙磊", "progress": 85, "status": "normal" }
+      ]
+    },
+    {
+      "name": "研发部", "icon": "fa-microchip", "score": 90,
+      "tasks": [
+        { "name": "试剂管理系统 效期预警模块", "owner": "刘洋", "progress": 55, "status": "normal" },
+        { "name": "检验设备数据采集网关联调", "owner": "郑宇", "progress": 20, "status": "warn" },
+        { "name": "移动端报告查询 App v2.3", "owner": "刘洋", "progress": 95, "status": "normal" }
+      ]
+    },
+    {
+      "name": "工程部", "icon": "fa-helmet-safety", "score": 85,
+      "tasks": [
+        { "name": "市中心医院检验流水线现场实施", "owner": "吴强", "progress": 68, "status": "normal" },
+        { "name": "县域医共体设备巡检与验收", "owner": "冯磊", "progress": 100, "status": "done" }
+      ]
+    }
+  ],
+  "flow": [
+    { "dept": "市场", "icon": "fa-bullhorn", "label": "获客线索", "count": 42, "status": "normal", "note": "本月新增有效线索 42 条" },
+    { "dept": "销售", "icon": "fa-handshake", "label": "商机跟单", "count": 28, "status": "normal", "note": "进入跟单阶段 28 个商机" },
+    { "dept": "售前", "icon": "fa-file-signature", "label": "方案输出", "count": 11, "status": "block", "note": "省人民医院方案卡点 3 天，下游研发排期空等" },
+    { "dept": "研发", "icon": "fa-microchip", "label": "技术实现", "count": 9, "status": "wait", "note": "2 项因售前方案未定，无法启动" },
+    { "dept": "工程", "icon": "fa-helmet-safety", "label": "交付实施", "count": 6, "status": "normal", "note": "在实施项目 6 个，进度正常" }
+  ],
+  "attentions": [
+    {
+      "title": "售前「省人民医院检验科方案」卡点 3 天，阻塞研发排期",
+      "level": "danger",
+      "why": "智能体研判：该方案是华东区第三季度最大单（预估 480 万），已停滞 72 小时无更新；下游研发 2 名工程师因此空等，本周产能损失约 40 工时。",
+      "action": "建议协调售前赵敏与研发对齐技术边界，或指派资深售前介入",
+      "cta": "协调处理"
+    },
+    {
+      "title": "研发「数据采集网关联调」进度仅 20%，临近里程碑",
+      "level": "warning",
+      "why": "智能体研判：距客户约定的联调验收还剩 5 个工作日，当前进度 20%，按历史速度预计延期 4 天，可能触发合同违约条款。",
+      "action": "建议评估是否增派人手或与客户申请顺延",
+      "cta": "查看详情"
+    },
+    {
+      "title": "销售「重点客户流失预警」已推送 2 天未回访",
+      "level": "warning",
+      "why": "智能体研判：该客户近 60 天采购额下降 47%，竞品接触频繁，流失概率 68%；负责人陈刚的回访任务已挂起 2 天。",
+      "action": "建议今日内安排回访，必要时您亲自致电客户高层",
+      "cta": "指派回访"
+    }
+  ],
+  "quality": [
+    { "dept": "市场部", "score": 91, "level": "good", "note": "文案规范、传播力强" },
+    { "dept": "销售部", "score": 88, "level": "good", "note": "跟单记录完整" },
+    { "dept": "售前部", "score": 72, "level": "low", "note": "方案完整度不足，2 份缺少报价与实施周期" },
+    { "dept": "研发部", "score": 90, "level": "good", "note": "代码规范、注释齐全" },
+    { "dept": "工程部", "score": 85, "level": "good", "note": "验收文档规范" }
+  ]
+}

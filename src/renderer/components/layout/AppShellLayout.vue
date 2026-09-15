@@ -74,6 +74,15 @@
             <span class="nav-label nav-p1">智能对话</span>
           </RouterLink>
           <RouterLink
+            to="/code"
+            class="nav-link"
+            :class="isCodeRoute ? 'nav-link--active' : ''"
+            title="代码"
+          >
+            <i class="fa-solid fa-code text-[11px]"></i>
+            <span class="nav-label nav-p1">代码</span>
+          </RouterLink>
+          <RouterLink
             to="/apps"
             class="nav-link"
             :class="isExpertsRoute ? 'nav-link--active' : ''"
@@ -209,6 +218,7 @@ const isHomeRoute = computed(() => route.path === '/');
 const isProjectSpecRoute = computed(() => route.path === '/project-spec');
 const isTrainingRoute = computed(() => route.path === '/training');
 const isChatRoute = computed(() => route.path === '/chat');
+const isCodeRoute = computed(() => route.path.startsWith('/code'));
 const isExpertsRoute = computed(() => route.path === '/experts' || route.path === '/apps');
 const isProjectsRoute = computed(() => route.path.startsWith('/projects'));
 const isKnowledgeRoute = computed(() => route.path === '/knowledge');

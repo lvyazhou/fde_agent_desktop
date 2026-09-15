@@ -1,0 +1,18 @@
+{
+  "apps": [
+    { "name": "代码模式", "icon": "fa-code", "desc": "程序员在此写代码、改代码，AI 原地生成与重构", "users": 18, "dept": "研发部", "today": 342, "hot": true },
+    { "name": "专家广场", "icon": "fa-user-tie", "desc": "市场/销售/售前各类 AI 专家：获客线索、销售话术、方案撰写", "users": 46, "dept": "市场·销售·售前", "today": 1280, "hot": true },
+    { "name": "通用对话", "icon": "fa-comments", "desc": "全员通用 AI 助手，问答、翻译、总结、润色", "users": 92, "dept": "全公司", "today": 2160, "hot": true },
+    { "name": "知识库", "icon": "fa-book", "desc": "企业私有知识沉淀：产品资料、案例、制度，AI 可检索问答", "users": 74, "dept": "全公司", "today": 560, "hot": false },
+    { "name": "技能中心", "icon": "fa-wand-magic-sparkles", "desc": "可复用的 AI 技能：生成 PPT、写周报、做架构图、导出文档", "users": 51, "dept": "全公司", "today": 430, "hot": false },
+    { "name": "项目管理", "icon": "fa-diagram-project", "desc": "任务派发与产出回收，跨部门协同的账本", "users": 63, "dept": "全公司", "today": 288, "hot": false }
+  ],
+  "recent": [
+    { "user": "刘洋", "dept": "研发部", "app": "代码模式", "action": "生成 试剂效期预警定时任务", "time": "12 分钟前" },
+    { "user": "李蔓", "dept": "市场部", "app": "专家广场", "action": "撰写 骨科新品发布会邀请函", "time": "23 分钟前" },
+    { "user": "赵敏", "dept": "售前部", "app": "专家广场", "action": "生成 检验科解决方案初稿", "time": "38 分钟前" },
+    { "user": "陈刚", "dept": "销售部", "app": "通用对话", "action": "整理 三甲医院采购决策链", "time": "1 小时前" },
+    { "user": "周颖", "dept": "市场部", "app": "技能中心", "action": "导出 行业舆情简报 PDF", "time": "1 小时前" },
+    { "user": "郑宇", "dept": "研发部", "app": "知识库", "action": "检索 网关协议对接文档", "time": "2 小时前" }
+  ]
+}

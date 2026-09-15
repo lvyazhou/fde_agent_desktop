@@ -12,6 +12,8 @@ import Knowledge from '@/pages/knowledge/Knowledge.vue';
 import Skills from '@/pages/skills/Skills.vue';
 import Settings from '@/pages/settings/Settings.vue';
 import ExpertSquare from '@/pages/experts/ExpertSquare.vue';
+import CodeWorkspaceList from '@/pages/code/CodeWorkspaceList.vue';
+import CodeWorkspace from '@/pages/code/CodeWorkspace.vue';
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -26,6 +28,8 @@ const router = createRouter({
         { path: 'project-spec', component: ProjectSpec },
         { path: 'training', component: TrainingGuide },
         { path: 'chat', component: AgentHome },
+        { path: 'code', component: CodeWorkspaceList },
+        { path: 'code/:id', component: CodeWorkspace, props: true },
         { path: 'projects', component: ProjectList },
         { path: 'projects/new', component: ProjectCreate },
         { path: 'projects/:slug', component: ProjectDetail, props: true },
