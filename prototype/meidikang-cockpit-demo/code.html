@@ -54,6 +54,16 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
 /* 中间：AI 对话 */
 .chat-col{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid hsl(var(--border) / 70%)}
 .chat-hd{display:flex;align-items:center;gap:8px;padding:9px 16px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+/* 多会话 tab 栏 */
+.sess-bar{display:flex;align-items:center;gap:6px;padding:6px 10px;overflow-x:auto;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
+.sess-bar::-webkit-scrollbar{height:0}
+.sess-tab{display:flex;align-items:center;gap:7px;padding:5px 9px 5px 11px;border-radius:8px;font-size:12.5px;cursor:pointer;white-space:nowrap;color:hsl(var(--muted-foreground));border:1px solid transparent;transition:all .12s;flex-shrink:0}
+.sess-tab:hover{background:hsl(var(--primary) / 6%)}
+.sess-tab.on{background:hsl(var(--primary) / 10%);border-color:hsl(var(--primary) / 30%);color:hsl(var(--primary));font-weight:600}
+.sess-tab .x{width:16px;height:16px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;opacity:.6}
+.sess-tab .x:hover{opacity:1;background:hsl(var(--danger) / 15%);color:hsl(var(--danger))}
+.sess-new{width:28px;height:28px;flex-shrink:0;border:1px dashed hsl(var(--border));border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:hsl(var(--muted-foreground))}
+.sess-new:hover{border-color:hsl(var(--primary) / 55%);color:hsl(var(--primary))}
 .chat-flow{flex:1;overflow-y:auto;padding:16px 18px}
 .qchip{padding:8px 11px;border-radius:9px;border:1px solid hsl(var(--border));font-size:12.5px;cursor:pointer;color:hsl(var(--foreground));background:hsl(var(--background))}
 .qchip:hover{border-color:hsl(var(--primary) / 50%);background:hsl(var(--primary) / 5%)}
@@ -180,6 +190,17 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
         <img src="image/bot.png" onerror="botFallback(this)" class="w-6 h-6 rounded-lg object-cover">
         <span class="text-[13px] font-semibold">AI 编程助手</span>
         <span class="ml-auto text-[12px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-shield-halved mr-1"></i>产出经网关审计 · 数据不出域</span>
+      </div>
+      <!-- 多会话 tab 栏 -->
+      <div class="sess-bar msc">
+        <template x-for="s in sessions" :key="s.id">
+          <div class="sess-tab" :class="{'on':s.id===sid}" @click="switchSession(s.id)">
+            <i class="fa fa-comment-dots text-[10px]"></i>
+            <span x-text="s.title"></span>
+            <span class="x" x-show="sessions.length>1" @click.stop="closeSession(s.id)"><i class="fa fa-xmark"></i></span>
+          </div>
+        </template>
+        <div class="sess-new" title="新建对话" @click="newSession()"><i class="fa fa-plus text-[11px]"></i></div>
       </div>
       <div class="chat-flow msc" x-ref="flow">
         <!-- 空态：欢迎 + 快捷指令 -->
@@ -320,7 +341,7 @@ function codeApp(){
       {id:'p3',name:'经营数据看板',path:'~/projects/dashboard',lang:'Python',updated:'09-12',icon:'fa-chart-line'}
     ],
     cur:'effiry', busy:false, act:'', generated:false, prompt:'', _cur:'',
-    messages:[],
+    sessions:[], sid:null, _sseq:0, messages:[],
     quicks:['给 checkExpiry 补充空数据与异常处理','把 daysLeft 提取成公共函数','这段并发扣减库存有没有问题？','给这个文件加单元测试'],
     toasts:[], _toastId:0,
     files:[
@@ -384,12 +405,24 @@ function codeApp(){
       this.modal=null;
     },
     openProject(p){ this.enterIde({name:p.name, path:p.path}); },
-    enterIde(proj){ this.project=proj; this.stage='ide'; this.cur='effiry'; this.messages=[]; this.generated=false; this._cur=''; this._extra=[]; },
-    backToEntry(){ this.stage='entry'; this.messages=[]; },
+    enterIde(proj){ this.project=proj; this.stage='ide'; this.cur='effiry'; this.generated=false; this._cur=''; this._extra=[];
+      this.sessions=[]; this._sseq=0; this.newSession(); },
+    backToEntry(){ this.stage='entry'; this.sessions=[]; this.sid=null; this.messages=[]; },
+    // —— 多对话会话 ——
+    newSession(){ const id='s'+(++this._sseq); this.sessions.push({id, title:'新对话', msgs:[]}); this.switchSession(id); },
+    switchSession(id){ this.sid=id; const s=this.sessions.find(x=>x.id===id); this.messages = s ? s.msgs : []; this.scrollFlow(); },
+    closeSession(id){ const idx=this.sessions.findIndex(x=>x.id===id); if(idx<0||this.sessions.length<=1) return;
+      this.sessions.splice(idx,1);
+      if(this.sid===id){ const next=this.sessions[Math.max(0,idx-1)]; this.switchSession(next.id); } },
+    curSession(){ return this.sessions.find(x=>x.id===this.sid); },
     // —— 第二步：代码 & 对话 ——
     curLines(){ return (this.code[this.cur]||[]).concat(this._cur===this.cur?this._extra:[]); },
     scrollCode(){ this.$nextTick(()=>{ const el=this.$refs.code; if(el) el.scrollTop=el.scrollHeight; }); },
     scrollFlow(){ this.$nextTick(()=>{ const el=this.$refs.flow; if(el) el.scrollTop=el.scrollHeight; }); },
+    // 推一条用户消息，首条自动成为会话标题
+    pushUser(text){ this.messages.push({role:'user',text});
+      const s=this.curSession(); if(s && s.title==='新对话'){ s.title = text.length>12 ? text.slice(0,12)+'…' : text; }
+      this.scrollFlow(); },
     // 往对话流推一条 AI 气泡（打字机效果），可带要点
     pushAi(text, points){
       this.messages.push({role:'ai',full:text,shown:'',typing:true,points:points||[]});
@@ -399,7 +432,7 @@ function codeApp(){
         if(i>=full.length){ clearInterval(timer); this.messages[idx].typing=false; this.busy=false; this.scrollFlow(); } },14);
     },
     genCode(){ if(this.busy) return; this.busy=true; this.act='gen';
-      this.messages.push({role:'user',text:'为 '+this.files.find(f=>f.key===this.cur).name+' 生成缺失的空数据与异常处理'}); this.scrollFlow();
+      this.pushUser('为 '+this.files.find(f=>f.key===this.cur).name+' 生成缺失的空数据与异常处理');
       setTimeout(()=>{ this._cur=this.cur; this._extra=[
         {html:'',isNew:true},
         {html:'<span class="cm">// —— AI 生成：补充空数据与异常处理 ——</span>',isNew:true},
@@ -414,7 +447,7 @@ function codeApp(){
         this.showToast('已生成 6 行代码','success');
       },1200); },
     refactor(){ if(this.busy) return; this.busy=true; this.act='ref';
-      this.messages.push({role:'user',text:'重构 '+this.files.find(f=>f.key===this.cur).name}); this.scrollFlow();
+      this.pushUser('重构 '+this.files.find(f=>f.key===this.cur).name);
       setTimeout(()=>{ this.act='';
         this.pushAi('已重构 <b>'+this.files.find(f=>f.key===this.cur).name+'</b>，逻辑不变、可读性更好。',
           ['提取公共函数 daysLeft()，减少重复','统一异常处理，抛出可读错误','变量命名规范化']);
@@ -422,7 +455,7 @@ function codeApp(){
       },1200); },
     ask(q){ this.prompt=q; this.askAi(); },
     askAi(){ const p=this.prompt.trim(); if(!p||this.busy) return; this.busy=true; this.prompt='';
-      this.messages.push({role:'user',text:p}); this.scrollFlow();
+      this.pushUser(p);
       setTimeout(()=>{
         this.pushAi('已按您的要求「'+p+'」调整了 <b>'+this.files.find(f=>f.key===this.cur).name+'</b>，改动已在右侧高亮，可直接查看。',
           ['已按要求「'+p+'」调整代码','改动已高亮，可在编辑器查看','产出经网关审计留痕']);

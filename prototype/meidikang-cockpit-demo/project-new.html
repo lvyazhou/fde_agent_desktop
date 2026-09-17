@@ -42,17 +42,26 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
 .title-bar .app-name{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600} .title-bar .app-name img{width:20px;height:20px;border-radius:5px}
 /* 顶部返回条 */
 .topbar{height:52px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 22px;box-shadow:inset 0 -1px 0 hsl(var(--border) / 70%)}
-/* 步骤条 */
-.steps{display:flex;align-items:center;padding:18px 26px;gap:6px}
-.step{display:flex;align-items:center;gap:9px;flex:1}
-.step-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0;border:2px solid hsl(var(--border));color:hsl(var(--muted-foreground));background:hsl(var(--background))}
-.step.done .step-dot{background:hsl(var(--success));border-color:hsl(var(--success));color:#fff}
-.step.active .step-dot{background:hsl(var(--primary));border-color:hsl(var(--primary));color:#fff}
-.step-txt{font-size:13px;color:hsl(var(--muted-foreground))}
-.step.active .step-txt,.step.done .step-txt{color:hsl(var(--foreground));font-weight:600}
-.step-line{flex:1;height:2px;background:hsl(var(--border));border-radius:1px;min-width:20px}
-.step.done .step-line{background:hsl(var(--success))}
-.wrap{flex:1;display:flex;min-height:0;padding:0 26px 22px;gap:16px}
+/* 返回图标钮 */
+.back-btn{width:34px;height:34px;border-radius:9px;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--muted-foreground));display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;text-decoration:none;transition:all .15s}
+.back-btn:hover{color:hsl(var(--primary));border-color:hsl(var(--primary) / 50%);background:hsl(var(--primary) / 6%)}
+/* 卡片式流程步骤 */
+.flow-steps{display:flex;gap:10px;padding:16px 26px 4px}
+.fcard{flex:1;border-radius:12px;border:1px solid hsl(var(--border));background:var(--card-bg);padding:12px 14px;cursor:pointer;transition:all .15s;position:relative;overflow:hidden}
+.fcard:hover{border-color:hsl(var(--primary) / 45%)}
+.fcard.done{border-color:hsl(var(--success) / 45%)}
+.fcard.active{border-color:transparent;color:#fff;background:linear-gradient(135deg,color-mix(in srgb,hsl(var(--primary)) 88%,black),hsl(var(--primary)));box-shadow:0 8px 18px hsl(var(--primary) / 22%)}
+.fcard .fnum{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:1.5px solid hsl(var(--border));color:hsl(var(--muted-foreground))}
+.fcard.done .fnum{background:hsl(var(--success));border-color:hsl(var(--success));color:#fff}
+.fcard.active .fnum{background:hsl(0 0% 100% / 22%);border-color:hsl(0 0% 100% / 50%);color:#fff}
+.fcard .fdept{font-size:14px;font-weight:600;margin-top:8px}
+.fcard .flabel2{font-size:11.5px;margin-top:2px}
+.fcard:not(.active) .flabel2{color:hsl(var(--muted-foreground))}
+.fcard.active .flabel2{color:hsl(0 0% 100% / 82%)}
+/* 表单自适应网格：按宽度自动排列，文本框有最小宽度不会太短 */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px 18px}
+.form-grid .full{grid-column:1 / -1}
+.wrap{flex:1;display:flex;min-height:0;padding:12px 26px 22px;gap:16px}
 .form-col{flex:1;overflow-y:auto;min-width:0}
 .ai-col{width:340px;flex-shrink:0;display:flex;flex-direction:column}
 .field{width:100%;padding:9px 12px;border:1px solid hsl(var(--border));border-radius:8px;background:hsl(var(--background));font-size:13px;color:hsl(var(--foreground));outline:none;font-family:inherit;resize:vertical}
@@ -80,7 +89,7 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
 
   <!-- 返回条 -->
   <div class="topbar">
-    <a href="project.html" class="btn-ghost" style="display:inline-flex;align-items:center;text-decoration:none"><i class="fa fa-arrow-left mr-1.5"></i>返回项目工作台</a>
+    <a href="project.html" class="back-btn" title="返回项目工作台"><i class="fa fa-arrow-left"></i></a>
     <div>
       <div class="text-[16px] font-bold">新建项目 · 协作流程向导</div>
       <div class="text-[11.5px]" style="color:hsl(var(--muted-foreground))">按 市场 → 销售 → 售前 → 研发 → 工程 五步走，每步由对应 AI 专家协助完成</div>
@@ -88,18 +97,17 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
     <div class="ml-auto text-[12px]" style="color:hsl(var(--muted-foreground))">第 <b class="num" style="color:hsl(var(--primary))" x-text="step+1"></b> / 5 步</div>
   </div>
 
-  <!-- 步骤条 -->
-  <div class="steps">
+  <!-- 卡片式流程步骤 -->
+  <div class="flow-steps">
     <template x-for="(s,i) in steps" :key="i">
-      <template x-if="true">
-        <div class="flex items-center" :class="i<steps.length-1?'flex-1':''" style="gap:6px">
-          <div class="step" :class="{'done':i<step,'active':i===step}" style="flex:none;cursor:pointer" @click="i<=maxReached && (step=i)">
-            <div class="step-dot"><span x-show="i>=step" x-text="i+1"></span><i class="fa fa-check" x-show="i<step" x-cloak></i></div>
-            <div><div class="step-txt" x-text="s.dept"></div><div class="text-[11px]" style="color:hsl(var(--muted-foreground))" x-text="s.label"></div></div>
-          </div>
-          <div class="step-line" :class="{'done':i<step}" x-show="i<steps.length-1"></div>
+      <div class="fcard" :class="{'done':i<step,'active':i===step}" @click="i<=maxReached && (step=i, enter())">
+        <div class="flex items-center justify-between">
+          <div class="fnum"><span x-show="i>=step" x-text="i+1"></span><i class="fa fa-check" x-show="i<step" x-cloak style="font-size:10px"></i></div>
+          <i class="fa" :class="s.icon" :style="i===step?'color:#fff':'color:hsl(var(--primary))'"></i>
         </div>
-      </template>
+        <div class="fdept" x-text="s.dept"></div>
+        <div class="flabel2" x-text="s.label"></div>
+      </div>
     </template>
   </div>
 
@@ -118,12 +126,34 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
             <i class="fa mr-1.5" :class="genning?'fa-spinner fa-spin':'fa-wand-magic-sparkles'"></i>AI 一键生成
           </button>
         </div>
-        <div class="space-y-3.5">
+        <div class="form-grid">
           <template x-for="f in cur().fields" :key="f.key">
-            <div>
+            <div :class="f.area?'full':''">
               <label class="flabel" x-text="f.label"></label>
               <textarea x-show="f.area" class="field" rows="2" x-model="form[step][f.key]" :placeholder="f.ph"></textarea>
               <input x-show="!f.area" class="field" x-model="form[step][f.key]" :placeholder="f.ph">
+            </div>
+          </template>
+        </div>
+      </div>
+
+      <!-- 本阶段交付物 -->
+      <div class="card mt-4" style="padding:14px 18px">
+        <div class="flex items-center gap-2 mb-2.5">
+          <i class="fa fa-folder-open" style="color:hsl(var(--primary))"></i>
+          <span class="text-[13.5px] font-semibold">本阶段交付物</span>
+          <span class="text-[11.5px]" style="color:hsl(var(--muted-foreground))" x-text="'（'+cur().deliverables.length+' 份 · AI 可自动生成）'"></span>
+          <span class="tag" :class="delivered?'success':'warning'" style="padding:1px 8px;margin-left:4px" x-text="delivered?'已生成':'待生成'"></span>
+        </div>
+        <div class="grid gap-2" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))">
+          <template x-for="d in cur().deliverables" :key="d.name">
+            <div class="flex items-center gap-2.5 rounded-lg" style="border:1px solid hsl(var(--border));padding:9px 11px">
+              <i class="fa flex-shrink-0" :class="fileIcon(d.type)" :style="'color:'+fileColor(d.type)+';font-size:16px'"></i>
+              <div class="flex-1 min-w-0">
+                <div class="text-[12.5px] truncate" :title="d.name" x-text="d.name"></div>
+                <div class="text-[11px]" style="color:hsl(var(--muted-foreground))" x-text="d.by"></div>
+              </div>
+              <i class="fa flex-shrink-0" :class="delivered?'fa-circle-check':'fa-clock'" :style="delivered?'color:hsl(var(--success))':'color:hsl(var(--muted-foreground))'"></i>
             </div>
           </template>
         </div>
@@ -189,67 +219,114 @@ function wizard(){
         fields:[
           {key:'name',label:'项目名称',ph:'如：省人民医院检验科整体解决方案'},
           {key:'hospital',label:'目标客户 / 医院',ph:'如：省人民医院'},
-          {key:'source',label:'线索来源',ph:'如：行业展会 / 老客户转介绍 / 招标公告'},
-          {key:'amount',label:'预估金额',ph:'如：480 万'}
+          {key:'level',label:'医院等级',ph:'如：三级甲等'},
+          {key:'region',label:'所在区域',ph:'如：华东区'},
+          {key:'source',label:'线索来源',ph:'如：招标公告 / 老客户转介绍'},
+          {key:'amount',label:'预估金额',ph:'如：480 万'},
+          {key:'contact',label:'关键联系人',ph:'如：检验科 王主任'},
+          {key:'need',label:'初步需求描述',area:true,ph:'如：检验科整体信息化升级，含 LIS 与流水线'},
+          {key:'value',label:'机会价值研判',area:true,ph:'AI 可自动评估机会等级与成单概率'}
         ],
         quick:['帮我判断这个线索的价值','这类医院采购一般走什么流程'],
-        genned:{name:'省人民医院检验科整体解决方案',hospital:'省人民医院',source:'招标公告 + 老客户转介绍',amount:'480 万'},
+        genned:{name:'省人民医院检验科整体解决方案',hospital:'省人民医院',level:'三级甲等',region:'华东区',source:'招标公告 + 老客户转介绍',amount:'480 万',contact:'检验科 王主任 / 采购科 刘科长',need:'检验科 LIS 系统 + 自动化流水线整体升级，要求与院内 HIS/EMR 打通，支持危急值自动上报',value:'评估为 A 类高价值机会：三甲医院、预算充足、有明确升级需求；成单概率约 65%，建议尽快转入销售跟单。'},
+        deliverables:[
+          {name:'客户机会评估表.xlsx',type:'xlsx',by:'AI 生成'},
+          {name:'线索背景调研报告.docx',type:'docx',by:'AI 生成'}
+        ],
         aiWelcome:'我是获客线索专家。把客户和来源填进去，我会帮你研判这个机会的价值与成单概率。也可以点「AI 一键生成」，我按典型案例先填一版。',
-        aiGen:'已按典型高价值机会为你填好表单：<br>· 判断为 <b>A 类机会</b>（三甲医院、预算充足）<br>· 建议尽快转入销售跟单阶段<br>· 关注竞品是否已介入' },
+        aiGen:'已按典型高价值机会为你填好表单：<br>· 判断为 <b>A 类机会</b>（三甲医院、预算充足）<br>· 成单概率约 <b>65%</b><br>· 建议尽快转入销售跟单阶段，关注竞品是否已介入<br>· 已生成「客户机会评估表」「线索背景调研报告」两份交付物' },
       { dept:'销售', label:'商机跟单', icon:'fa-handshake', expert:'销售话术专家', hint:'梳理决策链与跟单策略，AI 帮你制定推进打法',
         fields:[
-          {key:'chain',label:'决策链',area:true,ph:'如：检验科主任（使用方）→ 采购科（流程）→ 分管院长（拍板）'},
+          {key:'chain',label:'决策链梳理',area:true,ph:'如：检验科主任（使用方）→ 采购科（流程）→ 分管院长（拍板）'},
           {key:'time',label:'预计采购时间',ph:'如：2025 Q4'},
-          {key:'compete',label:'竞争态势',ph:'如：竞品 A 已接触采购科'},
-          {key:'strategy',label:'跟单策略',area:true,ph:'如：先攻临床科室建立技术认可，再推动采购'}
+          {key:'budget',label:'预算落实情况',ph:'如：已进入年度采购预算'},
+          {key:'compete',label:'竞争态势',ph:'如：竞品 A 已接触采购科，价格略低'},
+          {key:'advantage',label:'我方优势',ph:'如：技术方案成熟 + 本地化服务'},
+          {key:'strategy',label:'跟单策略',area:true,ph:'如：先攻临床科室建立技术认可，再推动采购'},
+          {key:'nextstep',label:'下一步动作',area:true,ph:'如：本周安排售前技术交流会'}
         ],
         quick:['决策链里谁最关键','竞品已介入，我该怎么打'],
-        genned:{chain:'检验科主任（使用方，重技术）→ 采购科（走流程）→ 分管副院长（最终拍板）',time:'2025 Q4',compete:'竞品 A 已接触采购科，价格略低',strategy:'先由售前做技术方案攻下检验科主任，建立技术壁垒；再通过老客户关系触达分管院长。'},
+        genned:{chain:'检验科主任（使用方，重技术认可）→ 采购科刘科长（走流程）→ 分管副院长（最终拍板）',time:'2025 Q4',budget:'已纳入 2025 年度设备采购预算',compete:'竞品 A 已接触采购科，主打低价；竞品 B 在观望',advantage:'检验信息化整体方案成熟、本地化实施团队响应快、有同级医院成功案例',strategy:'先由售前做技术方案攻下检验科主任建立技术壁垒；再通过老客户关系触达分管院长推动立项。',nextstep:'本周安排售前技术交流会；下周提交初步方案与报价框架。'},
+        deliverables:[
+          {name:'决策链分析与跟单策略.docx',type:'docx',by:'AI 生成'},
+          {name:'客户跟进记录表.xlsx',type:'xlsx',by:'AI 生成'},
+          {name:'竞争态势对比表.xlsx',type:'xlsx',by:'AI 生成'}
+        ],
         aiWelcome:'我是销售话术专家。把决策链和竞争情况告诉我，我帮你定跟单策略和关键话术。',
-        aiGen:'已为你梳理决策链与打法：<br>· 关键人是<b>检验科主任</b>（技术认可决定成败）<br>· 竞品打价格，我们打<b>技术+服务</b>差异化<br>· 建议本周安排售前技术交流' },
+        aiGen:'已为你梳理决策链与打法：<br>· 关键人是<b>检验科主任</b>（技术认可决定成败）<br>· 竞品打价格，我们打<b>技术+服务</b>差异化<br>· 建议本周安排售前技术交流<br>· 已生成跟单策略、跟进记录、竞争对比三份交付物' },
       { dept:'售前', label:'方案输出', icon:'fa-file-signature', expert:'招投标方案专家', hint:'确定需求与方案要点，AI 帮你生成方案初稿',
         fields:[
           {key:'demand',label:'客户需求要点',area:true,ph:'如：检验科 LIS 系统 + 流水线，要求与 HIS 打通'},
-          {key:'solution',label:'方案要点',area:true,ph:'如：整体检验信息化，含设备+软件+实施'},
-          {key:'difficulty',label:'技术难点',ph:'如：与院内 HIS 系统的接口对接'}
+          {key:'scope',label:'方案范围',ph:'如：设备 + 软件 + 数据网关 + 实施'},
+          {key:'solution',label:'方案核心要点',area:true,ph:'如：整体检验信息化，分三期交付'},
+          {key:'difficulty',label:'技术难点',area:true,ph:'如：与院内 HIS 系统的接口对接、历史数据迁移'},
+          {key:'quote',label:'报价框架',ph:'如：设备 300 万 + 软件 120 万 + 实施 60 万'},
+          {key:'bidpoint',label:'投标评分要点',area:true,ph:'AI 可标注评分关键项'}
         ],
         quick:['帮我生成方案大纲','这个技术难点怎么应答'],
-        genned:{demand:'检验科 LIS 系统 + 自动化流水线，要求与院内 HIS/EMR 打通，支持危急值自动上报',solution:'提供"设备+LIS软件+数据网关+现场实施"整体方案，分三期交付',difficulty:'与院内既有 HIS 系统的标准化接口对接、历史数据迁移'},
+        genned:{demand:'检验科 LIS 系统 + 自动化流水线，要求与院内 HIS/EMR 打通，支持危急值自动上报、检验报告自动出具',scope:'设备 + LIS 软件 + 数据网关 + 现场实施 + 培训',solution:'提供"设备+LIS软件+数据网关+现场实施"整体方案，分三期交付：一期上线 LIS，二期接入流水线，三期数据打通与优化',difficulty:'与院内既有 HIS 系统的标准化接口对接（HL7/FHIR）、历史检验数据迁移、危急值实时上报链路',quote:'设备 300 万 + LIS 软件 120 万 + 实施服务 60 万，合计约 480 万',bidpoint:'技术分重点：系统对接能力、危急值上报时效、同级医院案例；建议突出本地化服务与响应 SLA。'},
+        deliverables:[
+          {name:'整体解决方案.docx',type:'docx',by:'AI 生成'},
+          {name:'投标技术应答文件.docx',type:'docx',by:'AI 生成'},
+          {name:'报价清单.xlsx',type:'xlsx',by:'AI 生成'},
+          {name:'方案汇报 PPT.pptx',type:'pptx',by:'AI 生成'}
+        ],
         aiWelcome:'我是招投标方案专家。填入需求要点，我可以生成方案大纲、技术应答，并标注评分关键点。',
-        aiGen:'已生成方案要点（初稿）：<br>· 整体方案分<b>设备/软件/网关/实施</b>四块<br>· 技术难点：HIS 接口——建议用标准 HL7/FHIR 协议应答<br>· ⚠️ 此环节是当前跨部门流转的<b>常见卡点</b>，请尽快与研发对齐技术边界' },
+        aiGen:'已生成方案要点（初稿）：<br>· 整体方案分<b>设备/软件/网关/实施</b>四块，分三期交付<br>· 技术难点：HIS 接口——建议用标准 HL7/FHIR 协议应答<br>· ⚠️ 此环节是跨部门流转的<b>常见卡点</b>，请尽快与研发对齐技术边界<br>· 已生成方案、技术应答、报价、汇报 PPT 四份交付物' },
       { dept:'研发', label:'技术实现', icon:'fa-microchip', expert:'技术评估专家', hint:'评估技术选型与工期，AI 帮你识别工期与资源风险',
         fields:[
-          {key:'tech',label:'技术选型',area:true,ph:'如：数据采集网关 + LIS 对接中间件'},
-          {key:'period',label:'工期评估',ph:'如：45 个工作日'},
-          {key:'resource',label:'资源需求',ph:'如：2 名后端 + 1 名实施工程师'}
+          {key:'tech',label:'技术选型',area:true,ph:'如：数据采集网关 + LIS 对接中间件 + HL7 适配层'},
+          {key:'arch',label:'系统架构要点',area:true,ph:'如：采集层 / 网关层 / 应用层 三层结构'},
+          {key:'period',label:'工期评估',ph:'如：45 个工作日（含联调）'},
+          {key:'resource',label:'资源需求',ph:'如：2 名后端 + 1 名数据工程师'},
+          {key:'risk',label:'技术风险',area:true,ph:'AI 可自动识别工期与对接风险'},
+          {key:'depend',label:'外部依赖',ph:'如：需院方开放 HIS 接口权限'}
         ],
         quick:['这个工期合理吗','有哪些技术风险'],
-        genned:{tech:'数据采集网关（自研）+ LIS 对接中间件 + HL7 接口适配层',period:'45 个工作日（含联调）',resource:'2 名后端工程师 + 1 名数据工程师，联调阶段需现场支持'},
+        genned:{tech:'数据采集网关（自研）+ LIS 对接中间件 + HL7 接口适配层',arch:'采集层（设备对接）→ 网关层（协议转换/审计）→ 应用层（LIS 业务），数据全程院内闭环',period:'45 个工作日（含联调）',resource:'2 名后端工程师 + 1 名数据工程师，联调阶段需现场支持',risk:'⚠️ 工期偏紧：HIS 接口联调不确定性大，建议预留 1 周缓冲；历史数据迁移需院方配合，存在延期风险。',depend:'需院方开放 HIS 标准接口权限、提供历史数据样本'},
+        deliverables:[
+          {name:'技术评估报告.docx',type:'docx',by:'AI 生成'},
+          {name:'系统架构设计图.svg',type:'svg',by:'AI 生成'},
+          {name:'开发排期计划.xlsx',type:'xlsx',by:'AI 生成'}
+        ],
         aiWelcome:'我是技术评估专家。填入技术方案，我帮你评估工期是否现实、有哪些技术与资源风险。',
-        aiGen:'已完成技术评估：<br>· 选型可行，建议复用现有采集网关<br>· ⚠️ <b>工期风险</b>：45 天偏紧，HIS 接口联调不确定性大，建议预留 1 周缓冲<br>· 资源：联调期需现场工程师，注意与工程部排期协调' },
+        aiGen:'已完成技术评估：<br>· 选型可行，建议复用现有采集网关<br>· ⚠️ <b>工期风险</b>：45 天偏紧，HIS 接口联调不确定性大，建议预留 1 周缓冲<br>· 资源：联调期需现场工程师，注意与工程部排期协调<br>· 已生成技术评估报告、架构图、开发排期三份交付物' },
       { dept:'工程', label:'交付实施', icon:'fa-helmet-safety', expert:'交付实施专家', hint:'制定实施计划与验收标准，AI 帮你排里程碑',
         fields:[
-          {key:'plan',label:'实施计划',area:true,ph:'如：进场→安装→联调→培训→验收'},
-          {key:'milestone',label:'交付里程碑',area:true,ph:'如：M1 设备到场 / M2 联调完成 / M3 验收'},
-          {key:'accept',label:'验收标准',ph:'如：系统稳定运行 30 天，危急值上报准确率 100%'}
+          {key:'plan',label:'实施计划',area:true,ph:'如：进场→安装→部署→联调→培训→试运行→验收'},
+          {key:'milestone',label:'交付里程碑',area:true,ph:'如：M1 设备到场 / M2 联调完成 / M3 培训 / M4 验收'},
+          {key:'team',label:'实施团队',ph:'如：项目经理 1 + 实施工程师 2'},
+          {key:'duration',label:'实施周期',ph:'如：约 9 周'},
+          {key:'train',label:'培训计划',ph:'如：检验科全员 2 场培训'},
+          {key:'accept',label:'验收标准',area:true,ph:'如：稳定运行 30 天，危急值上报准确率 100%'}
         ],
         quick:['帮我排实施里程碑','验收标准怎么定'],
-        genned:{plan:'设备进场 → 硬件安装 → 系统部署 → 与 HIS 联调 → 科室培训 → 试运行 → 正式验收',milestone:'M1 设备到场(第2周) / M2 联调完成(第6周) / M3 培训完成(第7周) / M4 验收(第9周)',accept:'系统连续稳定运行 30 天，危急值自动上报准确率 100%，检验报告出具时间缩短 30%'},
+        genned:{plan:'设备进场 → 硬件安装 → 系统部署 → 与 HIS 联调 → 科室培训 → 试运行 → 正式验收',milestone:'M1 设备到场(第2周) / M2 联调完成(第6周) / M3 培训完成(第7周) / M4 正式验收(第9周)',team:'项目经理 1 名 + 实施工程师 2 名 + 数据工程师 1 名（联调期）',duration:'约 9 周',train:'检验科全员 2 场操作培训 + 1 场管理员培训，配套操作手册',accept:'系统连续稳定运行 30 天，危急值自动上报准确率 100%，检验报告出具时间缩短 30%'},
+        deliverables:[
+          {name:'项目实施方案.docx',type:'docx',by:'AI 生成'},
+          {name:'交付里程碑计划表.xlsx',type:'xlsx',by:'AI 生成'},
+          {name:'验收标准与清单.docx',type:'docx',by:'AI 生成'},
+          {name:'用户培训手册.pdf',type:'pdf',by:'AI 生成'}
+        ],
         aiWelcome:'我是交付实施专家。填入实施要点，我帮你排里程碑、定验收标准，确保项目顺利落地。',
-        aiGen:'已排定实施计划与里程碑：<br>· 4 个里程碑，总工期约 9 周<br>· 验收标准量化到"稳定运行 30 天 + 危急值准确率 100%"<br>· 建议培训环节提前介入，降低上线阻力' }
+        aiGen:'已排定实施计划与里程碑：<br>· 4 个里程碑，总工期约 9 周<br>· 验收标准量化到"稳定运行 30 天 + 危急值准确率 100%"<br>· 建议培训环节提前介入，降低上线阻力<br>· 已生成实施方案、里程碑计划、验收清单、培训手册四份交付物' }
     ],
     form:[{},{},{},{},{}],
     msgs:[],
+    delivered:false,
+    _deliveredSet:{},
     init(){ this.enter(); },
     cur(){ return this.steps[this.step]; },
-    enter(){ this.msgs=[]; this.pushAI(this.cur().aiWelcome); },
+    fileIcon(t){ return {docx:'fa-file-word',xlsx:'fa-file-excel',pptx:'fa-file-powerpoint',pdf:'fa-file-pdf',svg:'fa-file-image'}[t]||'fa-file'; },
+    fileColor(t){ return 'hsl(var(--primary))'; },
+    enter(){ this.msgs=[]; this.delivered=!!this._deliveredSet[this.step]; this.pushAI(this.cur().aiWelcome); },
     genForm(){ if(this.genning) return; this.genning=true;
       setTimeout(()=>{ const g=this.cur().genned; Object.keys(g).forEach(k=>{ this.form[this.step][k]=g[k]; });
-        this.genning=false; this.pushAI(this.cur().aiGen); this.showToast('AI 已生成本步内容','success'); },1300); },
+        this.genning=false; this.delivered=true; this._deliveredSet[this.step]=true; this.pushAI(this.cur().aiGen); this.showToast('AI 已生成本步内容与交付物','success'); },1300); },
     ask(q){ q=(q||'').trim(); if(!q||this.replying) return; this.draft=''; this.msgs.push({role:'user',text:q}); this.scroll();
       this.pushAI('针对「'+q+'」——'+this.cur().expert+'为你解答（演示）：结合本项目情况与企业知识库，建议如上表所填方向推进；需要我直接把要点写进表单吗？'); },
     prev(){ if(this.step>0){ this.step--; this.enter(); } },
-    next(){ if(!this.form[this.step].name && this.step===0){ /* 允许空，演示 */ } this.step++; this.maxReached=Math.max(this.maxReached,this.step); this.enter(); },
+    next(){ this.step++; this.maxReached=Math.max(this.maxReached,this.step); this.enter(); },
     submit(){ this.showToast('项目已创建，进入协作流转','success'); setTimeout(()=>{ location.href='project.html'; },1200); },
     pushAI(full){ this.replying=true; this.msgs.push({role:'ai',full,shown:'',typing:true}); const idx=this.msgs.length-1; this.stream(idx); },
     stream(idx){ let i=0; const full=this.msgs[idx].full;

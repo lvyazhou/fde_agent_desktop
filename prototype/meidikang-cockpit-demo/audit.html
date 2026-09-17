@@ -56,6 +56,17 @@ table{width:100%;border-collapse:collapse}
 th{padding:10px 14px;font-size:12px;font-weight:600;color:hsl(var(--muted-foreground));text-align:left;background:hsl(var(--primary) / 4%);white-space:nowrap}
 td{padding:10px 14px;font-size:13px;border-top:1px solid hsl(var(--border) / 70%)}
 tbody tr{cursor:pointer} tbody tr:hover td{background:hsl(var(--primary) / 4%)}
+/* 行为风险概览卡片 */
+.risk-card{position:relative;overflow:hidden;cursor:pointer;border:1px solid hsl(var(--border));border-radius:12px;padding:14px 15px 13px;background:hsl(var(--background));transition:transform .15s,box-shadow .15s,border-color .15s}
+.risk-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px hsl(var(--primary) / 10%)}
+.risk-card .rk-accent{position:absolute;left:0;top:0;bottom:0;width:3px;background:hsl(var(--success))}
+.risk-card .rk-icon{width:38px;height:38px;flex-shrink:0;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;background:hsl(var(--success) / 12%);color:hsl(var(--success))}
+.risk-card .rk-num{font-size:24px;font-weight:700;line-height:1;color:hsl(var(--foreground))}
+.risk-card.has-risk{background:color-mix(in srgb,hsl(var(--danger)) 4%,hsl(var(--background)))}
+.risk-card.has-risk .rk-accent{background:hsl(var(--danger))}
+.risk-card.has-risk .rk-icon{background:hsl(var(--danger) / 12%);color:hsl(var(--danger))}
+.risk-card.has-risk .rk-num{color:hsl(var(--danger))}
+.risk-card.sel{border-color:hsl(var(--primary));box-shadow:0 0 0 2px hsl(var(--primary) / 22%)}
 [x-cloak]{display:none!important}
 </style>
 </head>
@@ -93,14 +104,56 @@ tbody tr{cursor:pointer} tbody tr:hover td{background:hsl(var(--primary) / 4%)}
     </nav>
     <div class="content msc">
       <div class="pad space-y-5">
-        <!-- 迷你统计条（替代原大标题栏） -->
-        <div class="flex items-center justify-between flex-wrap gap-3">
-          <div class="flex items-center gap-5 text-[13px] flex-wrap">
-            <span class="flex items-center gap-1.5"><i class="fa fa-users" style="color:hsl(var(--primary))"></i>纳入审计 <b class="num" x-text="detail.length"></b> 人</span>
-            <span class="flex items-center gap-1.5" style="color:hsl(var(--danger))"><i class="fa fa-triangle-exclamation"></i><b class="num" x-text="riskyCount()"></b> 人存在风险</span>
-            <span class="flex items-center gap-1.5" style="color:hsl(var(--muted-foreground))"><i class="fa fa-flag"></i>合规智能体共标记 <b class="num" style="color:hsl(var(--foreground))" x-text="totalRiskItems()"></b> 项</span>
+        <!-- 页头栏：左标题 + 统计范围内联，右侧时间筛选 + 导出，一行对齐 -->
+        <div class="flex items-center gap-4 flex-wrap">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2.5">
+              <span style="width:4px;height:19px;border-radius:2px;background:hsl(var(--primary));display:inline-block"></span>
+              <h1 class="text-[18px] font-bold leading-none" style="color:hsl(var(--foreground))">AI 行为审计</h1>
+            </div>
+            <div class="text-[12px] mt-2 flex items-center gap-4 flex-wrap" style="color:hsl(var(--muted-foreground))">
+              <span class="flex items-center gap-1.5"><i class="fa fa-calendar-day" style="color:hsl(var(--primary))"></i>统计范围：<b style="color:hsl(var(--foreground))" x-text="rangeLabel()"></b><span x-text="'（'+rangeHint()+'）'"></span></span>
+              <span class="flex items-center gap-1.5"><i class="fa fa-users"></i>纳入 <b class="num" style="color:hsl(var(--foreground))" x-text="detail.length"></b> 人</span>
+              <span class="flex items-center gap-1.5" style="color:hsl(var(--danger))"><i class="fa fa-triangle-exclamation"></i><b class="num" x-text="riskyCount()"></b> 人存在风险 · 共 <b class="num" x-text="totalRiskItems()"></b> 项</span>
+            </div>
           </div>
-          <button class="btn-ghost" @click="exportData()"><i class="fa fa-download mr-1.5" :class="exporting?'fa-spin fa-spinner':''"></i>导出审计报告</button>
+
+          <div class="flex items-center gap-3 ml-auto relative">
+            <!-- 时间筛选条 -->
+            <div class="flex items-center rounded-lg overflow-hidden" style="border:1px solid hsl(var(--border));background:hsl(var(--background))">
+              <template x-for="r in ranges" :key="r.key">
+                <button class="text-[12.5px] px-3" style="height:32px;border:0;cursor:pointer;transition:background .15s;white-space:nowrap"
+                        :style="range===r.key?'background:hsl(var(--primary));color:#fff':'background:transparent;color:hsl(var(--muted-foreground))'"
+                        @click="setRange(r.key)" x-text="r.label"></button>
+              </template>
+              <button class="text-[12.5px] px-3 flex items-center gap-1.5" style="height:32px;border:0;border-left:1px solid hsl(var(--border));cursor:pointer;transition:background .15s;white-space:nowrap"
+                      :style="range==='custom'?'background:hsl(var(--primary));color:#fff':'background:transparent;color:hsl(var(--muted-foreground))'"
+                      @click="pickerOpen=!pickerOpen">
+                <i class="fa fa-calendar-days text-[11px]"></i>
+                <span x-text="range==='custom'?customLabel():'自定义'"></span>
+              </button>
+            </div>
+            <button class="btn-ghost" @click="exportData()"><i class="fa fa-download mr-1.5" :class="exporting?'fa-spin fa-spinner':''"></i>导出审计报告</button>
+
+            <!-- 自定义日期区间弹层 -->
+            <div x-show="pickerOpen" x-transition.opacity @click.outside="pickerOpen=false" x-cloak
+                 class="absolute right-0 z-40 card" style="top:40px;padding:14px;width:280px;box-shadow:0 12px 32px hsl(var(--primary) / 14%)">
+              <div class="text-[13px] font-semibold mb-3">自定义统计区间</div>
+              <div class="space-y-2.5">
+                <label class="block text-[12px]" style="color:hsl(var(--muted-foreground))">开始日期
+                  <input type="date" x-model="customStart" :max="customEnd||today"
+                         class="mt-1 w-full text-[12.5px] px-2.5 rounded-lg" style="height:32px;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground))"></label>
+                <label class="block text-[12px]" style="color:hsl(var(--muted-foreground))">结束日期
+                  <input type="date" x-model="customEnd" :min="customStart" :max="today"
+                         class="mt-1 w-full text-[12.5px] px-2.5 rounded-lg" style="height:32px;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground))"></label>
+              </div>
+              <div class="flex items-center gap-2 mt-3.5">
+                <button class="btn-pri flex-1" @click="applyCustom()">应用</button>
+                <button class="btn-ghost" @click="pickerOpen=false">取消</button>
+              </div>
+              <div class="text-[11px] mt-2.5 leading-snug" style="color:hsl(var(--muted-foreground))">选定区间后，用量与风险统计按所选天数重新归集。</div>
+            </div>
+          </div>
         </div>
 
         <!-- 风险概览 -->
@@ -108,15 +161,55 @@ tbody tr{cursor:pointer} tbody tr:hover td{background:hsl(var(--primary) / 4%)}
           <div class="sec-title"><span class="bar"></span>行为风险概览<span class="text-[11.5px] font-normal ml-auto flex items-center gap-1.5" style="color:hsl(var(--muted-foreground))"><img src="image/bot.png" onerror="botFallback(this)" class="w-4 h-4 rounded object-cover">合规智能体在每次调用时自动研判</span></div>
           <div class="grid grid-cols-4 gap-3">
             <template x-for="r in riskOverview" :key="r.key">
-              <div class="rounded-xl cursor-pointer transition-transform hover:-translate-y-0.5" style="border:1px solid hsl(var(--border));padding:13px 14px" :style="r.count>0?'background:color-mix(in srgb,hsl(var(--danger)) 5%,hsl(var(--background)))':'background:hsl(var(--primary) / 4%)'" @click="riskFilter=r.key;page=1;showToast('已筛选：'+r.label,'info')">
-                <div class="flex items-center justify-between">
-                  <span class="w-8 h-8 rounded-lg flex items-center justify-center" :style="r.count>0?'background:color-mix(in srgb,hsl(var(--danger)) 12%,hsl(var(--background)));color:hsl(var(--danger))':'background:hsl(var(--primary) / 10%);color:hsl(var(--primary))'"><i class="fa" :class="r.icon"></i></span>
-                  <span class="text-[26px] font-bold num" :style="r.count>0?'color:hsl(var(--danger))':'color:hsl(var(--foreground))'" x-text="r.count"></span>
+              <div class="risk-card" :class="[r.count>0?'has-risk':'', riskFilter===r.key?'sel':'']"
+                   @click="riskFilter===r.key?(riskFilter='',page=1):(riskFilter=r.key,page=1,showToast('已筛选：'+r.label,'info'))">
+                <span class="rk-accent"></span>
+                <div class="flex items-start gap-3">
+                  <span class="rk-icon"><i class="fa" :class="r.icon"></i></span>
+                  <div class="min-w-0 flex-1">
+                    <div class="flex items-baseline gap-1.5">
+                      <span class="rk-num num" x-text="r.count"></span>
+                      <span class="text-[11px]" style="color:hsl(var(--muted-foreground))" x-text="r.count>0?'人 / 项待核':'无异常'"></span>
+                    </div>
+                    <div class="text-[13px] font-semibold mt-0.5 truncate" x-text="r.label"></div>
+                  </div>
                 </div>
-                <div class="text-[13px] font-semibold mt-2" x-text="r.label"></div>
-                <div class="text-[11px] mt-0.5 leading-snug" style="color:hsl(var(--muted-foreground))" x-text="r.desc"></div>
+                <div class="text-[11px] mt-2 leading-snug" style="color:hsl(var(--muted-foreground))" x-text="r.desc"></div>
               </div>
             </template>
+          </div>
+        </div>
+
+        <!-- 部门维度统计 -->
+        <div class="card" style="padding:16px 18px">
+          <div class="sec-title"><span class="bar"></span>部门维度统计<span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">按部门看用量与风险分布——点部门可下钻到人员明细</span></div>
+          <div class="grid grid-cols-5 gap-4">
+            <!-- 左：部门成本条形图 -->
+            <div class="col-span-2 rounded-xl" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:12px 14px">
+              <div class="text-[13px] font-semibold flex items-center gap-1.5 mb-1"><i class="fa fa-ranking-star text-[11px]" style="color:hsl(var(--primary))"></i>各部门 AI 成本占比</div>
+              <div id="deptCost" style="height:188px"></div>
+            </div>
+            <!-- 右：部门聚合表 -->
+            <div class="col-span-3" style="overflow-x:auto">
+              <table>
+                <thead><tr><th>部门</th><th style="text-align:right">人数</th><th style="text-align:right">调用</th><th style="text-align:right">Token</th><th style="text-align:right">成本(元)</th><th style="text-align:right">占比</th><th style="text-align:center">风险人数</th></tr></thead>
+                <tbody>
+                  <template x-for="d in deptStats()" :key="d.dept">
+                    <tr @click="deptFilter=(deptFilter===d.dept?'':d.dept);page=1" :style="deptFilter===d.dept?'background:hsl(var(--primary) / 8%)':''">
+                      <td><span class="flex items-center gap-2 font-medium"><i class="fa fa-building text-[11px]" style="color:hsl(var(--primary))"></i><span x-text="d.dept"></span></span></td>
+                      <td style="text-align:right" class="num" x-text="d.people"></td>
+                      <td style="text-align:right" class="num" x-text="fmt(d.calls)"></td>
+                      <td style="text-align:right" class="num" x-text="(d.tokens/10000).toFixed(0)+' 万'"></td>
+                      <td style="text-align:right" class="num font-semibold" x-text="'¥'+fmt(d.cost)"></td>
+                      <td style="text-align:right" class="num" style="color:hsl(var(--muted-foreground))" x-text="d.pct+'%'"></td>
+                      <td style="text-align:center">
+                        <span class="tag" :class="d.risky>0?'danger':'success'" style="padding:1px 8px" x-text="d.risky>0?(d.risky+' 人'):'—'"></span>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -197,14 +290,83 @@ tbody tr{cursor:pointer} tbody tr:hover td{background:hsl(var(--primary) / 4%)}
 <script>
 function gw(){
   return {
-    detail:[], riskOverview:[],
+    detail:[], riskOverview:[], byDept:[], _detailBase:[], _byDeptBase:[],
     deptFilter:'', riskFilter:'', page:1, pageSize:7, exporting:false,
+    range:'month',
+    ranges:[{key:'today',label:'今日'},{key:'week',label:'本周'},{key:'month',label:'本月'},{key:'quarter',label:'本季度'},{key:'year',label:'本年'}],
+    pickerOpen:false, customStart:'', customEnd:'', today:new Date().toISOString().slice(0,10),
     drawerOpen:false, drawerTitle:'', drawerContent:'', toasts:[], _toastId:0,
     get depts(){ return [...new Set(this.detail.map(r=>r.dept))]; },
     async init(){
       try{ const r=await fetch('data/gateway.json'); const d=await r.json();
-        this.detail=d.detail; this.riskOverview=d.riskOverview||[];
+        this.detail=d.detail; this.riskOverview=d.riskOverview||[]; this.byDept=d.byDept||[];
+        this._detailBase=d.detail.map(x=>({...x})); this._byDeptBase=(d.byDept||[]).map(x=>({...x}));
       }catch(e){ this.showToast('数据加载失败，请用本地服务打开','error'); return; }
+      const now=new Date(), wk=new Date(now.getTime()-6*86400000);
+      this.customEnd=now.toISOString().slice(0,10); this.customStart=wk.toISOString().slice(0,10);
+      this.$nextTick(()=>this.renderDeptChart());
+    },
+    // ===== 时间范围 =====
+    rangeCfg(){
+      if(this.range==='custom'){ const d=this._customDays(); return {f:d*0.033,label:'自定义区间',hint:this.customLabel()+' 共 '+d+' 天'}; }
+      return {today:{f:0.045,label:'今日',hint:'实时累计到当前时刻'},week:{f:0.24,label:'本周',hint:'周一至今'},month:{f:1,label:'本月',hint:'9 月 1 日至今'},quarter:{f:2.9,label:'本季度',hint:'第三季度累计'},year:{f:9.6,label:'本年',hint:'今年 1 月 1 日至今'}}[this.range];
+    },
+    rangeLabel(){ return this.rangeCfg().label; },
+    rangeHint(){ return this.rangeCfg().hint; },
+    _customDays(){ if(!this.customStart||!this.customEnd) return 1; const ms=new Date(this.customEnd)-new Date(this.customStart); return Math.max(1, Math.round(ms/86400000)+1); },
+    customLabel(){ if(!this.customStart||!this.customEnd) return '自定义'; const s=this.customStart.slice(5).replace('-','/'), e=this.customEnd.slice(5).replace('-','/'); return s+' ~ '+e; },
+    _applyFactor(f){
+      this.detail = this._detailBase.map(r=>({...r, calls:Math.round(r.calls*f), tokens:Math.round(r.tokens*f), cost:Math.round(r.cost*f)}));
+      this.byDept = this._byDeptBase.map(r=>({...r, tokens:Math.round(r.tokens*f), cost:Math.round(r.cost*f)}));
+      this.page=1;
+      this.$nextTick(()=>this.renderDeptChart());
+    },
+    setRange(k){
+      if(this.range===k) return;
+      this.range=k; this.pickerOpen=false;
+      this._applyFactor(this.rangeCfg().f);
+      this.showToast('已切换统计范围：'+this.rangeCfg().label,'info');
+    },
+    applyCustom(){
+      if(!this.customStart||!this.customEnd){ this.showToast('请选择完整的开始与结束日期','warn'); return; }
+      if(new Date(this.customStart)>new Date(this.customEnd)){ this.showToast('开始日期不能晚于结束日期','error'); return; }
+      this.range='custom'; this.pickerOpen=false;
+      this._applyFactor(this.rangeCfg().f);
+      this.showToast('已按自定义区间统计：'+this.customLabel(),'info');
+    },
+    // ===== 部门维度聚合 =====
+    deptStats(){
+      const costByDept = Object.fromEntries(this.byDept.map(d=>[d.dept,d]));
+      const totalCost = this.byDept.reduce((s,d)=>s+d.cost,0)||1;
+      return this.depts.map(dept=>{
+        const people = this.detail.filter(r=>r.dept===dept);
+        const cd = costByDept[dept] || {};
+        const cost = cd.cost!=null ? cd.cost : people.reduce((s,r)=>s+r.cost,0);
+        return {
+          dept,
+          people: people.length,
+          calls: people.reduce((s,r)=>s+r.calls,0),
+          tokens: cd.tokens!=null ? cd.tokens*10000 : people.reduce((s,r)=>s+r.tokens,0),
+          cost,
+          pct: Math.round(cost/totalCost*1000)/10,
+          risky: people.filter(r=>(r.risks||[]).length>0).length
+        };
+      }).sort((a,b)=>b.cost-a.cost);
+    },
+    renderDeptChart(){
+      const el=document.getElementById('deptCost'); if(!el) return;
+      const C=window.TC_COLORS, E=window.TC_ECHARTS;
+      const rows=[...this.deptStats()].sort((a,b)=>a.cost-b.cost);
+      const chart=echarts.getInstanceByDom(el)||echarts.init(el);
+      chart.setOption({
+        tooltip:E.tooltip({formatter:p=>p[0].name+'：¥'+window.TC_FMT.thousands(p[0].value)}),
+        grid:E.grid({left:56,top:8,bottom:16,right:52}),
+        xAxis:{type:'value',...E.axis({axisLabel:{show:false}}),splitLine:{show:false}},
+        yAxis:{type:'category',data:rows.map(x=>x.dept),...E.axis({splitLine:{show:false}})},
+        series:[{type:'bar',data:rows.map((x,i)=>({value:x.cost,itemStyle:{color:C.palette[rows.length-1-i],borderRadius:[0,4,4,0]}})),barWidth:'52%',
+          label:{show:true,position:'right',formatter:p=>'¥'+window.TC_FMT.thousands(p.value),fontSize:10,color:C.textSub}}]
+      });
+      if(!this._deptResizeBound){ window.addEventListener('resize',()=>{const c=echarts.getInstanceByDom(el); if(c)c.resize();}); this._deptResizeBound=true; }
     },
     fmt(v){ return window.TC_FMT.thousands(v); },
     riskLabel(k){ const m=this.riskOverview.find(x=>x.key===k); return m?m.label:''; },
@@ -242,7 +404,7 @@ function gw(){
           <span>主用模型：<b style="color:hsl(var(--foreground))">${r.model}</b></span>
           <span>非工作时段占比：<b style="color:hsl(var(--${r.offWorkPct>=20?'danger':r.offWorkPct>=10?'warning':'foreground'}))">${r.offWorkPct}%</b></span>
         </div>
-        <div class="text-[13px] font-semibold pt-1"><i class="fa fa-clock-rotate-left mr-1.5" style="color:hsl(var(--primary))"></i>每日工作时间线</div>
+        <div class="text-[13px] font-semibold pt-1"><i class="fa fa-clock-rotate-left mr-1.5" style="color:hsl(var(--primary))"></i>每日工作时间线<span class="text-[11px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">近 7 天</span></div>
         ${this.timelineHtml(r)}
         <div class="text-[13px] font-semibold pt-1"><i class="fa fa-shield-halved mr-1.5" style="color:hsl(var(--primary))"></i>合规风险研判</div>
         ${risksHtml}
@@ -250,27 +412,45 @@ function gw(){
         <div class="text-[11.5px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-lock mr-1"></i>仅展示行为摘要与风险标签，不留存调用原文；数据不出域，符合医疗行业合规要求。</div>`;
       this.drawerOpen=true; },
     timelineHtml(r){
-      let days = r.timeline;
-      if(!days || !days.length){ days = [{ date:'09-14', items:[{ time:'—', app:r.app, title:r.workSummary, tag:'work' }] }]; }
       const tagColor = t => t==='work'?'primary':t==='leak'||t==='sensitive'||t==='irrelevant'?'danger':'warning';
       const tagText = t => ({work:'工作',irrelevant:'无关',leak:'外流',abnormal:'异常',sensitive:'敏感'})[t]||'工作';
-      return days.map(d=>`
-        <div class="rounded-xl" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:11px 13px">
-          <div class="text-[12px] font-semibold mb-2" style="color:hsl(var(--muted-foreground))"><i class="fa fa-calendar-day mr-1"></i>${d.date}</div>
-          <div style="position:relative;padding-left:14px">
-            <div style="position:absolute;left:3px;top:4px;bottom:4px;width:1.5px;background:hsl(var(--border))"></div>
-            ${d.items.map(it=>{ const c=tagColor(it.tag); return `
-              <div style="position:relative;padding-bottom:10px">
-                <span style="position:absolute;left:-14px;top:4px;width:7px;height:7px;border-radius:50%;background:hsl(var(--${c}));box-shadow:0 0 0 2px hsl(var(--background))"></span>
-                <div class="flex items-center gap-2">
-                  <span class="num text-[12px] font-semibold" style="color:hsl(var(--foreground))">${it.time}</span>
-                  <span class="tag ${c}" style="padding:0 6px;font-size:11px">${tagText(it.tag)}</span>
-                  <span class="text-[11px]" style="color:hsl(var(--muted-foreground))">${it.app}</span>
-                </div>
-                <div class="text-[12.5px] mt-0.5 leading-snug" style="color:${it.tag==='work'?'hsl(var(--foreground))':'hsl(var(--'+c+'))'}">${it.title}</div>
-              </div>`; }).join('')}
+      // 以数据里最新一天为基准，构造近 7 天（有真实记录的用真实，缺失的置空）
+      const real = {}; (r.timeline||[]).forEach(d=>real[d.date]=d);
+      const dates = Object.keys(real).sort();
+      const anchor = dates.length ? dates[dates.length-1] : (this.today||'').slice(5);
+      const [am,ad] = anchor.split('-').map(Number);
+      const base = new Date(2025, (am||9)-1, ad||14);
+      const wk = [];
+      for(let i=6;i>=0;i--){ const dt=new Date(base.getTime()-i*86400000); wk.push(String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')); }
+      const weekLabel = k => ['周日','周一','周二','周三','周四','周五','周六'][new Date(2025,k.split('-')[0]-1,k.split('-')[1]).getDay()];
+      return wk.map(date=>{
+        const d = real[date];
+        const items = d ? d.items : [];
+        const isEmpty = !items.length;
+        const inner = isEmpty
+          ? `<div class="text-[11.5px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-moon mr-1"></i>无 AI 调用记录</div>`
+          : `<div style="position:relative;padding-left:14px">
+              <div style="position:absolute;left:3px;top:4px;bottom:4px;width:1.5px;background:hsl(var(--border))"></div>
+              ${items.map(it=>{ const c=tagColor(it.tag); return `
+                <div style="position:relative;padding-bottom:10px">
+                  <span style="position:absolute;left:-14px;top:4px;width:7px;height:7px;border-radius:50%;background:hsl(var(--${c}));box-shadow:0 0 0 2px hsl(var(--background))"></span>
+                  <div class="flex items-center gap-2">
+                    <span class="num text-[12px] font-semibold" style="color:hsl(var(--foreground))">${it.time}</span>
+                    <span class="tag ${c}" style="padding:0 6px;font-size:11px">${tagText(it.tag)}</span>
+                    <span class="text-[11px]" style="color:hsl(var(--muted-foreground))">${it.app}</span>
+                  </div>
+                  <div class="text-[12.5px] mt-0.5 leading-snug" style="color:${it.tag==='work'?'hsl(var(--foreground))':'hsl(var(--'+c+'))'}">${it.title}</div>
+                </div>`; }).join('')}
+            </div>`;
+        return `
+        <div class="rounded-xl" style="background:${isEmpty?'hsl(var(--muted-foreground) / 4%)':'hsl(var(--primary) / 4%)'};border:1px solid hsl(var(--border));padding:11px 13px;${isEmpty?'opacity:.72':''}">
+          <div class="text-[12px] font-semibold mb-2 flex items-center gap-1.5" style="color:hsl(var(--muted-foreground))">
+            <i class="fa fa-calendar-day"></i><span>${date}</span><span class="font-normal">${weekLabel(date)}</span>
+            ${!isEmpty?`<span class="ml-auto num font-normal">${items.length} 条</span>`:''}
           </div>
-        </div>`).join('');
+          ${inner}
+        </div>`;
+      }).join('');
     },
     exportData(){ this.exporting=true; setTimeout(()=>{ this.exporting=false; this.showToast('审计报告已导出（演示）','success'); },1000); },
     showToast(m,type='info'){ const id=++this._toastId; this.toasts.push({id,message:m,type,removing:false});

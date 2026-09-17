@@ -123,60 +123,101 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
     <div class="content msc">
       <div class="pad space-y-5">
 
-        <!-- 页头（大标题已去除，仅保留操作条） -->
-        <div class="flex items-center justify-end flex-wrap gap-3">
-          <div class="flex items-center gap-3">
+        <!-- 页头栏：左标题 + 统计范围内联，右侧时间筛选 + 刷新，一行对齐 -->
+        <div class="page-head flex items-center gap-4 flex-wrap">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2.5">
+              <span class="bar" style="width:4px;height:19px;border-radius:2px;background:hsl(var(--primary));display:inline-block"></span>
+              <h1 class="text-[18px] font-bold leading-none" style="color:hsl(var(--foreground))">经营驾驶舱</h1>
+            </div>
+            <div class="text-[12px] mt-2 flex items-center gap-1.5" style="color:hsl(var(--muted-foreground))">
+              <i class="fa fa-calendar-day" style="color:hsl(var(--primary))"></i>
+              当前统计范围：<b style="color:hsl(var(--foreground))" x-text="rangeLabel()"></b>
+              <span x-text="'（'+rangeHint()+'）'"></span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3 ml-auto relative">
             <!-- 时间筛选条 -->
             <div class="flex items-center rounded-lg overflow-hidden" style="border:1px solid hsl(var(--border));background:hsl(var(--background))">
               <template x-for="r in ranges" :key="r.key">
-                <button class="text-[12.5px] px-3" style="height:32px;border:0;cursor:pointer;transition:background .15s"
+                <button class="text-[12.5px] px-3" style="height:32px;border:0;cursor:pointer;transition:background .15s;white-space:nowrap"
                         :style="range===r.key?'background:hsl(var(--primary));color:#fff':'background:transparent;color:hsl(var(--muted-foreground))'"
                         @click="setRange(r.key)" x-text="r.label"></button>
               </template>
+              <!-- 自定义区间 -->
+              <button class="text-[12.5px] px-3 flex items-center gap-1.5" style="height:32px;border:0;border-left:1px solid hsl(var(--border));cursor:pointer;transition:background .15s;white-space:nowrap"
+                      :style="range==='custom'?'background:hsl(var(--primary));color:#fff':'background:transparent;color:hsl(var(--muted-foreground))'"
+                      @click="pickerOpen=!pickerOpen">
+                <i class="fa fa-calendar-days text-[11px]"></i>
+                <span x-text="range==='custom'?customLabel():'自定义'"></span>
+              </button>
             </div>
             <button class="btn-ghost" @click="refresh()"><i class="fa fa-rotate mr-1.5" :class="refreshing?'fa-spin':''"></i>刷新</button>
-          </div>
-        </div>
-        <div class="text-[12px] -mt-2 flex items-center gap-1.5" style="color:hsl(var(--muted-foreground))">
-          <i class="fa fa-calendar-day" style="color:hsl(var(--primary))"></i>
-          当前统计范围：<b style="color:hsl(var(--foreground))" x-text="rangeLabel()"></b>
-          <span x-text="'（'+rangeHint()+'）'"></span>
-        </div>
 
-        <!-- 部门成本大盘 -->
-        <div class="grid grid-cols-3 gap-4">
-          <div class="card" style="padding:15px 17px">
-            <div class="sec-title" style="font-size:14px"><span class="bar"></span>AI 成本趋势<span class="text-[11.5px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">近 7 天(元)</span></div>
-            <div id="costTrend" style="height:150px"></div>
-          </div>
-          <div class="card" style="padding:15px 17px">
-            <div class="sec-title" style="font-size:14px"><span class="bar"></span>各部门成本排行</div>
-            <div id="costDept" style="height:150px"></div>
-          </div>
-          <div class="card" style="padding:15px 17px">
-            <div class="sec-title" style="font-size:14px"><span class="bar"></span>按模型分布</div>
-            <div id="costModel" style="height:150px"></div>
-          </div>
-        </div>
-
-        <!-- ① 经营/效率指标 -->
-        <div class="grid grid-cols-6 gap-3">
-          <template x-for="k in data.kpis" :key="k.key">
-            <div class="card cursor-pointer transition-transform hover:-translate-y-0.5" style="padding:13px 14px" @click="drillKpi(k)">
-              <div class="flex items-center justify-between">
-                <span class="text-[12px]" style="color:hsl(var(--muted-foreground))" x-text="k.label"></span>
-                <i class="fa" :class="k.icon" style="color:hsl(var(--primary))"></i>
+            <!-- 自定义日期区间弹层 -->
+            <div x-show="pickerOpen" x-transition.opacity @click.outside="pickerOpen=false" x-cloak
+                 class="absolute right-0 z-40 card" style="top:40px;padding:14px;width:280px;box-shadow:0 12px 32px hsl(var(--primary) / 14%)">
+              <div class="text-[13px] font-semibold mb-3">自定义统计区间</div>
+              <div class="space-y-2.5">
+                <label class="block text-[12px]" style="color:hsl(var(--muted-foreground))">开始日期
+                  <input type="date" x-model="customStart" :max="customEnd||today"
+                         class="mt-1 w-full text-[12.5px] px-2.5 rounded-lg" style="height:32px;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground))"></label>
+                <label class="block text-[12px]" style="color:hsl(var(--muted-foreground))">结束日期
+                  <input type="date" x-model="customEnd" :min="customStart" :max="today"
+                         class="mt-1 w-full text-[12.5px] px-2.5 rounded-lg" style="height:32px;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground))"></label>
               </div>
-              <div class="flex items-baseline gap-1.5 mt-2">
-                <span class="text-[22px] font-bold num" x-text="fmt(k)"></span>
-                <span class="text-[11px]" x-text="k.unit" style="color:hsl(var(--muted-foreground))"></span>
+              <div class="flex items-center gap-2 mt-3.5">
+                <button class="btn-pri flex-1" @click="applyCustom()">应用</button>
+                <button class="btn-ghost" @click="pickerOpen=false">取消</button>
               </div>
-              <div class="text-[11.5px] mt-1 num" :style="'color:hsl(var(--'+(k.up?'success':'danger')+'))'">
-                <i class="fa" :class="k.up?'fa-arrow-up':'fa-arrow-down'"></i> <span x-text="Math.abs(k.delta)+'%'"></span>
-                <span style="color:hsl(var(--muted-foreground))"> 环比</span>
-              </div>
+              <div class="text-[11px] mt-2.5 leading-snug" style="color:hsl(var(--muted-foreground))">选定区间后，各项指标按所选天数重新归集。</div>
             </div>
-          </template>
+          </div>
+        </div>
+
+        <!-- 经营总览：成本大盘 + 效率指标，收成一个协调的分区 -->
+        <div class="card" style="padding:16px 18px">
+          <div class="sec-title"><span class="bar"></span>经营总览<span class="text-[12px] font-normal ml-1" style="color:hsl(var(--muted-foreground))">成本与 AI 效能一屏看全</span></div>
+
+          <!-- 成本三图 -->
+          <div class="grid grid-cols-3 gap-4">
+            <div class="rounded-xl" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:12px 14px">
+              <div class="text-[13px] font-semibold flex items-center gap-1.5"><i class="fa fa-chart-line text-[11px]" style="color:hsl(var(--primary))"></i>AI 成本趋势<span class="text-[11px] font-normal" style="color:hsl(var(--muted-foreground))">近 7 天(元)</span></div>
+              <div id="costTrend" style="height:146px;margin-top:6px"></div>
+            </div>
+            <div class="rounded-xl" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:12px 14px">
+              <div class="text-[13px] font-semibold flex items-center gap-1.5"><i class="fa fa-ranking-star text-[11px]" style="color:hsl(var(--primary))"></i>各部门成本排行</div>
+              <div id="costDept" style="height:146px;margin-top:6px"></div>
+            </div>
+            <div class="rounded-xl" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:12px 14px">
+              <div class="text-[13px] font-semibold flex items-center gap-1.5"><i class="fa fa-chart-pie text-[11px]" style="color:hsl(var(--primary))"></i>按模型分布</div>
+              <div id="costModel" style="height:146px;margin-top:6px"></div>
+            </div>
+          </div>
+
+          <!-- 分隔 -->
+          <div style="height:1px;background:hsl(var(--border) / 70%);margin:15px 0"></div>
+
+          <!-- KPI 六宫格 -->
+          <div class="grid grid-cols-6 gap-3">
+            <template x-for="k in data.kpis" :key="k.key">
+              <div class="rounded-xl cursor-pointer transition-transform hover:-translate-y-0.5" style="background:hsl(var(--primary) / 4%);border:1px solid hsl(var(--border));padding:13px 14px" @click="drillKpi(k)">
+                <div class="flex items-center justify-between">
+                  <span class="text-[12px]" style="color:hsl(var(--muted-foreground))" x-text="k.label"></span>
+                  <i class="fa" :class="k.icon" style="color:hsl(var(--primary))"></i>
+                </div>
+                <div class="flex items-baseline gap-1.5 mt-2">
+                  <span class="text-[22px] font-bold num" x-text="fmt(k)"></span>
+                  <span class="text-[11px]" x-text="k.unit" style="color:hsl(var(--muted-foreground))"></span>
+                </div>
+                <div class="text-[11.5px] mt-1 num" :style="'color:hsl(var(--'+(k.up?'success':'danger')+'))'">
+                  <i class="fa" :class="k.up?'fa-arrow-up':'fa-arrow-down'"></i> <span x-text="Math.abs(k.delta)+'%'"></span>
+                  <span style="color:hsl(var(--muted-foreground))"> 环比</span>
+                </div>
+              </div>
+            </template>
+          </div>
         </div>
 
         <!-- ② 各部门任务进展 -->
@@ -320,7 +361,8 @@ function cockpit(){
     attentions:[],
     _kpiBase:[],
     range:'month',
-    ranges:[{key:'today',label:'今日'},{key:'week',label:'本周'},{key:'month',label:'本月'},{key:'quarter',label:'本季度'}],
+    ranges:[{key:'today',label:'今日'},{key:'week',label:'本周'},{key:'month',label:'本月'},{key:'quarter',label:'本季度'},{key:'year',label:'本年'}],
+    pickerOpen:false, customStart:'', customEnd:'', today:new Date().toISOString().slice(0,10),
     drawerOpen:false, drawerTitle:'', drawerContent:'',
     toasts:[], _toastId:0, refreshing:false,
     async init(){
@@ -328,6 +370,9 @@ function cockpit(){
       catch(e){ this.showToast('数据加载失败，请用本地服务打开','error'); return; }
       this.attentions = this.data.attentions.slice();
       this._kpiBase = this.data.kpis.map(k=>({...k}));
+      // 自定义区间默认预填近 7 天
+      const now=new Date(), wk=new Date(now.getTime()-6*86400000);
+      this.customEnd=now.toISOString().slice(0,10); this.customStart=wk.toISOString().slice(0,10);
       this.$nextTick(()=>this.renderCostCharts());
     },
     renderCostCharts(){
@@ -348,18 +393,32 @@ function cockpit(){
           data:cb.byModel.map((x,i)=>({name:x.model,value:x.pct,itemStyle:{color:C.palette[i]}}))}]});
       window.addEventListener('resize',()=>{t.resize();d.resize();m.resize();});
     },
-    rangeCfg(){ return {today:{f:0.045,label:'今日',hint:'实时累计到当前时刻'},week:{f:0.24,label:'本周',hint:'周一至今'},month:{f:1,label:'本月',hint:'9 月 1 日至今'},quarter:{f:2.9,label:'本季度',hint:'第三季度累计'}}[this.range]; },
+    rangeCfg(){
+      if(this.range==='custom'){ const d=this._customDays(); return {f:d*0.033,label:'自定义区间',hint:this.customLabel()+' 共 '+d+' 天'}; }
+      return {today:{f:0.045,label:'今日',hint:'实时累计到当前时刻'},week:{f:0.24,label:'本周',hint:'周一至今'},month:{f:1,label:'本月',hint:'9 月 1 日至今'},quarter:{f:2.9,label:'本季度',hint:'第三季度累计'},year:{f:9.6,label:'本年',hint:'今年 1 月 1 日至今'}}[this.range];
+    },
     rangeLabel(){ return this.rangeCfg().label; },
     rangeHint(){ return this.rangeCfg().hint; },
-    setRange(k){
-      if(this.range===k) return;
-      this.range=k; const f=this.rangeCfg().f;
-      // KPI 数值按时间范围缩放（百分比类不缩放）
+    _customDays(){ if(!this.customStart||!this.customEnd) return 1; const ms=new Date(this.customEnd)-new Date(this.customStart); return Math.max(1, Math.round(ms/86400000)+1); },
+    customLabel(){ if(!this.customStart||!this.customEnd) return '自定义'; const s=this.customStart.slice(5).replace('-','/'), e=this.customEnd.slice(5).replace('-','/'); return s+' ~ '+e; },
+    _applyFactor(f){
       this.data.kpis = this._kpiBase.map(k0=>{
         const pctLike = (k0.unit==='%');
         return {...k0, value: pctLike ? k0.value : Math.round(k0.value*f* (k0.value<100?10:1))/(k0.value<100?10:1) };
       });
+    },
+    setRange(k){
+      if(this.range===k) return;
+      this.range=k; this.pickerOpen=false;
+      this._applyFactor(this.rangeCfg().f);
       this.showToast('已切换统计范围：'+this.rangeCfg().label,'info');
+    },
+    applyCustom(){
+      if(!this.customStart||!this.customEnd){ this.showToast('请选择完整的开始与结束日期','warn'); return; }
+      if(new Date(this.customStart)>new Date(this.customEnd)){ this.showToast('开始日期不能晚于结束日期','error'); return; }
+      this.range='custom'; this.pickerOpen=false;
+      this._applyFactor(this.rangeCfg().f);
+      this.showToast('已按自定义区间统计：'+this.customLabel(),'info');
     },
     fmt(k){ return k.value >= 10000 ? window.TC_FMT.thousands(k.value) : k.value; },
     statusTag(s){ return s==='done'?'success':s==='normal'?'primary':s==='warn'?'warning':'danger'; },

@@ -651,6 +651,46 @@ function findCodeWorkspace(id) {
   return readCodeWorkspaces().find((w) => w.id === id) || null;
 }
 
+// 每个工作区可以开多条独立对话(像 VSCode 里对同一项目开多个 AI 会话)。
+// 结构：workspace.conversations = [{ id, title, sessionId, messages[], createdAt, lastActiveAt }]。
+// 兼容老数据：旧工作区只有顶层 sessionId、无 conversations → 迁移成一条默认对话。
+function genConversationId() {
+  return `conv_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function ensureConversations(workspace) {
+  if (!workspace) return workspace;
+  if (!Array.isArray(workspace.conversations)) workspace.conversations = [];
+  if (workspace.conversations.length === 0) {
+    const now = new Date().toISOString();
+    workspace.conversations.push({
+      id: genConversationId(),
+      title: '对话 1',
+      // 继承旧的顶层 sessionId(如有)，历史对话上下文不丢。
+      sessionId: workspace.sessionId || null,
+      messages: [],
+      createdAt: now,
+      lastActiveAt: now,
+    });
+    // 迁移后清掉顶层 sessionId，统一走 conversations。
+    delete workspace.sessionId;
+  }
+  return workspace;
+}
+
+// 取工作区 + 指定对话；conversationId 为空时取最近活跃的一条(或默认第一条)。
+function findCodeConversation(workspaceId, conversationId) {
+  const list = readCodeWorkspaces();
+  const workspace = list.find((w) => w.id === workspaceId);
+  if (!workspace) return { list, workspace: null, conversation: null };
+  ensureConversations(workspace);
+  let conversation = conversationId
+    ? workspace.conversations.find((c) => c.id === conversationId)
+    : null;
+  if (!conversation) conversation = workspace.conversations[0];
+  return { list, workspace, conversation };
+}
+
 // 解析工作区内的相对路径为绝对路径，并做路径逃逸守卫(照抄 resolveProjectPath 的做法)。
 function resolveWorkspacePath(workspace, relPath) {
   const root = path.resolve(workspace.path);

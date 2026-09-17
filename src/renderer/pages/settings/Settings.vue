@@ -172,7 +172,7 @@ const model = computed(() => (isCustomModel.value ? customModel.value.trim() : m
 const showApiKey = ref(false);
 const hermesHome = ref('~/.product-lobster');
 const projectCount = ref(0);
-const appVersion = ref('2.2.2');
+const appVersion = ref('3.0.0');
 const saving = ref(false);
 const saveStatus = ref(''); // '' | 'success' | 'error'
 

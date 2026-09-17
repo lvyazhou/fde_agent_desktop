@@ -110,7 +110,7 @@ import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const isMaximized = ref(false);
-const appVersion = ref('v2.2.2');
+const appVersion = ref('v3.0.0');
 const licenseInfo = ref(null);
 const importing = ref(false);
 const importError = ref('');
