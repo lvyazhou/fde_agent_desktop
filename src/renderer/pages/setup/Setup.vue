@@ -138,6 +138,58 @@
             />
             <p class="text-[11px] text-slate-400 mb-4">兼容 OpenAI 格式的接口地址。以 <code class="bg-slate-100 px-1 rounded">sk-ant-</code> 开头会按 Anthropic 处理。</p>
 
+            <!-- 非 360 网关:多选模型(勾选/手填的写进 models 列表) -->
+            <div v-if="!isThreeSixty" class="mb-4">
+              <label class="block text-[12px] font-medium text-slate-600 mb-1.5">启用的模型 <span class="text-slate-400 font-normal">(可多选)</span></label>
+              <div v-if="selectedModels.length" class="flex flex-wrap gap-2 mb-2">
+                <span
+                  v-for="(m, i) in selectedModels" :key="m"
+                  class="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg text-[12px] font-medium"
+                  :class="i === 0 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-600'"
+                >
+                  <span class="font-mono">{{ m }}</span>
+                  <span v-if="i === 0" class="text-[10px] text-blue-400">默认</span>
+                  <button @click="removeSelected(m)" class="w-4 h-4 rounded-full hover:bg-black/10 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                  </button>
+                </span>
+              </div>
+              <p v-else class="text-[12px] text-rose-500 mb-2">
+                <i class="fa-solid fa-circle-exclamation mr-1"></i>至少勾选或添加一个模型
+              </p>
+              <div class="border border-slate-200 rounded-xl p-3 max-h-44 overflow-y-auto space-y-1">
+                <label
+                  v-for="m in COMMON_MODELS" :key="m.value"
+                  class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="selectedModels.includes(m.value)"
+                    @change="toggleModel(m.value)"
+                    class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                  />
+                  <span class="text-[13px] text-slate-700 flex-1">{{ m.label }}</span>
+                  <span class="text-[11px] text-slate-400 font-mono">{{ m.value }}</span>
+                </label>
+              </div>
+              <div class="flex items-center gap-2 mt-2">
+                <input
+                  v-model="extraModelInput"
+                  @keyup.enter="addExtraModel"
+                  placeholder="其他网关的模型名，如 gpt-4o（回车添加）"
+                  class="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 font-mono"
+                />
+                <button
+                  @click="addExtraModel"
+                  :disabled="!extraModelInput.trim()"
+                  class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[13px] transition-colors disabled:opacity-40"
+                >
+                  <i class="fa-solid fa-plus mr-1 text-[11px]"></i>添加
+                </button>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-2">勾选/添加的模型会出现在顶栏下拉框，第一个为默认。请填该网关实际支持的模型名。</p>
+            </div>
+
             <!-- 测试结果 -->
             <div v-if="testResult" class="mb-4 p-3 rounded-xl text-[12px] flex items-start gap-2"
                  :class="testResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
@@ -161,7 +213,7 @@
                 </button>
                 <button
                   @click="saveAndFinish"
-                  :disabled="!(testResult && testResult.ok) || saving"
+                  :disabled="!(testResult && testResult.ok) || saving || (!isThreeSixty && selectedModels.length === 0)"
                   class="text-[13px] px-5 py-2.5 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
                 >
                   <i class="fa-solid" :class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
@@ -188,7 +240,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { DEFAULT_MODEL } from '../../constants/models.js';
+import { COMMON_MODELS, DEFAULT_MODEL } from '../../constants/models.js';
 
 const router = useRouter();
 const steps = ['软件授权', '环境自检', '配置 Key', '完成'];
@@ -308,9 +360,33 @@ const goNextFromCheck = () => {
 // --- 配置 Key ---
 const apiKey = ref('');
 const baseUrl = ref('https://api.360.cn/v1');
-// 首次引导不让用户选模型 —— 新用户不知道该选哪个。固定用默认模型(v4.1-flash)测试连接 +
-// 写进 config 的 model.default。以后想换,顶栏下拉/设置页随时切。
+// 首次引导:360 网关不让用户选模型(固定用默认模型测试连接 + 写 default,模板 12 个自动全保留);
+// 非 360 网关则展示多选,让用户勾选/手填该网关支持的模型,全部写进 config 的 models: 列表。
 const model = DEFAULT_MODEL;
+// 网关判定:base_url 含 360.cn 或留空 → 360 网关。
+const isThreeSixty = computed(() => {
+  const u = baseUrl.value.trim();
+  return !u || /360\.cn/i.test(u);
+});
+// 非360网关多选状态:selectedModels = 已选模型全名数组(保序,第一个=默认)。
+const selectedModels = ref([]);
+const extraModelInput = ref('');
+function toggleModel(value) {
+  const i = selectedModels.value.indexOf(value);
+  if (i >= 0) selectedModels.value.splice(i, 1);
+  else selectedModels.value.push(value);
+}
+function addExtraModel() {
+  const v = extraModelInput.value.trim();
+  if (v && !selectedModels.value.includes(v)) selectedModels.value.push(v);
+  extraModelInput.value = '';
+}
+function removeSelected(value) {
+  const i = selectedModels.value.indexOf(value);
+  if (i >= 0) selectedModels.value.splice(i, 1);
+}
+// 测试/保存时生效的模型:360网关=固定默认;非360网关=多选第一个。
+const effectiveModel = computed(() => (isThreeSixty.value ? model : (selectedModels.value[0] || '')));
 const testing = ref(false);
 const saving = ref(false);
 const testResult = ref(null);
@@ -319,7 +395,7 @@ const testConn = async () => {
   testing.value = true;
   testResult.value = null;
   try {
-    testResult.value = await window.api.env.testConnection({ apiKey: apiKey.value.trim(), baseUrl: baseUrl.value.trim(), model });
+    testResult.value = await window.api.env.testConnection({ apiKey: apiKey.value.trim(), baseUrl: baseUrl.value.trim(), model: effectiveModel.value });
   } catch (e) {
     testResult.value = { ok: false, error: e.message || '测试失败' };
   } finally {
@@ -329,6 +405,8 @@ const testConn = async () => {
 
 const saveAndFinish = async () => {
   if (!(testResult.value && testResult.value.ok)) return;
+  // 非360网关必须至少勾选一个模型
+  if (!isThreeSixty.value && selectedModels.value.length === 0) return;
   saving.value = true;
   try {
     const lines = [];
@@ -338,10 +416,10 @@ const saveAndFinish = async () => {
     if (baseUrl.value.trim()) lines.push(`OPENAI_BASE_URL=${baseUrl.value.trim()}`);
     // 不写 HERMES_MODEL 到 .env —— config.yaml 的 model.default 是模型的唯一真值。
     await window.api.hermes.writeEnv(lines.join('\n') + '\n');
-    // 同步写进 config.yaml 的 custom_providers[].api_key / base_url / 默认模型 ——
-    // hermes 选模型的事实来源是 config.yaml,只写 .env 不生效(占位符会一直被用),
-    // 且模型清单要跟着网关走,否则顶栏下拉列的是别的网关不认的模型名。
-    await window.api.hermes.syncProviderKey(key, baseUrl.value.trim(), model);
+    // 同步写进 config.yaml。360网关传单个默认模型(不收敛,保留模板全量);
+    // 非360网关传多选数组(收敛成勾选的这几项,第一个作 default)。
+    const modelArg = isThreeSixty.value ? model : selectedModels.value;
+    await window.api.hermes.syncProviderKey(key, baseUrl.value.trim(), modelArg);
     await window.api.hermes.restart();
     finishToApp();
   } catch (e) {

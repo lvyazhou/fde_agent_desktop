@@ -2,17 +2,17 @@
   "flow": [
     { "dept": "市场", "icon": "fa-bullhorn", "label": "获客线索", "count": 42, "status": "normal", "note": "本月新增有效线索 42 条" },
     { "dept": "销售", "icon": "fa-handshake", "label": "商机跟单", "count": 28, "status": "normal", "note": "进入跟单阶段 28 个商机" },
-    { "dept": "售前", "icon": "fa-file-signature", "label": "方案输出", "count": 11, "status": "block", "note": "省人民医院方案卡点 3 天，下游研发排期空等" },
+    { "dept": "售前", "icon": "fa-file-signature", "label": "方案输出", "count": 11, "status": "block", "note": "该客户方案卡点 3 天，下游研发排期空等" },
     { "dept": "研发", "icon": "fa-microchip", "label": "技术实现", "count": 9, "status": "wait", "note": "2 项因售前方案未定，无法启动" },
     { "dept": "工程", "icon": "fa-helmet-safety", "label": "交付实施", "count": 6, "status": "normal", "note": "在实施项目 6 个，进度正常" }
   ],
   "stages": ["市场", "销售", "售前", "研发", "工程"],
   "projects": [
     {
-      "id": "P2025-018", "name": "省人民医院检验科整体解决方案", "amount": "480 万", "owner": "赵敏", "stage": "售前", "progress": 40, "status": "block",
+      "id": "P2025-018", "name": "华东某集团数字化平台建设项目", "amount": "480 万", "owner": "赵敏", "stage": "售前", "progress": 40, "status": "block",
       "updated": "2025-09-11", "note": "方案卡点 3 天，阻塞下游研发排期",
       "timeline": [
-        { "stage": "市场", "owner": "李蔓", "date": "2025-08-12", "done": true, "desc": "获取院方采购意向线索，评估为高价值机会" },
+        { "stage": "市场", "owner": "李蔓", "date": "2025-08-12", "done": true, "desc": "获取客户采购意向线索，评估为高价值机会" },
         { "stage": "销售", "owner": "陈刚", "date": "2025-08-20", "done": true, "desc": "完成初步接触与需求确认，推进立项" },
         { "stage": "售前", "owner": "赵敏", "date": "2025-09-08", "done": false, "active": true, "desc": "解决方案撰写中，技术边界待与研发对齐（已停滞 3 天）" },
         { "stage": "研发", "owner": "刘洋", "date": "—", "done": false, "desc": "等待售前方案定稿后启动技术评估" },
@@ -20,18 +20,18 @@
       ]
     },
     {
-      "id": "P2025-021", "name": "市中心医院检验流水线实施", "amount": "320 万", "owner": "吴强", "stage": "工程", "progress": 68, "status": "normal",
+      "id": "P2025-021", "name": "中部某集团业务系统实施项目", "amount": "320 万", "owner": "吴强", "stage": "工程", "progress": 68, "status": "normal",
       "updated": "2025-09-14", "note": "现场实施中，进度正常",
       "timeline": [
         { "stage": "市场", "owner": "周颖", "date": "2025-06-05", "done": true, "desc": "线索转化立项" },
         { "stage": "销售", "owner": "王海", "date": "2025-06-22", "done": true, "desc": "签约，确定采购清单" },
         { "stage": "售前", "owner": "孙磊", "date": "2025-07-10", "done": true, "desc": "方案定稿并通过评审" },
         { "stage": "研发", "owner": "郑宇", "date": "2025-08-01", "done": true, "desc": "数据采集网关联调完成" },
-        { "stage": "工程", "owner": "吴强", "date": "2025-09-14", "done": false, "active": true, "desc": "流水线现场安装与联调中，进度 68%" }
+        { "stage": "工程", "owner": "吴强", "date": "2025-09-14", "done": false, "active": true, "desc": "业务系统现场安装与联调中，进度 68%" }
       ]
     },
     {
-      "id": "P2025-024", "name": "内镜中心信息化投标项目", "amount": "260 万", "owner": "孙磊", "stage": "售前", "progress": 85, "status": "normal",
+      "id": "P2025-024", "name": "某集团信息化投标项目", "amount": "260 万", "owner": "孙磊", "stage": "售前", "progress": 85, "status": "normal",
       "updated": "2025-09-13", "note": "技术方案接近定稿，准备投标",
       "timeline": [
         { "stage": "市场", "owner": "李蔓", "date": "2025-07-18", "done": true, "desc": "获取招标信息" },
@@ -42,7 +42,7 @@
       ]
     },
     {
-      "id": "P2025-026", "name": "县域医共体设备巡检项目", "amount": "150 万", "owner": "冯磊", "stage": "工程", "progress": 100, "status": "done",
+      "id": "P2025-026", "name": "区域连锁客户运维巡检项目", "amount": "150 万", "owner": "冯磊", "stage": "工程", "progress": 100, "status": "done",
       "updated": "2025-09-10", "note": "已交付验收完成",
       "timeline": [
         { "stage": "市场", "owner": "周颖", "date": "2025-05-10", "done": true, "desc": "区域推广获取线索" },
@@ -53,7 +53,7 @@
       ]
     },
     {
-      "id": "P2025-029", "name": "三甲医院骨科耗材集采跟单", "amount": "预估 600 万", "owner": "陈刚", "stage": "销售", "progress": 55, "status": "warn",
+      "id": "P2025-029", "name": "大客户产品集采跟单", "amount": "预估 600 万", "owner": "陈刚", "stage": "销售", "progress": 55, "status": "warn",
       "updated": "2025-09-12", "note": "竞品接触频繁，需加快推进",
       "timeline": [
         { "stage": "市场", "owner": "李蔓", "date": "2025-08-25", "done": true, "desc": "线索挖掘，识别集采机会" },
@@ -64,10 +64,10 @@
       ]
     },
     {
-      "id": "P2025-031", "name": "骨科新品市场推广活动", "amount": "—", "owner": "李蔓", "stage": "市场", "progress": 78, "status": "normal",
+      "id": "P2025-031", "name": "新品市场推广活动", "amount": "—", "owner": "李蔓", "stage": "市场", "progress": 78, "status": "normal",
       "updated": "2025-09-14", "note": "发布会策划推进中",
       "timeline": [
-        { "stage": "市场", "owner": "李蔓", "date": "2025-09-14", "done": false, "active": true, "desc": "Q4 骨科新品发布会策划与物料准备，进度 78%" },
+        { "stage": "市场", "owner": "李蔓", "date": "2025-09-14", "done": false, "active": true, "desc": "Q4 新品发布会策划与物料准备，进度 78%" },
         { "stage": "销售", "owner": "—", "date": "—", "done": false, "desc": "待活动产生线索后承接" },
         { "stage": "售前", "owner": "—", "date": "—", "done": false, "desc": "未开始" },
         { "stage": "研发", "owner": "—", "date": "—", "done": false, "desc": "未开始" },

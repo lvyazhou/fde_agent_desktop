@@ -151,25 +151,36 @@ function writeConfigProviderKey(apiKey, baseUrl, model) {
       );
     }
 
-    // model 同步(可选):换网关后 360 专用模型名不再适用,用用户填的模型统一:
-    //   ① model.default 改成该模型;② custom_providers[].models 列表收敛为仅此一项,
-    //   保证顶栏下拉框至少列出这个网关能用的模型。
-    const mdl = String(model || '').trim();
-    if (mdl) {
-      // ① model 块内的 default:
+    // model 同步(可选):model 可以是字符串或字符串数组(非360网关多选)。
+    //   ① model.default 改成第一个模型(始终执行);
+    //   ② custom_providers[].models 列表 —— 仅当换到「非 360」网关时才收敛为用户勾选的这几项。
+    //      背景:models: 就是顶栏下拉框的白名单。360 网关(默认)下模板里那 12 个模型
+    //      本来都能用,若无条件收敛,别人首启向导保存后下拉框就只剩一个模型
+    //      (DEFAULT_MODEL=deepseek/deepseek-v4.1-flash),这是个 bug。换成别的网关时
+    //      360 专用模型名可能不被对方识别,才收敛成用户实际勾选/手填的那几个。
+    const models = (Array.isArray(model) ? model : (model != null ? [model] : []))
+      .map((m) => String(m || '').trim())
+      .filter(Boolean)
+      .filter((m, i, arr) => arr.indexOf(m) === i); // 去重,保序
+    if (models.length) {
+      // ① model 块内的 default:(始终写第一个模型)
       if (/^[ \t]+default:[ \t]*.+$/m.test(content)) {
         content = content.replace(
           /^([ \t]+)default:[ \t]*.+$/m,
-          (_full, indent) => `${indent}default: ${mdl}`
+          (_full, indent) => `${indent}default: ${models[0]}`
         );
       }
-      // ② custom_providers[].models: 列表 —— 定位 "models:" 行,把其后连续的
-      //    "- xxx" 缩进列表项整体替换为单行 "- <model>"(保留 models: 的缩进层级)。
-      //    注意 config.yaml 可能是 CRLF,故用 \r?\n 兼容 Windows 换行。
-      content = content.replace(
-        /^([ \t]+)models:[ \t]*\r?\n(?:[ \t]+-[ \t]*.+\r?\n?)+/m,
-        (_full, indent) => `${indent}models:\n${indent}  - ${mdl}\n`
-      );
+      // ② 仅非 360 网关收敛 models: 列表。是否 360 以用户填的 base_url 判定,
+      //    未填 base_url 视为沿用默认(360),保留完整列表。
+      const isThreeSixty = !url || /(^|\.)360\.cn(\b|\/|:)/i.test(url);
+      if (!isThreeSixty) {
+        // 定位 "models:" 行,把其后连续的 "- xxx" 缩进列表项整体替换为用户勾选的多行列表
+        // (保留 models: 的缩进层级)。注意 config.yaml 可能是 CRLF,故用 \r?\n 兼容 Windows。
+        content = content.replace(
+          /^([ \t]+)models:[ \t]*\r?\n(?:[ \t]+-[ \t]*.+\r?\n?)+/m,
+          (_full, indent) => `${indent}models:\n` + models.map((m) => `${indent}  - ${m}\n`).join('')
+        );
+      }
     }
 
     fs.writeFileSync(CONFIG_YAML_PATH, content, 'utf-8');
@@ -216,6 +227,47 @@ function ensureDirs() {
       fs.copyFileSync(source, target);
       console.log(`[main] Initialized ${file} from template`);
     }
+  }
+
+  // 自愈:旧版 writeConfigProviderKey 会在首启保存 key 时把 custom_providers[].models
+  // 列表无条件收敛成一项(DEFAULT_MODEL),导致老用户下拉框只剩一个模型。此处在启动时
+  // 检测:若已存在的 config.yaml 是 360 网关且 models: 列表 <2 项(被旧版砍过),就从
+  // 模板补回完整列表。非 360 网关(用户自己换的)不动,避免覆盖用户的自定义。
+  try {
+    const target = path.join(PRODUCT_LOBSTER_HOME, 'config.yaml');
+    const source = path.join(templatesDir, 'config.yaml');
+    if (fs.existsSync(target) && fs.existsSync(source)) {
+      const cur = fs.readFileSync(target, 'utf-8');
+      // 判定 360 网关:base_url 含 360.cn(未显式换网关即视为默认 360)。
+      const nonThreeSixty = /base_url:[ \t]*(\S+)/i.test(cur)
+        && !/base_url:[ \t]*\S*360\.cn/i.test(cur);
+      // 统计 models: 块下的列表项数。
+      let count = 0, inModels = false;
+      for (const line of cur.split('\n')) {
+        if (/^\s*models:\s*$/.test(line)) { inModels = true; continue; }
+        if (inModels) {
+          if (/^\s+-\s+\S+/.test(line)) { count++; continue; }
+          if (line.trim() && !/^\s*#/.test(line)) break;
+        }
+      }
+      if (!nonThreeSixty && count < 2) {
+        // 从模板抽出完整 "models:\n  - ...\n  - ..." 块。
+        const tmpl = fs.readFileSync(source, 'utf-8');
+        const m = tmpl.match(/^([ \t]+)models:[ \t]*\r?\n(?:[ \t]+-[ \t]*.+\r?\n?)+/m);
+        if (m) {
+          const healed = cur.replace(
+            /^([ \t]+)models:[ \t]*\r?\n(?:[ \t]+-[ \t]*.+\r?\n?)+/m,
+            m[0]
+          );
+          if (healed !== cur) {
+            fs.writeFileSync(target, healed, 'utf-8');
+            console.log('[main] Healed config.yaml models list from template (was collapsed to <2 entries)');
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[main] heal models list skipped:', e.message);
   }
 
   // 同步内置 skills 到 HERMES_HOME/skills（每次启动都同步，确保更新）
@@ -505,7 +557,7 @@ async function initializeHermes() {
   try {
     const result = await acp.request('initialize', {
       protocolVersion: 1,
-      clientInfo: { name: 'prodesigner', version: '2.2.2' },
+      clientInfo: { name: 'prodesigner', version: '3.0.0' },
     });
     console.log('[main] hermes-acp initialized:', JSON.stringify(result).slice(0, 300));
     cachedCapabilities = result || {};
@@ -2253,8 +2305,14 @@ ipcMain.handle('code:remove-workspace', async (_event, { id } = {}) => {
 });
 
 ipcMain.handle('code:get-workspace', async (_event, { id } = {}) => {
-  const w = findCodeWorkspace(id);
-  return w ? { workspace: w } : { error: 'workspace not found' };
+  const list = readCodeWorkspaces();
+  const w = list.find((x) => x.id === id);
+  if (!w) return { error: 'workspace not found' };
+  // 打开工作区即触发老数据迁移(顶层 sessionId → conversations[0])，并落盘一次。
+  const before = JSON.stringify(w.conversations || null);
+  ensureConversations(w);
+  if (JSON.stringify(w.conversations) !== before) writeCodeWorkspaces(list);
+  return { workspace: w };
 });
 
 // 递归列出工作区文件树(嵌套结构)。跳过大目录，限制总条数。
@@ -2319,26 +2377,35 @@ ipcMain.handle('code:write-file', async (_event, { id, relPath, content } = {}) 
   }
 });
 
+// 为某个 conversation 建一条独立的 ACP session(cwd=工作区目录, mode:'default')。
+// 每会话独立 session 是并行多会话的基础——不同 session 在引擎侧并发跑、上下文互不干扰。
+async function ensureConversationSession(workspace, conversation) {
+  if (conversation.sessionId) return conversation.sessionId;
+  const newSession = await acp.request('session/new', { cwd: workspace.path, mcpServers: [] });
+  captureModelsFromSession(newSession);
+  conversation.sessionId = newSession && newSession.sessionId ? newSession.sessionId : null;
+  if (conversation.sessionId) {
+    await acp.request('session/set_mode', { sessionId: conversation.sessionId, modeId: 'default' }).catch(() => {});
+  }
+  conversation.lastActiveAt = new Date().toISOString();
+  return conversation.sessionId;
+}
+
 // 代码工作区对话：cwd = 工作区目录，mode:'default'(每次写文件都要用户确认)。
-ipcMain.handle('code:prompt', async (_event, { id, text, attachments } = {}) => {
+// conversationId 指定发往哪条会话；缺省时 findCodeConversation 取最近一条。
+ipcMain.handle('code:prompt', async (_event, { id, conversationId, text, attachments } = {}) => {
   try {
     if (!acp || !hermesReady) {
       if (!(await ensureHermesReady())) throw new Error('Hermes ACP not connected');
     }
-    const list = readCodeWorkspaces();
-    const workspace = list.find((w) => w.id === id);
+    const { list, workspace, conversation } = findCodeConversation(id, conversationId);
     if (!workspace) throw new Error('workspace not found');
+    if (!conversation) throw new Error('conversation not found');
     if (!fs.existsSync(workspace.path)) throw new Error('工作区目录不存在');
 
     // 会话缺失/失效 → 用工作区目录为 cwd 重建，并设 default 模式启用逐次编辑确认。
-    if (!workspace.sessionId) {
-      const newSession = await acp.request('session/new', { cwd: workspace.path, mcpServers: [] });
-      captureModelsFromSession(newSession);
-      workspace.sessionId = newSession && newSession.sessionId ? newSession.sessionId : null;
-      if (workspace.sessionId) {
-        await acp.request('session/set_mode', { sessionId: workspace.sessionId, modeId: 'default' }).catch(() => {});
-      }
-      workspace.lastOpenedAt = new Date().toISOString();
+    if (!conversation.sessionId) {
+      await ensureConversationSession(workspace, conversation);
       writeCodeWorkspaces(list);
     }
 
@@ -2347,7 +2414,7 @@ ipcMain.handle('code:prompt', async (_event, { id, text, attachments } = {}) => 
     const promptBlocks = buildPromptBlocks(text, attachments, uploadsDir);
 
     const result = await acp.request('session/prompt', {
-      sessionId: workspace.sessionId,
+      sessionId: conversation.sessionId,
       prompt: promptBlocks,
     }, 3_600_000); // 60 min timeout
     return result;
@@ -2355,6 +2422,112 @@ ipcMain.handle('code:prompt', async (_event, { id, text, attachments } = {}) => 
     console.error(`[main] code:prompt FAILED: ${err && err.message}`);
     throw new Error(`Prompt failed: ${err.message}`);
   }
+});
+
+// ---- 代码工作区「多会话」IPC -------------------------------------------------
+// 每个工作区可开多条独立对话(conversations)，各自一条 ACP session、并行跑。
+// 数据落 code-workspaces.json 的 workspace.conversations[]，持久化跨重启。
+
+// 列出会话(含各自 messages)。顺带触发老数据迁移并落盘。
+ipcMain.handle('code:list-conversations', async (_event, { id } = {}) => {
+  const list = readCodeWorkspaces();
+  const workspace = list.find((w) => w.id === id);
+  if (!workspace) return { error: 'workspace not found' };
+  const before = JSON.stringify(workspace.conversations || null);
+  ensureConversations(workspace);
+  if (JSON.stringify(workspace.conversations) !== before) writeCodeWorkspaces(list);
+  return { conversations: workspace.conversations };
+});
+
+// 新建会话：立即建 ACP session(决策 A)，让前端拿到 sessionId 才能路由流式事件。
+ipcMain.handle('code:new-conversation', async (_event, { id, title } = {}) => {
+  try {
+    if (!acp || !hermesReady) {
+      if (!(await ensureHermesReady())) throw new Error('Hermes ACP not connected');
+    }
+    const list = readCodeWorkspaces();
+    const workspace = list.find((w) => w.id === id);
+    if (!workspace) throw new Error('workspace not found');
+    if (!fs.existsSync(workspace.path)) throw new Error('工作区目录不存在');
+    ensureConversations(workspace);
+    const now = new Date().toISOString();
+    const conversation = {
+      id: genConversationId(),
+      title: (title && String(title).trim()) || `对话 ${workspace.conversations.length + 1}`,
+      sessionId: null,
+      messages: [],
+      createdAt: now,
+      lastActiveAt: now,
+    };
+    await ensureConversationSession(workspace, conversation);
+    workspace.conversations.push(conversation);
+    writeCodeWorkspaces(list);
+    return { conversation };
+  } catch (err) {
+    console.error(`[main] code:new-conversation FAILED: ${err && err.message}`);
+    throw new Error(`New conversation failed: ${err.message}`);
+  }
+});
+
+// 懒建 session：用于恢复历史(迁移/旧)会话时补齐 sessionId。
+ipcMain.handle('code:ensure-session', async (_event, { id, conversationId } = {}) => {
+  try {
+    if (!acp || !hermesReady) {
+      if (!(await ensureHermesReady())) throw new Error('Hermes ACP not connected');
+    }
+    const { list, workspace, conversation } = findCodeConversation(id, conversationId);
+    if (!workspace || !conversation) throw new Error('conversation not found');
+    if (conversation.sessionId) return { sessionId: conversation.sessionId };
+    await ensureConversationSession(workspace, conversation);
+    writeCodeWorkspaces(list);
+    return { sessionId: conversation.sessionId };
+  } catch (err) {
+    console.error(`[main] code:ensure-session FAILED: ${err && err.message}`);
+    throw new Error(`Ensure session failed: ${err.message}`);
+  }
+});
+
+// 删除会话；删到 0 条时补一条空默认对话(护栏)。不去释放旧 ACP session(悬空无害)。
+ipcMain.handle('code:delete-conversation', async (_event, { id, conversationId } = {}) => {
+  const list = readCodeWorkspaces();
+  const workspace = list.find((w) => w.id === id);
+  if (!workspace) return { error: 'workspace not found' };
+  ensureConversations(workspace);
+  workspace.conversations = workspace.conversations.filter((c) => c.id !== conversationId);
+  if (workspace.conversations.length === 0) {
+    const now = new Date().toISOString();
+    workspace.conversations.push({ id: genConversationId(), title: '对话 1', sessionId: null, messages: [], createdAt: now, lastActiveAt: now });
+  }
+  writeCodeWorkspaces(list);
+  return { conversations: workspace.conversations };
+});
+
+// 重命名会话。
+ipcMain.handle('code:rename-conversation', async (_event, { id, conversationId, title } = {}) => {
+  const { list, workspace, conversation } = findCodeConversation(id, conversationId);
+  if (!workspace || !conversation) return { error: 'conversation not found' };
+  conversation.title = (title && String(title).trim()) || conversation.title;
+  conversation.lastActiveAt = new Date().toISOString();
+  writeCodeWorkspaces(list);
+  return { success: true };
+});
+
+// 保存会话消息(决策 B：前端权威)。前端在一轮结束后回传完整 messages 落盘。
+ipcMain.handle('code:save-conversation', async (_event, { id, conversationId, messages } = {}) => {
+  const { list, workspace, conversation } = findCodeConversation(id, conversationId);
+  if (!workspace || !conversation) return { error: 'conversation not found' };
+  conversation.messages = Array.isArray(messages) ? messages : [];
+  conversation.lastActiveAt = new Date().toISOString();
+  // 默认标题("对话 N")在首条用户消息后自动改为其文本截断。
+  if (/^对话 \d+$/.test(conversation.title || '')) {
+    const firstUser = conversation.messages.find((m) => m && m.role === 'user' && m.content);
+    if (firstUser) {
+      const t = String(firstUser.content).trim();
+      conversation.title = t.length > 16 ? t.slice(0, 16) + '…' : t;
+    }
+  }
+  writeCodeWorkspaces(list);
+  return { success: true };
 });
 
 ipcMain.handle('hermes:create-project', async (_event, params) => {
@@ -2605,6 +2778,24 @@ ipcMain.handle('hermes:list-models', async () => {
   });
   // 过滤后为空（引擎列表和 config 完全对不上）→ 兜底返回原始，避免下拉空白。
   return { models: filtered.length ? filtered : cachedModels, current: currentModelId };
+});
+
+// 读 config.yaml 里 custom_providers[].models 的原始声明 id 列表 + 当前 base_url。
+// 供设置页在「非360网关」下回填多选已勾模型(事实来源是 config.yaml 的 models:,不是 .env)。
+ipcMain.handle('hermes:read-config-models', async () => {
+  try {
+    const ids = readDeclaredModelIds();
+    let baseUrl = '';
+    if (fs.existsSync(CONFIG_YAML_PATH)) {
+      const raw = fs.readFileSync(CONFIG_YAML_PATH, 'utf-8');
+      // 取第一个 base_url:(model 块或 custom_providers 里都行,值一致)。
+      const m = raw.match(/^[ \t]+base_url:[ \t]*(\S+)[ \t]*$/m);
+      if (m) baseUrl = m[1];
+    }
+    return { success: true, models: ids, baseUrl };
+  } catch (e) {
+    return { success: false, error: e.message, models: [], baseUrl: '' };
+  }
 });
 
 ipcMain.handle('hermes:set-model', async (_event, { slug, modelId }) => {

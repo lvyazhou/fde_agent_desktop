@@ -803,7 +803,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
     <!-- 08 项目管理规范 -->
     <section class="mod" id="m8">
       <div class="mod-head"><div class="mod-num">08</div><div><div class="short">贯穿五阶段的规矩 · 落在极库云上</div><h2>项目管理规范</h2></div></div>
-      <div class="goal"><b>学完能:</b> 记住五类规范和验收硬标准,并在极库云上把五阶段项目管起来——分工、拆需求排版本、盯进度、走产品复制。</div>
+      <div class="goal"><b>学完能:</b> 记住五类规范和验收硬标准,能梳理医院三网+VPN+SDR 部署做实施计划,并在极库云上把五阶段项目管起来——分工、拆需求排版本、盯进度、走产品复制。</div>
       <p class="body">这一块是 FDE 的<b>项目管理规范</b>——既是"守什么规矩"(五类规范),也是"平时在哪、怎么干"。日常项目都落在<b>极库云(Geelib)</b>上,项目管理、需求管理、进度把控都在这。两个常用入口先收藏好:</p>
       <div class="cards">
         <div class="card"><div class="ch">知识库文档</div><p><a href="https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=4632&docId=442814" target="_blank" style="color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass)">geelib.qihoo.net · 工作模式文档</a><br>完整项目管理规范,进场必读。</p></div>
@@ -850,10 +850,67 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       </div>
       <div class="cards">
         <div class="card"><div class="ch"><span class="tag">①②</span> 前两阶段</div><p>照五阶段照旧走:需求沟通+原型设计、需求确认+智能体设计。产出对接确认表、原型、需求最终确认表、智能体设计表。</p></div>
-        <div class="card"><div class="ch"><span class="tag">③</span> 产品实施计划说明书</div><p>定位到产品复制模式,由项目经理和交付共同完成。举例 HIS 厂商的<b>标品交付 SOP</b>:①账号开通 → ②数据治理 → ③智能体调试 → ④平台调试 → ⑤客户试用。</p></div>
+        <div class="card"><div class="ch"><span class="tag">③</span> 产品实施计划说明书</div><p>定位到产品复制模式,由项目经理和交付共同完成。举例 HIS 厂商的<b>标品交付 SOP</b>:①账号开通 → ②数据治理 → ③智能体调试 → ④平台调试 → ⑤客户试用。<b>实施计划的第一步永远是摸清医院网络环境</b>(见下)——网络不通,后面全是空谈。</p></div>
         <div class="card"><div class="ch"><span class="tag">④</span> 工作日报</div><p><b>按月新建文件,按天竖排。</b>一个月一个文件,每天一条往下排。</p></div>
         <div class="card"><div class="ch"><span class="tag">⑤</span> 工作周报</div><p><b>按季度新建文件,按周竖排。</b>一个季度一个文件,每周一条往下排。</p></div>
         <div class="card"><div class="ch"><span class="tag">⑥</span> 相关材料归档</div><p>录音、客户资料、我们调研的竞品材料,统一归档到项目下。</p></div>
+      </div>
+
+      <h3 class="sub">实施计划第一步:医院网络环境准备</h3>
+      <p class="body">进院第一件事不是装系统,是<b>把网络摸清楚</b>。医院网络是三张物理隔离的网,数据在哪张网、我们的服务往哪放、走哪条通道出内网,这几件事没梳理清楚,SDR 接不上数据、工作台连不上云,实施计划就是一纸空文。这也是<b>环境地基线(对信息科)</b>要跟信息科逐条对齐的核心。</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:90px">网络</th><th style="width:160px">是什么 / 上面有什么</th><th>跟我们的关系</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">内网(业务网)</span></td><td>HIS/EMR/LIS/PACS 全在这;物理隔离,最严</td><td><b>数据源头在这</b>。SDR 要部署进内网,才能读到业务数据</td></tr>
+          <tr><td><span class="k">办公网</span></td><td>医生办公电脑、OA、上网;和内网多为逻辑/物理隔离</td><td>用户<b>用工作台的终端多在办公网</b>;要打通办公网能访问到智能体服务</td></tr>
+          <tr><td><span class="k">外网(互联网)</span></td><td>公网;内网原则上<b>不直连外网</b></td><td>360 私有云 / 容器云在这。数据不出内网,只让 <b>SDR 主动出站</b>把结果送出去</td></tr>
+        </tbody>
+      </table></div>
+      <div class="diagram">
+        <svg viewBox="0 0 760 360" role="img" aria-label="医院三网与SDR部署拓扑图">
+          <defs><marker id="netarw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <!-- 内网区 -->
+          <rect x="16" y="20" width="330" height="320" rx="10" fill="none" stroke="#b5433a" stroke-width="1.5" stroke-dasharray="6 4"/>
+          <text x="30" y="42" fill="#b5433a" font-size="12.5" font-weight="700">① 内网 · 业务网(物理隔离,最严)</text>
+          <!-- 业务系统 -->
+          <rect x="34" y="58" width="132" height="30" rx="6" fill="#ece8de"/><text x="100" y="78" text-anchor="middle" fill="#232937" font-size="10.5" font-weight="700">HIS 挂号收费</text>
+          <rect x="34" y="94" width="132" height="30" rx="6" fill="#ece8de"/><text x="100" y="114" text-anchor="middle" fill="#232937" font-size="10.5" font-weight="700">EMR / LIS / PACS</text>
+          <text x="100" y="140" text-anchor="middle" fill="#5a6270" font-size="9.5">业务数据源头</text>
+          <!-- SDR + 私有云智能体 -->
+          <rect x="196" y="58" width="132" height="66" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="262" y="82" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">SDR</text><text x="262" y="99" text-anchor="middle" fill="#5a6270" font-size="9">部署进内网</text><text x="262" y="113" text-anchor="middle" fill="#5a6270" font-size="9">只读授权 View 取数</text>
+          <rect x="196" y="150" width="132" height="66" rx="8" fill="#0f1729"/><text x="262" y="174" text-anchor="middle" fill="#e3a94a" font-size="11" font-weight="700">360 私有云</text><text x="262" y="190" text-anchor="middle" fill="#9aa6bd" font-size="9">专属智能体实例</text><text x="262" y="204" text-anchor="middle" fill="#9aa6bd" font-size="9">离线模型·数据不出院</text>
+          <line x1="166" y1="88" x2="192" y2="88" stroke="#c8862a" stroke-width="1.5" marker-end="url(#netarw)"/>
+          <line x1="262" y1="124" x2="262" y2="146" stroke="#c8862a" stroke-width="1.5" marker-end="url(#netarw)"/>
+          <text x="181" y="252" text-anchor="middle" fill="#5a6270" font-size="9.5">SDR/智能体都在内网,数据不出这道墙</text>
+          <!-- 办公网区 -->
+          <rect x="16" y="270" width="330" height="70" rx="10" fill="none" stroke="#2f7d54" stroke-width="1.5"/>
+          <text x="30" y="292" fill="#2f7d54" font-size="12.5" font-weight="700">② 办公网(用户在这用)</text>
+          <rect x="34" y="300" width="150" height="30" rx="6" fill="#fff" stroke="#2f7d54" stroke-width="1.2"/><text x="109" y="320" text-anchor="middle" fill="#232937" font-size="10.5" font-weight="700">医生办公终端 / 浏览器</text>
+          <line x1="262" y1="216" x2="262" y2="300" stroke="#2f7d54" stroke-width="1.3" marker-end="url(#netarw)"/><text x="300" y="262" fill="#2f7d54" font-size="9">打通访问</text>
+          <!-- 外网区 -->
+          <rect x="430" y="120" width="314" height="150" rx="10" fill="none" stroke="#c8862a" stroke-width="1.5"/>
+          <text x="444" y="142" fill="#c8862a" font-size="12.5" font-weight="700">③ 外网 · 互联网</text>
+          <rect x="470" y="156" width="240" height="40" rx="8" fill="#0f1729"/><text x="590" y="180" text-anchor="middle" fill="#e3a94a" font-size="11" font-weight="700">360 智汇云容器云(工作台上线)</text>
+          <rect x="470" y="208" width="240" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.2"/><text x="590" y="228" text-anchor="middle" fill="#232937" font-size="10.5">云端管控 / 版本 / 知识库中心</text>
+          <!-- VPN 通道:内网到外网 -->
+          <path d="M328 175 C 390 175, 400 176, 466 176" fill="none" stroke="#b5433a" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#netarw)"/>
+          <text x="398" y="166" text-anchor="middle" fill="#b5433a" font-size="9.5" font-weight="700">VPN 通道</text>
+          <text x="398" y="196" text-anchor="middle" fill="#5a6270" font-size="8.5">SDR 主动出站,客户不用开入站端口</text>
+          <!-- 底部铁律 -->
+          <rect x="430" y="288" width="314" height="42" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/>
+          <text x="587" y="306" text-anchor="middle" fill="#232937" font-size="10" font-weight="700">数据只出结果、不出原始;方向永远内网→外网主动推</text>
+          <text x="587" y="322" text-anchor="middle" fill="#5a6270" font-size="9">外网进不了内网,合规硬约束</text>
+        </svg>
+        <p class="cap">医院三网拓扑:内网(业务数据+SDR+私有云智能体,数据不出这道墙)· 办公网(用户访问)· 外网(容器云/管控)。VPN 通道让 SDR <b>主动出站</b>连云端,方向永远是内网→外网推,外网进不了内网</p>
+      </div>
+      <h3 class="sub">进院要跟信息科对齐的清单(VPN + SDR 资源)</h3>
+      <div class="cards">
+        <div class="card"><div class="ch">VPN / 网络通道</div><ul><li>开一条 VPN,让 SDR 能<b>主动出站</b>到 360 私有云 / 容器云</li><li>确认内网↔办公网怎么打通(用户终端要能访问到智能体服务)</li><li>要开的域名/IP、端口白名单,提前给信息科走审批</li><li>只开出站、不开入站——外网不主动连内网</li></ul></div>
+        <div class="card"><div class="ch">SDR 要部署的资源</div><ul><li>内网里一台可部署 SDR 的服务器(或虚机),给够 CPU/内存/磁盘</li><li>各业务系统的<b>只读授权 View / 账号</b>(HIS/EMR/LIS…)</li><li>360 私有云上的<b>专属智能体实例 + 离线模型</b>(数据不出院)</li><li>数据库连接信息、字段映射所需的表结构说明</li></ul></div>
+      </div>
+      <div class="creed"><p class="ct">网络环境铁律</p>
+        <p><span class="lead">进院第一步是摸网络,不是装系统</span> —— 三网怎么隔、数据在哪、走哪条通道出去,没搞清就开工,后面全返工。</p>
+        <p><span class="lead">数据不出内网、只出结果</span> —— SDR 主动出站、方向永远内网→外网推;要开的端口/域名提前给信息科走审批,别现场干等。</p>
       </div>
 
       <h3 class="sub">三、项目需求管理(拆需求 → 排版本 → 盯进度)</h3>
@@ -963,7 +1020,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <p><span class="lead">完全定制先评估再接</span> —— 通用功能可做,完全定制先算清工作量和预算,值不值得再决定。</p>
       </div>
       <div class="drill"><p class="dt">当堂练习 + 检查点</p>
-        <ol><li>背出五类规范和验收的三条硬标准,说清三个人工确认节点卡在什么时候。</li><li>给一个假项目("某院要 8 个需求"),拆条并规划进 2–3 个版本、标 P0/P1/P2。</li><li>判断三个新客户场景各该走标品、新增需求、还是完全定制。</li></ol>
+        <ol><li>背出五类规范和验收的三条硬标准,说清三个人工确认节点卡在什么时候。</li><li>白板画医院三网拓扑,标出 SDR 部署在哪、VPN 走哪条向、数据为什么不出内网。</li><li>给一个假项目("某院要 8 个需求"),拆条并规划进 2–3 个版本、标 P0/P1/P2。</li><li>判断三个新客户场景各该走标品、新增需求、还是完全定制。</li></ol>
         <p class="chk"><b>过关:</b> 五类规范说全、验收三条不漏;需求拆条清晰、优先级合理;三个复制场景判断对。</p>
       </div>
       <p class="reading">延伸:<a href="https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=4632&docId=442814" target="_blank" style="color:var(--brass)">极库云工作模式文档</a>(项管/需求管理完整规范)</p>

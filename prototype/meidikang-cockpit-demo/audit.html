@@ -298,7 +298,7 @@ function gw(){
     drawerOpen:false, drawerTitle:'', drawerContent:'', toasts:[], _toastId:0,
     get depts(){ return [...new Set(this.detail.map(r=>r.dept))]; },
     async init(){
-      try{ const r=await fetch('data/gateway.json'); const d=await r.json();
+      try{ const r=await fetch('data/gateway.json?_='+Date.now(), {cache:'no-store'}); const d=await r.json();
         this.detail=d.detail; this.riskOverview=d.riskOverview||[]; this.byDept=d.byDept||[];
         this._detailBase=d.detail.map(x=>({...x})); this._byDeptBase=(d.byDept||[]).map(x=>({...x}));
       }catch(e){ this.showToast('数据加载失败，请用本地服务打开','error'); return; }
@@ -409,7 +409,7 @@ function gw(){
         <div class="text-[13px] font-semibold pt-1"><i class="fa fa-shield-halved mr-1.5" style="color:hsl(var(--primary))"></i>合规风险研判</div>
         ${risksHtml}
         ${(r.risks||[]).length?`<div class="flex gap-2 pt-1"><button class="btn-pri" style="flex:1;height:34px" onclick="event.stopPropagation()">通知本人核实</button><button class="btn-ghost" style="flex:1;height:34px" onclick="event.stopPropagation()">标记已复核</button></div>`:''}
-        <div class="text-[11.5px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-lock mr-1"></i>仅展示行为摘要与风险标签，不留存调用原文；数据不出域，符合医疗行业合规要求。</div>`;
+        <div class="text-[11.5px]" style="color:hsl(var(--muted-foreground))"><i class="fa fa-lock mr-1"></i>仅展示行为摘要与风险标签，不留存调用原文；数据不出域，符合数据合规要求。</div>`;
       this.drawerOpen=true; },
     timelineHtml(r){
       const tagColor = t => t==='work'?'primary':t==='leak'||t==='sensitive'||t==='irrelevant'?'danger':'warning';

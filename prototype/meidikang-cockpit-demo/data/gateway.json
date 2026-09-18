@@ -1,130 +1,1426 @@
 {
   "summary": [
-    { "label": "本月 Token 总量", "value": "4.82 亿", "delta": 12.3, "up": true },
-    { "label": "本月折算成本", "value": "¥68,420", "delta": -6.4, "up": false },
-    { "label": "调用总次数", "value": "128,640", "delta": 18.6, "up": true },
-    { "label": "平均单次成本", "value": "¥0.53", "delta": -8.1, "up": false }
+    {
+      "label": "本月 Token 总量",
+      "value": "4.82 亿",
+      "delta": 12.3,
+      "up": true
+    },
+    {
+      "label": "本月折算成本",
+      "value": "¥68,420",
+      "delta": -6.4,
+      "up": false
+    },
+    {
+      "label": "调用总次数",
+      "value": "128,640",
+      "delta": 18.6,
+      "up": true
+    },
+    {
+      "label": "平均单次成本",
+      "value": "¥0.53",
+      "delta": -8.1,
+      "up": false
+    }
   ],
   "trend": {
-    "days": ["09-01","09-02","09-03","09-04","09-05","09-06","09-07","09-08","09-09","09-10","09-11","09-12","09-13","09-14"],
-    "tokens": [2820,3010,2760,1980,1650,3120,3480,3640,3390,3720,3910,2680,2210,4020],
-    "cost": [4180,4460,4090,2930,2440,4620,5150,5390,5020,5510,5790,3970,3270,5950]
+    "days": [
+      "09-01",
+      "09-02",
+      "09-03",
+      "09-04",
+      "09-05",
+      "09-06",
+      "09-07",
+      "09-08",
+      "09-09",
+      "09-10",
+      "09-11",
+      "09-12",
+      "09-13",
+      "09-14"
+    ],
+    "tokens": [
+      2820,
+      3010,
+      2760,
+      1980,
+      1650,
+      3120,
+      3480,
+      3640,
+      3390,
+      3720,
+      3910,
+      2680,
+      2210,
+      4020
+    ],
+    "cost": [
+      4180,
+      4460,
+      4090,
+      2930,
+      2440,
+      4620,
+      5150,
+      5390,
+      5020,
+      5510,
+      5790,
+      3970,
+      3270,
+      5950
+    ]
   },
   "byDept": [
-    { "dept": "研发部", "tokens": 18240, "cost": 24680, "pct": 37.8 },
-    { "dept": "市场部", "tokens": 11320, "cost": 15020, "pct": 23.5 },
-    { "dept": "销售部", "tokens": 8760, "cost": 11240, "pct": 18.2 },
-    { "dept": "售前部", "tokens": 6480, "cost": 9860, "pct": 13.4 },
-    { "dept": "工程部", "tokens": 3400, "cost": 7620, "pct": 7.1 }
+    {
+      "dept": "研发部",
+      "tokens": 18240,
+      "cost": 24680,
+      "pct": 37.8
+    },
+    {
+      "dept": "市场部",
+      "tokens": 11320,
+      "cost": 15020,
+      "pct": 23.5
+    },
+    {
+      "dept": "销售部",
+      "tokens": 8760,
+      "cost": 11240,
+      "pct": 18.2
+    },
+    {
+      "dept": "售前部",
+      "tokens": 6480,
+      "cost": 9860,
+      "pct": 13.4
+    },
+    {
+      "dept": "工程部",
+      "tokens": 3400,
+      "cost": 7620,
+      "pct": 7.1
+    }
   ],
   "byModel": [
-    { "model": "自研大模型", "pct": 52, "cost": 21400, "note": "私有化部署，成本最低，处理内部数据" },
-    { "model": "DeepSeek", "pct": 31, "cost": 26800, "note": "复杂推理、代码生成" },
-    { "model": "豆包", "pct": 17, "cost": 20220, "note": "文案创意、多模态" }
+    {
+      "model": "自研大模型",
+      "pct": 52,
+      "cost": 21400,
+      "note": "私有化部署，成本最低，处理内部数据"
+    },
+    {
+      "model": "DeepSeek",
+      "pct": 31,
+      "cost": 26800,
+      "note": "复杂推理、代码生成"
+    },
+    {
+      "model": "豆包",
+      "pct": 17,
+      "cost": 20220,
+      "note": "文案创意、多模态"
+    }
   ],
   "riskOverview": [
-    { "key": "irrelevant", "label": "工作无关内容", "icon": "fa-mug-hot", "count": 3, "desc": "调用内容与本职工作无关（写小说、闲聊、兼职副业等）" },
-    { "key": "leak", "label": "敏感数据外流", "icon": "fa-shield-halved", "count": 1, "desc": "客户名单/报价/病人信息等发给外部模型" },
-    { "key": "abnormal", "label": "异常使用量", "icon": "fa-chart-line", "count": 2, "desc": "非工作时间大量调用 / token 突增 / 疑似脚本刷接口" },
-    { "key": "sensitive", "label": "敏感话题合规", "icon": "fa-gavel", "count": 1, "desc": "涉及违规、泄密或政治敏感等合规红线内容" }
+    {
+      "key": "irrelevant",
+      "label": "工作无关内容",
+      "icon": "fa-mug-hot",
+      "count": 3,
+      "desc": "调用内容与本职工作无关（写小说、闲聊、兼职副业等）"
+    },
+    {
+      "key": "leak",
+      "label": "敏感数据外流",
+      "icon": "fa-shield-halved",
+      "count": 1,
+      "desc": "客户名单/报价/客户敏感信息等发给外部模型"
+    },
+    {
+      "key": "abnormal",
+      "label": "异常使用量",
+      "icon": "fa-chart-line",
+      "count": 2,
+      "desc": "非工作时间大量调用 / token 突增 / 疑似脚本刷接口"
+    },
+    {
+      "key": "sensitive",
+      "label": "敏感话题合规",
+      "icon": "fa-gavel",
+      "count": 1,
+      "desc": "涉及违规、泄密或政治敏感等合规红线内容"
+    }
   ],
   "detail": [
-    { "id": 1, "dept": "研发部", "user": "刘洋", "app": "代码模式", "model": "DeepSeek", "calls": 1840, "tokens": 9820000, "cost": 13240,
-      "workSummary": "试剂管理系统效期预警模块编码、代码重构与联调",
-      "compliance": "normal", "offWorkPct": 4,
+    {
+      "id": 1,
+      "dept": "研发部",
+      "user": "刘洋",
+      "app": "代码模式",
+      "model": "DeepSeek",
+      "calls": 1840,
+      "tokens": 9820000,
+      "cost": 13240,
+      "workSummary": "库存管理系统预警模块编码、代码重构与联调",
+      "compliance": "normal",
+      "offWorkPct": 4,
       "risks": [],
       "timeline": [
-        { "date": "09-14", "items": [
-          { "time": "09:12", "app": "代码模式", "title": "生成效期预警定时任务框架代码", "tag": "work" },
-          { "time": "10:40", "app": "代码模式", "title": "重构库存扣减逻辑，修复并发问题", "tag": "work" },
-          { "time": "14:20", "app": "通用对话", "title": "查询 Cron 表达式写法", "tag": "work" },
-          { "time": "16:05", "app": "代码模式", "title": "为预警模块补充单元测试", "tag": "work" }
-        ]},
-        { "date": "09-13", "items": [
-          { "time": "09:30", "app": "代码模式", "title": "对接检验设备数据采集接口", "tag": "work" },
-          { "time": "15:10", "app": "知识库", "title": "检索网关协议对接文档", "tag": "work" }
-        ]}
-      ] },
-    { "id": 2, "dept": "研发部", "user": "郑宇", "app": "代码模式", "model": "DeepSeek", "calls": 1120, "tokens": 6180000, "cost": 8360,
-      "workSummary": "检验设备数据采集网关协议对接、调试脚本生成",
-      "compliance": "warn", "offWorkPct": 22,
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:20",
+              "app": "代码模式",
+              "title": "库存管理系统预警模块需求拆解与建模",
+              "tag": "work"
+            },
+            {
+              "time": "10:50",
+              "app": "代码模式",
+              "title": "编写库存扣减核心逻辑",
+              "tag": "work"
+            },
+            {
+              "time": "14:30",
+              "app": "知识库",
+              "title": "检索并发控制最佳实践",
+              "tag": "work"
+            },
+            {
+              "time": "16:40",
+              "app": "代码模式",
+              "title": "联调数据库事务，修复死锁",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:15",
+              "app": "代码模式",
+              "title": "效期预警定时任务框架搭建",
+              "tag": "work"
+            },
+            {
+              "time": "11:10",
+              "app": "代码模式",
+              "title": "对接消息推送网关",
+              "tag": "work"
+            },
+            {
+              "time": "15:00",
+              "app": "通用对话",
+              "title": "排查一处空指针异常",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "09:40",
+              "app": "代码模式",
+              "title": "重构库存服务，抽取公共方法",
+              "tag": "work"
+            },
+            {
+              "time": "13:50",
+              "app": "代码模式",
+              "title": "补充预警模块单元测试",
+              "tag": "work"
+            },
+            {
+              "time": "16:20",
+              "app": "知识库",
+              "title": "查阅接口幂等设计资料",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:25",
+              "app": "代码模式",
+              "title": "对接业务设备数据采集接口",
+              "tag": "work"
+            },
+            {
+              "time": "11:30",
+              "app": "代码模式",
+              "title": "处理设备上报数据解析",
+              "tag": "work"
+            },
+            {
+              "time": "15:20",
+              "app": "代码模式",
+              "title": "联调网关协议，处理粘包问题",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "09:30",
+              "app": "代码模式",
+              "title": "效期预警模块回归测试",
+              "tag": "work"
+            },
+            {
+              "time": "14:10",
+              "app": "代码模式",
+              "title": "修复测试发现的边界问题",
+              "tag": "work"
+            },
+            {
+              "time": "16:50",
+              "app": "通用对话",
+              "title": "整理本周开发小结",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": []
+        },
+        {
+          "date": "09-14",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "dept": "研发部",
+      "user": "郑宇",
+      "app": "代码模式",
+      "model": "DeepSeek",
+      "calls": 1120,
+      "tokens": 6180000,
+      "cost": 8360,
+      "workSummary": "业务数据采集网关协议对接、调试脚本生成",
+      "compliance": "warn",
+      "offWorkPct": 22,
       "risks": [
-        { "type": "abnormal", "level": "warning", "title": "非工作时间调用占比 22%", "detail": "近 7 天有 3 个夜间时段（23:00 后）出现连续高频调用，单时段最高 180 次，疑似批量测试或脚本刷用。" }
+        {
+          "type": "abnormal",
+          "level": "warning",
+          "title": "非工作时间调用占比 22%",
+          "detail": "近 7 天有 3 个夜间时段（23:00 后）出现连续高频调用，单时段最高 180 次，疑似批量测试或脚本刷用。"
+        }
       ],
       "timeline": [
-        { "date": "09-14", "items": [
-          { "time": "09:45", "app": "代码模式", "title": "调试数据采集网关握手协议", "tag": "work" },
-          { "time": "14:30", "app": "代码模式", "title": "生成设备联调测试脚本", "tag": "work" },
-          { "time": "23:18", "app": "代码模式", "title": "夜间连续调用 180 次（疑似脚本刷用）", "tag": "abnormal" },
-          { "time": "23:52", "app": "代码模式", "title": "夜间高频调用持续", "tag": "abnormal" }
-        ]},
-        { "date": "09-13", "items": [
-          { "time": "10:20", "app": "代码模式", "title": "网关协议字段映射编码", "tag": "work" },
-          { "time": "01:07", "app": "代码模式", "title": "凌晨批量调用（异常时段）", "tag": "abnormal" }
-        ]}
-      ] },
-    { "id": 3, "dept": "市场部", "user": "李蔓", "app": "专家广场", "model": "豆包", "calls": 2260, "tokens": 5240000, "cost": 7080,
-      "workSummary": "骨科新品发布会文案、邀请函、宣传视频脚本创作",
-      "compliance": "danger", "offWorkPct": 31,
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:35",
+              "app": "代码模式",
+              "title": "业务数据采集网关联调",
+              "tag": "work"
+            },
+            {
+              "time": "11:00",
+              "app": "代码模式",
+              "title": "编写设备心跳检测逻辑",
+              "tag": "work"
+            },
+            {
+              "time": "15:10",
+              "app": "代码模式",
+              "title": "处理数据采集丢包问题",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:50",
+              "app": "代码模式",
+              "title": "对接第三方设备 SDK",
+              "tag": "work"
+            },
+            {
+              "time": "14:20",
+              "app": "代码模式",
+              "title": "联调采集网关与后端服务",
+              "tag": "work"
+            },
+            {
+              "time": "23:20",
+              "app": "代码模式",
+              "title": "夜间连续调用 180 次，疑似批量测试脚本刷用",
+              "tag": "abnormal"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "10:10",
+              "app": "代码模式",
+              "title": "排查采集延迟问题",
+              "tag": "work"
+            },
+            {
+              "time": "15:30",
+              "app": "代码模式",
+              "title": "优化批量入库性能",
+              "tag": "work"
+            },
+            {
+              "time": "23:40",
+              "app": "代码模式",
+              "title": "夜间高频调用 156 次",
+              "tag": "abnormal"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:45",
+              "app": "代码模式",
+              "title": "设备联调联合测试",
+              "tag": "work"
+            },
+            {
+              "time": "14:40",
+              "app": "代码模式",
+              "title": "补充异常重试机制",
+              "tag": "work"
+            },
+            {
+              "time": "23:10",
+              "app": "代码模式",
+              "title": "夜间高频调用 132 次",
+              "tag": "abnormal"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "10:00",
+              "app": "代码模式",
+              "title": "采集网关联调收尾",
+              "tag": "work"
+            },
+            {
+              "time": "15:00",
+              "app": "通用对话",
+              "title": "查询 Netty 拆包写法",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": []
+        },
+        {
+          "date": "09-14",
+          "items": [
+            {
+              "time": "22:30",
+              "app": "代码模式",
+              "title": "夜间采集脚本调试",
+              "tag": "abnormal"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "dept": "市场部",
+      "user": "李蔓",
+      "app": "专家广场",
+      "model": "豆包",
+      "calls": 2260,
+      "tokens": 5240000,
+      "cost": 7080,
+      "workSummary": "新品发布会文案、邀请函、宣传视频脚本创作",
+      "compliance": "danger",
+      "offWorkPct": 31,
       "risks": [
-        { "type": "irrelevant", "level": "danger", "title": "疑似用于个人副业写作", "detail": "检测到 42 次调用主题为「都市言情小说续写」「短视频带货脚本（美妆类）」，与骨科市场岗位无关，累计消耗 68 万 token。" },
-        { "type": "abnormal", "level": "warning", "title": "token 消耗为同岗位 2.1 倍", "detail": "月 token 消耗显著高于市场部其他成员，主要由无关内容贡献。" }
+        {
+          "type": "irrelevant",
+          "level": "danger",
+          "title": "疑似用于个人副业写作",
+          "detail": "检测到 42 次调用主题为「都市言情小说续写」「短视频带货脚本（美妆类）」，与主营市场岗位无关，累计消耗 68 万 token。"
+        },
+        {
+          "type": "abnormal",
+          "level": "warning",
+          "title": "token 消耗为同岗位 2.1 倍",
+          "detail": "月 token 消耗显著高于市场部其他成员，主要由无关内容贡献。"
+        }
       ],
       "timeline": [
-        { "date": "09-14", "items": [
-          { "time": "09:20", "app": "专家广场", "title": "撰写骨科新品发布会邀请函", "tag": "work" },
-          { "time": "11:05", "app": "专家广场", "title": "都市言情小说第 12 章续写", "tag": "irrelevant" },
-          { "time": "14:15", "app": "专家广场", "title": "微创手术产品线宣传脚本", "tag": "work" },
-          { "time": "15:40", "app": "专家广场", "title": "美妆带货短视频脚本（个人副业）", "tag": "irrelevant" },
-          { "time": "17:30", "app": "专家广场", "title": "小说人物设定扩写", "tag": "irrelevant" }
-        ]},
-        { "date": "09-13", "items": [
-          { "time": "10:10", "app": "专家广场", "title": "行业月度舆情简报文案", "tag": "work" },
-          { "time": "16:22", "app": "专家广场", "title": "言情小说番外创作", "tag": "irrelevant" }
-        ]}
-      ] },
-    { "id": 4, "dept": "市场部", "user": "周颖", "app": "技能中心", "model": "豆包", "calls": 1480, "tokens": 3620000, "cost": 4890,
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:30",
+              "app": "专家广场",
+              "title": "Q4 新品发布会主题策划",
+              "tag": "work"
+            },
+            {
+              "time": "11:20",
+              "app": "专家广场",
+              "title": "撰写新品邀请函文案",
+              "tag": "work"
+            },
+            {
+              "time": "15:40",
+              "app": "技能中心",
+              "title": "生成发布会宣传海报文案",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:40",
+              "app": "专家广场",
+              "title": "宣传视频脚本创作（主力产品线）",
+              "tag": "work"
+            },
+            {
+              "time": "14:00",
+              "app": "专家广场",
+              "title": "都市言情小说续写",
+              "tag": "irrelevant"
+            },
+            {
+              "time": "16:30",
+              "app": "专家广场",
+              "title": "短视频带货脚本（美妆类）",
+              "tag": "irrelevant"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "10:00",
+              "app": "专家广场",
+              "title": "竞品市场活动分析",
+              "tag": "work"
+            },
+            {
+              "time": "14:20",
+              "app": "专家广场",
+              "title": "都市言情小说续写",
+              "tag": "irrelevant"
+            },
+            {
+              "time": "20:10",
+              "app": "专家广场",
+              "title": "个人公众号推文创作",
+              "tag": "irrelevant"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:50",
+              "app": "专家广场",
+              "title": "发布会流程与话术打磨",
+              "tag": "work"
+            },
+            {
+              "time": "15:10",
+              "app": "专家广场",
+              "title": "短视频带货脚本（美妆类）",
+              "tag": "irrelevant"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "10:20",
+              "app": "专家广场",
+              "title": "新品发布会物料终稿",
+              "tag": "work"
+            },
+            {
+              "time": "16:00",
+              "app": "专家广场",
+              "title": "都市言情小说续写",
+              "tag": "irrelevant"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": []
+        },
+        {
+          "date": "09-14",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "dept": "市场部",
+      "user": "周颖",
+      "app": "技能中心",
+      "model": "豆包",
+      "calls": 1480,
+      "tokens": 3620000,
+      "cost": 4890,
       "workSummary": "行业舆情简报生成、月报 PDF 导出、竞品资料整理",
-      "compliance": "normal", "offWorkPct": 6,
-      "risks": [] },
-    { "id": 5, "dept": "销售部", "user": "陈刚", "app": "通用对话", "model": "自研大模型", "calls": 3120, "tokens": 4180000, "cost": 3760,
-      "workSummary": "三甲医院采购决策链梳理、客户跟单话术、回访纪要",
-      "compliance": "normal", "offWorkPct": 9,
-      "risks": [] },
-    { "id": 6, "dept": "销售部", "user": "王海", "app": "专家广场", "model": "自研大模型", "calls": 1960, "tokens": 2840000, "cost": 2560,
+      "compliance": "normal",
+      "offWorkPct": 6,
+      "risks": [],
+      "timeline": [
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:25",
+              "app": "技能中心",
+              "title": "行业月度舆情采集",
+              "tag": "work"
+            },
+            {
+              "time": "11:15",
+              "app": "技能中心",
+              "title": "舆情简报自动生成",
+              "tag": "work"
+            },
+            {
+              "time": "15:30",
+              "app": "知识库",
+              "title": "检索行业政策动态",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:40",
+              "app": "技能中心",
+              "title": "竞品资料整理与归档",
+              "tag": "work"
+            },
+            {
+              "time": "14:10",
+              "app": "技能中心",
+              "title": "月报 PDF 排版导出",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "10:00",
+              "app": "技能中心",
+              "title": "舆情关键词监控配置",
+              "tag": "work"
+            },
+            {
+              "time": "15:20",
+              "app": "通用对话",
+              "title": "核对简报数据来源",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:35",
+              "app": "技能中心",
+              "title": "行业峰会资料汇编",
+              "tag": "work"
+            },
+            {
+              "time": "14:40",
+              "app": "技能中心",
+              "title": "生成传播效果分析表",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "10:10",
+              "app": "技能中心",
+              "title": "月度舆情简报终稿",
+              "tag": "work"
+            },
+            {
+              "time": "16:20",
+              "app": "知识库",
+              "title": "归档本周资料",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": []
+        },
+        {
+          "date": "09-14",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "dept": "销售部",
+      "user": "陈刚",
+      "app": "通用对话",
+      "model": "自研大模型",
+      "calls": 3120,
+      "tokens": 4180000,
+      "cost": 3760,
+      "workSummary": "大客户采购决策链梳理、客户跟单话术、回访纪要",
+      "compliance": "normal",
+      "offWorkPct": 9,
+      "risks": [],
+      "timeline": [
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:30",
+              "app": "通用对话",
+              "title": "大客户采购决策链梳理",
+              "tag": "work"
+            },
+            {
+              "time": "11:00",
+              "app": "通用对话",
+              "title": "客户跟单话术准备",
+              "tag": "work"
+            },
+            {
+              "time": "15:10",
+              "app": "知识库",
+              "title": "查阅华东区客户档案",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:45",
+              "app": "通用对话",
+              "title": "重点客户回访纪要整理",
+              "tag": "work"
+            },
+            {
+              "time": "14:20",
+              "app": "通用对话",
+              "title": "拟定跟单邮件",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "10:00",
+              "app": "通用对话",
+              "title": "经销商沟通要点准备",
+              "tag": "work"
+            },
+            {
+              "time": "15:30",
+              "app": "通用对话",
+              "title": "客户异议应对话术",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:50",
+              "app": "通用对话",
+              "title": "采购意向评估分析",
+              "tag": "work"
+            },
+            {
+              "time": "14:00",
+              "app": "知识库",
+              "title": "检索同类中标案例",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "10:15",
+              "app": "通用对话",
+              "title": "本周跟单进展汇总",
+              "tag": "work"
+            },
+            {
+              "time": "16:40",
+              "app": "通用对话",
+              "title": "下周拜访计划拟定",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": []
+        },
+        {
+          "date": "09-14",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "dept": "销售部",
+      "user": "王海",
+      "app": "专家广场",
+      "model": "自研大模型",
+      "calls": 1960,
+      "tokens": 2840000,
+      "cost": 2560,
       "workSummary": "经销商返利政策测算、招投标文件要点提取",
-      "compliance": "normal", "offWorkPct": 7,
-      "risks": [] },
-    { "id": 7, "dept": "售前部", "user": "赵敏", "app": "专家广场", "model": "DeepSeek", "calls": 980, "tokens": 4360000, "cost": 5880,
-      "workSummary": "省人民医院检验科解决方案撰写、投标技术应答",
-      "compliance": "danger", "offWorkPct": 12,
+      "compliance": "normal",
+      "offWorkPct": 7,
+      "risks": [],
+      "timeline": [
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:20",
+              "app": "专家广场",
+              "title": "经销商季度返利政策测算",
+              "tag": "work"
+            },
+            {
+              "time": "11:30",
+              "app": "专家广场",
+              "title": "招投标文件要点提取",
+              "tag": "work"
+            },
+            {
+              "time": "15:00",
+              "app": "知识库",
+              "title": "查阅返利政策历史数据",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:50",
+              "app": "专家广场",
+              "title": "返利方案模拟与对比",
+              "tag": "work"
+            },
+            {
+              "time": "14:30",
+              "app": "专家广场",
+              "title": "投标技术响应草拟",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "10:10",
+              "app": "专家广场",
+              "title": "经销商分级测算",
+              "tag": "work"
+            },
+            {
+              "time": "15:20",
+              "app": "通用对话",
+              "title": "核对测算口径",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:40",
+              "app": "专家广场",
+              "title": "招标文件合规性核对",
+              "tag": "work"
+            },
+            {
+              "time": "14:10",
+              "app": "专家广场",
+              "title": "投标报价策略分析",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "10:00",
+              "app": "专家广场",
+              "title": "返利政策终稿测算",
+              "tag": "work"
+            },
+            {
+              "time": "16:00",
+              "app": "专家广场",
+              "title": "投标文件要点定稿",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": []
+        },
+        {
+          "date": "09-14",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "dept": "售前部",
+      "user": "赵敏",
+      "app": "专家广场",
+      "model": "DeepSeek",
+      "calls": 980,
+      "tokens": 4360000,
+      "cost": 5880,
+      "workSummary": "华东某集团数字化解决方案撰写、投标技术应答",
+      "compliance": "danger",
+      "offWorkPct": 12,
       "risks": [
-        { "type": "leak", "level": "danger", "title": "敏感数据发往外部模型", "detail": "1 次调用将含「客户完整采购清单、报价明细、院方联系人」的文档粘贴给外部模型 DeepSeek，触发数据外流拦截规则，已由网关自动脱敏并告警。" }
+        {
+          "type": "leak",
+          "level": "danger",
+          "title": "敏感数据发往外部模型",
+          "detail": "1 次调用将含「客户完整采购清单、报价明细、客户联系人」的文档粘贴给外部模型 DeepSeek，触发数据外流拦截规则，已由网关自动脱敏并告警。"
+        }
       ],
       "timeline": [
-        { "date": "09-14", "items": [
-          { "time": "09:35", "app": "专家广场", "title": "省人民医院检验科方案框架撰写", "tag": "work" },
-          { "time": "11:20", "app": "专家广场", "title": "粘贴客户采购清单+报价发往外部模型", "tag": "leak" },
-          { "time": "14:50", "app": "专家广场", "title": "投标技术应答文档润色", "tag": "work" },
-          { "time": "16:40", "app": "知识库", "title": "检索同类医院中标案例", "tag": "work" }
-        ]},
-        { "date": "09-13", "items": [
-          { "time": "10:05", "app": "专家广场", "title": "检验科需求调研纪要整理", "tag": "work" }
-        ]}
-      ] },
-    { "id": 8, "dept": "售前部", "user": "孙磊", "app": "知识库", "model": "自研大模型", "calls": 640, "tokens": 1820000, "cost": 1640,
-      "workSummary": "网关协议对接文档检索、内镜中心方案资料查询",
-      "compliance": "normal", "offWorkPct": 5,
-      "risks": [] },
-    { "id": 9, "dept": "工程部", "user": "吴强", "app": "通用对话", "model": "自研大模型", "calls": 1240, "tokens": 1680000, "cost": 1510,
-      "workSummary": "检验流水线现场实施记录、设备验收文档整理",
-      "compliance": "warn", "offWorkPct": 3,
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:35",
+              "app": "专家广场",
+              "title": "华东某集团数字化平台建设项目框架",
+              "tag": "work"
+            },
+            {
+              "time": "11:10",
+              "app": "专家广场",
+              "title": "方案技术架构撰写",
+              "tag": "work"
+            },
+            {
+              "time": "15:20",
+              "app": "知识库",
+              "title": "检索客户部门信息化案例",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:50",
+              "app": "专家广场",
+              "title": "方案功能清单编写",
+              "tag": "work"
+            },
+            {
+              "time": "14:40",
+              "app": "专家广场",
+              "title": "投标技术应答草拟",
+              "tag": "work"
+            },
+            {
+              "time": "16:20",
+              "app": "专家广场",
+              "title": "将含客户采购清单、报价明细、客户联系人的文档粘贴给外部模型，触发数据外流拦截",
+              "tag": "leak"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "10:00",
+              "app": "专家广场",
+              "title": "方案实施计划编制",
+              "tag": "work"
+            },
+            {
+              "time": "15:00",
+              "app": "专家广场",
+              "title": "技术参数比对",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:45",
+              "app": "专家广场",
+              "title": "方案报价部分完善",
+              "tag": "work"
+            },
+            {
+              "time": "14:20",
+              "app": "知识库",
+              "title": "查阅招标评分细则",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "10:10",
+              "app": "专家广场",
+              "title": "解决方案终稿整合",
+              "tag": "work"
+            },
+            {
+              "time": "16:30",
+              "app": "专家广场",
+              "title": "投标文件封装校对",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": [
+            {
+              "time": "15:40",
+              "app": "专家广场",
+              "title": "周末补充方案投标材料",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-14",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "dept": "售前部",
+      "user": "孙磊",
+      "app": "知识库",
+      "model": "自研大模型",
+      "calls": 640,
+      "tokens": 1820000,
+      "cost": 1640,
+      "workSummary": "网关协议对接文档检索、某集团方案资料查询",
+      "compliance": "normal",
+      "offWorkPct": 5,
+      "risks": [],
+      "timeline": [
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:30",
+              "app": "知识库",
+              "title": "某集团信息化投标资料检索",
+              "tag": "work"
+            },
+            {
+              "time": "11:20",
+              "app": "专家广场",
+              "title": "投标技术方案撰写",
+              "tag": "work"
+            },
+            {
+              "time": "15:10",
+              "app": "知识库",
+              "title": "查阅业务设备参数",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:45",
+              "app": "专家广场",
+              "title": "技术方案功能设计",
+              "tag": "work"
+            },
+            {
+              "time": "14:30",
+              "app": "知识库",
+              "title": "检索同类项目实施经验",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "10:00",
+              "app": "专家广场",
+              "title": "方案系统集成部分编写",
+              "tag": "work"
+            },
+            {
+              "time": "15:20",
+              "app": "通用对话",
+              "title": "核对技术指标",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:50",
+              "app": "知识库",
+              "title": "投标评分项对照检查",
+              "tag": "work"
+            },
+            {
+              "time": "14:10",
+              "app": "专家广场",
+              "title": "完善方案实施路径",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "10:15",
+              "app": "专家广场",
+              "title": "某集团方案终稿",
+              "tag": "work"
+            },
+            {
+              "time": "16:00",
+              "app": "知识库",
+              "title": "归档投标资料",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": []
+        },
+        {
+          "date": "09-14",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "dept": "工程部",
+      "user": "吴强",
+      "app": "通用对话",
+      "model": "自研大模型",
+      "calls": 1240,
+      "tokens": 1680000,
+      "cost": 1510,
+      "workSummary": "业务系统现场实施记录、设备验收文档整理",
+      "compliance": "warn",
+      "offWorkPct": 3,
       "risks": [
-        { "type": "sensitive", "level": "warning", "title": "命中合规敏感词", "detail": "2 次调用内容命中合规词库（涉及对第三方厂商的负面不实评价），已标记待人工复核，未造成外发。" }
-      ] },
-    { "id": 10, "dept": "工程部", "user": "冯磊", "app": "知识库", "model": "自研大模型", "calls": 720, "tokens": 980000, "cost": 880,
-      "workSummary": "县域医共体设备巡检手册查询、验收标准检索",
-      "compliance": "normal", "offWorkPct": 4,
-      "risks": [] }
+        {
+          "type": "sensitive",
+          "level": "warning",
+          "title": "命中合规敏感词",
+          "detail": "2 次调用内容命中合规词库（涉及对第三方厂商的负面不实评价），已标记待人工复核，未造成外发。"
+        }
+      ],
+      "timeline": [
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:25",
+              "app": "通用对话",
+              "title": "中部某集团业务系统现场实施排期",
+              "tag": "work"
+            },
+            {
+              "time": "11:00",
+              "app": "通用对话",
+              "title": "实施方案沟通纪要",
+              "tag": "work"
+            },
+            {
+              "time": "15:30",
+              "app": "知识库",
+              "title": "查阅设备安装规范",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:40",
+              "app": "通用对话",
+              "title": "现场联调问题记录",
+              "tag": "work"
+            },
+            {
+              "time": "14:20",
+              "app": "通用对话",
+              "title": "对第三方厂商配合情况的评价（命中合规敏感词，待复核）",
+              "tag": "sensitive"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "10:00",
+              "app": "通用对话",
+              "title": "业务系统调试进度跟进",
+              "tag": "work"
+            },
+            {
+              "time": "15:10",
+              "app": "通用对话",
+              "title": "验收前问题清单整理",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:50",
+              "app": "通用对话",
+              "title": "设备巡检计划制定",
+              "tag": "work"
+            },
+            {
+              "time": "14:40",
+              "app": "通用对话",
+              "title": "对第三方厂商的负面评价（命中合规敏感词，待复核）",
+              "tag": "sensitive"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "10:10",
+              "app": "通用对话",
+              "title": "现场实施周报汇总",
+              "tag": "work"
+            },
+            {
+              "time": "16:20",
+              "app": "知识库",
+              "title": "归档验收文档",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": []
+        },
+        {
+          "date": "09-14",
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "dept": "工程部",
+      "user": "冯磊",
+      "app": "知识库",
+      "model": "自研大模型",
+      "calls": 720,
+      "tokens": 980000,
+      "cost": 880,
+      "workSummary": "区域连锁客户运维巡检手册查询、验收标准检索",
+      "compliance": "normal",
+      "offWorkPct": 4,
+      "risks": [],
+      "timeline": [
+        {
+          "date": "09-08",
+          "items": [
+            {
+              "time": "09:30",
+              "app": "知识库",
+              "title": "县域区域连锁客户设备巡检标准查阅",
+              "tag": "work"
+            },
+            {
+              "time": "11:15",
+              "app": "通用对话",
+              "title": "巡检计划拟定",
+              "tag": "work"
+            },
+            {
+              "time": "15:00",
+              "app": "知识库",
+              "title": "检索验收流程规范",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-09",
+          "items": [
+            {
+              "time": "09:45",
+              "app": "知识库",
+              "title": "设备台账核对",
+              "tag": "work"
+            },
+            {
+              "time": "14:30",
+              "app": "通用对话",
+              "title": "巡检问题分类整理",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-10",
+          "items": [
+            {
+              "time": "10:00",
+              "app": "知识库",
+              "title": "验收报告模板准备",
+              "tag": "work"
+            },
+            {
+              "time": "15:20",
+              "app": "通用对话",
+              "title": "现场巡检纪要",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-11",
+          "items": [
+            {
+              "time": "09:40",
+              "app": "知识库",
+              "title": "区域连锁客户设备清单核验",
+              "tag": "work"
+            },
+            {
+              "time": "14:10",
+              "app": "通用对话",
+              "title": "整改建议编写",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-12",
+          "items": [
+            {
+              "time": "10:10",
+              "app": "通用对话",
+              "title": "巡业务收周报",
+              "tag": "work"
+            },
+            {
+              "time": "16:00",
+              "app": "知识库",
+              "title": "归档验收资料",
+              "tag": "work"
+            }
+          ]
+        },
+        {
+          "date": "09-13",
+          "items": []
+        },
+        {
+          "date": "09-14",
+          "items": []
+        }
+      ]
+    }
   ]
 }

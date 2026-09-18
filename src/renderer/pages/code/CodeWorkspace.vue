@@ -41,6 +41,30 @@
         </button>
       </div>
 
+      <!-- 会话 tab 栏（多会话，可并行）-->
+      <div class="conv-bar scrollbar-thin">
+        <button
+          v-for="c in conversations"
+          :key="c.id"
+          class="conv-tab"
+          :class="{ 'conv-tab--on': c.id === activeConvId }"
+          @click="selectConversation(c.id)"
+        >
+          <i v-if="streamingByConv[c.id]" class="fa-solid fa-spinner fa-spin text-[10px]"></i>
+          <i v-else class="fa-regular fa-comment text-[10px]"></i>
+          <span class="conv-tab-title">{{ c.title }}</span>
+          <span
+            v-if="conversations.length > 1"
+            class="conv-x"
+            title="关闭会话"
+            @click.stop="closeConversation(c.id)"
+          ><i class="fa-solid fa-xmark"></i></span>
+        </button>
+        <button class="conv-new" title="新建会话" @click="newConversation">
+          <i class="fa-solid fa-plus text-[11px]"></i>
+        </button>
+      </div>
+
       <!-- messages -->
       <div ref="msgScroll" class="code-messages scrollbar-thin">
         <div v-if="!messages.length" class="code-welcome">
@@ -213,7 +237,7 @@
     <!-- Diff approval dialog -->
     <DiffApprovalDialog
       v-if="pendingDiff"
-      :file-path="pendingDiff.filePath"
+      :file-path="pendingDiff.convTitle ? `〔${pendingDiff.convTitle}〕${pendingDiff.filePath}` : pendingDiff.filePath"
       :old-text="pendingDiff.oldText"
       :new-text="pendingDiff.newText"
       @approve="respondDiff(true)"
@@ -223,7 +247,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, reactive, onMounted, onUnmounted, nextTick } from 'vue';
 import FileTree from '@/components/code/FileTree.vue';
 import DiffApprovalDialog from '@/components/code/DiffApprovalDialog.vue';
 import { useChatComposer } from '@/composables/useChatComposer';
@@ -275,11 +299,28 @@ const fileContent = ref(null);
 const fileLoading = ref(false);
 const fileError = ref('');
 
+// ---- 多会话状态 ----------------------------------------------------------
+// conversations: 该工作区全部会话[{id,title,sessionId,messages[],...}]。
+// messages: 当前活动会话的可写副本(流式频繁 mutate 元素，用 ref 而非只读 computed)。
+// 并行状态全部按 convId 维度存，后台会话流式不影响前台显示。
+const conversations = ref([]);
+const activeConvId = ref('');
+const activeConversation = computed(() => conversations.value.find((c) => c.id === activeConvId.value) || null);
+const activeSessionId = computed(() => activeConversation.value?.sessionId || '');
+
 const messages = ref([]);
 const draft = ref('');
-const isStreaming = ref(false);
+// 每会话是否正在流式(并行时多个可同时为真)。当前会话据此禁用输入。
+const streamingByConv = reactive({});
+const isStreaming = computed(() => !!streamingByConv[activeConvId.value]);
 const msgScroll = ref(null);
 const inputRef = ref(null);
+
+// 每会话的 streamEnd 定时器 / 计时 / token 累计 / 待落 meta。
+const streamEndTimers = new Map();   // convId → timer
+const turnStartByConv = new Map();   // convId → performance.now()
+const prevTotalByConv = new Map();   // convId → 上轮累计 token
+const pendingMetaByConv = new Map(); // convId → 本轮小结
 
 // 多模态输入：图片 / 文件 / 语音，复用共享 composer。
 // onTranscribe 把识别文本填进输入框；getSlug 给录音兜底落盘用（无 FDE slug，
@@ -292,25 +333,109 @@ const composer = useChatComposer({
   getSlug: () => `code-${props.id}`,
 });
 
-// 待确认的 diff（来自引擎 request_permission），null 时无弹窗。
-const pendingDiff = ref(null);
+// 待确认的 diff 队列（来自引擎 request_permission）。并行时多个会话可能同时来请求，
+// 逐个处理；pendingDiff 取队首展示。每项带归属会话标题。
+const diffQueue = ref([]);
+const pendingDiff = computed(() => diffQueue.value[0] || null);
 
 let unsubUpdate = null;
 let unsubPerm = null;
-let streamEndTimer = null;
-
-// 回合计时 + token 统计。turnStartAt=本轮发送时刻;prevTotalTokens=上轮累计
-// (引擎的 usage 是"跨所有回合累计",需做差得到本回合消耗)。
-let turnStartAt = 0;
-let prevTotalTokens = 0;
-// prompt 返回后算好的本回合小结，由 finishStream 落到助手消息上。
-let pendingTurnMeta = null;
 
 // ---- workspace + tree ----------------------------------------------------
 
 const loadWorkspace = async () => {
   const res = await window.api.code.getWorkspace(props.id);
   if (res && res.workspace) workspace.value = res.workspace;
+};
+
+// ---- 会话管理 ------------------------------------------------------------
+
+// 找某 sessionId 归属的会话(流式事件路由用)。
+const convBySession = (sid) => conversations.value.find((c) => c.sessionId && c.sessionId === sid) || null;
+
+const loadConversations = async () => {
+  const res = await window.api.code.listConversations(props.id);
+  let list = (res && res.conversations) || [];
+  if (!list.length) {
+    // 空工作区：建首条会话(立即建 session)。
+    const r = await window.api.code.newConversation(props.id);
+    if (r && r.conversation) list = [r.conversation];
+  }
+  conversations.value = list;
+  activeConvId.value = list[0]?.id || '';
+  messages.value = activeConversation.value?.messages || [];
+  // 历史(迁移/旧)会话可能没有 sessionId，后台补齐以便后续能路由。
+  for (const c of conversations.value) {
+    if (!c.sessionId) ensureConvSession(c.id);
+  }
+};
+
+const ensureConvSession = async (convId) => {
+  const c = conversations.value.find((x) => x.id === convId);
+  if (!c || c.sessionId) return c?.sessionId || '';
+  try {
+    const r = await window.api.code.ensureSession(props.id, convId);
+    if (r && r.sessionId) c.sessionId = r.sessionId;
+  } catch (e) {
+    console.error('[CodeWorkspace] ensureSession failed:', e);
+  }
+  return c.sessionId || '';
+};
+
+const selectConversation = async (convId) => {
+  if (convId === activeConvId.value) return;
+  activeConvId.value = convId;
+  // 只改指向；后台会话的 messages 引用保持稳定，流式不受影响。
+  messages.value = activeConversation.value?.messages || [];
+  scrollToBottom();
+  if (!activeConversation.value?.sessionId) ensureConvSession(convId);
+};
+
+const newConversation = async () => {
+  try {
+    const r = await window.api.code.newConversation(props.id);
+    if (r && r.conversation) {
+      conversations.value.push(r.conversation);
+      activeConvId.value = r.conversation.id;
+      messages.value = r.conversation.messages;
+    }
+  } catch (e) {
+    console.error('[CodeWorkspace] newConversation failed:', e);
+  }
+};
+
+const closeConversation = async (convId) => {
+  if (!confirm('关闭这条会话？其历史将被删除。')) return;
+  const idx = conversations.value.findIndex((c) => c.id === convId);
+  try {
+    const r = await window.api.code.deleteConversation(props.id, convId);
+    conversations.value = (r && r.conversations) || [];
+  } catch (e) {
+    console.error('[CodeWorkspace] deleteConversation failed:', e);
+    return;
+  }
+  // 关的是当前会话 → 切到相邻。
+  if (convId === activeConvId.value) {
+    const next = conversations.value[Math.max(0, idx - 1)];
+    activeConvId.value = next?.id || '';
+    messages.value = activeConversation.value?.messages || [];
+    if (activeConvId.value && !activeConversation.value?.sessionId) ensureConvSession(activeConvId.value);
+  }
+};
+
+// 把当前会话 messages 落盘(strip 附件 base64，延续附件 session-only 约定)。
+const stripAttachmentsData = (msgs) =>
+  msgs.map((m) => {
+    if (!m.attachments || !m.attachments.length) return m;
+    return { ...m, attachments: m.attachments.map((a) => ({ type: a.type, name: a.name, media_type: a.media_type })) };
+  });
+
+const saveConversation = (convId) => {
+  const c = conversations.value.find((x) => x.id === convId);
+  if (!c) return;
+  window.api.code.saveConversation(props.id, convId, stripAttachmentsData(c.messages || [])).catch((e) =>
+    console.error('[CodeWorkspace] saveConversation failed:', e)
+  );
 };
 
 const refreshTree = async () => {
@@ -377,37 +502,55 @@ const scrollToBottom = () => {
   });
 };
 
-const getOrCreateAssistant = () => {
-  const last = messages.value[messages.value.length - 1];
+// 往指定会话的消息数组取/建 pending 助手气泡(泛化，支持后台会话)。
+const getOrCreateAssistant = (targetMsgs) => {
+  const last = targetMsgs[targetMsgs.length - 1];
   if (last && last.role === 'assistant' && last.pending) return last;
   const msg = { id: Date.now() + Math.random(), role: 'assistant', content: '', thinkingSteps: [], thinkOpen: true, pending: true };
-  messages.value.push(msg);
+  targetMsgs.push(msg);
   return msg;
 };
 
-const scheduleStreamEnd = () => {
-  if (streamEndTimer) clearTimeout(streamEndTimer);
-  streamEndTimer = setTimeout(() => finishStream(), 1500);
+const scheduleStreamEnd = (convId) => {
+  const t = streamEndTimers.get(convId);
+  if (t) clearTimeout(t);
+  streamEndTimers.set(convId, setTimeout(() => finishStream(convId), 1500));
 };
 
-const finishStream = () => {
-  if (streamEndTimer) { clearTimeout(streamEndTimer); streamEndTimer = null; }
-  const last = messages.value[messages.value.length - 1];
+const finishStream = (convId) => {
+  const t = streamEndTimers.get(convId);
+  if (t) { clearTimeout(t); streamEndTimers.delete(convId); }
+  const conv = conversations.value.find((c) => c.id === convId);
+  if (!conv) return;
+  const msgs = conv.messages;
+  const last = msgs[msgs.length - 1];
   if (last && last.role === 'assistant') {
     last.pending = false;
     // 落本回合小结 + 完成后默认收起思考过程，回归干净的答案视图。
-    if (pendingTurnMeta) { last.meta = pendingTurnMeta; last.thinkOpen = false; }
+    const meta = pendingMetaByConv.get(convId);
+    if (meta) { last.meta = meta; last.thinkOpen = false; }
   }
-  pendingTurnMeta = null;
-  isStreaming.value = false;
-  // 一轮结束后刷新文件树 + 当前预览（AI 可能改了文件）。
-  refreshTree();
-  if (selectedFile.value) loadFile(selectedFile.value);
+  pendingMetaByConv.delete(convId);
+  streamingByConv[convId] = false;
+  // 消息定稿后落盘。
+  saveConversation(convId);
+  // 一轮结束后刷新文件树 + 当前预览(仅当前会话，AI 可能改了文件)。
+  if (convId === activeConvId.value) {
+    refreshTree();
+    if (selectedFile.value) loadFile(selectedFile.value);
+  }
 };
 
+// 按 data.sessionId 把流式事件路由到对应会话的消息数组——多会话并行不串台的关键。
 const handleSessionUpdate = (data) => {
   const update = data?.update || data;
   if (!update) return;
+  const sid = data?.sessionId || '';
+  const conv = sid ? convBySession(sid) : activeConversation.value;
+  if (!conv) { console.warn('[mc] update DROPPED, unknown sid=', sid, 'known=', conversations.value.map(c=>c.sessionId)); return; } // 未知 session：丢弃
+  console.log('[mc] update sid=', String(sid).slice(0,8), '→ conv=', conv.title, 'type=', (update.type||update.sessionUpdate));
+  const targetMsgs = conv.messages;
+  const isActive = conv.id === activeConvId.value;
   const type = update.type || update.sessionUpdate;
   const content = update.content || update.data || '';
 
@@ -419,13 +562,13 @@ const handleSessionUpdate = (data) => {
   };
 
   if (type === 'agent_message_chunk' || type === 'content_block_delta') {
-    const msg = getOrCreateAssistant();
+    const msg = getOrCreateAssistant(targetMsgs);
     const t = textOf(content);
     if (t) msg.content += t;
-    scrollToBottom();
-    scheduleStreamEnd();
+    if (isActive) scrollToBottom();
+    scheduleStreamEnd(conv.id);
   } else if (type === 'agent_thought_chunk' || type === 'agent_reasoning') {
-    const msg = getOrCreateAssistant();
+    const msg = getOrCreateAssistant(targetMsgs);
     const t = textOf(content);
     if (t) {
       const steps = msg.thinkingSteps;
@@ -433,28 +576,29 @@ const handleSessionUpdate = (data) => {
       if (last && last.icon === 'fa-solid fa-brain' && !last.finalized) last.text += t;
       else steps.push({ text: t, icon: 'fa-solid fa-brain', finalized: false });
     }
-    scrollToBottom();
-    scheduleStreamEnd();
+    if (isActive) scrollToBottom();
+    scheduleStreamEnd(conv.id);
   } else if (type === 'tool_call' || type === 'tool_call_start') {
-    const msg = getOrCreateAssistant();
+    const msg = getOrCreateAssistant(targetMsgs);
     const toolName = update.title || update.toolName || update.name || 'tool';
     msg.thinkingSteps.push({ text: `调用工具: ${toolName}`, icon: 'fa-solid fa-wrench', finalized: true });
-    if (streamEndTimer) clearTimeout(streamEndTimer);
-    scrollToBottom();
+    const t = streamEndTimers.get(conv.id);
+    if (t) clearTimeout(t);
+    if (isActive) scrollToBottom();
   } else if (type === 'tool_call_update' || type === 'tool_call_end') {
     const status = update.status || '';
     if (status === 'completed' || status === 'failed') {
-      const msg = getOrCreateAssistant();
+      const msg = getOrCreateAssistant(targetMsgs);
       const toolName = update.title || update.toolName || update.name || 'tool';
       msg.thinkingSteps.push({
         text: status === 'failed' ? `${toolName} 失败` : `${toolName} 完成`,
         icon: status === 'failed' ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-circle-check',
         finalized: true,
       });
-      scheduleStreamEnd();
+      scheduleStreamEnd(conv.id);
     }
   } else if (type === 'agent_message_end' || type === 'session_end' || type === 'stop') {
-    finishStream();
+    finishStream(conv.id);
   }
 };
 
@@ -479,12 +623,18 @@ const extractDiff = (params) => {
 const handlePermissionRequest = (payload) => {
   // payload: { requestId, isEdit, sessionId, toolCall, options }
   const info = extractDiff(payload);
-  pendingDiff.value = { requestId: payload.requestId, ...info };
+  // 按 sessionId 找归属会话，弹窗标题标注来源(并行时多个会话可能同时请求)。
+  const conv = payload.sessionId ? convBySession(payload.sessionId) : activeConversation.value;
+  diffQueue.value.push({
+    requestId: payload.requestId,
+    convId: conv?.id || '',
+    convTitle: conv?.title || '',
+    ...info,
+  });
 };
 
 const respondDiff = async (approved) => {
-  const req = pendingDiff.value;
-  pendingDiff.value = null;
+  const req = diffQueue.value.shift(); // 出队队首
   if (!req) return;
   try {
     await window.api.hermes.respondPermission(req.requestId, approved, approved ? 'allow_once' : 'deny');
@@ -499,51 +649,60 @@ const send = async () => {
   const text = draft.value.trim();
   const atts = composer.attachments.value;
   if ((!text && atts.length === 0) || isStreaming.value) return;
+  const convId = activeConvId.value;
+  if (!convId) return;
   // 带附件但当前模型不支持多模态 → 提示并阻止（composer 内部弹窗引导切模型）。
   if (!(await composer.checkModelForAttachments())) return;
+  // 首次发送前确保本会话已有 session(路由/持久化都要它)。
+  if (!activeConversation.value?.sessionId) await ensureConvSession(convId);
 
   // 快照附件（发送后即清空 composer），随用户气泡一起展示。
   const sentAtts = atts.map((a) => ({ type: a.type, name: a.name, media_type: a.media_type, data: a.data, text: a.text }));
   draft.value = '';
   composer.clearAttachments();
   messages.value.push({ id: Date.now(), role: 'user', content: text, attachments: sentAtts });
-  isStreaming.value = true;
-  turnStartAt = performance.now();
-  pendingTurnMeta = null;
+  streamingByConv[convId] = true;
+  turnStartByConv.set(convId, performance.now());
+  pendingMetaByConv.delete(convId);
   scrollToBottom();
   try {
-    const result = await window.api.code.prompt(props.id, text, sentAtts);
+    const result = await window.api.code.prompt(props.id, convId, text, sentAtts);
     // result.usage 是"跨所有回合累计"，做差得到本回合 token 消耗。
     const usage = result && result.usage ? result.usage : null;
     const total = usage ? (usage.totalTokens ?? ((usage.inputTokens || 0) + (usage.outputTokens || 0))) : null;
-    pendingTurnMeta = {
-      elapsedMs: Math.round(performance.now() - turnStartAt),
+    const prevTotal = prevTotalByConv.get(convId) || 0;
+    pendingMetaByConv.set(convId, {
+      elapsedMs: Math.round(performance.now() - (turnStartByConv.get(convId) || performance.now())),
       stopReason: (result && result.stopReason) || 'end_turn',
       input: usage ? (usage.inputTokens || 0) : null,
       output: usage ? (usage.outputTokens || 0) : null,
-      turnTokens: total != null ? Math.max(0, total - prevTotalTokens) : null,
+      turnTokens: total != null ? Math.max(0, total - prevTotal) : null,
       totalTokens: total,
-    };
-    if (total != null) prevTotalTokens = total;
+    });
+    if (total != null) prevTotalByConv.set(convId, total);
   } catch (e) {
-    const msg = getOrCreateAssistant();
-    msg.content += `\n\n⚠️ 出错了：${e.message}`;
-    pendingTurnMeta = { elapsedMs: Math.round(performance.now() - turnStartAt), error: true };
-    finishStream();
+    const conv = conversations.value.find((c) => c.id === convId);
+    if (conv) {
+      const msg = getOrCreateAssistant(conv.messages);
+      msg.content += `\n\n⚠️ 出错了：${e.message}`;
+    }
+    pendingMetaByConv.set(convId, { elapsedMs: Math.round(performance.now() - (turnStartByConv.get(convId) || performance.now())), error: true });
+    finishStream(convId);
     return;
   }
   // 正常结束由 scheduleStreamEnd / agent_message_end 兜底；prompt 已返回则直接收尾。
-  finishStream();
+  finishStream(convId);
 };
 
 const cancel = () => {
   // 引擎侧无独立 code:cancel，先在前端结束本轮流式（下一条消息会 redirect）。
-  finishStream();
+  if (activeConvId.value) finishStream(activeConvId.value);
 };
 
 onMounted(async () => {
   if (!window.api?.code) { fileError.value = '当前环境不支持代码工作区'; return; }
   await loadWorkspace();
+  await loadConversations();
   await refreshTree();
   if (window.api?.hermes?.onSessionUpdate) unsubUpdate = window.api.hermes.onSessionUpdate(handleSessionUpdate);
   if (window.api?.hermes?.onPermissionRequest) unsubPerm = window.api.hermes.onPermissionRequest(handlePermissionRequest);
@@ -552,7 +711,8 @@ onMounted(async () => {
 onUnmounted(() => {
   if (unsubUpdate) unsubUpdate();
   if (unsubPerm) unsubPerm();
-  if (streamEndTimer) clearTimeout(streamEndTimer);
+  for (const t of streamEndTimers.values()) clearTimeout(t);
+  streamEndTimers.clear();
 });
 </script>
 
@@ -575,6 +735,32 @@ onUnmounted(() => {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; background: #fff; border-bottom: 1px solid #eef2f7;
 }
+/* 会话 tab 栏 */
+.conv-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 10px; background: #fff; border-bottom: 1px solid #eef2f7;
+  overflow-x: auto; flex-shrink: 0;
+}
+.conv-tab {
+  display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+  padding: 5px 8px 5px 11px; border-radius: 8px; cursor: pointer;
+  font-size: 12.5px; color: #64748b; background: transparent;
+  border: 1px solid transparent; white-space: nowrap; transition: all .12s;
+}
+.conv-tab:hover { background: #eff6ff; }
+.conv-tab--on { background: #eff6ff; border-color: rgba(37,99,235,.3); color: #1d4ed8; font-weight: 600; }
+.conv-tab-title { max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+.conv-x {
+  width: 16px; height: 16px; border-radius: 5px; display: flex;
+  align-items: center; justify-content: center; font-size: 10px; opacity: .55;
+}
+.conv-x:hover { opacity: 1; background: rgba(239,68,68,.15); color: #dc2626; }
+.conv-new {
+  width: 28px; height: 28px; flex-shrink: 0; border: 1px dashed #cbd5e1;
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #64748b; background: transparent; transition: all .12s;
+}
+.conv-new:hover { border-color: rgba(37,99,235,.55); color: #1d4ed8; }
 .code-messages { flex: 1; overflow: auto; padding: 20px; }
 .code-welcome { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 

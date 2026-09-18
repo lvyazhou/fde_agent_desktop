@@ -193,9 +193,11 @@ const api = {
     openInBrowser(slug, file) { return invoke('hermes:open-in-browser', { slug, file }); },
     readEnv() { return invoke('hermes:read-env'); },
     writeEnv(content) { return invoke('hermes:write-env', { content }); },
+    // model 可为字符串或字符串数组(非360网关多选)。
     syncProviderKey(apiKey, baseUrl, model) { return invoke('hermes:sync-provider-key', { apiKey, baseUrl, model }); },
     restart() { return invoke('hermes:restart'); },
     listModels() { return invoke('hermes:list-models'); },
+    readConfigModels() { return invoke('hermes:read-config-models'); },
     setModel(slug, modelId) { return invoke('hermes:set-model', { slug, modelId }); },
     readConfigModel() { return invoke('hermes:read-config-model'); },
     setConfigModel(modelId) { return invoke('hermes:set-config-model', { modelId }); },

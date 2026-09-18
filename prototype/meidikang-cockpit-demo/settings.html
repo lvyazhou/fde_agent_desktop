@@ -482,15 +482,15 @@ function pageApp(){
     security:[
       {key:'mask',   name:'敏感数据自动脱敏', desc:'姓名/身份证/联系方式等在送入模型前自动打码',           on:true,  locked:false},
       {key:'audit',  name:'外部模型调用审计留痕', desc:'凡调用 DeepSeek/豆包等外部模型，全量记录内容与用途', on:true,  locked:false},
-      {key:'noleave',name:'私有化数据不出域', desc:'医疗行业强制，患者/院方数据仅在自研私有化模型内处理', on:true,  locked:true},
+      {key:'noleave',name:'私有化数据不出域', desc:'行业强制，客户数据仅在自研私有化模型内处理', on:true,  locked:true},
     ],
     rules:[
       {key:'irrelevant',name:'工作无关内容检测', desc:'检测小说创作、闲聊、副业等与本职工作无关的调用',       level:'中', on:true},
-      {key:'leak',      name:'敏感数据外流拦截', desc:'客户名单、报价单、病人信息发往外部模型时即时拦截',     level:'高', on:true},
+      {key:'leak',      name:'敏感数据外流拦截', desc:'客户名单、报价单、客户敏感信息发往外部模型时即时拦截',     level:'高', on:true},
       {key:'abnormal',  name:'异常使用量告警',   desc:'非工作时间大量调用、单人 token 突增等异常行为告警',    level:'中', on:true},
       {key:'topic',     name:'敏感话题合规',     desc:'政治敏感、违规违法、泄密词库命中即阻断并上报',         level:'高', on:true},
     ],
-    words:['客户报价','采购清单','病人信息','院方联系人'],
+    words:['客户报价','采购清单','客户敏感信息','客户联系人'],
     newWord:'',
     threshold:{ offHour:'21:00', tokenSurge:'150%', irrelevant:'20%' },
 
@@ -518,7 +518,7 @@ function pageApp(){
       this.drawer.open=false;
     },
     saveDistribute(){ this.save('distribute'); },
-    toggleSecurity(s){ if(s.locked){ this.showToast('该项为医疗行业强制要求，不可关闭','warn'); return; } s.on=!s.on; this.showToast('「'+s.name+'」已'+(s.on?'开启':'关闭'), s.on?'success':'warn'); },
+    toggleSecurity(s){ if(s.locked){ this.showToast('该项为行业强制要求，不可关闭','warn'); return; } s.on=!s.on; this.showToast('「'+s.name+'」已'+(s.on?'开启':'关闭'), s.on?'success':'warn'); },
     toggleRule(r){ r.on=!r.on; this.showToast('规则「'+r.name+'」已'+(r.on?'启用':'停用'), r.on?'success':'warn'); },
 
     addWord(){ const w=(this.newWord||'').trim(); if(!w){ return; } if(this.words.includes(w)){ this.showToast('「'+w+'」已存在','warn'); this.newWord=''; return; } this.words.push(w); this.newWord=''; this.showToast('已添加敏感词「'+w+'」','success'); },

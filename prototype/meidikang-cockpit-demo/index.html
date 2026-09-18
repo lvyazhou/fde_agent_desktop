@@ -366,7 +366,7 @@ function cockpit(){
     drawerOpen:false, drawerTitle:'', drawerContent:'',
     toasts:[], _toastId:0, refreshing:false,
     async init(){
-      try{ const r = await fetch('data/cockpit.json'); this.data = await r.json(); }
+      try{ const r = await fetch('data/cockpit.json?_='+Date.now(), {cache:'no-store'}); this.data = await r.json(); }
       catch(e){ this.showToast('数据加载失败，请用本地服务打开','error'); return; }
       this.attentions = this.data.attentions.slice();
       this._kpiBase = this.data.kpis.map(k=>({...k}));

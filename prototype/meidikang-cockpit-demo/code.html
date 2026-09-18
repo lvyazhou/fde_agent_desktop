@@ -275,7 +275,7 @@ body { font-family:'PingFang SC',-apple-system,sans-serif; margin:0; color:hsl(v
     <div class="modal-bd" x-show="modal==='new'">
       <div class="fld">
         <label>项目名称</label>
-        <input class="inp" x-model="form.name" placeholder="如：试剂管理系统">
+        <input class="inp" x-model="form.name" placeholder="如：库存管理系统">
       </div>
       <div class="fld" style="margin-bottom:2px">
         <label>项目模板</label>
@@ -336,7 +336,7 @@ function codeApp(){
       {key:'py',label:'Python 脚本',icon:'fa-python'}
     ],
     recents:[
-      {id:'p1',name:'试剂管理系统',path:'~/projects/reagent',lang:'Node.js',updated:'今天 09:12',icon:'fa-flask'},
+      {id:'p1',name:'库存管理系统',path:'~/projects/reagent',lang:'Node.js',updated:'今天 09:12',icon:'fa-flask'},
       {id:'p2',name:'设备巡检小程序',path:'~/projects/inspect',lang:'Vue',updated:'昨天 17:40',icon:'fa-clipboard-check'},
       {id:'p3',name:'经营数据看板',path:'~/projects/dashboard',lang:'Python',updated:'09-12',icon:'fa-chart-line'}
     ],
@@ -351,11 +351,11 @@ function codeApp(){
     ],
     code:{
       effiry:[
-        {html:'<span class="cm">// 试剂效期预警定时任务</span>'},
+        {html:'<span class="cm">// 库存预警定时任务</span>'},
         {html:'<span class="kw">import</span> { db } <span class="kw">from</span> <span class="st">\'./db\'</span>'},
         {html:'<span class="kw">import</span> { notify } <span class="kw">from</span> <span class="st">\'./notify\'</span>'},
         {html:''},
-        {html:'<span class="cm">// 每天 08:00 扫描近效期试剂</span>'},
+        {html:'<span class="cm">// 每天 08:00 扫描近效期库存</span>'},
         {html:'<span class="kw">export async function</span> <span class="fn">checkExpiry</span>() {'},
         {html:'  <span class="kw">const</span> items = <span class="kw">await</span> db.<span class="fn">query</span>('},
         {html:'    <span class="st">"SELECT * FROM reagent WHERE expiry_date &lt; NOW() + INTERVAL 30 DAY"</span>'},
@@ -437,7 +437,7 @@ function codeApp(){
         {html:'',isNew:true},
         {html:'<span class="cm">// —— AI 生成：补充空数据与异常处理 ——</span>',isNew:true},
         {html:'<span class="kw">if</span> (!items || items.length === <span class="st">0</span>) {',isNew:true},
-        {html:'  <span class="fn">console</span>.<span class="fn">log</span>(<span class="st">\'无近效期试剂\'</span>)',isNew:true},
+        {html:'  <span class="fn">console</span>.<span class="fn">log</span>(<span class="st">\'无近效期库存\'</span>)',isNew:true},
         {html:'  <span class="kw">return</span>',isNew:true},
         {html:'}',isNew:true}
       ];
