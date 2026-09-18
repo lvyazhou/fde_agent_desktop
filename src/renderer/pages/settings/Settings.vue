@@ -76,6 +76,10 @@
 
             <!-- 非 360 网关:多选(勾选的写进 models 列表,顶栏下拉可切换) -->
             <template v-else>
+              <div class="mb-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[12px] text-amber-700 flex items-start gap-1.5">
+                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                <span>你正在使用非 360 网关。下方内置清单是 360 专用模型名，多半不被该网关识别——请用底部输入框<b>手填该网关真实支持的裸模型名</b>（如 <code class="bg-white/60 px-1 rounded">gpt-4o</code>、<code class="bg-white/60 px-1 rounded">deepseek-chat</code>）。保存时会自动去掉 <code class="bg-white/60 px-1 rounded">厂商/</code> 前缀。</span>
+              </div>
               <!-- 已选 chip -->
               <div v-if="selectedModels.length" class="flex flex-wrap gap-2 mb-2">
                 <span
@@ -129,7 +133,7 @@
               </div>
               <p class="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
                 <i class="fa-solid fa-circle-info text-slate-300"></i>
-                勾选/添加的模型会出现在顶栏下拉框，第一个为默认。请填该网关实际支持的模型名。
+                勾选/添加的模型会出现在顶栏下拉框，第一个为默认。请填该网关的裸模型名（如 <code class="bg-slate-100 px-1 rounded">gpt-4o</code>），不要带 <code class="bg-slate-100 px-1 rounded">厂商/</code> 前缀。
               </p>
             </template>
           </div>

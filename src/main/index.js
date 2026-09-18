@@ -158,8 +158,15 @@ function writeConfigProviderKey(apiKey, baseUrl, model) {
     //      本来都能用,若无条件收敛,别人首启向导保存后下拉框就只剩一个模型
     //      (DEFAULT_MODEL=deepseek/deepseek-v4.1-flash),这是个 bug。换成别的网关时
     //      360 专用模型名可能不被对方识别,才收敛成用户实际勾选/手填的那几个。
+    //   前缀:引擎 provider:custom 桶把带前缀模型名整串透传给 base_url。360 认前缀名
+    //      (anthropic/claude-sonnet-5 能跑);非360官方网关只认裸名(gpt-4o),带 openai/ 前缀会400。
+    //      故非360网关写入前先剥前缀。是否360以用户填的 base_url 判定,未填=默认360。
+    const isThreeSixty = !url || /(^|\.)360\.cn(\b|\/|:)/i.test(url);
+    const stripPrefix = (m) => { const i = m.indexOf('/'); return i >= 0 ? m.slice(i + 1).trim() : m; };
     const models = (Array.isArray(model) ? model : (model != null ? [model] : []))
       .map((m) => String(m || '').trim())
+      .filter(Boolean)
+      .map((m) => (isThreeSixty ? m : stripPrefix(m))) // 非360剥前缀
       .filter(Boolean)
       .filter((m, i, arr) => arr.indexOf(m) === i); // 去重,保序
     if (models.length) {
@@ -170,9 +177,7 @@ function writeConfigProviderKey(apiKey, baseUrl, model) {
           (_full, indent) => `${indent}default: ${models[0]}`
         );
       }
-      // ② 仅非 360 网关收敛 models: 列表。是否 360 以用户填的 base_url 判定,
-      //    未填 base_url 视为沿用默认(360),保留完整列表。
-      const isThreeSixty = !url || /(^|\.)360\.cn(\b|\/|:)/i.test(url);
+      // ② 仅非 360 网关收敛 models: 列表。
       if (!isThreeSixty) {
         // 定位 "models:" 行,把其后连续的 "- xxx" 缩进列表项整体替换为用户勾选的多行列表
         // (保留 models: 的缩进层级)。注意 config.yaml 可能是 CRLF,故用 \r?\n 兼容 Windows。
@@ -3239,9 +3244,13 @@ ipcMain.handle('env:test-connection', async (_event, params) => {
   const cfg = parseEnvConfig();
   const apiKey = (params && params.apiKey) || cfg.apiKey;
   const baseUrl = (params && params.baseUrl) || cfg.baseUrl;
-  const model = (params && params.model) || cfg.model;
+  let model = (params && params.model) || cfg.model;
   if (!apiKey) return { ok: false, error: '未填写 API Key' };
   if (!model) return { ok: false, error: '未指定测试模型(请填写该网关支持的模型名)' };
+  // 与引擎写 config 的规则对齐:非360网关剥掉模型名 provider 前缀(官方网关只认裸名),
+  // 否则测试连接会用 openai/gpt-4o 这种名字打官方 /chat/completions → 400,和引擎实际不一致。
+  const isThreeSixty = !baseUrl || /(^|\.)360\.cn(\b|\/|:)/i.test(baseUrl);
+  if (!isThreeSixty) { const i = model.indexOf('/'); if (i >= 0) model = model.slice(i + 1).trim(); }
   const r = await postChatCompletion({
     apiKey, baseUrl, model,
     messages: [{ role: 'user', content: 'ping' }],

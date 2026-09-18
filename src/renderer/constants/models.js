@@ -34,3 +34,14 @@ export const CUSTOM_MODEL = '__custom__';
 export function isCommonModel(value) {
   return COMMON_MODELS.some((m) => m.value === value);
 }
+
+// 剥掉模型名的 provider 前缀:'openai/gpt-4o' → 'gpt-4o'。
+// 背景:引擎 provider:custom 桶会把带前缀的模型名【整串透传】给 base_url。
+// 360 网关认 'anthropic/claude-sonnet-5' 这种前缀名;但 OpenAI/DeepSeek 等官方网关
+// 只认裸名 'gpt-4o',带 'openai/' 前缀会 400。故换非360网关时须先剥前缀再写 config。
+// (聚合器如 OpenRouter 反而需要 vendor/model 格式,但本平台默认不走聚合器。)
+export function stripModelPrefix(value) {
+  const s = String(value || '').trim();
+  const i = s.indexOf('/');
+  return i >= 0 ? s.slice(i + 1).trim() : s;
+}

@@ -397,7 +397,10 @@ const newConversation = async () => {
     if (r && r.conversation) {
       conversations.value.push(r.conversation);
       activeConvId.value = r.conversation.id;
-      messages.value = r.conversation.messages;
+      // 关键：push 进 reactive 数组后元素被 proxy 化，必须从 conversations.value 重新取
+      // proxy 引用赋给 messages.value——否则 messages.value 指向 raw 对象的数组，
+      // 而流式回填/落盘走的是 proxy 数组，两者不是同一引用 → 消息串台且落盘为空。
+      messages.value = activeConversation.value?.messages || [];
     }
   } catch (e) {
     console.error('[CodeWorkspace] newConversation failed:', e);
@@ -532,6 +535,7 @@ const finishStream = (convId) => {
   }
   pendingMetaByConv.delete(convId);
   streamingByConv[convId] = false;
+  console.log('[mc] finishStream conv=', conv.title, 'msgs=', msgs.length, '→ saving');
   // 消息定稿后落盘。
   saveConversation(convId);
   // 一轮结束后刷新文件树 + 当前预览(仅当前会话，AI 可能改了文件)。
@@ -660,7 +664,11 @@ const send = async () => {
   const sentAtts = atts.map((a) => ({ type: a.type, name: a.name, media_type: a.media_type, data: a.data, text: a.text }));
   draft.value = '';
   composer.clearAttachments();
-  messages.value.push({ id: Date.now(), role: 'user', content: text, attachments: sentAtts });
+  // 用 convId 定位目标会话数组，而非 messages.value——避免 await 期间用户切换会话导致推错。
+  const sendConv = conversations.value.find((c) => c.id === convId);
+  if (!sendConv) return;
+  console.log('[mc] send → conv=', sendConv.title, 'sid=', String(sendConv.sessionId).slice(0,8), 'msgsRef===messages.value?', sendConv.messages === messages.value);
+  sendConv.messages.push({ id: Date.now(), role: 'user', content: text, attachments: sentAtts });
   streamingByConv[convId] = true;
   turnStartByConv.set(convId, performance.now());
   pendingMetaByConv.delete(convId);

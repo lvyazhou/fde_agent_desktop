@@ -141,6 +141,10 @@
             <!-- 非 360 网关:多选模型(勾选/手填的写进 models 列表) -->
             <div v-if="!isThreeSixty" class="mb-4">
               <label class="block text-[12px] font-medium text-slate-600 mb-1.5">启用的模型 <span class="text-slate-400 font-normal">(可多选)</span></label>
+              <div class="mb-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-[12px] text-amber-700 flex items-start gap-1.5">
+                <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                <span>非 360 网关请用下方输入框<b>手填该网关真实的裸模型名</b>（如 <code class="bg-white/60 px-1 rounded">gpt-4o</code>）。内置清单是 360 专用名，多半不被识别。保存时会自动去掉 <code class="bg-white/60 px-1 rounded">厂商/</code> 前缀。</span>
+              </div>
               <div v-if="selectedModels.length" class="flex flex-wrap gap-2 mb-2">
                 <span
                   v-for="(m, i) in selectedModels" :key="m"
