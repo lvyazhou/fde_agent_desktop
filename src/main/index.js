@@ -871,6 +871,24 @@ function readMessages(slug, maxLines = 200) {
   return lines.slice(-maxLines).map(l => { try { return JSON.parse(l); } catch { return null; } }).filter(Boolean);
 }
 
+// 删除某个会话线的历史消息（按 tab 过滤后整档重写）。
+// tab 为空表示清空全部；返回删除条数。
+function deleteMessagesByTab(slug, tab) {
+  const msgPath = resolveProjectPath(slug, 'messages.jsonl');
+  if (!fs.existsSync(msgPath)) return 0;
+  const lines = fs.readFileSync(msgPath, 'utf-8').trim().split('\n').filter(Boolean);
+  const kept = [];
+  let removed = 0;
+  for (const line of lines) {
+    let msg = null;
+    try { msg = JSON.parse(line); } catch { kept.push(line); continue; } // 坏行原样保留
+    if (!tab || msg.tab === tab) { removed++; continue; }
+    kept.push(line);
+  }
+  fs.writeFileSync(msgPath, kept.length ? kept.join('\n') + '\n' : '', 'utf-8');
+  return removed;
+}
+
 // ---------------------------------------------------------------------------
 // Window creation
 // ---------------------------------------------------------------------------
@@ -2699,6 +2717,15 @@ ipcMain.handle('hermes:save-message', async (_event, { slug, message }) => {
   }
 });
 
+ipcMain.handle('hermes:delete-messages', async (_event, { slug, tab }) => {
+  try {
+    const removed = deleteMessagesByTab(slug, tab);
+    return { success: true, removed };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('hermes:update-project-meta', async (_event, { slug, updates }) => {
   try {
     const meta = updateProjectMeta(slug, updates);
@@ -3468,6 +3495,176 @@ ipcMain.handle('hermes:open-in-browser', async (_event, { slug, file }) => {
   }
 });
 
+// Markdown → docx Buffer。表格(GFM)转 Word 原生表格，图片按 md 所在目录解析相对路径后嵌入。
+// baseDir 为 md 文件所在的绝对目录，用于解析 ![](assets/x.png) 这类相对图片；缺省则跳过图片。
+async function markdownToDocxBuffer(mdContent, baseDir) {
+  const {
+    Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer,
+    Table, TableRow, TableCell, WidthType, ImageRun,
+  } = require('docx');
+
+  const lines = mdContent.split('\n');
+  const children = [];
+
+  // 图片：仅支持 docx 能嵌的位图(png/jpg/gif/bmp)；svg/缺失文件退化为「[图片: alt]」占位。
+  const imageParagraph = (alt, src) => {
+    try {
+      if (!baseDir || /^(https?:|data:|file:|\/\/)/i.test(src)) throw new Error('remote');
+      const abs = path.isAbsolute(src) ? src : path.join(baseDir, src);
+      const ext = path.extname(abs).toLowerCase();
+      if (!['.png', '.jpg', '.jpeg', '.gif', '.bmp'].includes(ext)) throw new Error('unsupported');
+      if (!fs.existsSync(abs)) throw new Error('missing');
+      return new Paragraph({
+        children: [new ImageRun({
+          data: fs.readFileSync(abs),
+          transformation: { width: 560, height: 320 },
+        })],
+        spacing: { before: 120, after: 120 },
+      });
+    } catch {
+      return new Paragraph({
+        children: [new TextRun({ text: `[图片: ${alt || src}]`, italics: true, color: '94a3b8' })],
+        spacing: { after: 60 },
+      });
+    }
+  };
+
+  const splitRow = (line) => line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => c.trim());
+  const isSeparatorRow = (line) => /^\s*\|?[\s:-]*-[\s:|-]*\|?\s*$/.test(line) && line.includes('-');
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // GFM 表格：`| a | b |` + 分隔行 → Word 原生表格
+    if (/^\s*\|.*\|\s*$/.test(line) && i + 1 < lines.length && isSeparatorRow(lines[i + 1])) {
+      const header = splitRow(line);
+      const bodyRows = [];
+      let j = i + 2;
+      while (j < lines.length && /^\s*\|.*\|\s*$/.test(lines[j])) {
+        bodyRows.push(splitRow(lines[j]));
+        j++;
+      }
+      const colCount = header.length;
+      const mkCell = (text, bold) => new TableCell({
+        children: [new Paragraph({ children: parseInlineMarkdown(text || '', TextRun, bold) })],
+        shading: bold ? { fill: 'f1f5f9' } : undefined,
+      });
+      children.push(new Table({
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        rows: [
+          new TableRow({ children: header.map((h) => mkCell(h, true)), tableHeader: true }),
+          ...bodyRows.map((r) => new TableRow({
+            children: Array.from({ length: colCount }, (_, ci) => mkCell(r[ci], false)),
+          })),
+        ],
+      }));
+      children.push(new Paragraph({ text: '' }));
+      i = j - 1;
+      continue;
+    }
+
+    // 独占一行的图片
+    const imgOnly = line.trim().match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)$/);
+    if (imgOnly) {
+      children.push(imageParagraph(imgOnly[1], imgOnly[2]));
+      continue;
+    }
+
+    if (line.startsWith('# ')) {
+      children.push(new Paragraph({
+        text: line.slice(2).trim(),
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 240, after: 120 },
+      }));
+    } else if (line.startsWith('## ')) {
+      children.push(new Paragraph({
+        text: line.slice(3).trim(),
+        heading: HeadingLevel.HEADING_2,
+        spacing: { before: 200, after: 100 },
+      }));
+    } else if (line.startsWith('### ')) {
+      children.push(new Paragraph({
+        text: line.slice(4).trim(),
+        heading: HeadingLevel.HEADING_3,
+        spacing: { before: 160, after: 80 },
+      }));
+    } else if (line.startsWith('#### ')) {
+      children.push(new Paragraph({
+        text: line.slice(5).trim(),
+        heading: HeadingLevel.HEADING_4,
+        spacing: { before: 120, after: 60 },
+      }));
+    } else if (/^\s*[-*+]\s/.test(line)) {
+      const indent = line.match(/^(\s*)/)[1].length;
+      const level = Math.min(Math.floor(indent / 2), 4);
+      const text = line.replace(/^\s*[-*+]\s+/, '');
+      children.push(new Paragraph({
+        children: parseInlineMarkdown(text, TextRun),
+        bullet: { level },
+      }));
+    } else if (/^\s*\d+\.\s/.test(line)) {
+      const text = line.replace(/^\s*\d+\.\s+/, '');
+      children.push(new Paragraph({
+        children: parseInlineMarkdown(text, TextRun),
+        numbering: { reference: 'default-numbering', level: 0 },
+      }));
+    } else if (/^---+$/.test(line.trim())) {
+      children.push(new Paragraph({ text: '' }));
+    } else if (line.trim() === '') {
+      children.push(new Paragraph({ text: '' }));
+    } else {
+      children.push(new Paragraph({
+        children: parseInlineMarkdown(line, TextRun),
+        spacing: { after: 60 },
+      }));
+    }
+  }
+
+  const doc = new Document({
+    numbering: {
+      config: [{
+        reference: 'default-numbering',
+        levels: [{ level: 0, format: 'decimal', text: '%1.', alignment: AlignmentType.START }],
+      }],
+    },
+    sections: [{ children }],
+  });
+
+  return Packer.toBuffer(doc);
+}
+
+// 交付物 md 自动转存同名 .docx（阶段②③工作台：md 是可编辑源，docx 是交付成品）。
+// relativePath 传 md 的项目内相对路径，产出同目录同名 .docx。
+ipcMain.handle('hermes:md-to-docx', async (_event, { slug, relativePath }) => {
+  try {
+    const mdPath = resolveProjectPath(slug, relativePath);
+    if (!fs.existsSync(mdPath)) return { success: false, error: `${relativePath} not found` };
+    const mdContent = fs.readFileSync(mdPath, 'utf-8');
+    if (!mdContent.trim()) return { success: false, error: 'empty markdown' };
+
+    const buffer = await markdownToDocxBuffer(mdContent, path.dirname(mdPath));
+    const docxPath = mdPath.replace(/\.md$/i, '') + '.docx';
+    fs.writeFileSync(docxPath, buffer);
+    const docxRel = relativePath.replace(/\.md$/i, '') + '.docx';
+    return { success: true, path: docxPath, relativePath: docxRel };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 读取项目内 docx 并转成 HTML 供右侧面板预览（mammoth：Word → HTML 快照）。
+ipcMain.handle('hermes:docx-preview', async (_event, { slug, relativePath }) => {
+  try {
+    const abs = resolveProjectPath(slug, relativePath);
+    if (!fs.existsSync(abs)) return { success: false, error: `${relativePath} not found` };
+    const mammoth = require('mammoth');
+    const result = await mammoth.convertToHtml({ path: abs });
+    return { success: true, html: result.value || '' };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('hermes:export-word', async (_event, { slug }) => {
   try {
     const specPath = resolveProjectPath(slug, 'spec.md');
@@ -3475,84 +3672,6 @@ ipcMain.handle('hermes:export-word', async (_event, { slug }) => {
       return { success: false, error: 'spec.md not found' };
     }
     const mdContent = fs.readFileSync(specPath, 'utf-8');
-
-    const { Document, Paragraph, TextRun, HeadingLevel, AlignmentType, Packer } = require('docx');
-
-    // Parse markdown lines into docx paragraphs
-    const lines = mdContent.split('\n');
-    const children = [];
-
-    for (const line of lines) {
-      // Headings
-      if (line.startsWith('# ')) {
-        children.push(new Paragraph({
-          text: line.slice(2).trim(),
-          heading: HeadingLevel.HEADING_1,
-          spacing: { before: 240, after: 120 },
-        }));
-      } else if (line.startsWith('## ')) {
-        children.push(new Paragraph({
-          text: line.slice(3).trim(),
-          heading: HeadingLevel.HEADING_2,
-          spacing: { before: 200, after: 100 },
-        }));
-      } else if (line.startsWith('### ')) {
-        children.push(new Paragraph({
-          text: line.slice(4).trim(),
-          heading: HeadingLevel.HEADING_3,
-          spacing: { before: 160, after: 80 },
-        }));
-      } else if (line.startsWith('#### ')) {
-        children.push(new Paragraph({
-          text: line.slice(5).trim(),
-          heading: HeadingLevel.HEADING_4,
-          spacing: { before: 120, after: 60 },
-        }));
-      }
-      // Unordered list items
-      else if (/^\s*[-*+]\s/.test(line)) {
-        const indent = line.match(/^(\s*)/)[1].length;
-        const level = Math.min(Math.floor(indent / 2), 4);
-        const text = line.replace(/^\s*[-*+]\s+/, '');
-        children.push(new Paragraph({
-          children: parseInlineMarkdown(text, TextRun),
-          bullet: { level },
-        }));
-      }
-      // Ordered list items
-      else if (/^\s*\d+\.\s/.test(line)) {
-        const text = line.replace(/^\s*\d+\.\s+/, '');
-        children.push(new Paragraph({
-          children: parseInlineMarkdown(text, TextRun),
-          numbering: { reference: 'default-numbering', level: 0 },
-        }));
-      }
-      // Horizontal rule
-      else if (/^---+$/.test(line.trim())) {
-        children.push(new Paragraph({ text: '' }));
-      }
-      // Empty line
-      else if (line.trim() === '') {
-        children.push(new Paragraph({ text: '' }));
-      }
-      // Normal paragraph
-      else {
-        children.push(new Paragraph({
-          children: parseInlineMarkdown(line, TextRun),
-          spacing: { after: 60 },
-        }));
-      }
-    }
-
-    const doc = new Document({
-      numbering: {
-        config: [{
-          reference: 'default-numbering',
-          levels: [{ level: 0, format: 'decimal', text: '%1.', alignment: AlignmentType.START }],
-        }],
-      },
-      sections: [{ children }],
-    });
 
     const meta = readProjectMeta(slug);
     const defaultName = meta?.name ? `${meta.name} - 产品功能清单.docx` : '功能清单.docx';
@@ -3565,7 +3684,7 @@ ipcMain.handle('hermes:export-word', async (_event, { slug }) => {
 
     if (canceled || !filePath) return { success: false, canceled: true };
 
-    const buffer = await Packer.toBuffer(doc);
+    const buffer = await markdownToDocxBuffer(mdContent, path.dirname(specPath));
     fs.writeFileSync(filePath, buffer);
     return { success: true, path: filePath };
   } catch (err) {
@@ -3574,7 +3693,8 @@ ipcMain.handle('hermes:export-word', async (_event, { slug }) => {
 });
 
 // Helper: parse bold/italic inline markdown to TextRun array
-function parseInlineMarkdown(text, TextRun) {
+// forceBold: 表格表头整格加粗（正文行传 false / 省略）
+function parseInlineMarkdown(text, TextRun, forceBold = false) {
   const runs = [];
   // Match **bold**, *italic*, `code`, and plain text
   const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`|([^*`]+))/g;
@@ -3585,16 +3705,16 @@ function parseInlineMarkdown(text, TextRun) {
       runs.push(new TextRun({ text: match[2], bold: true }));
     } else if (match[3]) {
       // Italic
-      runs.push(new TextRun({ text: match[3], italics: true }));
+      runs.push(new TextRun({ text: match[3], italics: true, bold: forceBold || undefined }));
     } else if (match[4]) {
       // Code
-      runs.push(new TextRun({ text: match[4], font: 'Consolas', size: 20 }));
+      runs.push(new TextRun({ text: match[4], font: 'Consolas', size: 20, bold: forceBold || undefined }));
     } else if (match[5]) {
       // Plain
-      runs.push(new TextRun({ text: match[5] }));
+      runs.push(new TextRun({ text: match[5], bold: forceBold || undefined }));
     }
   }
-  return runs.length > 0 ? runs : [new TextRun({ text })];
+  return runs.length > 0 ? runs : [new TextRun({ text, bold: forceBold || undefined })];
 }
 
 // ---------------------------------------------------------------------------

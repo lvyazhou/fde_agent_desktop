@@ -3,10 +3,10 @@
     <!-- 左侧：交付物列表 -->
     <div class="w-[260px] shrink-0 bg-white border-r border-slate-200/60 flex flex-col overflow-hidden">
       <div class="px-4 py-3 border-b border-slate-100">
-        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">
-          <i class="fa-solid fa-box-open text-blue-500 mr-1.5"></i>阶段③交付物
+        <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">
+          <i class="fa-solid fa-box-open text-blue-500 mr-1.5"></i>{{ stageId === 3 ? '阶段③交付物' : '阶段②交付物' }}
         </span>
-        <p class="text-[11px] text-slate-400 mt-1">需求签字定稿 + 智能体设计</p>
+        <p class="text-[11px] text-slate-400 mt-1">{{ stageId === 3 ? '需求签字定稿 + 智能体设计' : '需求沟通 + 原型设计' }}</p>
       </div>
       <div class="flex-1 overflow-y-auto p-2 space-y-1">
         <button
@@ -18,14 +18,16 @@
         >
           <i :class="[d.icon, 'text-[13px] mt-0.5 shrink-0', selected === d.key ? 'text-blue-500' : 'text-slate-400']"></i>
           <div class="min-w-0 flex-1">
-            <div class="text-[13px] font-medium text-slate-700 leading-tight">{{ d.name }}</div>
+            <div class="text-[14px] font-medium text-slate-700 leading-snug">{{ d.name }}</div>
             <div class="mt-1 flex items-center gap-1.5">
               <span
-                class="text-[10px] px-1.5 py-0.5 rounded"
-                :class="statusMap[d.key] === 'ready' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'"
+                class="text-[11px] px-1.5 py-0.5 rounded"
+                :class="busyKey === d.key ? 'bg-blue-50 text-blue-600'
+                  : statusMap[d.key] === 'ready' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'"
               >
-                <i :class="statusMap[d.key] === 'ready' ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'" class="mr-0.5 text-[9px]"></i>
-                {{ statusMap[d.key] === 'ready' ? '已生成' : '未生成' }}
+                <i :class="busyKey === d.key ? 'fa-solid fa-spinner fa-spin'
+                  : statusMap[d.key] === 'ready' ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'" class="mr-0.5 text-[10px]"></i>
+                {{ busyKey === d.key ? '生成中' : statusMap[d.key] === 'ready' ? '已生成' : '未生成' }}
               </span>
             </div>
           </div>
@@ -40,20 +42,20 @@
     <div class="flex-1 flex flex-col min-w-0">
       <!-- 工具条 -->
       <div class="shrink-0 flex items-center gap-3 px-5 py-3 border-b border-slate-100 bg-white">
-        <span class="text-[13px] font-semibold text-slate-700">{{ activeDeliverable?.name }}</span>
+        <span class="text-[15px] font-semibold text-slate-700">{{ activeDeliverable?.name }}</span>
         <div class="ml-auto flex items-center gap-2">
           <button
             @click="$emit('generate', selected)"
             :disabled="busy"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-blue-700 hover:bg-blue-800 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] rounded-lg bg-blue-700 hover:bg-blue-800 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i :class="busy ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-wand-magic-sparkles'" class="text-[10px]"></i>
+            <i :class="isSelectedBusy ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-wand-magic-sparkles'" class="text-[11px]"></i>
             {{ statusMap[selected] === 'ready' ? '重新生成' : '生成' + activeDeliverable?.short }}
           </button>
           <button
             v-if="statusMap[selected] === 'ready'"
             @click="$emit('toggle-edit')"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-colors"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] rounded-lg transition-colors"
             :class="editing ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'"
           >
             <i :class="editing ? 'fa-solid fa-eye' : 'fa-solid fa-pen'" class="text-[10px]"></i>
@@ -62,9 +64,9 @@
           <button
             v-if="statusMap[selected] === 'ready'"
             @click="$emit('export-md', selected)"
-            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
           >
-            <i class="fa-solid fa-download text-[10px]"></i>.md
+            <i class="fa-solid fa-download text-[11px]"></i>.md
           </button>
         </div>
       </div>
@@ -72,7 +74,7 @@
       <!-- 内容区 -->
       <div class="flex-1 overflow-y-auto px-8 py-10 bg-[#e9e5dd]">
         <!-- 生成中 -->
-        <div v-if="busy" class="flex flex-col items-center justify-center py-24 text-slate-400">
+        <div v-if="isSelectedBusy" class="flex flex-col items-center justify-center py-24 text-slate-400">
           <div class="relative w-12 h-12 mb-5">
             <div class="absolute inset-0 rounded-full border-2 border-blue-100"></div>
             <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin"></div>
@@ -89,8 +91,8 @@
           <div class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center mb-4">
             <i :class="activeDeliverable?.icon" class="text-2xl text-slate-300"></i>
           </div>
-          <p class="text-sm text-slate-500 mb-1">尚未生成《{{ activeDeliverable?.name }}》</p>
-          <p class="text-xs text-slate-400 mb-6 max-w-sm text-center">{{ activeDeliverable?.hint }}</p>
+          <p class="text-[15px] text-slate-500 mb-1">尚未生成《{{ activeDeliverable?.name }}》</p>
+          <p class="text-[13px] text-slate-400 mb-6 max-w-md text-center leading-relaxed">{{ activeDeliverable?.hint }}</p>
           <button
             @click="$emit('generate', selected)"
             :disabled="busy"
@@ -121,7 +123,7 @@
         <!-- 预览态 -->
         <div v-else class="mx-auto w-full max-w-[1440px]">
           <div class="doc-paper bg-[#fdfcfa] rounded-[14px] border border-[#e7e2d9] px-10 py-12 sm:px-14 sm:py-16">
-            <div class="prose prose-sm prose-slate max-w-none doc-body" v-html="rendered"></div>
+            <div class="prose prose-base prose-slate max-w-none doc-body" v-html="rendered"></div>
           </div>
         </div>
       </div>
@@ -140,11 +142,16 @@ const props = defineProps({
   content: { type: String, default: '' },           // 当前选中交付物的 markdown
   busy: { type: Boolean, default: false },
   editing: { type: Boolean, default: false },
+  stageId: { type: Number, default: 2 },
+  // 正在生成的交付物 key —— 只让这一件转圈，其余三件不受影响
+  busyKey: { type: String, default: '' },
 });
 
 defineEmits(['select', 'generate', 'toggle-edit', 'export-md', 'update-content', 'save']);
 
 const activeDeliverable = computed(() => props.deliverables.find((d) => d.key === props.selected) || null);
+// 只有「当前选中的这件正在生成」才在右侧显示 loading；别的交付物在生成时不影响本视图
+const isSelectedBusy = computed(() => props.busy && props.busyKey === props.selected);
 const rendered = computed(() => (props.content ? marked(props.content, { breaks: true, gfm: true }) : ''));
 </script>
 

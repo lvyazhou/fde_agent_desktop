@@ -42,32 +42,145 @@
     <!-- 阶段②工作区:现有 tab 内容(需求对话/功能清单/原型/迭代/导出) -->
     <div v-show="isWorkspaceStage" class="flex-1 flex min-h-0 overflow-hidden">
 
-      <!-- 阶段② 对话 Tab (requirement) — 豆包风格,与「智能对话」一致 -->
-      <div v-if="activeTab === 'requirement'" class="flex h-full w-full">
-        <div class="flex-1 flex flex-col min-w-0 relative bg-white">
-          <div ref="chatContainerRef" class="flex-1 overflow-y-auto px-4 pt-6" :class="messages.length > 0 ? 'pb-[150px]' : ''">
+      <!-- 阶段②③ 工作台 Tab：三栏 — 交付物导航 + 对话 + 文档预览 -->
+      <div v-if="activeTab === 'workspace'" class="flex h-full w-full overflow-hidden">
+
+        <!-- 左栏：交付物导航（可隐藏） -->
+        <div
+          v-if="!leftPanelCollapsed"
+          class="shrink-0 flex flex-col bg-slate-50/80 border-r border-slate-100 overflow-hidden"
+          :style="'flex: 2 1 0; min-width: 180px'"
+        >
+          <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <div class="text-[12px] font-semibold text-slate-400 uppercase tracking-wider">
+              {{ currentStage === 3 ? '阶段③ 交付物' : '阶段② 交付物' }}
+            </div>
+            <button
+              @click="leftPanelCollapsed = true"
+              class="w-5 h-5 rounded flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+              title="隐藏交付物列表"
+            >
+              <i class="fa-solid fa-angles-left text-[9px]"></i>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto py-2">
+            <div
+              v-for="d in activeDeliverables"
+              :key="d.key"
+              @click="selectDeliverable(d.key)"
+              role="button"
+              class="w-full text-left px-3 py-2.5 mx-2 mb-0.5 rounded-xl transition-all group relative"
+              :style="'width: calc(100% - 16px)'"
+              :class="deliverableSelected === d.key
+                ? 'bg-blue-50 border border-blue-200/80'
+                : 'hover:bg-white/80 border border-transparent'"
+            >
+              <!-- 删除该交付物的对话（hover 才出现） -->
+              <button
+                v-if="(deliverableMsgs[dkey(currentStage, d.key)] || []).length > 0"
+                @click.stop="clearDeliverableChat(d.key)"
+                class="absolute top-1.5 right-1.5 w-5 h-5 rounded-md flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                title="清空该交付物的对话记录"
+              >
+                <i class="fa-solid fa-trash-can text-[9px]"></i>
+              </button>
+              <div class="flex items-start gap-2.5">
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors"
+                  :class="deliverableSelected === d.key ? 'bg-blue-100' : 'bg-slate-100 group-hover:bg-white'">
+                  <i :class="d.icon" class="text-[13px]"
+                    :style="deliverableSelected === d.key ? 'color:#2563eb' : 'color:#94a3b8'"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[13.5px] font-semibold truncate"
+                      :class="deliverableSelected === d.key ? 'text-blue-700' : 'text-slate-700'">
+                      {{ d.name }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-1 mt-0.5">
+                    <span v-if="deliverableStatus[d.key] === 'ready'"
+                      class="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>已生成
+                    </span>
+                    <span v-else class="text-[11px] text-slate-400">未生成</span>
+                    <span v-if="deliverableSelected === d.key && (deliverableMsgs[dkey(currentStage, d.key)] || []).length > 0"
+                      class="text-[11px] text-blue-500">
+                      · {{ (deliverableMsgs[dkey(currentStage, d.key)] || []).filter(m=>m.role==='user').length }} 条对话
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- 生成按钮 -->
+          <div class="shrink-0 px-3 py-3 border-t border-slate-100">
+            <button
+              @click="generateDeliverable(deliverableSelected)"
+              :disabled="isStreaming || deliverableBusy || !deliverableSelected"
+              class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="deliverableBusy ? 'bg-blue-50 text-blue-500' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/25'"
+            >
+              <i class="fa-solid text-[10px]" :class="deliverableBusy ? 'fa-circle-notch fa-spin' : 'fa-wand-magic-sparkles'"></i>
+              {{ deliverableBusy ? '生成中…' : `生成${selectedDeliverable ? ' · ' + selectedDeliverable.short : ''}` }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 中栏：对话区 (flex-1) -->
+        <div class="flex flex-col min-w-0 relative bg-white" style="flex: 4 1 0">
+          <!-- 顶部：当前交付物标题栏 -->
+          <div v-if="selectedDeliverable" class="shrink-0 flex items-center gap-3 px-5 py-2.5 border-b border-slate-100 bg-white/95">
+            <button
+              v-if="leftPanelCollapsed"
+              @click="leftPanelCollapsed = false"
+              class="w-5 h-5 rounded flex items-center justify-center text-slate-300 hover:text-blue-600 hover:bg-slate-100 transition-colors shrink-0"
+              title="显示交付物列表"
+            >
+              <i class="fa-solid fa-angles-right text-[9px]"></i>
+            </button>
+            <i :class="selectedDeliverable.icon" class="text-blue-500 text-sm shrink-0"></i>
+            <span class="text-[14.5px] font-semibold text-slate-700 truncate">{{ selectedDeliverable.name }}</span>
+            <span v-if="livePreviewStreaming" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-medium ml-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>生成中
+            </span>
+            <span class="flex-1"></span>
+            <span class="text-[12px] text-slate-400 truncate max-w-[45%]">{{ selectedDeliverable.hint }}</span>
+          </div>
+
+          <!-- 消息区 -->
+          <div
+            ref="chatContainerRef"
+            class="flex-1 overflow-y-auto px-4 pt-5"
+            :class="activeDlvMsgs.length > 0 ? 'pb-[140px]' : ''"
+          >
             <!-- Loading -->
             <div v-if="messagesLoading" class="flex flex-col items-center justify-center py-24">
-              <div class="relative w-12 h-12 mb-5">
+              <div class="relative w-10 h-10 mb-4">
                 <div class="absolute inset-0 rounded-full border-2 border-blue-100"></div>
                 <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin"></div>
               </div>
-              <p class="text-sm text-slate-500 font-medium">正在加载对话记录...</p>
+              <p class="text-sm text-slate-400">加载对话记录…</p>
             </div>
 
-            <!-- Empty state -->
-            <div v-else-if="messages.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6">
-              <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-5 shadow-lg shadow-blue-500/25">
-                <i class="fa-solid fa-comments text-xl text-white"></i>
+            <!-- Empty: no deliverable selected -->
+            <div v-else-if="!deliverableSelected" class="flex flex-col items-center justify-center h-full text-center px-6">
+              <i class="fa-solid fa-hand-pointer text-3xl text-slate-200 mb-3"></i>
+              <p class="text-[13px] text-slate-400">从左侧选择一件交付物开始</p>
+            </div>
+
+            <!-- Empty: deliverable selected, no messages yet -->
+            <div v-else-if="activeDlvMsgs.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/20">
+                <i :class="selectedDeliverable ? selectedDeliverable.icon : 'fa-solid fa-comments'" class="text-lg text-white"></i>
               </div>
-              <h3 class="text-[17px] font-semibold text-slate-800 mb-1.5">阶段② · 需求沟通 + 原型设计</h3>
-              <p class="text-[13px] text-slate-400 max-w-md leading-relaxed">聊透需求，出对接确认表与 AI 能力清单，再到「交付物」生成功能清单、「原型」出可交互 Demo。</p>
-              <div class="flex flex-wrap gap-2 justify-center mt-6 max-w-lg">
+              <h3 class="text-[17px] font-semibold text-slate-800 mb-2">{{ selectedDeliverable ? selectedDeliverable.name : '' }}</h3>
+              <p class="text-[13.5px] text-slate-400 max-w-sm leading-relaxed mb-6">{{ selectedDeliverable ? selectedDeliverable.hint : '' }}</p>
+              <div class="flex flex-wrap gap-2 justify-center max-w-sm">
                 <button
-                  v-for="q in stage2Quick"
+                  v-for="q in (currentStage === 3 ? stage3Quick : stage2Quick)"
                   :key="q"
-                  @click="chatInput = q; sendMessage()"
-                  class="px-3.5 py-2 rounded-full bg-slate-50 hover:bg-blue-50 border border-slate-200/70 hover:border-blue-200 text-[12.5px] text-slate-600 hover:text-blue-700 transition-all"
+                  @click="dlvInput = q; dlvSend()"
+                  class="px-3.5 py-2 rounded-full bg-slate-50 hover:bg-blue-50 border border-slate-200/70 hover:border-blue-200 text-[13px] text-slate-600 hover:text-blue-700 transition-all"
                 >
                   {{ q }}
                 </button>
@@ -75,148 +188,250 @@
             </div>
 
             <!-- Message list -->
-            <div v-else class="w-full max-w-3xl mx-auto space-y-7">
+            <div v-else class="w-full max-w-[640px] mx-auto space-y-8">
               <div
-                v-for="(msg, idx) in messages"
+                v-for="(msg, idx) in activeDlvMsgs"
                 :key="idx"
                 :data-msg-index="idx"
-                class="flex flex-col w-full group"
+                class="flex flex-col w-full"
                 :class="msg.role === 'user' ? 'items-end' : 'items-start'"
               >
                 <!-- User -->
-                <div v-if="msg.role === 'user'" class="max-w-[80%] flex flex-col items-end">
+                <div v-if="msg.role === 'user'" class="max-w-[80%]">
                   <div v-if="msg.attachments && msg.attachments.length" class="flex flex-wrap gap-2 mb-1.5 justify-end">
                     <template v-for="(att, ai) in msg.attachments" :key="ai">
-                      <img v-if="att.type === 'image'" :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data" class="max-w-[160px] max-h-[120px] object-cover rounded-xl border border-slate-200 cursor-zoom-in hover:brightness-95 transition" @click="openLightbox('data:' + (att.media_type || 'image/png') + ';base64,' + att.data)" />
+                      <img v-if="att.type === 'image'" :src="'data:' + (att.media_type || 'image/png') + ';base64,' + att.data" class="max-w-[140px] max-h-[100px] object-cover rounded-xl border border-slate-200" @click="openLightbox('data:' + (att.media_type || 'image/png') + ';base64,' + att.data)" />
                       <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
                     </template>
                   </div>
-                  <div v-if="msg.content" class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                  <div v-if="msg.content" class="rounded-[18px] px-4.5 py-3 leading-relaxed text-[15px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
                     {{ msg.content }}
                   </div>
                 </div>
 
                 <!-- Assistant -->
                 <div v-else class="w-full flex flex-col items-start">
-                  <!-- AI 头像 + 名字 + 状态 -->
                   <div class="flex items-center gap-2 mb-2">
-                    <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm shrink-0">
+                    <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
                       <i class="fa-solid fa-robot text-white text-[12px]"></i>
                     </div>
                     <span class="text-[13px] font-semibold text-slate-700">AI 助手</span>
-                    <span class="inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded-full"
-                      :class="(isStreaming && idx === messages.length - 1) ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'">
-                      <span class="w-1.5 h-1.5 rounded-full" :class="(isStreaming && idx === messages.length - 1) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'"></span>
-                      {{ (isStreaming && idx === messages.length - 1) ? '工作中' : '已完成' }}
+                    <span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full"
+                      :class="(isStreaming && idx === activeDlvMsgs.length - 1) ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'">
+                      <span class="w-1.5 h-1.5 rounded-full" :class="(isStreaming && idx === activeDlvMsgs.length - 1) ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'"></span>
+                      {{ (isStreaming && idx === activeDlvMsgs.length - 1) ? '工作中' : '已完成' }}
                     </span>
                   </div>
-                  <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0 && (!msg.thinkingDone || msg.expanded)" class="mb-3 w-full">
-                    <button type="button" class="flex items-center gap-2.5 text-left" @click="msg.expanded = !msg.expanded">
-                      <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-gradient-to-br from-blue-100 to-indigo-50'">
-                        <i class="fa-solid fa-brain text-sm" :class="msg.thinkingDone ? 'text-slate-400' : 'text-blue-500 animate-pulse'"></i>
+                  <!-- Thinking steps -->
+                  <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0" class="mb-2.5 w-full">
+                    <button type="button" class="flex items-center gap-2 text-left" @click="msg.expanded = !msg.expanded">
+                      <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-gradient-to-br from-blue-100 to-indigo-50'">
+                        <i class="fa-solid fa-brain text-xs" :class="msg.thinkingDone ? 'text-slate-400' : 'text-blue-500 animate-pulse'"></i>
                       </div>
-                      <span class="text-[13px] font-semibold" :class="msg.thinkingDone ? 'text-slate-500' : 'text-blue-700'">
-                        {{ msg.thinkingDone ? '推理完成' : '深度推理中' }}
+                      <span class="text-[12px] font-semibold" :class="msg.thinkingDone ? 'text-slate-500' : 'text-blue-700'">
+                        {{ !msg.thinkingDone ? '深度推理中' : (msg.expanded ? '收起推理过程' : `推理完成 · ${msg.thinkingSteps.length} 步`) }}
                       </span>
                     </button>
-                    <div class="mt-2 ml-4 pl-4 border-l-2 border-blue-200/40 space-y-0.5 max-h-[220px] overflow-y-auto scrollbar-hide">
-                      <div v-for="(step, si) in msg.thinkingSteps" :key="si" v-show="step.visible !== false" class="flex items-start gap-2.5 py-1">
-                        <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 bg-white border border-slate-200/60 text-slate-400">
-                          <i :class="step.icon || 'fa-solid fa-circle'" class="text-[8px]"></i>
+                    <div v-if="msg.expanded" class="mt-2 ml-3.5 pl-4 border-l-2 border-blue-100 space-y-0.5 max-h-[200px] overflow-y-auto scrollbar-hide">
+                      <div v-for="(step, si) in msg.thinkingSteps" :key="si" v-show="step.visible !== false" class="flex items-start gap-2 py-0.5">
+                        <div class="w-4 h-4 rounded flex items-center justify-center shrink-0 mt-0.5 bg-white border border-slate-200/60 text-slate-400">
+                          <i :class="step.icon || 'fa-solid fa-circle'" class="text-[7px]"></i>
                         </div>
-                        <span class="text-[12px] leading-relaxed text-slate-600 compact-markdown" v-html="renderMarkdown(step.text)"></span>
+                        <span class="text-[11.5px] leading-relaxed text-slate-500 compact-markdown" v-html="renderMarkdown(step.text)"></span>
                       </div>
                     </div>
                   </div>
-                  <div v-if="msg.content || (isStreaming && idx === messages.length - 1)" class="w-full leading-[1.75] text-[15px] text-slate-800 markdown-body" v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"></div>
-                  <span v-if="msg.timestamp" class="text-[12px] text-slate-400 mt-2">{{ msg.timestamp }}</span>
+                  <!-- AI card wrapper -->
+                  <div v-if="msg.content || (isStreaming && idx === activeDlvMsgs.length - 1)"
+                    class="w-full bg-slate-50/70 rounded-2xl px-5 py-4 border border-slate-100/80">
+                    <div class="w-full max-w-full leading-[1.85] text-[15.5px] text-slate-800 markdown-body"
+                      v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"></div>
+                  </div>
+                  <span v-if="msg.timestamp" class="text-[11px] text-slate-400 mt-1.5 ml-0.5">{{ msg.timestamp }}</span>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Composer -->
-          <div v-if="messages.length > 0" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-10 pb-5 px-4">
-            <div class="w-full max-w-3xl mx-auto">
-              <!-- 快捷操作芯片（贴输入框上方，豆包式）-->
-              <div class="flex items-center gap-1 mb-2 overflow-x-auto scrollbar-hide pb-0.5">
-                <button
-                  v-for="act in quickActions"
-                  :key="act.key"
-                  @click="runQuickAction(act)"
-                  :disabled="isStreaming || deliverableBusy"
-                  class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <i :class="act.icon" class="text-[8px] text-blue-500"></i>
-                  {{ act.label }}
-                </button>
-              </div>
-              <div class="rounded-[26px] border transition-all duration-200 bg-slate-50 border-slate-200 hover:border-slate-300 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)] focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_6px_28px_-8px_rgba(59,130,246,0.28)]">
-                <!-- 附件预览 -->
-                <div v-if="reqComposer.attachments.value.length" class="flex items-center gap-2 px-5 pt-4 flex-wrap">
-                  <div v-for="(att, ai) in reqComposer.attachments.value" :key="ai" class="relative group/att">
-                    <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-14 h-14 object-cover rounded-xl border border-slate-200" />
-                    <div v-else class="flex items-center gap-2 h-14 px-3 rounded-xl border border-slate-200 bg-white max-w-[200px]">
-                      <i class="fa-solid fa-file-lines text-blue-500 text-base shrink-0"></i>
-                      <span class="text-[12px] text-slate-700 truncate">{{ att.name }}</span>
+          <div v-if="deliverableSelected" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-8 pb-4 px-4">
+            <div class="w-full max-w-[640px] mx-auto">
+              <div class="rounded-[22px] border transition-all duration-200 bg-slate-50 border-slate-200 hover:border-slate-300 shadow-[0_2px_10px_-6px_rgba(15,23,42,0.10)] focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_4px_20px_-6px_rgba(59,130,246,0.22)]">
+                <div v-if="dlvComposer.attachments.value.length" class="flex items-center gap-2 px-4 pt-3 flex-wrap">
+                  <div v-for="(att, ai) in dlvComposer.attachments.value" :key="ai" class="relative">
+                    <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-12 h-12 object-cover rounded-lg border border-slate-200" />
+                    <div v-else class="flex items-center gap-2 h-12 px-2.5 rounded-lg border border-slate-200 bg-white max-w-[180px]">
+                      <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
+                      <span class="text-[11.5px] text-slate-700 truncate">{{ att.name }}</span>
                     </div>
-                    <button @click="reqComposer.removeAttachment(ai)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center shadow-sm">
+                    <button @click="dlvComposer.removeAttachment(ai)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[8px] flex items-center justify-center">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
                   </div>
                 </div>
                 <textarea
-                  v-model="chatInput"
+                  v-model="dlvInput"
                   rows="1"
-                  :placeholder="isStreaming ? 'AI 正在响应中…' : '聊需求、输入 / 唤起指令，Ctrl + Enter 发送'"
+                  :placeholder="isStreaming ? 'AI 正在响应中…' : `关于《${selectedDeliverable ? selectedDeliverable.name : '交付物'}》的问题，Ctrl+Enter 发送`"
                   :disabled="isStreaming"
-                  class="w-full resize-none text-[14px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-6 px-5 pt-4 pb-1 max-h-[160px] scrollbar-hide disabled:opacity-60"
-                  @keydown.ctrl.enter.prevent="sendMessage"
-                  @keydown.meta.enter.prevent="sendMessage"
+                  class="w-full resize-none text-[14.5px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-7 px-4.5 pt-3.5 pb-1 max-h-[160px] scrollbar-hide disabled:opacity-60"
+                  @keydown.ctrl.enter.prevent="dlvSend"
+                  @keydown.meta.enter.prevent="dlvSend"
                 ></textarea>
-                <div class="flex items-center justify-between px-3 pb-3 pt-1.5 gap-2.5">
-                  <div class="flex items-center gap-1.5">
-                    <button @click="reqComposer.pickImage" :disabled="isStreaming" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传图片">
-                      <i class="fa-solid fa-image text-sm"></i>
+                <div class="flex items-center justify-between px-3 pb-2.5 pt-1 gap-2">
+                  <div class="flex items-center gap-1">
+                    <button @click="dlvComposer.pickImage" :disabled="isStreaming" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40">
+                      <i class="fa-solid fa-image text-xs"></i>
                     </button>
-                    <button @click="reqComposer.pickFile" :disabled="isStreaming" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传文件">
-                      <i class="fa-solid fa-paperclip text-sm"></i>
+                    <button @click="dlvComposer.pickFile" :disabled="isStreaming" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40">
+                      <i class="fa-solid fa-paperclip text-xs"></i>
                     </button>
-                    <button @click="reqComposer.toggleRecording" :disabled="isStreaming || !reqComposer.recordingSupported" class="w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="reqComposer.isRecording.value ? 'text-white bg-rose-500 hover:bg-rose-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="reqComposer.recordingSupported ? (reqComposer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
-                      <i class="fa-solid text-sm" :class="reqComposer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
+                    <button @click="dlvComposer.toggleRecording" :disabled="isStreaming || !dlvComposer.recordingSupported" class="w-8 h-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-40" :class="dlvComposer.isRecording.value ? 'text-white bg-rose-500' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'">
+                      <i class="fa-solid text-xs" :class="dlvComposer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
                     </button>
-                    <span v-if="reqComposer.isRecording.value" class="text-[11px] text-rose-500 font-medium tabular-nums">{{ reqComposer.recordSeconds.value }}s</span>
-                    <span v-else-if="reqComposer.isTranscribing.value" class="text-[11px] text-blue-500 font-medium">识别中…</span>
                   </div>
-                  <div class="flex items-center gap-2.5">
-                    <span class="text-[11px] text-slate-400 select-none">Ctrl + Enter 发送</span>
-                    <button
-                      v-if="isStreaming"
-                      @click="cancelStream"
-                      class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all shadow-sm"
-                      title="停止生成"
-                    >
-                      <span class="w-3 h-3 rounded-[3px] bg-white"></span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-[10.5px] text-slate-300 select-none">Ctrl+Enter</span>
+                    <button v-if="isStreaming" @click="cancelStream" class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center">
+                      <span class="w-2.5 h-2.5 rounded-[2px] bg-white"></span>
                     </button>
-                    <button
-                      v-else
-                      @click="sendMessage"
-                      :disabled="!chatInput.trim() && reqComposer.attachments.value.length === 0"
-                      class="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
-                      :class="(chatInput.trim() || reqComposer.attachments.value.length) ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30 hover:shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
-                    >
-                      <i class="fa-solid fa-arrow-up text-sm"></i>
-                    </button>
+                    <button v-else @click="dlvSend" :disabled="!dlvInput.trim() && dlvComposer.attachments.value.length === 0"
+                      class="w-8 h-8 rounded-full flex items-center justify-center transition-all"
+                      :class="(dlvInput.trim() || dlvComposer.attachments.value.length) ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30 active:scale-95' : 'bg-slate-100 text-slate-300'"
+                    ><i class="fa-solid fa-arrow-up text-xs"></i></button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+
+        <!-- 拖拽分割线 -->
+        <div
+          v-if="!rightPanelCollapsed"
+          class="w-[3px] shrink-0 cursor-col-resize transition-colors relative z-10 bg-slate-100 hover:bg-blue-300"
+          :class="rightPanelDragging ? 'bg-blue-400' : ''"
+          @mousedown.prevent="startRightDrag"
+        ></div>
+
+        <!-- 右栏：文档预览 -->
+        <div
+          class="shrink-0 flex flex-col bg-slate-50/60 border-l border-slate-100 overflow-hidden"
+          :style="rightPanelCollapsed ? 'flex: 0 0 40px' : (rightPanelUserWidth ? 'flex: 0 0 ' + rightPanelUserWidth + 'px' : 'flex: 4 1 0; min-width: 320px')"
+        >
+          <!-- 顶栏 -->
+          <div class="shrink-0 flex items-center gap-2 px-2.5 py-2 border-b border-slate-100 bg-white">
+            <button
+              class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+              :title="rightPanelCollapsed ? '展开文档面板' : '折叠'"
+              @click="rightPanelCollapsed = !rightPanelCollapsed"
+            >
+              <i class="fa-solid text-[10px]" :class="rightPanelCollapsed ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
+            </button>
+            <template v-if="!rightPanelCollapsed">
+              <i class="fa-solid fa-file-lines text-slate-400 text-[11px] shrink-0"></i>
+              <span class="flex-1 text-[13px] font-semibold text-slate-600 truncate">
+                {{ livePreviewTitle || (selectedDeliverable ? selectedDeliverable.name : '文档') }}
+              </span>
+              <span v-if="livePreviewStreaming" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-medium shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>写入中
+              </span>
+              <div class="flex items-center gap-0.5 rounded-md bg-slate-100 p-0.5 ml-1">
+                <button @click="livePreviewMode = 'md'" class="px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors" :class="livePreviewMode === 'md' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">MD</button>
+                <button @click="switchToDocxView" :disabled="!livePreviewDocxHtml" class="px-1.5 py-0.5 rounded text-[10px] font-medium disabled:opacity-40" :class="livePreviewMode === 'docx' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">Word</button>
+              </div>
+              <button @click="openDeliverableDocx" :disabled="!livePreviewDocxHtml" class="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-40 ml-0.5" title="用 Word 打开">
+                <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
+              </button>
+            </template>
+          </div>
+
+          <!-- 文档正文 -->
+          <div v-if="!rightPanelCollapsed" ref="previewScrollRef" class="flex-1 overflow-y-auto min-h-0">
+            <!-- 空态 -->
+            <div v-if="!livePreviewContent && !livePreviewDocxHtml" class="h-full flex flex-col px-4 py-5">
+              <div class="mb-3 px-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <i :class="selectedDeliverable ? selectedDeliverable.icon : 'fa-solid fa-file-lines'" class="text-blue-500 text-sm"></i>
+                  <span class="text-[14px] font-semibold text-slate-700">{{ selectedDeliverable ? selectedDeliverable.name : '选择交付物' }}</span>
+                </div>
+                <p class="text-[12px] text-slate-400 leading-relaxed pl-5">{{ selectedDeliverable ? selectedDeliverable.hint : '从左侧选一件交付物' }}</p>
+              </div>
+              <div class="flex-1 bg-white rounded-xl border border-slate-200/70 shadow-sm overflow-hidden">
+                <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50/60 flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-sm bg-slate-200"></div>
+                  <div class="h-2 w-28 bg-slate-200 rounded-full"></div>
+                </div>
+                <div class="px-4 py-4 space-y-2.5">
+                  <div class="h-2.5 w-3/4 bg-slate-100 rounded-full"></div>
+                  <div class="h-2 w-full bg-slate-100 rounded-full"></div>
+                  <div class="h-2 w-5/6 bg-slate-100 rounded-full"></div>
+                  <div class="h-2 w-4/5 bg-slate-100 rounded-full"></div>
+                  <div class="mt-4 h-2.5 w-1/2 bg-slate-100 rounded-full"></div>
+                  <div class="h-2 w-full bg-slate-100 rounded-full"></div>
+                  <div class="h-2 w-3/4 bg-slate-100 rounded-full"></div>
+                </div>
+              </div>
+              <div class="mt-3 flex justify-center">
+                <button @click="generateDeliverable(deliverableSelected)" :disabled="isStreaming || deliverableBusy || !deliverableSelected"
+                  class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm disabled:opacity-50">
+                  <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+                  {{ deliverableBusy ? '生成中…' : 'AI 生成' }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Word 成品预览 -->
+            <div v-else-if="livePreviewMode === 'docx' && livePreviewDocxHtml"
+              class="bg-white mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
+              <div class="px-5 py-2.5 border-b border-slate-100 bg-slate-50/50 rounded-t-xl flex items-center gap-2">
+                <i class="fa-solid fa-file-word text-blue-500 text-[11px]"></i>
+                <span class="text-[11px] text-slate-500 font-mono truncate">{{ docxRelPath }}</span>
+              </div>
+              <div class="px-7 py-6 markdown-body docx-preview" v-html="livePreviewDocxHtml"></div>
+            </div>
+
+            <!-- Markdown 预览 / 在线编辑 -->
+            <div v-else
+              class="bg-white mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
+              <div class="px-5 py-2.5 border-b border-slate-100 bg-slate-50/50 rounded-t-xl flex items-center gap-2">
+                <i class="fa-solid fa-file-lines text-slate-400 text-[12px]"></i>
+                <span class="text-[12px] text-slate-500 font-mono truncate">{{ livePreviewFile }}</span>
+                <span v-if="livePreviewStreaming" class="ml-auto text-[11px] text-emerald-600">正在写入…</span>
+                <!-- 生成完成后可就地编辑 -->
+                <button
+                  v-else-if="livePreviewContent"
+                  @click="togglePreviewEdit"
+                  class="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors"
+                  :class="previewEditing ? 'bg-blue-50 text-blue-700' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'"
+                  :title="previewEditing ? '回到预览' : '编辑文档'"
+                >
+                  <i class="fa-solid text-[10px]" :class="previewEditing ? 'fa-eye' : 'fa-pen'"></i>
+                  {{ previewEditing ? '预览' : '编辑' }}
+                </button>
+              </div>
+              <!-- 编辑态 -->
+              <div v-if="previewEditing" class="p-4">
+                <textarea
+                  v-model="previewDraft"
+                  class="w-full h-[calc(100vh-340px)] min-h-[320px] px-4 py-3 border border-slate-200 rounded-lg text-[13.5px] font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                ></textarea>
+                <div class="mt-3 flex items-center justify-end gap-2">
+                  <button @click="previewEditing = false" class="px-3 py-1.5 text-[12.5px] rounded-lg text-slate-500 hover:bg-slate-100 transition-colors">取消</button>
+                  <button @click="savePreviewEdit" class="px-4 py-1.5 text-[12.5px] font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                    <i class="fa-solid fa-check mr-1 text-[10px]"></i>保存并更新 Word
+                  </button>
+                </div>
+              </div>
+              <!-- 预览态 -->
+              <div v-else class="px-7 py-6 markdown-body" v-html="renderMarkdown(livePreviewPreviewMd)"></div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end workspace tab -->
 
       <!-- Prototype Tab — full width -->
-      <div v-else-if="activeTab === 'prototype'" class="flex h-full w-full">
+      <div v-if="activeTab === 'prototype'" class="flex h-full w-full">
         <!-- File tree -->
         <div class="w-[212px] shrink-0 bg-slate-50/60 border-r border-slate-100 flex flex-col overflow-hidden">
           <div class="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
@@ -630,13 +845,15 @@
 
       <!-- 交付物 Tab (阶段②③ 通用) -->
       <Stage3Deliverables
-        v-else-if="activeTab === 'deliverables2' || activeTab === 'deliverables3'"
+        v-else-if="activeTab === 'deliverables'"
         :deliverables="activeDeliverables"
         :selected="deliverableSelected"
         :status-map="deliverableStatus"
         :content="activeDeliverableContent"
         :preview-content="activeDeliverablePreview"
         :busy="deliverableBusy"
+        :busy-key="deliverableBusyKey"
+        :stage-id="currentStage"
         :editing="deliverableEditing"
         @select="deliverableSelected = $event"
         @generate="generateDeliverable"
@@ -645,6 +862,7 @@
         @update-content="updateDeliverableContent"
         @save="saveDeliverable"
       />
+
 
     </div><!-- end tab content body -->
   </div>
@@ -688,7 +906,7 @@ const route = useRoute();
 // --- State ---
 const projectName = ref('');
 const projectMeta = ref(null);
-const activeTab = ref('requirement');
+const activeTab = ref('workspace');
 
 // 图片放大预览（三个对话 tab 共用）
 const lightboxSrc = ref('');
@@ -738,7 +956,13 @@ async function selectStage(id) {
   // 交付物：选中该阶段第一件，并加载该阶段已生成的交付物
   const firstDeliv = deliverablesForStage(id)[0];
   if (firstDeliv) deliverableSelected.value = firstDeliv.key;
-  loadDeliverablesForStage(id);
+  // 清掉上一阶段的预览内容，再读新阶段（loadDeliverablesForStage 会刷新右侧）
+  livePreviewContent.value = '';
+  livePreviewDocxHtml.value = '';
+  livePreviewTitle.value = '';
+  livePreviewFile.value = '';
+  previewEditing.value = false;
+  await loadDeliverablesForStage(id);
   // 更新阶段状态:比 id 小的算 done、id 为 active、比 id 大的保持 todo
   const next = {};
   for (let i = 1; i <= 5; i++) {
@@ -795,45 +1019,15 @@ const flushThoughtBuffer = () => {
   thoughtFlushTimer = null;
 };
 
-// --- Computed: user messages for session sidebar ---
-const userMessageSummaries = computed(() => {
-  return messages.value
-    .filter(m => m.role === 'user')
-    .map((m, idx) => ({
-      index: messages.value.indexOf(m),
-      preview: (m.content || '').slice(0, 20) + ((m.content || '').length > 20 ? '...' : ''),
-      full: m.content || '',
-    }));
-});
-
-const scrollToMessage = (msgIndex) => {
-  // Ensure we're on the requirement tab
-  activeTab.value = 'requirement';
-  nextTick(() => {
-    if (chatContainerRef.value) {
-      const messageEls = chatContainerRef.value.querySelectorAll('[data-msg-index]');
-      for (const el of messageEls) {
-        if (parseInt(el.getAttribute('data-msg-index')) === msgIndex) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          // Brief highlight effect
-          el.classList.add('ring-2', 'ring-blue-300');
-          setTimeout(() => el.classList.remove('ring-2', 'ring-blue-300'), 1500);
-          break;
-        }
-      }
-    }
-  });
-};
-
-// tab 集按阶段计算：阶段②③ 统一为 对话 | 交付物 | 原型
+// tab 集按阶段计算：阶段②③ 统一为 工作台（对话+交付物预览）| 原型
 const STAGE2_TABS = [
-  { key: 'requirement', label: '智能对话', icon: 'fa-solid fa-comments' },
-  { key: 'deliverables2', label: '交付物', icon: 'fa-solid fa-box-open' },
+  { key: 'workspace', label: '工作台', icon: 'fa-solid fa-table-columns' },
+  { key: 'deliverables', label: '交付物', icon: 'fa-solid fa-box-open' },
   { key: 'prototype', label: '原型', icon: 'fa-solid fa-window-maximize' },
 ];
 const STAGE3_TABS = [
-  { key: 'chat3', label: '智能对话', icon: 'fa-solid fa-comments' },
-  { key: 'deliverables3', label: '交付物', icon: 'fa-solid fa-box-open' },
+  { key: 'workspace', label: '工作台', icon: 'fa-solid fa-table-columns' },
+  { key: 'deliverables', label: '交付物', icon: 'fa-solid fa-box-open' },
   { key: 'prototype', label: '定稿原型', icon: 'fa-solid fa-window-maximize' },
 ];
 function tabsForStage(id) {
@@ -842,6 +1036,35 @@ function tabsForStage(id) {
 }
 const tabs = computed(() => tabsForStage(currentStage.value));
 
+// 当前阶段活动的对话消息数组（workspace tab 按 currentStage 区分）
+const currentMessages = computed(() => {
+  if (activeTab.value === 'iterate' || streamTargetTab.value === 'iterate') return iterateMessages;
+  return currentStage.value === 3 ? stage3Messages : messages;
+});
+
+// 按当前 tab 取对应的消息数组（.value）——统一入口，供流式渲染/追加使用
+const streamTargetTab = ref('');
+function activeMessagesArr() {
+  const t = streamTargetTab.value || activeTab.value;
+  if (t === 'iterate') return iterateMessages.value;
+  if (t === 'prototype-gen') return prototypeGenMessages.value;
+  if (t === 'chat3') return stage3Messages.value;
+  if (t === 'workspace' || t.startsWith('deliverable')) {
+    const k = dkey(currentStage.value, deliverableSelected.value);
+    if (!deliverableMsgs.value[k]) deliverableMsgs.value[k] = [];
+    return deliverableMsgs.value[k];
+  }
+  return messages.value;
+}
+// 当前 tab 对应的持久化 tab 名
+function activeTabName() {
+  const t = streamTargetTab.value || activeTab.value;
+  if (t === 'iterate') return 'iterate';
+  if (t === 'prototype-gen') return 'prototype-gen';
+  if (t === 'workspace' || t.startsWith('deliverable')) return `deliverable:${deliverableSelected.value}`;
+  if (t === 'chat3') return 'chat3';
+  return 'requirement';
+}
 // 生成 PRD / 功能清单时自动配图的指令片段。
 // {mdDir} 会被替换为该交付物 md 文件所在目录（根目录交付物为空串）。
 // 图必须写到「与 md 同级的 assets/ 目录」，并在正文用相对路径 ![](assets/xxx.svg) 引用，
@@ -911,6 +1134,18 @@ const STAGE3_DELIVERABLES = [
     icon: 'fa-solid fa-diagram-project', file: 'stage3/agent-design.md',
     tpl: { stage: '03', md: '1-智能体设计表【交付】.md' },
     hint: '一个环节一个智能体：身份卡→五层拆解→六组件→提示词→知识库→技能→A/B→验收上线。',
+  },
+  {
+    key: 'task-plan', name: '项目任务计划表', short: '任务计划',
+    icon: 'fa-solid fa-calendar-check', file: 'stage3/task-plan.md',
+    tpl: { stage: '03', md: '0-阶段三规范说明.md' },
+    hint: '把签字定死的需求拆成可排期的任务：每个环节的任务、责任人、工期、前置依赖、交付物，作为阶段④建工作台的排期依据。',
+  },
+  {
+    key: 'acceptance', name: '项目验收标准表', short: '验收标准',
+    icon: 'fa-solid fa-clipboard-check', file: 'stage3/acceptance.md',
+    tpl: { stage: '03', md: '2.4-产品需求文档PRD(模板)【交付】.md' },
+    hint: '每条需求对应可量化的验收口径（如问数≤30秒、准确率≥95%）：验收项、判定标准、测试方法、数据来源、责任人。阶段⑤对账依据。',
   },
   {
     key: 'data-metric', name: '业务数据口径模版', short: '数据口径',
@@ -1059,6 +1294,7 @@ const deliverableContents = ref({});          // { 'stage:key': markdown } —�
 const deliverablePreviews = ref({});           // { 'stage:key': markdown } —— 相对图片已内联为 data URI，供预览
 const deliverableEditing = ref(false);
 const deliverableBusy = ref(false);
+const deliverableBusyKey = ref('');   // 正在生成的交付物 key（只让它转圈）
 
 // 当前阶段交付物清单 + 选中项 + 状态
 const activeDeliverables = computed(() => (currentStage.value === 3 ? STAGE3_DELIVERABLES : STAGE2_DELIVERABLES));
@@ -1094,28 +1330,6 @@ const stage2Quick = [
 
 // Session update subscription
 let unsubscribe = null;
-
-// Determine which messages array to target based on active tab
-const currentMessages = computed(() => activeTab.value === 'iterate' ? iterateMessages : (activeTab.value === 'chat3' ? stage3Messages : messages));
-
-// 按当前 tab 取对应的消息数组（.value）——统一入口，供流式渲染/追加使用
-// streamTargetTab 非空时优先（用于原型页迭代：在 prototype tab 触发，但内容应归到 iterate 流）
-const streamTargetTab = ref('');
-function activeMessagesArr() {
-  const t = streamTargetTab.value || activeTab.value;
-  if (t === 'iterate') return iterateMessages.value;
-  if (t === 'chat3') return stage3Messages.value;
-  if (t === 'prototype-gen') return prototypeGenMessages.value;
-  return messages.value;
-}
-// 当前 tab 对应的持久化 tab 名
-function activeTabName() {
-  const t = streamTargetTab.value || activeTab.value;
-  if (t === 'iterate') return 'iterate';
-  if (t === 'chat3') return 'chat3';
-  if (t === 'prototype-gen') return 'prototype-gen';
-  return 'requirement';
-}
 
 // --- Helper: create a fresh message object ---
 function createMessage(role, content, extra = {}) {
@@ -1327,7 +1541,25 @@ const loadProject = async () => {
       if (typeof m.stage === 'number') currentStage.value = m.stage;
       if (m.stageStatus && typeof m.stageStatus === 'object') stageStatus.value = m.stageStatus;
       if (data.messages && data.messages.length > 0) {
-        const reqMsgs = data.messages.filter(m => m.tab !== 'iterate' && m.tab !== 'chat3');
+        // 按交付物分拣：tab 形如 'deliverable:<key>'，各自恢复到独立会话
+        const dlvBuckets = {};
+        for (const m of data.messages) {
+          const tab = m.tab || '';
+          if (!tab.startsWith('deliverable:')) continue;
+          const key = tab.slice('deliverable:'.length);
+          for (const sid of [2, 3]) {
+            if (!deliverablesForStage(sid).some((d) => d.key === key)) continue;
+            const k = `${sid}:${key}`;
+            (dlvBuckets[k] ||= []).push(m);
+          }
+        }
+        const restored = {};
+        for (const [k, msgs] of Object.entries(dlvBuckets)) {
+          restored[k] = msgs.map((m) => createMessage(m.role || 'assistant', m.content || ''));
+        }
+        deliverableMsgs.value = restored;
+
+        const reqMsgs = data.messages.filter(m => m.tab !== 'iterate' && m.tab !== 'chat3' && !String(m.tab || '').startsWith('deliverable:'));
         const itMsgs = data.messages.filter(m => m.tab === 'iterate');
         const s3Msgs = data.messages.filter(m => m.tab === 'chat3');
         if (reqMsgs.length) {
@@ -1476,6 +1708,38 @@ const getOrCreateAssistantMsg = () => {
   return newMsg;
 };
 
+// 从 ACP tool_call 事件里抓「写文件」的实时内容，推到右侧预览面板。
+// 引擎在 auto-approve 模式下会把完整新内容放进 content[] 的 diff 块（{type:'diff', path, newText}），
+// 所以文档在 agent 写完那一刻就能渲染，不用等落盘再读回。
+function captureLiveEdit(update) {
+  if (!update) return;
+  const blocks = Array.isArray(update.content) ? update.content
+    : (update.content ? [update.content] : []);
+  const diff = blocks.find((c) => c && (c.type === 'diff' || c.newText != null || c.new_text != null));
+  if (!diff) return;
+
+  const rawPath = diff.path || diff.file_path || '';
+  const newText = diff.newText ?? diff.new_text ?? '';
+  if (!rawPath || typeof newText !== 'string') return;
+
+  // 只关心当前阶段的交付物 md（其他文件如原型 html 不进文档面板）
+  const norm = String(rawPath).replace(/\\/g, '/');
+  const stageId = currentStage.value;
+  const d = deliverablesForStage(stageId).find((x) => norm.endsWith(x.file));
+  if (!d) return;
+
+  const k = dkey(stageId, d.key);
+  deliverableContents.value = { ...deliverableContents.value, [k]: newText };
+  // 实时预览优先展示正在写的这份，切换选中项让左右对应
+  deliverableSelected.value = d.key;
+  livePreviewTitle.value = d.name;
+  livePreviewFile.value = d.file;
+  livePreviewContent.value = newText;
+  livePreviewMode.value = 'md';        // 生成过程中固定看 md 实时流
+  livePreviewDocxHtml.value = '';      // 新内容让旧 docx 快照失效
+  livePreviewStreaming.value = true;
+}
+
 const handleSessionUpdate = (data) => {
   if (!data) return;
   // ACP notification structure varies — normalize access
@@ -1551,6 +1815,10 @@ const handleSessionUpdate = (data) => {
     const args = update.arguments || update.args || {};
     toolLabel.value = title;
 
+    // 实时预览：引擎写文件时带 diff 内容块（{type:'diff', path, newText}），
+    // 直接把 newText 推到右侧面板，不必等落盘后再读回。
+    captureLiveEdit(update);
+
     assistantMsg.thinkingSteps.push({
       text: formatToolCallText(title, args),
       icon: 'fa-solid fa-wrench',
@@ -1559,6 +1827,7 @@ const handleSessionUpdate = (data) => {
     addLog('tool', formatToolCallText(title, args), 'running');
     scrollToBottom();
   } else if (type === 'tool_call_progress') {
+    captureLiveEdit(update);
     if (update.status === 'completed' || update.status === 'failed') {
       isToolRunning.value = false;
       const assistantMsg = getOrCreateAssistantMsg();
@@ -1624,7 +1893,9 @@ const handleSessionUpdate = (data) => {
     // 阶段②③：AI 可能刚写完交付物文件，读回渲染
     if (currentStage.value === 2 || currentStage.value === 3) {
       deliverableBusy.value = false;
-      loadDeliverablesForStage(currentStage.value);
+      deliverableBusyKey.value = '';
+      livePreviewStreaming.value = false;
+      finishLivePreview(currentStage.value);
     }
   } else if (type === 'usage_update' || type === 'usage') {
     // Rich usage info: model, tokens, latency
@@ -1803,7 +2074,250 @@ const sendStage3 = async () => {
   }
 };
 
-// —— 通用交付物：读取 / 加载 / 生成 / 保存 / 导出（阶段②③共用）——
+// —— 工作台右侧文档预览状态 ——
+// 实时预览：agent 通过 tool_call(kind=edit) 写文件时，直接取 new_text 更新此处
+const livePreviewContent = ref('');      // 当前右侧面板展示的 markdown 原文（实时 or 静态）
+const livePreviewDocxHtml = ref('');     // docx → HTML 快照（生成完成后填充）
+const livePreviewMode = ref('md');       // 'md' | 'docx'
+const livePreviewTitle = ref('');        // 面板顶部标题（交付物名）
+const livePreviewFile = ref('');         // 正在预览的项目内相对路径（用于 docx 转存判断）
+const livePreviewStreaming = ref(false); // 正在实时接收写入（面板顶部显示「生成中」）
+const rightPanelWidth = ref(480);        // 兼容旧引用
+const rightPanelUserWidth = ref(0);     // 0 = 未拖拽，走 flex 2:4:4；>0 = 用户拖过，固定像素
+const rightPanelCollapsed = ref(false);
+const leftPanelCollapsed = ref(false);   // 隐藏左侧交付物导航
+const rightPanelDragging = ref(false);
+let _dragStartX = 0, _dragStartW = 0;
+
+// 显示指定交付物的预览：切换 livePreviewContent + 标题。
+// 内存里没有时回落到读盘——否则已生成的交付物在内存未填充前会被误判成「未生成」。
+async function showPreview(stageId, d) {
+  const k = dkey(stageId, d.key);
+  livePreviewTitle.value = d.name;
+  livePreviewFile.value = d.file;
+  livePreviewDocxHtml.value = '';
+  livePreviewMode.value = 'md';
+
+  let content = deliverableContents.value[k] || '';
+  if (!content) {
+    await loadDeliverable(stageId, d);          // 读盘并写回 deliverableContents
+    content = deliverableContents.value[k] || '';
+  }
+  livePreviewContent.value = content;
+  if (content) loadDocxPreview(stageId, d);
+}
+
+async function loadDocxPreview(stageId, d) {
+  try {
+    const docxRel = d.file.replace(/\.md$/i, '') + '.docx';
+    const r = await window.api.hermes.docxPreview(props.slug, docxRel);
+    if (r && r.success && r.html) livePreviewDocxHtml.value = r.html;
+  } catch (_) { /* 无 docx 时静默 */ }
+}
+
+// 拖拽调整右侧预览宽度。
+// 未拖过时右栏走 flex 比例（2:4:4 随窗口自适应）；一旦用户拖过就固定为像素宽度。
+function startRightDrag(e) {
+  rightPanelDragging.value = true;
+  _dragStartX = e.clientX;
+  // 首次拖拽：以当前实际渲染宽度为起点，避免从默认值跳一下
+  const panelEl = e.currentTarget?.nextElementSibling;
+  _dragStartW = rightPanelUserWidth.value || panelEl?.getBoundingClientRect().width || rightPanelWidth.value;
+  const onMove = (ev) => {
+    const delta = _dragStartX - ev.clientX;
+    rightPanelUserWidth.value = Math.min(900, Math.max(320, _dragStartW + delta));
+  };
+  const onUp = () => {
+    rightPanelDragging.value = false;
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  };
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
+
+// 生成结束后自动把 md 转存为 docx
+async function autoSaveDocx(stageId, key) {
+  const d = deliverablesForStage(stageId).find((x) => x.key === key);
+  if (!d) return;
+  try {
+    const r = await window.api.hermes.mdToDocx(props.slug, d.file);
+    if (r && r.success) {
+      // 刷新 docx 预览
+      const rv = await window.api.hermes.docxPreview(props.slug, r.relativePath);
+      if (rv && rv.success && rv.html) {
+        livePreviewDocxHtml.value = rv.html;
+      }
+    }
+  } catch (_) { /* 转存失败不中断流程 */ }
+}
+
+// —— 工作台：每件交付物的独立消息状态 ——
+// 每件交付物的独立消息数组：键为 `${stageId}:${key}`
+const deliverableMsgs = ref({});
+
+// 当前选中交付物的消息数组（响应式引用，供模板绑定）
+const activeDlvMsgs = computed(() => {
+  const k = dkey(currentStage.value, deliverableSelected.value);
+  if (!deliverableMsgs.value[k]) deliverableMsgs.value[k] = [];
+  return deliverableMsgs.value[k];
+});
+
+// 发送当前交付物的对话消息
+const dlvInput = ref('');
+const dlvComposer = useChatComposer({
+  onTranscribe: (t) => { dlvInput.value = (dlvInput.value ? dlvInput.value + ' ' : '') + t; },
+  getSlug: () => props.slug,
+});
+
+async function dlvSend() {
+  if (!dlvInput.value.trim() && dlvComposer.attachments.value.length === 0) return;
+  if (isStreaming.value) return;
+
+  const stageId = currentStage.value;
+  const d = deliverablesForStage(stageId).find((x) => x.key === deliverableSelected.value);
+  if (!d) return;
+
+  const text = dlvInput.value.trim();
+  const attachments = dlvComposer.attachments.value.length ? [...dlvComposer.attachments.value] : undefined;
+  dlvInput.value = '';
+  dlvComposer.clearAttachments?.();
+
+  const k = dkey(stageId, deliverableSelected.value);
+  if (!deliverableMsgs.value[k]) deliverableMsgs.value[k] = [];
+  const arr = deliverableMsgs.value[k];
+
+  const sending = { content: text, ...(attachments ? { attachments } : {}) };
+  arr.push(createMessage('user', text, attachments ? { attachments } : {}));
+
+  isStreaming.value = true;
+  currentStreamId = Date.now().toString();
+  window.api.hermes.saveMessage(props.slug, {
+    role: 'user', content: text, tab: `deliverable:${deliverableSelected.value}`, timestamp: new Date().toISOString(),
+  });
+
+  arr.push(createMessage('assistant', '', {
+    thinkingSteps: [{ text: `正在处理《${d.name}》相关问题...`, icon: 'fa-solid fa-cloud-arrow-up', visible: true }],
+    thinkingDone: false, expanded: true, typingContent: '', timestamp: '', streamId: currentStreamId,
+  }));
+  scrollToBottom();
+
+  const framed = `【交付物：${d.name}】${text}`;
+  try {
+    await window.api.hermes.prompt(props.slug, framed, sending);
+    setTimeout(() => {
+      if (isStreaming.value) {
+        finalizeLastAssistantMessage();
+        isStreaming.value = false;
+        isToolRunning.value = false;
+      }
+    }, 2000);
+  } catch (e) {
+    console.error('dlvSend failed:', e);
+    isStreaming.value = false;
+  }
+}
+
+// 右侧预览滚动容器
+const previewScrollRef = ref(null);
+
+// docx 相对路径（面板顶栏展示）
+const docxRelPath = computed(() =>
+  livePreviewFile.value ? livePreviewFile.value.replace(/\.md$/i, '') + '.docx' : ''
+);
+
+// 预览用 markdown：图片已内联的版本优先，回退到实时原文
+const livePreviewPreviewMd = computed(() => {
+  const k = dkey(currentStage.value, deliverableSelected.value);
+  return deliverablePreviews.value[k] || livePreviewContent.value;
+});
+
+// 选交付物 → 切选中项 + 刷新右侧预览
+function selectDeliverable(key) {
+  deliverableSelected.value = key;
+  const d = deliverablesForStage(currentStage.value).find((x) => x.key === key);
+  if (d) showPreview(currentStage.value, d);
+  // 切换后确保该交付物的消息数组初始化
+  const k = dkey(currentStage.value, key);
+  if (!deliverableMsgs.value[k]) deliverableMsgs.value[k] = [];
+}
+
+// —— 右侧预览的在线编辑 ——
+const previewEditing = ref(false);
+const previewDraft = ref('');
+
+function togglePreviewEdit() {
+  if (previewEditing.value) { previewEditing.value = false; return; }
+  previewDraft.value = livePreviewContent.value || '';
+  previewEditing.value = true;
+}
+
+// 保存编辑：写回 md → 刷新预览 → 重新转存 docx（保持 md 与 Word 一致）
+async function savePreviewEdit() {
+  const stageId = currentStage.value;
+  const key = deliverableSelected.value;
+  const d = deliverablesForStage(stageId).find((x) => x.key === key);
+  if (!d) return;
+  try {
+    await window.api.hermes.writeFile(props.slug, d.file, previewDraft.value);
+    const k = dkey(stageId, key);
+    deliverableContents.value = { ...deliverableContents.value, [k]: previewDraft.value };
+    const preview = await inlineRelativeImages(previewDraft.value, d.file);
+    deliverablePreviews.value = { ...deliverablePreviews.value, [k]: preview };
+    livePreviewContent.value = previewDraft.value;
+    previewEditing.value = false;
+    await autoSaveDocx(stageId, key);   // md 改了，Word 跟着更新
+    showToast('已保存，Word 同步更新', 'success');
+  } catch (e) {
+    showToast(`保存失败：${e.message || e}`, 'error');
+  }
+}
+
+// 清空某件交付物的对话记录（磁盘 + 内存）。交付物文档本身不动。
+async function clearDeliverableChat(key) {
+  const stageId = currentStage.value;
+  const d = deliverablesForStage(stageId).find((x) => x.key === key);
+  if (!d) return;
+  const k = dkey(stageId, key);
+  const count = (deliverableMsgs.value[k] || []).filter((m) => m.role === 'user').length;
+  if (!window.confirm(`清空《${d.name}》的 ${count} 轮对话记录？\n（已生成的文档不会被删除）`)) return;
+  try {
+    await window.api.hermes.deleteMessages(props.slug, `deliverable:${key}`);
+    deliverableMsgs.value = { ...deliverableMsgs.value, [k]: [] };
+    showToast(`已清空《${d.name}》的对话记录`, 'success');
+  } catch (e) {
+    showToast(`清空失败：${e.message || e}`, 'error');
+  }
+}
+
+// 切到 Word 成品视图（只读 HTML 快照，无快照时按钮禁用）
+function switchToDocxView() {
+  if (livePreviewDocxHtml.value) livePreviewMode.value = 'docx';
+}
+
+// 用系统默认程序打开该交付物的 .docx
+async function openDeliverableDocx() {
+  if (!livePreviewFile.value) return;
+  try {
+    await window.api.hermes.openInBrowser(props.slug, docxRelPath.value);
+  } catch (_) { /* 文件不存在时静默 */ }
+}
+
+// 一轮生成结束：读回全部交付物 → 刷新当前预览 → 自动转存 docx
+async function finishLivePreview(stageId) {
+  await loadDeliverablesForStage(stageId);
+  const key = deliverableSelected.value;
+  const d = deliverablesForStage(stageId).find((x) => x.key === key);
+  if (d) {
+    showPreview(stageId, d);
+    await autoSaveDocx(stageId, key);
+  }
+  livePreviewStreaming.value = false;
+}
+
+// —— 工作台右侧预览辅助：渲染选中交付物 ——
+const workspaceSplitRef = ref(null);
+const chatPanelRef = ref(null);
 
 const dkey = (stageId, key) => `${stageId}:${key}`;
 
@@ -1855,6 +2369,18 @@ const loadDeliverablesForStage = async (stageId) => {
   for (const d of deliverablesForStage(stageId)) {
     await loadDeliverable(stageId, d);
   }
+  // 读回内容后同步刷新右侧预览：否则首次进入/切阶段时右侧停在骨架屏
+  // （之前只有手工点击交付物才会走 showPreview）
+  if (stageId === currentStage.value) {
+    const d = deliverablesForStage(stageId).find((x) => x.key === deliverableSelected.value);
+    if (d) await showPreview(stageId, d);
+  }
+};
+
+const loadAllDeliverableMsgs = async (stageId) => {
+  // messages.jsonl 里按 tab 字段过滤出每件交付物的消息
+  // 已由 loadProject 加载到 allMessages，这里按 tab key 分拣
+  // （若未来需要懒加载可再改；目前项目消息量小，全量分拣可行）
 };
 
 // 生成某份交付物：读模板(md/html)或走 skill → 拼 prompt → AI 真跑 write_file → 读回
@@ -1866,6 +2392,7 @@ const generateDeliverable = async (key) => {
 
   deliverableSelected.value = key;
   deliverableBusy.value = true;
+  deliverableBusyKey.value = key;
   isStreaming.value = true;
 
   // 生成留痕：写到当前阶段的对话流
@@ -1910,17 +2437,22 @@ const generateDeliverable = async (key) => {
 
   try {
     await window.api.hermes.prompt(props.slug, prompt);
+    // 兜底：正常由 agent_message_end 触发 finishLivePreview
     setTimeout(async () => {
+      if (!deliverableBusy.value) return;   // 已经被 agent_message_end 处理过
       finalizeLastAssistantMessage();
       isStreaming.value = false;
       isToolRunning.value = false;
       deliverableBusy.value = false;
-      await loadDeliverable(stageId, d);
+      deliverableBusyKey.value = '';
+      await finishLivePreview(stageId);
     }, 3000);
   } catch (e) {
     console.error('Generate deliverable failed:', e);
     isStreaming.value = false;
     deliverableBusy.value = false;
+    deliverableBusyKey.value = '';
+    livePreviewStreaming.value = false;
   }
 };
 
@@ -1939,8 +2471,9 @@ const runQuickAction = (act) => {
     activeTab.value = 'prototype';
     generatePrototype();
   } else {
-    deliverableSelected.value = act.key;
-    activeTab.value = currentStage.value === 3 ? 'deliverables3' : 'deliverables2';
+    // 工作台内就地生成：切右侧预览到这件交付物，不再跳 tab
+    activeTab.value = 'workspace';
+    selectDeliverable(act.key);
     generateDeliverable(act.key);
   }
 };
@@ -1990,9 +2523,8 @@ const scrollToBottom = () => {
   nextTick(() => {
     if ((activeTab.value === 'iterate' || (activeTab.value === 'prototype' && streamTargetTab.value === 'iterate')) && iterateChatRef.value) {
       iterateChatRef.value.scrollTop = iterateChatRef.value.scrollHeight;
-    } else if (activeTab.value === 'chat3' && stage3ChatRef.value) {
-      stage3ChatRef.value.scrollTop = stage3ChatRef.value.scrollHeight;
     } else if (chatContainerRef.value) {
+      // 工作台左栏（阶段②③共用同一个容器）
       chatContainerRef.value.scrollTop = chatContainerRef.value.scrollHeight;
     }
   });
@@ -2021,7 +2553,7 @@ const toggleSpecEdit = () => {
 
 const generateSpec = async () => {
   isStreaming.value = true;
-  activeTab.value = 'requirement';
+  activeTab.value = 'workspace';
   const requirement = projectMeta.value?.requirement || projectMeta.value?.name || '这个产品';
   messages.value.push(createMessage('user', '请根据我们之前的讨论，生成完整的产品功能清单'));
   messages.value.push(createMessage('assistant', '', {
@@ -2040,7 +2572,7 @@ const generateSpec = async () => {
     finalizeLastAssistantMessage();
     isStreaming.value = false;
     loadSpec();
-    activeTab.value = 'deliverables2';
+    selectDeliverable('feature-spec');
   } catch (e) {
     console.error('Generate spec failed:', e);
     isStreaming.value = false;
@@ -2256,7 +2788,7 @@ onMounted(async () => {
   // 依据恢复后的当前阶段，把 activeTab 设为该阶段第一个 tab
   const stageTabs = tabsForStage(currentStage.value);
   if (!stageTabs.some(t => t.key === activeTab.value)) {
-    activeTab.value = stageTabs[0]?.key || 'requirement';
+    activeTab.value = stageTabs[0]?.key || 'workspace';
   }
 
   // Set initial tab from query
@@ -2277,6 +2809,8 @@ onMounted(async () => {
   const firstDeliv = deliverablesForStage(currentStage.value)[0];
   if (firstDeliv && !deliverableSelected.value) deliverableSelected.value = firstDeliv.key;
   loadDeliverablesForStage(currentStage.value);
+  // 加载每件交付物的独立对话记录
+  loadAllDeliverableMsgs(currentStage.value);
 
   // Load prototype files
   refreshPrototypeFiles();
@@ -2320,7 +2854,7 @@ onUnmounted(() => {
 
 // Watch tab changes to load relevant data
 watch(activeTab, (newTab) => {
-  if (newTab === 'deliverables2' || newTab === 'deliverables3') {
+  if (newTab === 'workspace' || newTab === 'deliverables') {
     loadDeliverablesForStage(currentStage.value);
   } else if (newTab === 'prototype') {
     refreshPrototypeFiles();
@@ -2344,12 +2878,15 @@ button:disabled {
 textarea {
   cursor: text;
 }
-/* Markdown Body Styles */
+/* Markdown Body — document reading feel */
 :deep(.markdown-body) {
   word-wrap: break-word;
+  font-size: 15.5px;
+  line-height: 1.85;
+  color: #1e293b;
 }
 :deep(.markdown-body p) {
-  margin-bottom: 1em;
+  margin-bottom: 1.1em;
 }
 :deep(.markdown-body p:last-child) {
   margin-bottom: 0;
@@ -2360,87 +2897,94 @@ textarea {
 :deep(.markdown-body h4),
 :deep(.markdown-body h5),
 :deep(.markdown-body h6) {
-  margin-top: 1.5em;
-  margin-bottom: 0.5em;
+  margin-top: 1.75em;
+  margin-bottom: 0.6em;
   font-weight: 700;
-  line-height: 1.25;
-  color: #1e293b;
+  line-height: 1.3;
+  color: #0f172a;
 }
-:deep(.markdown-body h1) { font-size: 1.5em; }
-:deep(.markdown-body h2) { font-size: 1.25em; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.3em; }
-:deep(.markdown-body h3) { font-size: 1.1em; }
+:deep(.markdown-body h1) { font-size: 1.45em; letter-spacing: -0.01em; }
+:deep(.markdown-body h2) {
+  font-size: 1.2em;
+  border-bottom: 1.5px solid #e2e8f0;
+  padding-bottom: 0.35em;
+  letter-spacing: -0.005em;
+}
+:deep(.markdown-body h3) { font-size: 1.05em; font-weight: 600; color: #334155; }
 :deep(.markdown-body ul),
 :deep(.markdown-body ol) {
-  margin-top: 0;
-  margin-bottom: 1em;
-  padding-left: 2em;
+  margin-top: 0.25em;
+  margin-bottom: 1.1em;
+  padding-left: 1.75em;
 }
 :deep(.markdown-body ul) { list-style-type: disc; }
 :deep(.markdown-body ol) { list-style-type: decimal; }
-:deep(.markdown-body li + li) { margin-top: 0.25em; }
+:deep(.markdown-body li) { margin-bottom: 0.35em; }
+:deep(.markdown-body li + li) { margin-top: 0; }
 :deep(.markdown-body code) {
-  padding: 0.2em 0.4em;
+  padding: 0.18em 0.42em;
   margin: 0;
-  font-size: 85%;
+  font-size: 83%;
   background-color: #f1f5f9;
-  border-radius: 6px;
+  border-radius: 5px;
   font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
   color: #0f172a;
+  border: 1px solid #e2e8f0;
 }
 :deep(.markdown-body pre) {
-  padding: 16px;
+  padding: 16px 18px;
   overflow: auto;
-  font-size: 85%;
-  line-height: 1.45;
+  font-size: 83%;
+  line-height: 1.5;
   background-color: #f8fafc;
-  border-radius: 8px;
-  margin-bottom: 1em;
+  border-radius: 10px;
+  margin-bottom: 1.2em;
   border: 1px solid #e2e8f0;
 }
 :deep(.markdown-body pre code) {
-  display: inline;
-  max-width: auto;
   padding: 0;
   margin: 0;
-  overflow: visible;
-  line-height: inherit;
-  word-wrap: normal;
   background-color: transparent;
   border: 0;
   color: #334155;
+  font-size: inherit;
+  line-height: inherit;
 }
 :deep(.markdown-body blockquote) {
-  padding: 0 1em;
+  padding: 0.3em 1em;
   color: #64748b;
-  border-left: 0.25em solid #cbd5e1;
-  margin-bottom: 1em;
+  border-left: 3px solid #cbd5e1;
+  margin-bottom: 1.1em;
+  background: #f8fafc;
+  border-radius: 0 6px 6px 0;
 }
 :deep(.markdown-body table) {
   display: block;
-  width: 100%;
   width: max-content;
   max-width: 100%;
   overflow: auto;
-  margin-bottom: 1em;
+  margin-bottom: 1.2em;
   border-spacing: 0;
   border-collapse: collapse;
+  font-size: 14px;
 }
 :deep(.markdown-body table th),
 :deep(.markdown-body table td) {
-  padding: 6px 13px;
+  padding: 7px 14px;
   border: 1px solid #e2e8f0;
 }
-:deep(.markdown-body table tr) {
-  background-color: #fff;
-  border-top: 1px solid #e2e8f0;
+:deep(.markdown-body table th) {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #334155;
 }
 :deep(.markdown-body table tr:nth-child(2n)) {
-  background-color: #f8fafc;
+  background-color: #fafafa;
 }
 :deep(.markdown-body hr) {
-  height: 0.25em;
+  height: 1.5px;
   padding: 0;
-  margin: 24px 0;
+  margin: 1.5em 0;
   background-color: #e2e8f0;
   border: 0;
 }
