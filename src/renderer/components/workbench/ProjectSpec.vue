@@ -1,30 +1,49 @@
 <template>
-  <div class="flex flex-col h-full min-h-0 bg-[#f5f7fa]">
-    <!-- 顶部:标题 -->
-    <div class="flex items-center gap-3 px-6 py-4 bg-white border-b border-slate-200/80 shrink-0">
-      <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shrink-0">
+  <div class="flex flex-col h-full min-h-0 paper-grain">
+    <!-- 顶部:标题(去渐变,改暖棕竖条 — Swiss 风格避免装饰性渐变) -->
+    <div class="flex items-center gap-3 px-6 py-4 bg-white border-b border-paper-line/70 shrink-0 relative">
+      <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-brass"></div>
+      <span class="w-8 h-8 rounded-lg bg-paper-faint text-brass flex items-center justify-center shrink-0">
         <i class="fa-solid fa-clipboard-list text-[13px]"></i>
       </span>
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2">
-          <h2 class="text-[15px] font-semibold text-slate-800 truncate">FDE 项目规范</h2>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium shrink-0">极库云项目管理制度</span>
+          <h1 class="text-[15px] font-semibold text-slate-800 truncate">FDE 项目规范</h1>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-paper-faint text-brass font-medium shrink-0">极库云项目管理制度</span>
         </div>
         <p class="text-[12px] text-slate-500 truncate">五阶段项目管理 · 需求管理 · 产品复制模式</p>
       </div>
     </div>
 
-    <!-- 主体:分区卡片纵向排列,可滚动 -->
-    <div class="flex-1 min-h-0 overflow-y-auto">
-      <div class="spec-inner w-full space-y-6">
+    <!-- 主体:左锚点目录 + 右内容(章节多,靠滚动找太费劲) -->
+    <div class="flex-1 min-h-0 flex overflow-hidden">
+      <!-- 锚点目录 -->
+      <nav class="w-[180px] shrink-0 border-r border-paper-line/60 bg-paper/40 overflow-y-auto py-4 px-3 hidden lg:block" aria-label="章节导航">
+        <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 mb-2">目录</div>
+        <button
+          v-for="sec in sections"
+          :key="sec.id"
+          type="button"
+          @click="scrollTo(sec.id)"
+          class="w-full text-left px-2 py-1.5 rounded-lg mb-0.5 text-[12px] transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40"
+          :class="activeSection === sec.id ? 'bg-white text-brass font-semibold border border-paper-line/70' : 'text-slate-500 hover:bg-white/70 border border-transparent'"
+        >
+          <span class="w-4 text-center text-[11px] shrink-0" :class="activeSection === sec.id ? 'text-brass' : 'text-slate-300'">{{ sec.no }}</span>
+          <span class="truncate">{{ sec.label }}</span>
+        </button>
+      </nav>
+
+      <!-- 内容区 -->
+      <div ref="scrollRef" class="flex-1 min-h-0 overflow-y-auto spec-scroll">
+        <div class="spec-inner w-full space-y-6">
 
         <!-- 一、五阶段项目管理 -->
-        <section>
-          <div class="section-title">
+        <section id="sec-stage" data-sec="sec-stage">
+          <h2 class="section-title">
             <span class="section-no">一</span>
-            <i class="fa-solid fa-layer-group text-blue-500"></i>
+            <i class="fa-solid fa-layer-group text-brass"></i>
             五阶段项目管理
-          </div>
+          </h2>
           <div class="space-y-3">
             <div
               v-for="(group, gi) in stageGroups"
@@ -32,37 +51,39 @@
               class="grid grid-cols-1 sm:grid-cols-2 gap-3"
               :class="group.cols === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4'"
             >
-              <div
+              <component
+                :is="s.template ? 'button' : 'div'"
                 v-for="s in group.items"
                 :key="s.id"
-                class="bg-white rounded-2xl border border-slate-200/70 p-4 flex flex-col transition-all"
-                :class="s.template ? 'cursor-pointer hover:border-blue-300 hover:shadow-md group/card' : ''"
+                :type="s.template ? 'button' : undefined"
+                class="bg-white rounded-xl border border-paper-line/70 p-4 flex flex-col text-left transition-colors duration-200"
+                :class="s.template ? 'cursor-pointer hover:border-brass/45 group/card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40' : ''"
                 @click="s.template && openTemplate(s)"
               >
               <!-- 顶部常驻提示:点击查看模板(仅有 template 的卡片) -->
               <div
                 v-if="s.template"
-                class="mb-2.5 -mt-0.5 inline-flex self-start items-center gap-1.5 px-2 py-1 rounded-lg bg-blue-50 text-blue-600 text-[10px] font-medium group-hover/card:bg-blue-600 group-hover/card:text-white transition-colors"
+                class="mb-2.5 -mt-0.5 inline-flex self-start items-center gap-1.5 px-2 py-1 rounded-md bg-paper-faint text-brass text-[10px] font-medium group-hover/card:bg-brass group-hover/card:text-white transition-colors"
               >
                 <i class="fa-solid fa-hand-pointer text-[10px]"></i>
                 点击查看模板
                 <i class="fa-solid fa-arrow-right-long text-[9px]"></i>
               </div>
               <div class="flex items-center gap-2.5 mb-2">
-                <span class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shrink-0">
+                <span class="w-8 h-8 rounded-lg bg-brass-deep text-white flex items-center justify-center shrink-0">
                   <i :class="s.icon" class="text-[13px]"></i>
                 </span>
                 <div class="min-w-0 flex-1">
                   <div class="text-[10px] text-slate-400 leading-none">环节 {{ s.id }}</div>
-                  <div class="text-[13px] font-semibold text-slate-800 truncate">{{ s.name }}</div>
+                  <h3 class="text-[13px] font-semibold text-slate-800 truncate">{{ s.name }}</h3>
                 </div>
               </div>
               <p class="text-[12px] text-slate-500 leading-relaxed">{{ s.desc }}</p>
 
               <!-- 交付物清单(复用作战链 deliverables) -->
-              <div v-if="s.deliverables && s.deliverables.length" class="mt-3 pt-3 border-t border-slate-100">
+              <div v-if="s.deliverables && s.deliverables.length" class="mt-3 pt-3 border-t border-paper-line/50">
                 <div class="text-[10px] text-slate-400 mb-1.5">
-                  <i class="fa-solid fa-box-open mr-1 text-blue-400"></i>输出交付物
+                  <i class="fa-solid fa-box-open mr-1 text-brass/70"></i>输出交付物
                 </div>
                 <div class="space-y-1.5">
                   <div
@@ -70,76 +91,76 @@
                     :key="di"
                     class="text-[11px] text-slate-600 flex items-start gap-1.5 leading-snug"
                   >
-                    <i class="fa-solid fa-circle text-blue-300 text-[4px] mt-1.5 shrink-0"></i>
+                    <i class="fa-solid fa-circle text-brass/40 text-[4px] mt-1.5 shrink-0"></i>
                     <span class="min-w-0">
                       {{ d.name }}
                       <span v-if="d.form" class="text-[10px] text-slate-400 ml-0.5">· {{ formLabel(d.form) }}</span>
-                      <span v-if="d.sign" class="ml-1 text-[10px] px-1 py-0.5 rounded bg-amber-50 text-amber-600 whitespace-nowrap">{{ d.sign }}</span>
+                      <span v-if="d.sign" class="ml-1 text-[10px] px-1 py-0.5 rounded bg-brass/12 text-brass whitespace-nowrap">{{ d.sign }}</span>
                     </span>
                   </div>
                 </div>
               </div>
 
               <!-- 节奏标签(日报/周报) -->
-              <div v-if="s.cadence" class="mt-2 inline-flex self-start items-center gap-1.5 px-2 py-1 rounded-lg bg-amber-50 border border-amber-100 text-[11px] text-amber-600 font-medium">
+              <div v-if="s.cadence" class="mt-2 inline-flex self-start items-center gap-1.5 px-2 py-1 rounded-md bg-brass/10 border border-brass/20 text-[11px] text-brass font-medium">
                 <i class="fa-solid fa-clock text-[10px]"></i>{{ s.cadence }}
               </div>
 
               <!-- 相关材料标签 -->
               <div v-if="s.tags" class="mt-2 flex flex-wrap gap-1">
-                <span v-for="t in s.tags" :key="t" class="text-[11px] px-1.5 py-0.5 rounded bg-slate-50 text-slate-500 border border-slate-200/60">{{ t }}</span>
+                <span v-for="t in s.tags" :key="t" class="text-[11px] px-1.5 py-0.5 rounded bg-paper-faint text-slate-500 border border-paper-line/60">{{ t }}</span>
               </div>
 
               <!-- HIS 标品交付 SOP 举例 -->
-              <div v-if="s.example" class="mt-3 pt-3 border-t border-slate-100">
+              <div v-if="s.example" class="mt-3 pt-3 border-t border-paper-line/50">
                 <div class="text-[11px] text-slate-400 mb-2">{{ s.example.title }}</div>
                 <div class="flex items-center gap-1 flex-wrap">
                   <template v-for="(step, i) in s.example.steps" :key="step">
-                    <span class="text-[11px] px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 whitespace-nowrap">{{ i + 1 }}. {{ step }}</span>
-                    <i v-if="i < s.example.steps.length - 1" class="fa-solid fa-arrow-right text-indigo-300 text-[9px]"></i>
+                    <span class="text-[11px] px-2 py-1 rounded-md bg-paper-faint text-slate-700 whitespace-nowrap">{{ i + 1 }}. {{ step }}</span>
+                    <i v-if="i < s.example.steps.length - 1" class="fa-solid fa-arrow-right text-brass/40 text-[9px]"></i>
                   </template>
                 </div>
               </div>
-              </div>
+              </component>
             </div>
           </div>
         </section>
 
         <!-- 二、项目需求管理 -->
-        <section>
-          <div class="section-title">
+        <section id="sec-req" data-sec="sec-req">
+          <h2 class="section-title">
             <span class="section-no">二</span>
-            <i class="fa-solid fa-list-check text-blue-500"></i>
+            <i class="fa-solid fa-list-check text-brass"></i>
             项目需求管理
-          </div>
+          </h2>
           <p class="text-[12px] text-slate-500 mb-3">{{ reqMgmt.intro }}</p>
 
           <!-- 角色分工 -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div v-for="r in reqMgmt.roles" :key="r.name" class="bg-white rounded-2xl border border-slate-200/70 p-4 flex items-start gap-3">
-              <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+            <div v-for="r in reqMgmt.roles" :key="r.name" class="bg-white rounded-xl border border-paper-line/70 p-4 flex items-start gap-3">
+              <span class="w-9 h-9 rounded-lg bg-paper-faint text-brass flex items-center justify-center shrink-0">
                 <i :class="r.icon"></i>
               </span>
               <div class="min-w-0">
-                <div class="text-[13px] font-semibold text-slate-800 mb-0.5">{{ r.name }}</div>
+                <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5">{{ r.name }}</h3>
                 <p class="text-[12px] text-slate-500 leading-relaxed">{{ r.duty }}</p>
               </div>
             </div>
           </div>
 
           <!-- 迭代版本规划举例 -->
-          <div class="bg-white rounded-2xl border border-slate-200/70 p-4 mb-3">
-            <div class="text-[13px] font-semibold text-slate-800 mb-0.5">{{ reqMgmt.example.title }}</div>
+          <div class="bg-white rounded-xl border border-paper-line/70 p-4 mb-3">
+            <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5">{{ reqMgmt.example.title }}</h3>
             <p class="text-[12px] text-slate-500 mb-3">{{ reqMgmt.example.desc }}</p>
             <div class="flex items-stretch gap-2 overflow-x-auto pb-1">
               <div
                 v-for="it in reqMgmt.example.iterations"
                 :key="it.version"
-                class="shrink-0 min-w-[160px] flex-1 rounded-xl border border-slate-200/70 bg-slate-50/60 p-3"
+                class="shrink-0 min-w-[160px] flex-1 rounded-lg border border-paper-line/60 bg-paper-faint/50 p-3"
               >
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-[12px] font-mono font-semibold text-indigo-700">{{ it.version }}</span>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600 text-white font-semibold">{{ it.priority }}</span>
+                  <span class="text-[12px] font-mono font-semibold text-brass-deep">{{ it.version }}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-brass text-white font-semibold">{{ it.priority }}</span>
                 </div>
                 <div class="text-[11px] text-slate-500">{{ it.label }}</div>
               </div>
@@ -147,49 +168,49 @@
           </div>
 
           <!-- 项目主动跟进 -->
-          <div class="bg-white rounded-2xl border border-slate-200/70 p-4">
-            <div class="text-[13px] font-semibold text-slate-800 mb-0.5 flex items-center gap-1.5">
-              <i class="fa-solid fa-bullseye text-blue-500 text-[12px]"></i>项目主动跟进
-            </div>
+          <div class="bg-white rounded-xl border border-paper-line/70 p-4">
+            <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5 flex items-center gap-1.5">
+              <i class="fa-solid fa-bullseye text-brass text-[12px]"></i>项目主动跟进
+            </h3>
             <p class="text-[12px] text-slate-500 mb-3">{{ reqMgmt.followUp.desc }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div v-for="src in reqMgmt.followUp.sources" :key="src.name" class="rounded-xl bg-emerald-50/60 border border-emerald-100 p-3">
+              <div v-for="src in reqMgmt.followUp.sources" :key="src.name" class="rounded-lg bg-emerald-50/50 border border-emerald-100/70 p-3">
                 <div class="text-[12px] font-medium text-emerald-800 flex items-center gap-1.5 mb-0.5">
                   <i class="fa-solid fa-circle-check text-emerald-500 text-[10px]"></i>{{ src.name }}
                 </div>
                 <div class="text-[11px] text-emerald-600">{{ src.watch }}</div>
-                <div class="text-[10px] text-emerald-400 mt-0.5">{{ src.host }}</div>
+                <div class="text-[10px] text-emerald-500/70 mt-0.5">{{ src.host }}</div>
               </div>
             </div>
           </div>
         </section>
 
         <!-- 三、产品复制模式 -->
-        <section>
-          <div class="section-title">
+        <section id="sec-copy" data-sec="sec-copy">
+          <h2 class="section-title">
             <span class="section-no">三</span>
-            <i class="fa-solid fa-copy text-blue-500"></i>
+            <i class="fa-solid fa-copy text-brass"></i>
             产品复制模式
-          </div>
+          </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div
               v-for="m in modes"
               :key="m.key"
-              class="bg-white rounded-2xl border p-4"
-              :class="m.accent === 'blue' ? 'border-blue-200/70' : 'border-indigo-200/70'"
+              class="bg-white rounded-xl border p-4"
+              :class="m.accent === 'blue' ? 'border-brass/30' : 'border-brass-deep/30'"
             >
               <div class="flex items-center gap-2.5 mb-3">
                 <span
                   class="w-9 h-9 rounded-lg text-white flex items-center justify-center shrink-0"
-                  :class="m.accent === 'blue' ? 'bg-blue-600' : 'bg-indigo-600'"
+                  :class="m.accent === 'blue' ? 'bg-brass' : 'bg-brass-deep'"
                 >
                   <i :class="m.icon"></i>
                 </span>
-                <div class="text-[14px] font-semibold text-slate-800">{{ m.name }}</div>
+                <h3 class="text-[14px] font-semibold text-slate-800">{{ m.name }}</h3>
               </div>
               <ul class="space-y-2">
                 <li v-for="(p, i) in m.points" :key="i" class="text-[12px] text-slate-600 leading-relaxed flex items-start gap-2">
-                  <i class="fa-solid fa-circle text-[4px] mt-1.5 shrink-0" :class="m.accent === 'blue' ? 'text-blue-300' : 'text-indigo-300'"></i>
+                  <i class="fa-solid fa-circle text-[4px] mt-1.5 shrink-0 text-brass/40"></i>
                   <span>{{ p }}</span>
                 </li>
               </ul>
@@ -197,26 +218,27 @@
           </div>
         </section>
 
-        <!-- 相关外链 -->
-        <section>
-          <div class="section-title">
-            <i class="fa-solid fa-link text-blue-500"></i>
+        <!-- 四、极库云资源 -->
+        <section id="sec-links" data-sec="sec-links">
+          <h2 class="section-title">
+            <i class="fa-solid fa-link text-brass"></i>
             极库云资源
-          </div>
+          </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button
               v-for="lk in links"
               :key="lk.url"
+              type="button"
               @click="openLink(lk.url)"
-              class="group text-left bg-white rounded-2xl border border-slate-200/70 hover:border-blue-300 hover:shadow-md hover:shadow-blue-500/5 transition-all cursor-pointer p-4 flex items-start gap-3"
+              class="group text-left bg-white rounded-xl border border-paper-line/70 hover:border-brass/45 transition-colors duration-200 cursor-pointer p-4 flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40"
             >
-              <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <span class="w-9 h-9 rounded-lg bg-paper-faint text-brass flex items-center justify-center shrink-0">
                 <i :class="lk.icon"></i>
               </span>
               <div class="min-w-0 flex-1">
                 <div class="text-[13px] font-semibold text-slate-800 flex items-center gap-1.5">
                   <span class="truncate">{{ lk.title }}</span>
-                  <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-blue-500 transition-colors shrink-0"></i>
+                  <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-brass transition-colors shrink-0"></i>
                 </div>
                 <p class="text-[11px] text-slate-500 leading-relaxed mt-0.5">{{ lk.desc }}</p>
               </div>
@@ -224,6 +246,7 @@
           </div>
         </section>
 
+        </div>
       </div>
     </div>
 
@@ -236,13 +259,14 @@
       @close="activeTemplate = null"
     >
       <template #header-icon>
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-sm shadow-blue-500/30">
+        <div class="w-9 h-9 rounded-lg bg-brass-deep flex items-center justify-center text-white">
           <i :class="activeTemplate?.icon || 'fa-solid fa-file-lines'"></i>
         </div>
       </template>
       <template #header-actions>
         <button
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-slate-600 hover:text-brass hover:bg-paper-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40"
           @click="copyTemplate"
         >
           <i :class="copied ? 'fa-solid fa-check text-emerald-500' : 'fa-regular fa-copy'" class="text-[12px]"></i>
@@ -252,11 +276,11 @@
 
       <div class="p-6">
         <!-- 文档纸张卡片 -->
-        <div class="rounded-2xl bg-white shadow-[0_1px_3px_rgba(15,23,42,0.06),0_8px_24px_rgba(15,23,42,0.05)] overflow-hidden ring-1 ring-slate-200/60">
-          <!-- 顶部彩条 + 文件名标签 -->
-          <div class="h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500"></div>
+        <div class="rounded-xl bg-white overflow-hidden border border-paper-line/70">
+          <!-- 顶部棕色条 + 文件名标签 -->
+          <div class="h-1 bg-brass"></div>
           <div class="flex items-center gap-2 px-6 pt-4 pb-2">
-            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 text-slate-500 text-[11px] font-mono">
+            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-paper-faint text-slate-500 text-[11px] font-mono">
               <i class="fa-regular fa-file-lines text-[10px]"></i>
               {{ activeTemplate?.filename || 'template.md' }}
             </span>
@@ -271,7 +295,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { marked } from 'marked';
 import DrawerPanel from '@/components/common/DrawerPanel.vue';
 import { FIVE_STAGE_MGMT, REQUIREMENT_MGMT, REPLICATION_MODES, GEELIB_LINKS } from '@/data/fde-project-spec';
@@ -285,6 +309,41 @@ const stageGroups = [
 const reqMgmt = REQUIREMENT_MGMT;
 const modes = REPLICATION_MODES;
 const links = GEELIB_LINKS;
+
+/** 左侧锚点目录：章节多，纯滚动找太费劲 */
+const sections = [
+  { id: 'sec-stage', no: '一', label: '五阶段项目管理' },
+  { id: 'sec-req', no: '二', label: '项目需求管理' },
+  { id: 'sec-copy', no: '三', label: '产品复制模式' },
+  { id: 'sec-links', no: '四', label: '极库云资源' },
+];
+const scrollRef = ref(null);
+const activeSection = ref('sec-stage');
+
+function scrollTo(id) {
+  const el = scrollRef.value?.querySelector(`#${id}`);
+  if (!el) return;
+  // 尊重 prefers-reduced-motion：关了动效就直接跳
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  activeSection.value = id;
+}
+
+// 滚动到哪一章就高亮哪一项
+let observer = null;
+onMounted(() => {
+  const root = scrollRef.value;
+  if (!root) return;
+  observer = new IntersectionObserver(
+    (entries) => {
+      const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+      if (hit) activeSection.value = hit.target.id;
+    },
+    { root, rootMargin: '-10% 0px -70% 0px', threshold: 0 },
+  );
+  root.querySelectorAll('section[data-sec]').forEach((el) => observer.observe(el));
+});
+onUnmounted(() => observer?.disconnect());
 
 /** 交付物文件形态 → 中文标签 */
 const FORM_LABELS = { docx: 'Word', md: 'Markdown', html: '原型', doc: '文档', system: '系统', template: '模板' };
@@ -334,14 +393,27 @@ const copyTemplate = async () => {
 .section-no {
   width: 1.375rem;
   height: 1.375rem;
-  border-radius: 0.5rem;
-  background: #eff6ff; /* blue-50 */
-  color: #2563eb; /* blue-600 */
+  border-radius: 0.375rem;
+  background: var(--color-paper-faint);
+  color: var(--color-brass);
   font-size: 12px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+/* 章节之间留出滚动落点，锚点跳转后标题不贴顶 */
+.spec-scroll {
+  scroll-behavior: smooth;
+}
+.spec-scroll section {
+  scroll-margin-top: 16px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .spec-scroll {
+    scroll-behavior: auto;
+  }
 }
 
 /* ============================================================
@@ -371,16 +443,16 @@ const copyTemplate = async () => {
 .tpl-body :deep(h2) {
   font-size: 1.02rem;
   font-weight: 700;
-  color: #1e3a8a; /* blue-900 */
+  color: #6d4312;
   margin: 1.6rem 0 0.7rem;
   padding-left: 0.65rem;
-  border-left: 3px solid #3b82f6; /* blue-500 */
+  border-left: 3px solid #8f5a18;
   line-height: 1.4;
 }
 .tpl-body :deep(h3) {
   font-size: 0.92rem;
   font-weight: 600;
-  color: #1e40af;
+  color: #8f5a18;
   margin: 1.2rem 0 0.5rem;
 }
 
@@ -389,7 +461,7 @@ const copyTemplate = async () => {
 .tpl-body :deep(ul),
 .tpl-body :deep(ol) { margin: 0.6rem 0; padding-left: 1.4rem; }
 .tpl-body :deep(li) { margin: 0.35rem 0; }
-.tpl-body :deep(li::marker) { color: #3b82f6; }
+.tpl-body :deep(li::marker) { color: #8f5a18; }
 .tpl-body :deep(ul ul),
 .tpl-body :deep(ol ol) { margin: 0.2rem 0; }
 .tpl-body :deep(strong) { font-weight: 600; color: #0f172a; }
@@ -398,8 +470,8 @@ const copyTemplate = async () => {
 .tpl-body :deep(blockquote) {
   margin: 0.9rem 0;
   padding: 0.7rem 1rem;
-  background: linear-gradient(90deg, #eff6ff, #f8fafc);
-  border-left: 3px solid #60a5fa;
+  background: #ece8de;
+  border-left: 3px solid #c8862a;
   border-radius: 0 0.6rem 0.6rem 0;
   color: #475569;
   font-style: normal;
@@ -426,8 +498,8 @@ const copyTemplate = async () => {
   overflow: hidden;
 }
 .tpl-body :deep(thead th) {
-  background: #f1f5fb;
-  color: #1e3a8a;
+  background: #ece8de;
+  color: #6d4312;
   font-weight: 600;
   text-align: left;
 }
@@ -445,7 +517,7 @@ const copyTemplate = async () => {
 .tpl-body :deep(:not(pre) > code) {
   font-family: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
   background: #eef2f8;
-  color: #1e40af;
+  color: #8f5a18;
   padding: 0.12em 0.4em;
   border-radius: 0.35rem;
   font-size: 0.86em;
