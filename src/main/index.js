@@ -31,6 +31,11 @@ let hermesReady = false;     // ACP 是否已连接且 initialize 成功(供环�
 // value = { resolve } —— 渲染层通过 hermes:permission-respond 回传裁决后 resolve。
 const pendingPermissions = new Map();
 
+// session/load 回放历史期间的会话：回放出来的 chunk 不转发，否则前端会当成新回复追加
+const replayingSessions = new Set();
+// 正在跑 session/prompt 的会话：此时重进项目页不再 session/load，免得打乱进行中的这一轮
+const promptingSessions = new Set();
+
 // ---------------------------------------------------------------------------
 // Data directories
 // ---------------------------------------------------------------------------
@@ -487,9 +492,13 @@ function startHermes() {
   acp.onNotification((notification) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       const params = notification.params || {};
+      const sessionId = params.sessionId || params.session_id || '';
+      // session/load 会把整段历史当成 message chunk 重放一遍。放行会让前端把历史
+      // 当成新回复追加进当前对话（重进项目页就「乱套」的根因），这里直接丢掉。
+      if (sessionId && replayingSessions.has(sessionId)) return;
       const payload = {
         method: notification.method || '',
-        sessionId: params.sessionId || params.session_id || '',
+        sessionId,
         ...params,
       };
       mainWindow.webContents.send('hermes:session-update', payload);
@@ -2632,14 +2641,22 @@ ipcMain.handle('hermes:load-project', async (_event, slug) => {
     let sessionRecovered = false;
 
     if (acp && meta.sessionId) {
+      const sid = meta.sessionId;
+      // 这一轮还在生成：引擎里的会话本来就活着，不要 session/load（会重放历史、打乱进行中的回复）
+      if (promptingSessions.has(sid)) {
+        return { slug, ...meta, messages: persistedMessages, prompting: true };
+      }
+      replayingSessions.add(sid);
       try {
-        const result = await acp.request('session/load', { sessionId: meta.sessionId, cwd: resolveProjectPath(slug), mcpServers: [] });
+        const result = await acp.request('session/load', { sessionId: sid, cwd: resolveProjectPath(slug), mcpServers: [] });
         if (result) {
-          await acp.request('session/set_mode', { sessionId: meta.sessionId, modeId: 'dont_ask' }).catch(() => {});
+          await acp.request('session/set_mode', { sessionId: sid, modeId: 'dont_ask' }).catch(() => {});
           return { slug, ...meta, messages: persistedMessages, loadResult: result };
         }
       } catch (loadErr) {
-        console.log(`[main] Session ${meta.sessionId} not found, creating new session for ${slug}`);
+        console.log(`[main] Session ${sid} not found, creating new session for ${slug}`);
+      } finally {
+        replayingSessions.delete(sid);
       }
     }
 
@@ -3023,10 +3040,17 @@ ipcMain.handle('hermes:prompt', async (_event, { slug, text, attachments }) => {
       console.log(`[main]   → blocks=${JSON.stringify(promptBlocks.map(b => b.type))}  imageBlocks=${promptBlocks.filter(b => b.type === 'image').length}`);
     }
 
-    const result = await acp.request('session/prompt', {
-      sessionId: meta.sessionId,
-      prompt: promptBlocks,
-    }, 3_600_000); // 60 min timeout
+    const promptSid = meta.sessionId;
+    promptingSessions.add(promptSid);
+    let result;
+    try {
+      result = await acp.request('session/prompt', {
+        sessionId: promptSid,
+        prompt: promptBlocks,
+      }, 3_600_000); // 60 min timeout
+    } finally {
+      promptingSessions.delete(promptSid);
+    }
 
 
     // Refresh outputs after AI may have written files

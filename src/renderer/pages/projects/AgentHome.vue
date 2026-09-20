@@ -52,6 +52,8 @@
       :context-usage="contextUsage"
       :plan-items="planItems"
       :current-model="currentModel"
+      :deliverable-threads="deliverableThreads"
+      @open-deliverable="goDeliverable"
       @close="showInfoPanel = false"
       @clear-logs="logs = []"
       @ask-question="handleQuickSend"
@@ -82,6 +84,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { DELIVERABLE_META } from '@/data/fde-stages';
 import SessionList from '@/components/agent/SessionList.vue';
 import ChatPanel from '@/components/agent/ChatPanel.vue';
 import InfoSidebar from '@/components/agent/InfoSidebar.vue';
@@ -99,6 +102,8 @@ const currentSlug = ref('');
 const currentProjectName = ref('');
 const currentMeta = ref({});
 const messages = ref([]);
+// 工作台各交付物的对话线（只读汇总，供本页回看）
+const deliverableThreads = ref([]);
 const isStreaming = ref(false);
 const messagesLoading = ref(false);
 const suggestedQuestions = ref([]);
@@ -151,14 +156,29 @@ function createMessage(role, content, extra = {}) {
 }
 
 function formatTimestamp(date) {
-  const d = date || new Date();
+  const d = date ? new Date(date) : new Date();
+  if (Number.isNaN(d.getTime())) return '';
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
+// 消息来自哪条对话线 → 时间线上的来源标签。requirement/空 = 本页自己聊的，不加标签。
+function sourceLabelOf(tab) {
+  const t = String(tab || '');
+  if (t.startsWith('deliverable:')) {
+    const key = t.slice('deliverable:'.length);
+    return `交付物：${(DELIVERABLE_META[key] || {}).name || key}`;
+  }
+  if (t === 'iterate') return '原型迭代';
+  if (t === 'prototype-gen') return '原型生成';
+  if (t === 'chat3') return '阶段③ 需求确认+智能体设计';
+  return '';
 }
 
 // --- Load projects list ---
 const loadProjects = async () => {
   try {
-    projects.value = await window.api.hermes.listProjects({ kind: 'chat' });
+    // 取全部：FDE 项目(kind='project')也要能在这里选中回看/续聊，SessionList 会把它们单独分组
+    projects.value = await window.api.hermes.listProjects({ kind: 'all' });
   } catch (e) {
     projects.value = [];
   }
@@ -169,6 +189,7 @@ const selectProject = async (slug) => {
   if (slug === currentSlug.value) return;
   currentSlug.value = slug;
   messages.value = [];
+  deliverableThreads.value = [];
   logs.value = [];
   suggestedQuestions.value = [];
   messagesLoading.value = true;
@@ -180,10 +201,13 @@ const selectProject = async (slug) => {
       currentProjectName.value = data.name || slug;
       resolveAppSkills();  // 老会话缺 skills 时按内置定义回填，避免技能区回退全局库
       if (data.messages && data.messages.length > 0) {
-        const reqMsgs = data.messages.filter(m => m.tab !== 'iterate');
-        if (reqMsgs.length) {
-          messages.value = reqMsgs.map(m => createMessage(m.role || 'assistant', m.content || ''));
-        }
+        // 全部对话线按时间合并成一条主时间线：工作台按交付物聊的(deliverable:*)、
+        // 原型迭代(iterate)、阶段③(chat3) 都进来，各自带 sourceLabel 标明出处，
+        // 这样这一页能完整体现 AI 在项目里干了什么。
+        messages.value = data.messages.map((m) => createMessage(m.role || 'assistant', m.content || '', {
+          sourceLabel: sourceLabelOf(m.tab),
+          timestamp: m.timestamp ? formatTimestamp(m.timestamp) : '',
+        }));
       }
       if (data.sessionRecovered) {
         messages.value.push(createMessage('assistant', '检测到之前的会话已过期，已从项目文件中自动恢复上下文。'));
@@ -606,6 +630,12 @@ const handleFork = async (msgIndex) => {
   } catch (e) {
     console.error('Fork failed:', e);
   }
+};
+
+// 从「AI 智能对话」跳到项目详情页工作台，并定位到该交付物
+const goDeliverable = (key) => {
+  if (!currentSlug.value) return;
+  router.push(`/projects/${currentSlug.value}?tab=workspace&deliverable=${encodeURIComponent(key)}`);
 };
 
 const handleNavigate = (tab) => {

@@ -146,6 +146,36 @@
         </div>
       </AccordionSection>
 
+      <!-- 交付物对话（项目详情页工作台里按交付物聊的记录，此处只读回看） -->
+      <AccordionSection
+        v-if="deliverableThreads.length"
+        title="交付物对话"
+        icon="fa-solid fa-box-open"
+        icon-color="#7c3aed"
+        :default-open="false"
+      >
+        <div class="space-y-1.5">
+          <button
+            v-for="t in deliverableThreads"
+            :key="t.key"
+            @click="$emit('open-deliverable', t.key)"
+            class="w-full text-left rounded-lg px-2 py-1.5 hover:bg-violet-50 transition-colors cursor-pointer"
+          >
+            <div class="flex items-center gap-1.5">
+              <i class="fa-solid fa-comment-dots text-[9px] text-violet-500 shrink-0"></i>
+              <span class="text-[12px] font-medium text-slate-700 truncate">{{ t.name || t.key }}</span>
+              <span class="ml-auto text-[10px] text-slate-400 shrink-0">{{ t.count }} 轮</span>
+            </div>
+            <div v-if="t.last" class="mt-0.5 pl-[15px] text-[11px] text-slate-400 line-clamp-2 leading-snug">
+              {{ (t.last.content || '').slice(0, 60) }}
+            </div>
+          </button>
+          <p class="text-[10px] text-slate-400 px-2 pt-1 leading-relaxed">
+            在「项目列表 → 工作台」里按交付物对话；此处仅供回看。
+          </p>
+        </div>
+      </AccordionSection>
+
       <!-- Suggested Questions -->
       <AccordionSection title="建议追问" icon="fa-solid fa-comments" icon-color="#2563eb" :default-open="true">
         <div v-if="suggestedQuestions.length === 0" class="text-[11px] text-slate-400 text-center py-3">
@@ -182,9 +212,11 @@ const props = defineProps({
   contextUsage: { type: Object, default: () => ({ used: 0, size: 0 }) },
   planItems: { type: Array, default: () => [] },
   currentModel: { type: String, default: '' },
+  // 工作台按交付物的对话线（只读汇总）
+  deliverableThreads: { type: Array, default: () => [] },
 });
 
-defineEmits(['close', 'clear-logs', 'ask-question', 'upload-knowledge', 'change-model', 'browse-skills']);
+defineEmits(['close', 'clear-logs', 'ask-question', 'upload-knowledge', 'change-model', 'browse-skills', 'open-deliverable']);
 
 // Skill 名称 → 中文标签 + 图标映射（兜底自动生成）
 const skillMeta = {

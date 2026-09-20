@@ -1,8 +1,8 @@
 <template>
   <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
     <!-- Top bar: project name + tab bar -->
-    <div class="shrink-0 bg-white border-b border-slate-200/80 px-6 pt-4 pb-0">
-      <div class="flex items-center gap-3 mb-4">
+    <div class="shrink-0 bg-white border-b border-slate-200/80 px-6 pt-2 pb-0">
+      <div class="flex items-center gap-3 mb-2">
         <RouterLink to="/projects" class="text-slate-400 hover:text-blue-700 transition-colors">
           <i class="fa-solid fa-arrow-left text-sm"></i>
         </RouterLink>
@@ -13,15 +13,15 @@
         <StageTimeline :current="currentStage" :stage-status="stageStatus" @select="selectStage" />
       </div>
       <!-- Tabs(仅工作区阶段显示) -->
-      <div v-if="isWorkspaceStage" class="flex items-center gap-6 mt-3.5 px-1">
+      <div v-if="isWorkspaceStage" class="flex items-center gap-5 mt-1 px-1">
         <button
           v-for="tab in tabs"
           :key="tab.key"
           @click="activeTab = tab.key"
-          class="group relative inline-flex items-center gap-2 pb-2.5 text-[14px] transition-colors duration-200"
+          class="group relative inline-flex items-center gap-1.5 pb-1.5 text-[12px] transition-colors duration-200"
           :class="activeTab === tab.key ? 'text-blue-600 font-semibold' : 'text-slate-400 hover:text-slate-700 font-medium'"
         >
-          <i :class="tab.icon" class="text-[13px]"></i>
+          <i :class="tab.icon" class="text-[10.5px]"></i>
           {{ tab.label }}
           <span
             class="absolute -bottom-px left-0 right-0 h-0.5 rounded-full transition-all duration-200"
@@ -49,10 +49,10 @@
         <div
           v-if="!leftPanelCollapsed"
           class="shrink-0 flex flex-col bg-slate-50/80 border-r border-slate-100 overflow-hidden"
-          :style="'flex: 2 1 0; min-width: 180px'"
+          :style="'flex: 1 1 0; min-width: 170px; max-width: 240px'"
         >
           <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-            <div class="text-[12px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
               {{ currentStage === 3 ? '阶段③ 交付物' : '阶段② 交付物' }}
             </div>
             <button
@@ -69,7 +69,7 @@
               :key="d.key"
               @click="selectDeliverable(d.key)"
               role="button"
-              class="w-full text-left px-3 py-2.5 mx-2 mb-0.5 rounded-xl transition-all group relative"
+              class="w-full text-left px-2.5 py-2 mx-2 mb-0.5 rounded-lg transition-all group relative"
               :style="'width: calc(100% - 16px)'"
               :class="deliverableSelected === d.key
                 ? 'bg-blue-50 border border-blue-200/80'
@@ -85,26 +85,26 @@
                 <i class="fa-solid fa-trash-can text-[9px]"></i>
               </button>
               <div class="flex items-start gap-2.5">
-                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors"
+                <div class="w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition-colors"
                   :class="deliverableSelected === d.key ? 'bg-blue-100' : 'bg-slate-100 group-hover:bg-white'">
-                  <i :class="d.icon" class="text-[13px]"
+                  <i :class="d.icon" class="text-[11px]"
                     :style="deliverableSelected === d.key ? 'color:#2563eb' : 'color:#94a3b8'"></i>
                 </div>
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-1.5">
-                    <span class="text-[13.5px] font-semibold truncate"
+                    <span class="text-[12.5px] font-semibold leading-snug"
                       :class="deliverableSelected === d.key ? 'text-blue-700' : 'text-slate-700'">
                       {{ d.name }}
                     </span>
                   </div>
                   <div class="flex items-center gap-1 mt-0.5">
                     <span v-if="deliverableStatus[d.key] === 'ready'"
-                      class="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-medium">
+                      class="inline-flex items-center gap-1 text-[10.5px] text-emerald-600 font-medium">
                       <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>已生成
                     </span>
-                    <span v-else class="text-[11px] text-slate-400">未生成</span>
+                    <span v-else class="text-[10.5px] text-slate-400">未生成</span>
                     <span v-if="deliverableSelected === d.key && (deliverableMsgs[dkey(currentStage, d.key)] || []).length > 0"
-                      class="text-[11px] text-blue-500">
+                      class="text-[10.5px] text-blue-500">
                       · {{ (deliverableMsgs[dkey(currentStage, d.key)] || []).filter(m=>m.role==='user').length }} 条对话
                     </span>
                   </div>
@@ -117,7 +117,7 @@
             <button
               @click="generateDeliverable(deliverableSelected)"
               :disabled="isStreaming || deliverableBusy || !deliverableSelected"
-              class="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-[13px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full inline-flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-lg text-[12px] font-semibold leading-snug transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               :class="deliverableBusy ? 'bg-blue-50 text-blue-500' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/25'"
             >
               <i class="fa-solid text-[10px]" :class="deliverableBusy ? 'fa-circle-notch fa-spin' : 'fa-wand-magic-sparkles'"></i>
@@ -127,7 +127,7 @@
         </div>
 
         <!-- 中栏：对话区 (flex-1) -->
-        <div class="flex flex-col min-w-0 relative bg-white" style="flex: 4 1 0">
+        <div class="flex flex-col min-w-0 relative bg-white" style="flex: 4.5 1 0">
           <!-- 顶部：当前交付物标题栏 -->
           <div v-if="selectedDeliverable" class="shrink-0 flex items-center gap-3 px-5 py-2.5 border-b border-slate-100 bg-white/95">
             <button
@@ -139,12 +139,12 @@
               <i class="fa-solid fa-angles-right text-[9px]"></i>
             </button>
             <i :class="selectedDeliverable.icon" class="text-blue-500 text-sm shrink-0"></i>
-            <span class="text-[14.5px] font-semibold text-slate-700 truncate">{{ selectedDeliverable.name }}</span>
+            <span class="text-[13.5px] font-semibold text-slate-700 truncate">{{ selectedDeliverable.name }}</span>
             <span v-if="livePreviewStreaming" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-medium ml-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>生成中
             </span>
             <span class="flex-1"></span>
-            <span class="text-[12px] text-slate-400 truncate max-w-[45%]">{{ selectedDeliverable.hint }}</span>
+            <span class="text-[11.5px] text-slate-400 truncate max-w-[45%]">{{ selectedDeliverable.hint }}</span>
           </div>
 
           <!-- 消息区 -->
@@ -173,14 +173,14 @@
               <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/20">
                 <i :class="selectedDeliverable ? selectedDeliverable.icon : 'fa-solid fa-comments'" class="text-lg text-white"></i>
               </div>
-              <h3 class="text-[17px] font-semibold text-slate-800 mb-2">{{ selectedDeliverable ? selectedDeliverable.name : '' }}</h3>
-              <p class="text-[13.5px] text-slate-400 max-w-sm leading-relaxed mb-6">{{ selectedDeliverable ? selectedDeliverable.hint : '' }}</p>
+              <h3 class="text-[15px] font-semibold text-slate-800 mb-2">{{ selectedDeliverable ? selectedDeliverable.name : '' }}</h3>
+              <p class="text-[12.5px] text-slate-400 max-w-sm leading-relaxed mb-6">{{ selectedDeliverable ? selectedDeliverable.hint : '' }}</p>
               <div class="flex flex-wrap gap-2 justify-center max-w-sm">
                 <button
                   v-for="q in (currentStage === 3 ? stage3Quick : stage2Quick)"
                   :key="q"
                   @click="dlvInput = q; dlvSend()"
-                  class="px-3.5 py-2 rounded-full bg-slate-50 hover:bg-blue-50 border border-slate-200/70 hover:border-blue-200 text-[13px] text-slate-600 hover:text-blue-700 transition-all"
+                  class="px-3 py-1.5 rounded-full bg-slate-50 hover:bg-blue-50 border border-slate-200/70 hover:border-blue-200 text-[12.5px] text-slate-600 hover:text-blue-700 transition-all"
                 >
                   {{ q }}
                 </button>
@@ -204,7 +204,7 @@
                       <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
                     </template>
                   </div>
-                  <div v-if="msg.content" class="rounded-[18px] px-4.5 py-3 leading-relaxed text-[15px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                  <div v-if="msg.content" class="rounded-[16px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
                     {{ msg.content }}
                   </div>
                 </div>
@@ -244,8 +244,8 @@
                   <!-- AI card wrapper -->
                   <div v-if="msg.content || (isStreaming && idx === activeDlvMsgs.length - 1)"
                     class="w-full bg-slate-50/70 rounded-2xl px-5 py-4 border border-slate-100/80">
-                    <div class="w-full max-w-full leading-[1.85] text-[15.5px] text-slate-800 markdown-body"
-                      v-html="renderAssistantContent(msg, idx)" @click="handleContentImgClick"></div>
+                    <div class="w-full max-w-full leading-[1.8] text-[14px] text-slate-800 markdown-body"
+                      v-html="renderAssistantContent(msg, idx, { noFileCards: true })" @click="handleContentImgClick"></div>
                   </div>
                   <span v-if="msg.timestamp" class="text-[11px] text-slate-400 mt-1.5 ml-0.5">{{ msg.timestamp }}</span>
                 </div>
@@ -274,7 +274,7 @@
                   rows="1"
                   :placeholder="isStreaming ? 'AI 正在响应中…' : `关于《${selectedDeliverable ? selectedDeliverable.name : '交付物'}》的问题，Ctrl+Enter 发送`"
                   :disabled="isStreaming"
-                  class="w-full resize-none text-[14.5px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-7 px-4.5 pt-3.5 pb-1 max-h-[160px] scrollbar-hide disabled:opacity-60"
+                  class="w-full resize-none text-[13.5px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-6 px-4 pt-3 pb-1 max-h-[150px] scrollbar-hide disabled:opacity-60"
                   @keydown.ctrl.enter.prevent="dlvSend"
                   @keydown.meta.enter.prevent="dlvSend"
                 ></textarea>
@@ -317,7 +317,7 @@
         <!-- 右栏：文档预览 -->
         <div
           class="shrink-0 flex flex-col bg-slate-50/60 border-l border-slate-100 overflow-hidden"
-          :style="rightPanelCollapsed ? 'flex: 0 0 40px' : (rightPanelUserWidth ? 'flex: 0 0 ' + rightPanelUserWidth + 'px' : 'flex: 4 1 0; min-width: 320px')"
+          :style="rightPanelCollapsed ? 'flex: 0 0 40px' : (rightPanelUserWidth ? 'flex: 0 0 ' + rightPanelUserWidth + 'px' : 'flex: 4.5 1 0; min-width: 320px')"
         >
           <!-- 顶栏 -->
           <div class="shrink-0 flex items-center gap-2 px-2.5 py-2 border-b border-slate-100 bg-white">
@@ -330,7 +330,7 @@
             </button>
             <template v-if="!rightPanelCollapsed">
               <i class="fa-solid fa-file-lines text-slate-400 text-[11px] shrink-0"></i>
-              <span class="flex-1 text-[13px] font-semibold text-slate-600 truncate">
+              <span class="flex-1 text-[12.5px] font-semibold text-slate-600 truncate">
                 {{ livePreviewTitle || (selectedDeliverable ? selectedDeliverable.name : '文档') }}
               </span>
               <span v-if="livePreviewStreaming" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-medium shrink-0">
@@ -353,7 +353,7 @@
               <div class="mb-3 px-1">
                 <div class="flex items-center gap-2 mb-1">
                   <i :class="selectedDeliverable ? selectedDeliverable.icon : 'fa-solid fa-file-lines'" class="text-blue-500 text-sm"></i>
-                  <span class="text-[14px] font-semibold text-slate-700">{{ selectedDeliverable ? selectedDeliverable.name : '选择交付物' }}</span>
+                  <span class="text-[13px] font-semibold text-slate-700">{{ selectedDeliverable ? selectedDeliverable.name : '选择交付物' }}</span>
                 </div>
                 <p class="text-[12px] text-slate-400 leading-relaxed pl-5">{{ selectedDeliverable ? selectedDeliverable.hint : '从左侧选一件交付物' }}</p>
               </div>
@@ -374,7 +374,7 @@
               </div>
               <div class="mt-3 flex justify-center">
                 <button @click="generateDeliverable(deliverableSelected)" :disabled="isStreaming || deliverableBusy || !deliverableSelected"
-                  class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm disabled:opacity-50">
+                  class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12.5px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm disabled:opacity-50">
                   <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
                   {{ deliverableBusy ? '生成中…' : 'AI 生成' }}
                 </button>
@@ -385,8 +385,8 @@
             <div v-else-if="livePreviewMode === 'docx' && livePreviewDocxHtml"
               class="bg-white mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
               <div class="px-5 py-2.5 border-b border-slate-100 bg-slate-50/50 rounded-t-xl flex items-center gap-2">
-                <i class="fa-solid fa-file-word text-blue-500 text-[11px]"></i>
-                <span class="text-[11px] text-slate-500 font-mono truncate">{{ docxRelPath }}</span>
+                <i class="fa-solid fa-file-word text-blue-500 text-[12px]"></i>
+                <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }} · Word</span>
               </div>
               <div class="px-7 py-6 markdown-body docx-preview" v-html="livePreviewDocxHtml"></div>
             </div>
@@ -396,8 +396,8 @@
               class="bg-white mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
               <div class="px-5 py-2.5 border-b border-slate-100 bg-slate-50/50 rounded-t-xl flex items-center gap-2">
                 <i class="fa-solid fa-file-lines text-slate-400 text-[12px]"></i>
-                <span class="text-[12px] text-slate-500 font-mono truncate">{{ livePreviewFile }}</span>
-                <span v-if="livePreviewStreaming" class="ml-auto text-[11px] text-emerald-600">正在写入…</span>
+                <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }}</span>
+                <span v-if="livePreviewStreaming" class="ml-auto text-[11.5px] text-emerald-600">正在写入…</span>
                 <!-- 生成完成后可就地编辑 -->
                 <button
                   v-else-if="livePreviewContent"
@@ -887,6 +887,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
+import { trackPrompt, getInflightPrompt } from '../../composables/promptInflight.js';
 import { useRoute } from 'vue-router';
 import { marked } from 'marked';
 import StageTimeline from '@/components/workbench/StageTimeline.vue';
@@ -1044,13 +1045,19 @@ const currentMessages = computed(() => {
 
 // 按当前 tab 取对应的消息数组（.value）——统一入口，供流式渲染/追加使用
 const streamTargetTab = ref('');
+// 本轮回复锁定的写入目标 { arr, tab }：生成途中切交付物 / 切 tab 都不会串台
+let lockedStream = null;
 function activeMessagesArr() {
+  if (lockedStream) return lockedStream.arr;
   const t = streamTargetTab.value || activeTab.value;
   if (t === 'iterate') return iterateMessages.value;
   if (t === 'prototype-gen') return prototypeGenMessages.value;
   if (t === 'chat3') return stage3Messages.value;
   if (t === 'workspace' || t.startsWith('deliverable')) {
-    const k = dkey(currentStage.value, deliverableSelected.value);
+    // 正在生成时锁定到生成目标；否则才跟随界面选中项。
+    // 否则用户在生成途中切换交付物，剩余 chunk 会串进新选中的那条对话。
+    const target = deliverableBusyKey.value || deliverableSelected.value;
+    const k = dkey(currentStage.value, target);
     if (!deliverableMsgs.value[k]) deliverableMsgs.value[k] = [];
     return deliverableMsgs.value[k];
   }
@@ -1058,12 +1065,76 @@ function activeMessagesArr() {
 }
 // 当前 tab 对应的持久化 tab 名
 function activeTabName() {
+  if (lockedStream) return lockedStream.tab;
   const t = streamTargetTab.value || activeTab.value;
   if (t === 'iterate') return 'iterate';
   if (t === 'prototype-gen') return 'prototype-gen';
-  if (t === 'workspace' || t.startsWith('deliverable')) return `deliverable:${deliverableSelected.value}`;
+  if (t === 'workspace' || t.startsWith('deliverable')) return `deliverable:${deliverableBusyKey.value || deliverableSelected.value}`;
   if (t === 'chat3') return 'chat3';
   return 'requirement';
+}
+
+// 由持久化 tab 名反查该轮应写入的消息数组（重进页面时恢复锁用）
+function lockFromTab(tab) {
+  if (String(tab).startsWith('deliverable:')) {
+    const key = String(tab).slice('deliverable:'.length);
+    const k = dkey(currentStage.value, key);
+    if (!deliverableMsgs.value[k]) deliverableMsgs.value[k] = [];
+    return { arr: deliverableMsgs.value[k], tab };
+  }
+  if (tab === 'iterate') return { arr: iterateMessages.value, tab };
+  if (tab === 'chat3') return { arr: stage3Messages.value, tab };
+  return { arr: messages.value, tab };
+}
+
+// 一轮回复开始：锁死写入目标。之后切交付物 / 切 tab 都不会把剩余 chunk 串到别处。
+function beginStream(arr, tab) {
+  lockedStream = { arr, tab };
+  isStreaming.value = true;
+  isToolRunning.value = false;
+  currentStreamId = Date.now().toString();
+  return currentStreamId;
+}
+
+// 一轮回复收尾。幂等：引擎事件和 await 返回都会调，只有第一次真正生效，
+// 否则 finalizeLastAssistantMessage 会重复落盘同一条回答。
+function endStream() {
+  if (!isStreaming.value && !lockedStream) return;
+  if (streamEndTimer) { clearTimeout(streamEndTimer); streamEndTimer = null; }
+  flushTypewriterQueue();
+  finalizeLastAssistantMessage();   // 仍要用本轮的锁，必须在清锁之前
+  lockedStream = null;
+  isStreaming.value = false;
+  isToolRunning.value = false;
+}
+
+// 离开项目页时上一轮还没结束：重进后锁回它原来的对话，保持「生成中」直到引擎真正返回
+function resumeInflight(inflight) {
+  const tab = String(inflight.tab || '');
+  const dlvKey = tab.startsWith('deliverable:') ? tab.slice('deliverable:'.length) : '';
+  if (dlvKey) {
+    deliverableBusy.value = true;
+    deliverableBusyKey.value = dlvKey;
+    selectDeliverable(dlvKey);
+  }
+  if (tab === 'iterate') streamTargetTab.value = 'iterate';
+  const lock = lockFromTab(tab);
+  const streamId = beginStream(lock.arr, lock.tab);
+  lock.arr.push(createMessage('assistant', '', {
+    thinkingSteps: [{ text: 'AI 仍在处理上一轮请求…', icon: 'fa-solid fa-hourglass-half', visible: true }],
+    thinkingDone: false, expanded: true, typingContent: '', timestamp: '', streamId,
+  }));
+  inflight.done.then(async () => {
+    endStream();
+    if (dlvKey) {
+      deliverableBusy.value = false;
+      deliverableBusyKey.value = '';
+      await finishLivePreview(currentStage.value);
+    }
+    if (tab === 'iterate') { iframeKey.value++; streamTargetTab.value = ''; }
+    refreshPrototypeFiles();
+    loadSpec();
+  });
 }
 // 生成 PRD / 功能清单时自动配图的指令片段。
 // {mdDir} 会被替换为该交付物 md 文件所在目录（根目录交付物为空串）。
@@ -1237,7 +1308,7 @@ const iframeSrc = ref('');
 const fileSource = ref('');
 const isHtmlSelected = ref(true);
 // 原型预览缩放（仅缩放 iframe 视觉，不改原型文件）
-const previewZoom = ref(1);
+const previewZoom = ref(0.75);
 function setZoom(z) {
   previewZoom.value = Math.min(1.5, Math.max(0.5, Math.round(z * 100) / 100));
 }
@@ -1496,8 +1567,11 @@ const processImagePaths = (content) => {
   return processed;
 };
 
-const renderMarkdown = (text) => {
+// noFileCards：工作台对话区用——右侧已有文档预览，正文里再出文件卡片是重复信息。
+// 此时文件名退化成普通行内代码，不再渲染可下载/打开的卡片。
+const renderMarkdown = (text, opts = {}) => {
   if (!text) return '';
+  if (opts.noFileCards) return marked(text, { breaks: true, gfm: true });
   let html = marked(processImagePaths(text), { breaks: true, gfm: true });
   for (let i = 0; i < _pdPlaceholders.length; i++) {
     html = html.replace(`XDLVR${i}X`, _pdPlaceholders[i]);
@@ -1511,7 +1585,7 @@ const renderedSpec = computed(() => {
 });
 
 // --- Render assistant content with typewriter cursor ---
-const renderAssistantContent = (msg, index) => {
+const renderAssistantContent = (msg, index, opts = {}) => {
   const targetMessages = activeMessagesArr();
   const isLast = index === targetMessages.length - 1;
 
@@ -1519,13 +1593,13 @@ const renderAssistantContent = (msg, index) => {
   if (isLast && isStreaming.value && msg.role === 'assistant') {
     const content = msg.typingContent || msg.content || '';
     if (content) {
-      return renderMarkdown(content) + "<span class='inline-block w-2 h-4 bg-blue-500 ml-1 rounded-sm animate-pulse align-middle'></span>";
+      return renderMarkdown(content, opts) + "<span class='inline-block w-2 h-4 bg-blue-500 ml-1 rounded-sm animate-pulse align-middle'></span>";
     }
     // Still waiting for first content
     return "<span class='inline-block w-2 h-4 bg-blue-500 ml-1 rounded-sm animate-pulse align-middle'></span>";
   }
 
-  return renderMarkdown(msg.content);
+  return renderMarkdown(msg.content, opts);
 };
 
 // --- Load project ---
@@ -1593,10 +1667,9 @@ const scheduleStreamEnd = () => {
   if (streamEndTimer) clearTimeout(streamEndTimer);
   // 120 seconds — generous fallback; normal ending relies on agent_message_end event
   streamEndTimer = setTimeout(() => {
-    if (isStreaming.value && !isToolRunning.value) {
-      flushTypewriterQueue();
-      finalizeLastAssistantMessage();
-      isStreaming.value = false;
+    // prompt 还没返回说明引擎仍在跑（长工具调用时可能 2 分钟没 chunk），不能提前收尾
+    if (isStreaming.value && !isToolRunning.value && !getInflightPrompt(props.slug)) {
+      endStream();
       loadSpec();
       refreshPrototypeFiles();
     }
@@ -1866,12 +1939,8 @@ const handleSessionUpdate = (data) => {
     scrollToBottom();
     scheduleStreamEnd();
   } else if (type === 'agent_message_end' || type === 'session_end' || type === 'stop') {
-    if (streamEndTimer) clearTimeout(streamEndTimer);
     if (thoughtBuffer) flushThoughtBuffer();
-    flushTypewriterQueue();
-    finalizeLastAssistantMessage();
-    isStreaming.value = false;
-    isToolRunning.value = false;
+    endStream();
     // Rich completion log with usage stats if available
     const usage = update.usage || data.usage || {};
     let doneMsg = '✅ 回复完成';
@@ -1929,12 +1998,10 @@ const handleSessionUpdate = (data) => {
       scheduleStreamEnd();
     }
   } else if (type === 'error') {
-    if (streamEndTimer) clearTimeout(streamEndTimer);
     if (thoughtBuffer) flushThoughtBuffer();
-    isStreaming.value = false;
-    isToolRunning.value = false;
+    const targetMessages = activeMessagesArr();   // 先取本轮目标，endStream 会清锁
+    endStream();
     addLog('error', update.message || '请求失败');
-    const targetMessages = activeMessagesArr();
     targetMessages.push(createMessage('assistant', `**Error:** ${update.message || '请求失败'}`));
   }
 };
@@ -1950,8 +2017,7 @@ const sendMessage = async () => {
   chatInput.value = '';
   const sending = [...atts];
   reqComposer.clearAttachments();
-  isStreaming.value = true;
-  currentStreamId = Date.now().toString();
+  beginStream(messages.value, 'requirement');
 
   window.api.hermes.saveMessage(props.slug, { role: 'user', content: text, tab: 'requirement', timestamp: new Date().toISOString() });
 
@@ -1970,19 +2036,14 @@ const sendMessage = async () => {
   scrollToBottom();
 
   try {
-    await window.api.hermes.prompt(props.slug, text, sending);
-    // 延迟兜底：正常情况由 agent_message_end 事件结束
-    setTimeout(() => {
-      if (isStreaming.value) {
-        finalizeLastAssistantMessage();
-        isStreaming.value = false;
-        isToolRunning.value = false;
-        loadSpec();
-      }
-    }, 2000);
+    const p = window.api.hermes.prompt(props.slug, text, sending);
+    trackPrompt(props.slug, { tab: 'requirement' }, p);
+    await p;
+    endStream();   // prompt 返回 = 引擎这一轮真的结束了
+    loadSpec();
   } catch (e) {
     console.error('Prompt failed:', e);
-    isStreaming.value = false;
+    endStream();
   }
 };
 
@@ -1997,8 +2058,7 @@ const sendIterate = async () => {
   iterateInput.value = '';
   const sending = [...atts];
   iterateComposer.clearAttachments();
-  isStreaming.value = true;
-  currentStreamId = Date.now().toString();
+  beginStream(iterateMessages.value, 'iterate');
 
   window.api.hermes.saveMessage(props.slug, { role: 'user', content: text, tab: 'iterate', timestamp: new Date().toISOString() });
 
@@ -2015,21 +2075,16 @@ const sendIterate = async () => {
   }));
 
   try {
-    await window.api.hermes.prompt(props.slug, `/prototype-iterate ${text}`, sending);
-    // 延迟兜底：正常情况由 agent_message_end 事件结束
-    setTimeout(() => {
-      if (isStreaming.value) {
-        finalizeLastAssistantMessage();
-        isStreaming.value = false;
-        isToolRunning.value = false;
-        iframeKey.value++;
-        refreshPrototypeFiles();
-        streamTargetTab.value = '';
-      }
-    }, 2000);
+    const p = window.api.hermes.prompt(props.slug, `/prototype-iterate ${text}`, sending);
+    trackPrompt(props.slug, { tab: 'iterate' }, p);
+    await p;
+    endStream();
+    iframeKey.value++;
+    refreshPrototypeFiles();
+    streamTargetTab.value = '';
   } catch (e) {
     console.error('Iterate prompt failed:', e);
-    isStreaming.value = false;
+    endStream();
     streamTargetTab.value = '';
   }
 };
@@ -2047,8 +2102,7 @@ const sendStage3 = async () => {
   stage3Input.value = '';
   const sending = [...atts];
   stage3Composer.clearAttachments();
-  isStreaming.value = true;
-  currentStreamId = Date.now().toString();
+  beginStream(stage3Messages.value, 'chat3');
 
   window.api.hermes.saveMessage(props.slug, { role: 'user', content: text, tab: 'chat3', timestamp: new Date().toISOString() });
 
@@ -2060,17 +2114,13 @@ const sendStage3 = async () => {
 
   const framed = `【阶段③ 需求确认+智能体设计】你是 FDE 交付工程师。当前任务：把阶段②收敛后的需求签字定死，并把业务链路拆成智能体矩阵（一个环节一个智能体、上游输出=下游输入、过 Eval 门禁）。请围绕以下用户输入继续推进，必要时追问澄清：\n\n${text}`;
   try {
-    await window.api.hermes.prompt(props.slug, framed, sending);
-    setTimeout(() => {
-      if (isStreaming.value) {
-        finalizeLastAssistantMessage();
-        isStreaming.value = false;
-        isToolRunning.value = false;
-      }
-    }, 2000);
+    const p = window.api.hermes.prompt(props.slug, framed, sending);
+    trackPrompt(props.slug, { tab: 'chat3' }, p);
+    await p;
+    endStream();
   } catch (e) {
     console.error('Stage3 prompt failed:', e);
-    isStreaming.value = false;
+    endStream();
   }
 };
 
@@ -2190,10 +2240,10 @@ async function dlvSend() {
   const sending = { content: text, ...(attachments ? { attachments } : {}) };
   arr.push(createMessage('user', text, attachments ? { attachments } : {}));
 
-  isStreaming.value = true;
-  currentStreamId = Date.now().toString();
+  const tab = `deliverable:${d.key}`;
+  beginStream(arr, tab);
   window.api.hermes.saveMessage(props.slug, {
-    role: 'user', content: text, tab: `deliverable:${deliverableSelected.value}`, timestamp: new Date().toISOString(),
+    role: 'user', content: text, tab, timestamp: new Date().toISOString(),
   });
 
   arr.push(createMessage('assistant', '', {
@@ -2204,17 +2254,13 @@ async function dlvSend() {
 
   const framed = `【交付物：${d.name}】${text}`;
   try {
-    await window.api.hermes.prompt(props.slug, framed, sending);
-    setTimeout(() => {
-      if (isStreaming.value) {
-        finalizeLastAssistantMessage();
-        isStreaming.value = false;
-        isToolRunning.value = false;
-      }
-    }, 2000);
+    const p = window.api.hermes.prompt(props.slug, framed, sending);
+    trackPrompt(props.slug, { tab }, p);
+    await p;
+    endStream();
   } catch (e) {
     console.error('dlvSend failed:', e);
-    isStreaming.value = false;
+    endStream();
   }
 }
 
@@ -2393,14 +2439,20 @@ const generateDeliverable = async (key) => {
   deliverableSelected.value = key;
   deliverableBusy.value = true;
   deliverableBusyKey.value = key;
-  isStreaming.value = true;
 
-  // 生成留痕：写到当前阶段的对话流
-  const chatArr = stageId === 3 ? stage3Messages : messages;
-  chatArr.value.push(createMessage('user', `请生成《${d.name}》`));
-  chatArr.value.push(createMessage('assistant', '', {
+  // 生成留痕：写进「该交付物」的独立对话线（早先误写进全局 messages/stage3Messages，
+  // 导致不同交付物、以及和「AI 智能对话」页的记录互相串台）
+  const mk = dkey(stageId, key);
+  if (!deliverableMsgs.value[mk]) deliverableMsgs.value[mk] = [];
+  const chatArr = deliverableMsgs.value[mk];
+  const tab = `deliverable:${key}`;
+  beginStream(chatArr, tab);
+  const userMsg = `请生成《${d.name}》`;
+  chatArr.push(createMessage('user', userMsg));
+  window.api.hermes.saveMessage(props.slug, { role: 'user', content: userMsg, tab, timestamp: new Date().toISOString() });
+  chatArr.push(createMessage('assistant', '', {
     thinkingSteps: [{ text: `正在生成《${d.name}》...`, icon: 'fa-solid fa-wand-magic-sparkles', visible: true }],
-    thinkingDone: false, expanded: true, typingContent: '', timestamp: '',
+    thinkingDone: false, expanded: true, typingContent: '', timestamp: '', streamId: currentStreamId,
   }));
 
   const reqName = projectMeta.value?.name || props.slug;
@@ -2436,20 +2488,17 @@ const generateDeliverable = async (key) => {
   }
 
   try {
-    await window.api.hermes.prompt(props.slug, prompt);
-    // 兜底：正常由 agent_message_end 触发 finishLivePreview
-    setTimeout(async () => {
-      if (!deliverableBusy.value) return;   // 已经被 agent_message_end 处理过
-      finalizeLastAssistantMessage();
-      isStreaming.value = false;
-      isToolRunning.value = false;
-      deliverableBusy.value = false;
-      deliverableBusyKey.value = '';
-      await finishLivePreview(stageId);
-    }, 3000);
+    const p = window.api.hermes.prompt(props.slug, prompt);
+    trackPrompt(props.slug, { tab: `deliverable:${key}` }, p);
+    await p;
+    // 兜底：agent_message_end 已在事件处理里调 endStream，这里再调一次也是幂等的
+    endStream();
+    deliverableBusy.value = false;
+    deliverableBusyKey.value = '';
+    await finishLivePreview(stageId);
   } catch (e) {
     console.error('Generate deliverable failed:', e);
-    isStreaming.value = false;
+    endStream();
     deliverableBusy.value = false;
     deliverableBusyKey.value = '';
     livePreviewStreaming.value = false;
@@ -2513,10 +2562,11 @@ const cancelStream = async () => {
   } catch (e) {
     console.error('Cancel failed:', e);
   }
-  flushTypewriterQueue();
-  finalizeLastAssistantMessage();
-  isStreaming.value = false;
-  isToolRunning.value = false;
+  endStream();
+  deliverableBusy.value = false;
+  deliverableBusyKey.value = '';
+  livePreviewStreaming.value = false;
+  streamTargetTab.value = '';
 };
 
 const scrollToBottom = () => {
@@ -2712,9 +2762,8 @@ const generatePrototype = async () => {
   if (isStreaming.value) return;
   activeTab.value = 'prototype';
   streamTargetTab.value = 'iterate';           // 生成过程的流归到 iterate 消息数组，供原型页进度面板展示
-  isStreaming.value = true;
-  currentStreamId = Date.now().toString();
   iterateMessages.value.push(createMessage('user', '基于 stage2/prd.md 生成 HTML 原型'));
+  beginStream(iterateMessages.value, 'iterate');
   iterateMessages.value.push(createMessage('assistant', '', {
     thinkingSteps: [
       { text: '正在准备生成原型...', icon: 'fa-solid fa-wand-magic-sparkles', visible: true },
@@ -2727,22 +2776,24 @@ const generatePrototype = async () => {
   }));
   scrollToBottom();
   try {
-    await window.api.hermes.prompt(props.slug, '/prototype-generator 基于当前项目目录下的 stage2/prd.md 生成 HTML 原型，输出到 prototype/ 目录');
+    const p = window.api.hermes.prompt(props.slug, '/prototype-generator 基于当前项目目录下的 stage2/prd.md 生成 HTML 原型，输出到 prototype/ 目录');
+    trackPrompt(props.slug, { tab: 'iterate' }, p);
+    await p;
   } catch (e) {
     console.error('Generate prototype failed:', e);
-    finalizeLastAssistantMessage();
-    isStreaming.value = false;
-    streamTargetTab.value = '';
   }
+  endStream();
+  iframeKey.value++;
+  refreshPrototypeFiles();
+  streamTargetTab.value = '';
 };
 
 const regeneratePrototype = async () => {
   if (isStreaming.value) return;
   activeTab.value = 'prototype';
   streamTargetTab.value = 'iterate';
-  isStreaming.value = true;
-  currentStreamId = Date.now().toString();
   iterateMessages.value.push(createMessage('user', '基于 stage2/prd.md 重新生成 HTML 原型'));
+  beginStream(iterateMessages.value, 'iterate');
   iterateMessages.value.push(createMessage('assistant', '', {
     thinkingSteps: [
       { text: '正在准备重新生成原型...', icon: 'fa-solid fa-wand-magic-sparkles', visible: true },
@@ -2755,13 +2806,16 @@ const regeneratePrototype = async () => {
   }));
   scrollToBottom();
   try {
-    await window.api.hermes.prompt(props.slug, '/prototype-generator 基于当前项目目录下的 stage2/prd.md 重新生成 HTML 原型，输出到 prototype/ 目录');
+    const p = window.api.hermes.prompt(props.slug, '/prototype-generator 基于当前项目目录下的 stage2/prd.md 重新生成 HTML 原型，输出到 prototype/ 目录');
+    trackPrompt(props.slug, { tab: 'iterate' }, p);
+    await p;
   } catch (e) {
     console.error('Regenerate prototype failed:', e);
-    finalizeLastAssistantMessage();
-    isStreaming.value = false;
-    streamTargetTab.value = '';
   }
+  endStream();
+  iframeKey.value++;
+  refreshPrototypeFiles();
+  streamTargetTab.value = '';
 };
 
 // --- Export functions ---
@@ -2811,6 +2865,9 @@ onMounted(async () => {
   loadDeliverablesForStage(currentStage.value);
   // 加载每件交付物的独立对话记录
   loadAllDeliverableMsgs(currentStage.value);
+
+  const inflight = getInflightPrompt(props.slug);
+  if (inflight) resumeInflight(inflight);
 
   // Load prototype files
   refreshPrototypeFiles();
@@ -2881,8 +2938,8 @@ textarea {
 /* Markdown Body — document reading feel */
 :deep(.markdown-body) {
   word-wrap: break-word;
-  font-size: 15.5px;
-  line-height: 1.85;
+  font-size: 13.5px;
+  line-height: 1.75;
   color: #1e293b;
 }
 :deep(.markdown-body p) {
@@ -2966,7 +3023,7 @@ textarea {
   margin-bottom: 1.2em;
   border-spacing: 0;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 12.5px;
 }
 :deep(.markdown-body table th),
 :deep(.markdown-body table td) {

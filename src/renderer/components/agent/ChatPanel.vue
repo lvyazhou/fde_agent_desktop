@@ -38,6 +38,19 @@
           class="flex flex-col w-full group transition-all duration-300 relative"
           :class="msg.role === 'user' ? 'items-end' : 'items-start'"
         >
+          <!-- 来源标签：这条记录来自工作台哪条对话线（本页自己聊的没有标签） -->
+          <div
+            v-if="msg.sourceLabel && msg.sourceLabel !== messages[idx - 1]?.sourceLabel"
+            class="w-full flex items-center gap-2 my-3 select-none"
+          >
+            <span class="h-px flex-1 bg-slate-200/70"></span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-[11px] font-medium text-slate-500">
+              <i class="fa-solid fa-diagram-project text-[9px] text-slate-400"></i>
+              {{ msg.sourceLabel }}
+            </span>
+            <span class="h-px flex-1 bg-slate-200/70"></span>
+          </div>
+
           <!-- User Message -->
           <div v-if="msg.role === 'user'" class="relative max-w-[80%] flex flex-col items-end">
             <!-- User attachments (images + files) -->

@@ -31,6 +31,24 @@
 
     <!-- Project list -->
     <div class="flex-1 overflow-y-auto px-2 pb-2">
+      <!-- FDE 五阶段项目 -->
+      <template v-if="fdeProjects.length > 0">
+        <div class="px-2 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider mt-2">FDE 项目</div>
+        <button
+          v-for="project in fdeProjects"
+          :key="project.slug"
+          @click="$emit('select', project.slug)"
+          class="w-full text-left px-3 py-2 rounded-lg mb-0.5 transition-all flex items-center gap-2.5 cursor-pointer"
+          :class="project.slug === currentSlug ? 'bg-slate-100' : 'hover:bg-slate-50'"
+        >
+          <span class="w-4 shrink-0 flex items-center justify-center">
+            <i class="fa-solid fa-diagram-project text-[11px]" :style="{ color: project.slug === currentSlug ? '#2563eb' : '#94a3b8' }"></i>
+          </span>
+          <span class="flex-1 min-w-0 text-[13px] truncate" :class="project.slug === currentSlug ? 'text-slate-900 font-semibold' : 'text-slate-600'">{{ project.name }}</span>
+          <span class="text-[10px] text-slate-400 shrink-0">阶段{{ project.stage }}</span>
+        </button>
+      </template>
+
       <!-- Today -->
       <template v-if="todayProjects.length > 0">
         <div class="px-2 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">今天</div>
@@ -131,16 +149,20 @@ const filteredProjects = computed(() => {
   return list;
 });
 
+// FDE 五阶段项目单独一组，普通对话按日期分组
+const fdeProjects = computed(() => filteredProjects.value.filter(p => p.conversationKind === 'project' || p.projectType === 'fde-project'));
+const chatProjects = computed(() => filteredProjects.value.filter(p => p.conversationKind !== 'project' && p.projectType !== 'fde-project'));
+
 const todayProjects = computed(() => {
   const today = new Date().toISOString().slice(0, 10);
-  return filteredProjects.value.filter(p => (p.updatedAt || p.createdAt || '').slice(0, 10) === today);
+  return chatProjects.value.filter(p => (p.updatedAt || p.createdAt || '').slice(0, 10) === today);
 });
 
 const recentProjects = computed(() => {
   const today = new Date();
   const sevenDaysAgo = new Date(today.getTime() - 7 * 86400000).toISOString().slice(0, 10);
   const todayStr = today.toISOString().slice(0, 10);
-  return filteredProjects.value.filter(p => {
+  return chatProjects.value.filter(p => {
     const d = (p.updatedAt || p.createdAt || '').slice(0, 10);
     return d < todayStr && d >= sevenDaysAgo;
   });
@@ -148,7 +170,7 @@ const recentProjects = computed(() => {
 
 const olderProjects = computed(() => {
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
-  return filteredProjects.value.filter(p => (p.updatedAt || p.createdAt || '').slice(0, 10) < sevenDaysAgo);
+  return chatProjects.value.filter(p => (p.updatedAt || p.createdAt || '').slice(0, 10) < sevenDaysAgo);
 });
 
 const phaseIcon = (phase) => {
