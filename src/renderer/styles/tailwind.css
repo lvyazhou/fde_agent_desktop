@@ -70,6 +70,16 @@
   /* --- 内容区背景(全站统一,收编 #f4f7fb/#f5f7fa/#f8fafc 三套)--- */
   --color-content-bg: #ffffff;
 
+  /* --- 暖纸色板(取自培训教程 fde-training-guide.html,用于门户/教程等阅读型页面)--- */
+  --color-paper: #f7f5f0;            /* 暖纸底 */
+  --color-paper-line: #dfdbd1;       /* 暖分隔线 */
+  --color-paper-faint: #ece8de;      /* 暖淡块底 */
+  --color-ink: #0f1729;              /* 深墨(卡片/深色块底) */
+  --color-ink-soft: #1c2740;         /* 次级墨 */
+  --color-brass: #8f5a18;            /* 黄铜强调(加深:棕调更重) */
+  --color-brass-deep: #6d4312;       /* 更深的棕,用于标题/序号块 */
+  --color-brass-on-ink: #e3a94a;     /* 深底上的黄铜 */
+
   /* --- 统一圆角基准(收编 rounded-2xl/xl/[24px] 三套)--- */
   --radius-card: 14px;   /* 卡片统一圆角 */
   --radius-control: 9px; /* 按钮/输入/小控件 */
@@ -79,6 +89,25 @@
   color: #0f172a;
   background: #f4f7fb; /* 暖灰绿 → 冷调浅灰蓝 */
   font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+/* 暖纸 + 颗粒磨砂底：给门户/阅读型页面用。
+   颗粒是内联 SVG feTurbulence，无需图片资源；叠在暖纸色上做出纸张手感。 */
+.paper-grain {
+  background-color: var(--color-paper);
+  position: relative;
+}
+/* 颗粒层盖在内容之上(z-index 高于内容、pointer-events:none 不挡交互)，
+   否则内容区的白底卡片会把颗粒完全遮住，视觉上等于没有。 */
+.paper-grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  opacity: 0.85;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
 }
 
 * {

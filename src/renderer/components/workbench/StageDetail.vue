@@ -42,7 +42,11 @@
           <div class="bg-slate-50 rounded-xl p-3">
             <div class="text-[11px] text-slate-400 mb-1"><i class="fa-solid fa-user-gear mr-1"></i>负责人 / 节奏</div>
             <div class="text-[12px] text-slate-700">{{ stage.owner }}</div>
-            <div class="text-[11px] text-slate-400 mt-0.5">{{ stage.duration }}</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">{{ stage.rhythm || stage.duration }}</div>
+          </div>
+          <div v-if="stage.successCriteria" class="bg-emerald-50/60 rounded-xl p-3 border border-emerald-100/70">
+            <div class="text-[11px] text-emerald-600/80 mb-1"><i class="fa-solid fa-circle-check mr-1"></i>过关标准</div>
+            <div class="text-[12px] text-slate-600 leading-relaxed">{{ stage.successCriteria }}</div>
           </div>
         </div>
 

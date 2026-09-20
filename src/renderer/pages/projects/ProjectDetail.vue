@@ -64,23 +64,27 @@
             </button>
           </div>
           <div class="flex-1 overflow-y-auto py-2">
-            <div
+            <button
               v-for="d in activeDeliverables"
               :key="d.key"
               @click="selectDeliverable(d.key)"
-              role="button"
-              class="w-full text-left px-2.5 py-2 mx-2 mb-0.5 rounded-lg transition-all group relative"
+              type="button"
+              :aria-pressed="deliverableSelected === d.key"
+              class="w-full text-left px-2.5 py-2 mx-2 mb-0.5 rounded-lg transition-all group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
               :style="'width: calc(100% - 16px)'"
               :class="deliverableSelected === d.key
                 ? 'bg-blue-50 border border-blue-200/80'
                 : 'hover:bg-white/80 border border-transparent'"
             >
-              <!-- 删除该交付物的对话（hover 才出现） -->
+              <!-- 清空该交付物的对话：hover 或键盘 focus 都要显形，
+                   否则键盘用户完全触达不到这个唯一入口 -->
               <button
                 v-if="(deliverableMsgs[dkey(currentStage, d.key)] || []).length > 0"
                 @click.stop="clearDeliverableChat(d.key)"
-                class="absolute top-1.5 right-1.5 w-5 h-5 rounded-md flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 hover:text-rose-500 hover:bg-rose-50 transition-all"
+                type="button"
+                class="absolute top-1.5 right-1.5 w-5 h-5 rounded-md flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-500 hover:bg-rose-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
                 title="清空该交付物的对话记录"
+                aria-label="清空该交付物的对话记录"
               >
                 <i class="fa-solid fa-trash-can text-[9px]"></i>
               </button>
@@ -110,7 +114,7 @@
                   </div>
                 </div>
               </div>
-            </div>
+            </button>
           </div>
           <!-- 生成按钮 -->
           <div class="shrink-0 px-3 py-3 border-t border-slate-100">
