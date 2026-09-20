@@ -129,7 +129,7 @@
             </div>
 
             <!-- Message content: Doubao-style, no bubble, plain text on background -->
-            <div v-if="msg.content && !msg.systemNotice" class="w-full leading-[1.75] text-[15px] text-slate-800 prose prose-slate max-w-none" v-html="renderAssistantContent(msg.content)" @click="handleContentImgClick">
+            <div v-if="msg.content && !msg.systemNotice" class="w-full leading-[1.75] text-[13.5px] text-slate-800 prose prose-slate max-w-none" v-html="renderAssistantContent(msg.content)" @click="handleContentImgClick">
             </div>
 
             <!-- Action bar (always visible) -->
@@ -857,7 +857,7 @@ defineExpose({ scrollToBottom, scrollToMessage });
 <style scoped>
 /* Ensure markdown content renders correctly inside chat bubbles */
 :deep(.prose) {
-  font-size: 15px;
+  font-size: 13.5px;
   line-height: 1.75;
 }
 :deep(.prose p) {

@@ -424,7 +424,7 @@
                 </div>
               </div>
               <!-- 预览态 -->
-              <div v-else class="px-7 py-6 markdown-body" v-html="renderMarkdown(livePreviewPreviewMd)"></div>
+              <div v-else class="px-7 py-6 markdown-body" v-html="renderMarkdown(livePreviewPreviewMd, { noFileCards: true })"></div>
             </div>
           </div>
         </div>

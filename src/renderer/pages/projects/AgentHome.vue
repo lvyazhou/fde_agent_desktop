@@ -510,20 +510,15 @@ const handleSend = async (text) => {
   window.api.hermes.saveMessage(currentSlug.value, { role: 'user', content: text, tab: 'requirement', timestamp: new Date().toISOString() });
 
   try {
+    // prompt 返回 = 引擎这一轮真的结束了。之前用 2 秒定时器提前收尾，
+    // 会在引擎还在跑时就放开输入，用户再发一条就触发「已并入正在进行的回答」。
     await window.api.hermes.prompt(currentSlug.value, text);
-    // 延迟兜底：正常情况由 agent_message_end 事件结束，RPC 返回只作为安全回退
-    setTimeout(() => {
-      if (isStreaming.value) {
-        finalizeLastAssistantMessage();
-        isStreaming.value = false;
-        isToolRunning.value = false;
-      }
-    }, 2000);
   } catch (e) {
     console.error('Prompt failed:', e);
-    isStreaming.value = false;
-    stopElapsed();
   }
+  finalizeLastAssistantMessage();
+  isStreaming.value = false;
+  isToolRunning.value = false;
 };
 
 const handleQuickSend = (text) => {
@@ -592,19 +587,12 @@ const handleSendWithAttachments = async (text, attachments) => {
         }))
       : attachments;
     await window.api.hermes.prompt(currentSlug.value, text, plainAttachments);
-    // 延迟兜底：正常情况由 agent_message_end 事件结束
-    setTimeout(() => {
-      if (isStreaming.value) {
-        finalizeLastAssistantMessage();
-        isStreaming.value = false;
-        isToolRunning.value = false;
-      }
-    }, 2000);
   } catch (e) {
     console.error('Prompt with attachments failed:', e);
-    isStreaming.value = false;
-    stopElapsed();
   }
+  finalizeLastAssistantMessage();
+  isStreaming.value = false;
+  isToolRunning.value = false;
 };
 
 const handleCancel = async () => {
