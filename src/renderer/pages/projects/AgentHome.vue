@@ -185,8 +185,8 @@ const loadProjects = async () => {
 };
 
 // --- Select / load a project ---
-const selectProject = async (slug) => {
-  if (slug === currentSlug.value) return;
+const selectProject = async (slug, opts = {}) => {
+  if (slug === currentSlug.value && !opts.force) return;
   currentSlug.value = slug;
   messages.value = [];
   deliverableThreads.value = [];
@@ -1010,11 +1010,27 @@ onMounted(async () => {
   if (projects.value.length > 0) {
     await selectProject(projects.value[0].slug);
   }
+
+  window.addEventListener('focus', refreshCurrentOnFocus);
 });
+
+// 路由重新进到本页时重读一次盘：工作台刚生成的交付物对话才能出现在时间线上
+watch(() => route.path, (p) => {
+  if (p === '/chat') refreshCurrentOnFocus();
+});
+
+// 窗口重新获得焦点时重读一次：工作台在别的窗口/页面生成的交付物对话能及时出现。
+// 生成中不刷新，否则会覆盖掉正在流式写入的消息。
+function refreshCurrentOnFocus() {
+  if (!currentSlug.value || isStreaming.value) return;
+  loadProjects();
+  selectProject(currentSlug.value, { force: true });
+}
 
 onUnmounted(() => {
   if (unsubscribe) unsubscribe();
   if (streamEndTimer) clearTimeout(streamEndTimer);
   stopElapsed();
+  window.removeEventListener('focus', refreshCurrentOnFocus);
 });
 </script>
