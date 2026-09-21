@@ -611,7 +611,7 @@
               ></iframe>
             </div>
             <!-- 非 HTML 文件：源码预览 -->
-            <div v-else class="h-full flex flex-col bg-[#1e293b] min-h-0">
+            <div v-else class="h-full flex flex-col bg-[#0f1b2d] min-h-0">
               <div class="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-white/10">
                 <i class="text-[11px]" :class="[fileIcon(selectedFile).icon, fileIcon(selectedFile).color]"></i>
                 <span class="text-[12px] text-slate-300 font-mono">{{ selectedFile }}</span>
@@ -644,8 +644,7 @@
                   :placeholder="isStreaming ? 'AI 正在修改原型…' : '说出你想改什么，AI 就地更新原型，例如：把首页导航改成左侧栏'"
                   :disabled="isStreaming"
                   class="flex-1 resize-none text-[13px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-6 px-4 py-3 max-h-[120px] scrollbar-hide disabled:opacity-60"
-                  @keydown.enter.exact.prevent="sendIterate"
-                  @keydown.shift.enter.exact="null"
+                  @keydown.enter.exact="onIterateEnter"
                 ></textarea>
                 <button @click="iterateComposer.pickImage" :disabled="isStreaming" class="mb-1.5 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed" title="上传图片">
                   <i class="fa-solid fa-image text-xs"></i>
@@ -2558,6 +2557,13 @@ const exportDeliverableMd = async (key) => {
     await window.api.hermes.writeFile(props.slug, d.file, content);
     await window.api.hermes.openInBrowser(props.slug, d.file);
   } catch (e) { console.error('Export deliverable md failed:', e); }
+};
+
+// 中文输入法选词时的回车 isComposing 为 true，不能当发送——否则选个词就把半句发出去。
+const onIterateEnter = (e) => {
+  if (e.isComposing || e.keyCode === 229) return;
+  e.preventDefault();
+  sendIterate();
 };
 
 const cancelStream = async () => {

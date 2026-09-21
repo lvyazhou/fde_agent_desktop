@@ -196,7 +196,7 @@
             placeholder="描述要做的改动，回车发送（Shift+Enter 换行）"
             class="code-input"
             :disabled="isStreaming"
-            @keydown.enter.exact.prevent="send"
+            @keydown.enter.exact="onEnterKey"
           ></textarea>
           <button
             v-if="!isStreaming"
@@ -715,6 +715,14 @@ const send = async () => {
   finishStream(convId);
 };
 
+// 中文输入法选词时按回车会触发 keydown.enter，但此时 isComposing 为 true，
+// 不能当成发送——否则选个词就把半句话发出去了。
+const onEnterKey = (e) => {
+  if (e.isComposing || e.keyCode === 229) return;
+  e.preventDefault();
+  send();
+};
+
 const cancel = async () => {
   const convId = activeConvId.value;
   if (!convId) return;
@@ -745,7 +753,7 @@ onUnmounted(() => {
 .code-sidebar {
   width: 260px; flex-shrink: 0;
   display: flex; flex-direction: column;
-  background: #fff;
+  background: color-mix(in srgb, hsl(var(--background)) 92%, hsl(var(--primary)) 4%);
   border-right: 1px solid #eef2f7;
 }
 .code-sidebar--collapsed { display: none; }
@@ -755,7 +763,7 @@ onUnmounted(() => {
 }
 .code-tree { flex: 1; overflow: auto; padding: 6px 4px; }
 
-.code-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #f8fafc; }
+.code-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: transparent; }
 .code-main-head {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; background: #fff; border-bottom: 1px solid #eef2f7;

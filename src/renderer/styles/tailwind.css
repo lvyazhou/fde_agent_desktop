@@ -69,7 +69,7 @@
   --color-sidebar-active: #2563eb;   /* 图标点缀强调(品牌蓝,克制使用) */
 
   /* --- 内容区背景(全站统一,收编 #f4f7fb/#f5f7fa/#f8fafc 三套)--- */
-  --color-content-bg: #ffffff;
+  --color-content-bg: transparent;
 
   /* --- 暖纸色板(取自培训教程 fde-training-guide.html,用于门户/教程等阅读型页面)--- */
   --color-paper: #f7f5f0;            /* 暖纸底 */

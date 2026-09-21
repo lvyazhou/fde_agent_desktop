@@ -559,7 +559,7 @@ function openProjectDoc(pj, item) {
 .kb-bg {
   background: var(--color-content-bg);
 }
-.kb-tree { width: 240px; background: #ffffff !important; border-color: var(--color-sidebar-border) !important; }
+.kb-tree { width: 240px; background: color-mix(in srgb, hsl(var(--background)) 92%, hsl(var(--primary)) 4%) !important; border-color: var(--color-sidebar-border) !important; }
 
 /* 自适应卡片网格:列数随宽度自动增减(最小 260px 一列),窄屏 2 列宽屏可到 4-5 列 */
 .kb-grid {

@@ -264,7 +264,7 @@ onMounted(loadContent);
 .handbook-md :deep(strong) { font-weight: 700; color: #1e293b; }
 .handbook-md :deep(blockquote) { border-left: 3px solid #2563eb; padding: 0.2em 0 0.2em 0.9em; margin: 0.6em 0; color: #475569; background: #f8fafc; border-radius: 0 6px 6px 0; }
 .handbook-md :deep(code) { font-size: 12px; background: #f1f5f9; padding: 0.15em 0.4em; border-radius: 4px; color: #475569; }
-.handbook-md :deep(pre) { background: #1e293b; color: #e2e8f0; padding: 0.9em 1.1em; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 0.6em 0; }
+.handbook-md :deep(pre) { background: #0f1b2d; color: #e2e8f0; padding: 0.9em 1.1em; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 0.6em 0; }
 .handbook-md :deep(pre code) { background: transparent; padding: 0; color: inherit; }
 .handbook-md :deep(hr) { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
 .handbook-md :deep(a) { color: #2563eb; text-decoration: none; }
@@ -274,7 +274,7 @@ onMounted(loadContent);
 .doc-source {
   margin: 0;
   padding: 1em 1.1em;
-  background: #1e293b;
+  background: #0f1b2d;
   color: #e2e8f0;
   border-radius: 8px;
   overflow-x: auto;

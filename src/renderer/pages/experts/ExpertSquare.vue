@@ -1324,7 +1324,7 @@ async function openAssetDir(type) {
 .es-bg {
   background: var(--color-content-bg);
 }
-.es-tree { width: 240px; background: #ffffff !important; border-color: var(--color-sidebar-border) !important; }
+.es-tree { width: 240px; background: color-mix(in srgb, hsl(var(--background)) 92%, hsl(var(--primary)) 4%) !important; border-color: var(--color-sidebar-border) !important; }
 
 .es-grid {
   display: grid;

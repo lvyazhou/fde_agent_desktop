@@ -847,7 +847,7 @@ async function deleteSkill(sk) {
 .sk-bg {
   background: var(--color-content-bg);
 }
-.sk-tree { width: 240px; background: #ffffff !important; border-color: var(--color-sidebar-border) !important; }
+.sk-tree { width: 240px; background: color-mix(in srgb, hsl(var(--background)) 92%, hsl(var(--primary)) 4%) !important; border-color: var(--color-sidebar-border) !important; }
 
 /* 自适应卡片网格:列数随宽度自动增减(最小 280px),窄屏 2 列宽屏可到 4-5 列 */
 .sk-grid {
