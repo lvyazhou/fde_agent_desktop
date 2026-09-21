@@ -34,7 +34,7 @@
             <p class="text-[13px] text-slate-500 mb-6">导入授权文件激活。若尚未授权,请把下方机器码提供给供应方获取授权文件。</p>
 
             <!-- 机器码 -->
-            <div class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 mb-4">
+            <div class="rounded-2xl border border-slate-200 bg-transparent/60 p-4 mb-4">
               <div class="text-[11px] text-slate-400 mb-1.5">本机机器码</div>
               <div class="flex items-center gap-2">
                 <code class="flex-1 min-w-0 text-[13px] font-mono text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 truncate">{{ machineSn || '计算中...' }}</code>
@@ -164,7 +164,7 @@
               <div class="border border-slate-200 rounded-xl p-3 max-h-44 overflow-y-auto space-y-1">
                 <label
                   v-for="m in COMMON_MODELS" :key="m.value"
-                  class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
+                  class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-transparent cursor-pointer"
                 >
                   <input
                     type="checkbox"

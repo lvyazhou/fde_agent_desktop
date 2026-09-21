@@ -449,8 +449,10 @@ const closeWindow = () => {
   align-items: center;
   justify-content: space-between;
   padding: 0 6px 0 10px;
-  background: var(--color-sidebar);
-  border-bottom: 1px solid var(--color-sidebar-border);
+  /* 顶栏毛玻璃：chrome-bg + blur(14px) saturate(1.4)（skill 只许顶栏/侧栏加 blur） */
+  background: var(--chrome-bg);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid hsl(var(--primary) / 12%);
   position: relative;
   z-index: 30;
 }
@@ -476,8 +478,10 @@ const closeWindow = () => {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--color-sidebar);
-  border-right: 1px solid var(--color-sidebar-border);
+  /* 侧栏毛玻璃：玻璃感最明显的区域 */
+  background: var(--chrome-bg);
+  backdrop-filter: blur(14px) saturate(1.35);
+  border-right: 1px solid hsl(var(--primary) / 12%);
   transition: width 0.18s ease;
   overflow: hidden;
 }
@@ -556,6 +560,8 @@ const closeWindow = () => {
 /* 纯白内容区 */
 .app-content {
   flex: 1;
+  /* 透明：让 body 的蓝色光晕渐变透上来，各页面不再自带死板底色 */
+  background: transparent;
   min-width: 0;
   min-height: 0;
   display: flex;

@@ -48,7 +48,7 @@
         <!-- 左栏：交付物导航（可隐藏） -->
         <div
           v-if="!leftPanelCollapsed"
-          class="shrink-0 flex flex-col bg-slate-50/80 border-r border-slate-100 overflow-hidden"
+          class="shrink-0 flex flex-col bg-transparent/80 border-r border-slate-100 overflow-hidden"
           :style="'flex: 1 1 0; min-width: 170px; max-width: 240px'"
         >
           <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
@@ -247,7 +247,7 @@
                   </div>
                   <!-- AI card wrapper -->
                   <div v-if="msg.content || (isStreaming && idx === activeDlvMsgs.length - 1)"
-                    class="w-full bg-slate-50/70 rounded-2xl px-5 py-4 border border-slate-100/80">
+                    class="w-full bg-transparent/70 rounded-2xl px-5 py-4 border border-slate-100/80">
                     <div class="w-full max-w-full leading-[1.8] text-[14px] text-slate-800 markdown-body"
                       v-html="renderAssistantContent(msg, idx, { noFileCards: true })" @click="handleContentImgClick"></div>
                   </div>
@@ -320,7 +320,7 @@
 
         <!-- 右栏：文档预览 -->
         <div
-          class="shrink-0 flex flex-col bg-slate-50/60 border-l border-slate-100 overflow-hidden"
+          class="shrink-0 flex flex-col bg-transparent/60 border-l border-slate-100 overflow-hidden"
           :style="rightPanelCollapsed ? 'flex: 0 0 40px' : (rightPanelUserWidth ? 'flex: 0 0 ' + rightPanelUserWidth + 'px' : 'flex: 4.5 1 0; min-width: 320px')"
         >
           <!-- 顶栏 -->
@@ -362,7 +362,7 @@
                 <p class="text-[12px] text-slate-400 leading-relaxed pl-5">{{ selectedDeliverable ? selectedDeliverable.hint : '从左侧选一件交付物' }}</p>
               </div>
               <div class="flex-1 bg-white rounded-xl border border-slate-200/70 shadow-sm overflow-hidden">
-                <div class="px-4 py-2.5 border-b border-slate-100 bg-slate-50/60 flex items-center gap-2">
+                <div class="px-4 py-2.5 border-b border-slate-100 bg-transparent/60 flex items-center gap-2">
                   <div class="w-3 h-3 rounded-sm bg-slate-200"></div>
                   <div class="h-2 w-28 bg-slate-200 rounded-full"></div>
                 </div>
@@ -388,7 +388,7 @@
             <!-- Word 成品预览 -->
             <div v-else-if="livePreviewMode === 'docx' && livePreviewDocxHtml"
               class="bg-white mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
-              <div class="px-5 py-2.5 border-b border-slate-100 bg-slate-50/50 rounded-t-xl flex items-center gap-2">
+              <div class="px-5 py-2.5 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
                 <i class="fa-solid fa-file-word text-blue-500 text-[12px]"></i>
                 <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }} · Word</span>
               </div>
@@ -398,7 +398,7 @@
             <!-- Markdown 预览 / 在线编辑 -->
             <div v-else
               class="bg-white mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
-              <div class="px-5 py-2.5 border-b border-slate-100 bg-slate-50/50 rounded-t-xl flex items-center gap-2">
+              <div class="px-5 py-2.5 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
                 <i class="fa-solid fa-file-lines text-slate-400 text-[12px]"></i>
                 <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }}</span>
                 <span v-if="livePreviewStreaming" class="ml-auto text-[11.5px] text-emerald-600">正在写入…</span>
@@ -437,7 +437,7 @@
       <!-- Prototype Tab — full width -->
       <div v-if="activeTab === 'prototype'" class="flex h-full w-full">
         <!-- File tree -->
-        <div class="w-[212px] shrink-0 bg-slate-50/60 border-r border-slate-100 flex flex-col overflow-hidden">
+        <div class="w-[212px] shrink-0 bg-transparent/60 border-r border-slate-100 flex flex-col overflow-hidden">
           <div class="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
             <span class="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">文件列表</span>
             <button @click="refreshPrototypeFiles" class="text-slate-400 hover:text-blue-600 transition-colors" title="刷新">

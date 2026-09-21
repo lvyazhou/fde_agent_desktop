@@ -9,7 +9,7 @@
       <div class="flex items-center gap-2">
         <button
           @click="createWorkspace"
-          class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
+          class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-transparent text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
         >
           <i class="fa-solid fa-folder-plus text-xs"></i>
           <span>新建项目</span>
@@ -51,7 +51,7 @@
         </button>
         <button
           @click="createWorkspace"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-transparent text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
         >
           <i class="fa-solid fa-folder-plus text-xs"></i>
           <span>新建项目</span>

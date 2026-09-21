@@ -70,7 +70,7 @@
       </div>
 
       <!-- 内容区 -->
-      <div class="flex-1 overflow-y-auto p-6 bg-[#f5f7fa]">
+      <div class="flex-1 overflow-y-auto p-6 bg-transparent">
         <!-- 生成中 -->
         <div v-if="busy" class="flex flex-col items-center justify-center py-24 text-slate-400">
           <div class="relative w-12 h-12 mb-5">

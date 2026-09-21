@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full min-h-0 bg-[#f5f7fa]">
+  <div class="flex flex-col h-full min-h-0 bg-transparent">
     <!-- 顶部:返回 + 阶段标题 -->
     <div class="flex items-center gap-3 px-6 py-4 bg-white border-b border-slate-200/80 shrink-0">
       <button

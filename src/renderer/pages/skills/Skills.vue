@@ -294,7 +294,7 @@
             </aside>
 
             <!-- 右侧:卡片网格 + 分页 -->
-            <div class="flex-1 min-w-0 overflow-y-auto bg-slate-50/40">
+            <div class="flex-1 min-w-0 overflow-y-auto bg-transparent/40">
               <div class="px-5 py-4">
                 <!-- 结果头 -->
                 <div class="flex items-center gap-2 mb-3">

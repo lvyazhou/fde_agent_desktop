@@ -100,7 +100,7 @@
             <span
               v-for="d in deletedBuiltins"
               :key="d.id"
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11.5px] bg-slate-50 border border-slate-200 text-slate-500"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11.5px] bg-transparent border border-slate-200 text-slate-500"
             >
               <i :class="'fa-solid fa-' + (d.icon || 'rocket') + ' text-[10px]'" :style="{ color: d.color }"></i>
               {{ d.name }}
@@ -358,13 +358,13 @@
                 <i class="fa-solid fa-database mr-1.5 text-blue-500"></i>专家资产
               </h4>
               <div class="grid grid-cols-2 gap-2.5 mb-2.5">
-                <div class="rounded-lg bg-slate-50 border border-slate-200/70 px-3 py-2.5">
+                <div class="rounded-lg bg-transparent border border-slate-200/70 px-3 py-2.5">
                   <div class="text-[11px] text-slate-400 mb-1">
                     <i class="fa-solid fa-brain text-[10px] text-blue-500 mr-1.5"></i>长期记忆
                   </div>
                   <div class="text-[15px] font-bold text-slate-700 leading-none">{{ assetMemoryChars }} <span class="text-[11px] font-normal text-slate-400">字</span></div>
                 </div>
-                <div class="rounded-lg bg-slate-50 border border-slate-200/70 px-3 py-2.5">
+                <div class="rounded-lg bg-transparent border border-slate-200/70 px-3 py-2.5">
                   <div class="text-[11px] text-slate-400 mb-1">
                     <i class="fa-solid fa-folder-open text-[10px] text-blue-500 mr-1.5"></i>知识库
                   </div>
@@ -671,7 +671,7 @@
               <div
                 v-for="f in assetKnowledgeFiles"
                 :key="f.name"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-slate-50 border border-slate-200/70 hover:border-blue-200 transition group"
+                class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-transparent border border-slate-200/70 hover:border-blue-200 transition group"
               >
                 <span class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
                   <i class="fa-solid fa-file-lines text-[13px] text-blue-500"></i>

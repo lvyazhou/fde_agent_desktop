@@ -117,7 +117,7 @@
             </template>
             <span
               v-else
-              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 text-slate-400 text-[11px] font-medium"
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-transparent text-slate-400 text-[11px] font-medium"
             >
               <i class="fa-solid fa-clock text-[10px]"></i>
               暂无交付物

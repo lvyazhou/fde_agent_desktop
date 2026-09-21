@@ -102,7 +102,7 @@
               <div class="border border-slate-200 rounded-xl p-3 max-h-52 overflow-y-auto space-y-1">
                 <label
                   v-for="m in COMMON_MODELS" :key="m.value"
-                  class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
+                  class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-transparent cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -166,7 +166,7 @@
         </div>
         <p class="text-xs text-slate-500 mb-3">
           MCP (Model Context Protocol) 服务器扩展 AI 的能力——连接外部数据源、API 和工具。
-          在 <code class="bg-slate-50 px-1.5 py-0.5 rounded text-[11px] font-mono">~/.product-lobster/config.yaml</code> 的 <code class="bg-slate-50 px-1.5 py-0.5 rounded text-[11px] font-mono">mcp_servers:</code> 部分配置。
+          在 <code class="bg-transparent px-1.5 py-0.5 rounded text-[11px] font-mono">~/.product-lobster/config.yaml</code> 的 <code class="bg-transparent px-1.5 py-0.5 rounded text-[11px] font-mono">mcp_servers:</code> 部分配置。
         </p>
         <button
           @click="openConfigFile"
@@ -188,7 +188,7 @@
         <div class="space-y-3">
           <div class="flex items-center justify-between py-2">
             <span class="text-sm text-slate-600">数据目录</span>
-            <span class="text-sm text-slate-800 font-mono bg-slate-50 px-3 py-1 rounded-lg">{{ hermesHome }}</span>
+            <span class="text-sm text-slate-800 font-mono bg-transparent px-3 py-1 rounded-lg">{{ hermesHome }}</span>
           </div>
           <div class="flex items-center justify-between py-2 border-t border-slate-50">
             <span class="text-sm text-slate-600">项目数量</span>

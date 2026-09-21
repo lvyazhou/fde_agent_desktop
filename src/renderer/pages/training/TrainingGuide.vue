@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col h-full min-h-0 bg-[#f5f7fa]">
+  <div class="flex flex-col h-full min-h-0 bg-transparent">
     <!-- 顶部:标题 + 外部打开 -->
     <div class="flex items-center gap-3 px-6 py-4 bg-white border-b border-slate-200/80 shrink-0">
       <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shrink-0">
