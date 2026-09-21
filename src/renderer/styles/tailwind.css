@@ -89,6 +89,96 @@
   color: #0f172a;
   background: #f4f7fb; /* 暖灰绿 → 冷调浅灰蓝 */
   font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* ============================================================
+     prototype-generator-skill(token 版) 语义 token
+     裸 HSL 三元组，消费方式：hsl(var(--primary) / 10%)
+     状态色只做「文字 / 8px 圆点 / 细边框」的点缀，
+     卡片底、图标容器、进度条一律用 primary 家族。
+     ============================================================ */
+  --primary: 214 95% 44%;
+  --background: 0 0% 100%;
+  --foreground: 218 45% 14%;
+  --muted-foreground: 215 18% 45%;
+  --border: 213 32% 88%;
+  --success: 160 84% 33%;
+  --warning: 32 88% 40%;
+  --danger: 352 68% 48%;
+  --info: 214 15% 50%;
+  --shadow-card-token: 0 4px 14px hsl(var(--primary) / 7%);
+}
+
+/* ---- skill 组件基元：.card / .btn-pri / .btn-ghost / .field / .tag / .num ----
+   放 @layer components，Tailwind 原子类仍可覆盖。 */
+@layer components {
+  .card {
+    background: hsl(var(--background));
+    border: 1px solid hsl(var(--border));
+    border-radius: 12px;
+    box-shadow: var(--shadow-card-token);
+  }
+  .btn-pri {
+    height: 32px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(135deg,
+      color-mix(in srgb, hsl(var(--primary)) 88%, black),
+      hsl(var(--primary)));
+    box-shadow: 0 5px 12px hsl(var(--primary) / 18%);
+  }
+  .btn-ghost {
+    height: 32px;
+    padding: 0 14px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 8px;
+    font-size: 14px;
+    cursor: pointer;
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--background));
+  }
+  .field {
+    height: 32px;
+    padding: 0 12px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    color: hsl(var(--foreground));
+    background: hsl(var(--background));
+  }
+  .field:focus {
+    border-color: hsl(var(--primary));
+  }
+  .tag {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  /* 数字列/数值统一等宽数字，避免跳动 */
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  /* 细分隔线：替代粗 border-b */
+  .inset-divider {
+    box-shadow: inset 0 -1px 0 hsl(var(--border) / 70%);
+  }
+}
+
+/* skill 硬性要求：尊重系统「减少动效」偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 /* 暖纸 + 颗粒磨砂底：给门户/阅读型页面用。
