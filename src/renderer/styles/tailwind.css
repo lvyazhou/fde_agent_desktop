@@ -124,6 +124,81 @@
   --chrome-bg: color-mix(in srgb, hsl(var(--background)) 80%, hsl(var(--primary)) 6%);
 }
 
+/* ============================================================
+   主题二：暖棕磨砂（棕调 + 纸张颗粒）
+   做法：只覆盖 CSS 变量。Tailwind v4 把 bg-blue-600 编译成
+   background-color: var(--color-blue-600)，所以这里重映射蓝色阶
+   为棕色阶，全站 blue-* 类自动变棕，无需改任何组件。
+   ============================================================ */
+[data-theme='brown'] {
+  /* 蓝色阶 → 棕色阶（锚点 blue-600 = brass #8f5a18） */
+  --color-blue-50: #f6f1e8;
+  --color-blue-100: #ece2d0;
+  --color-blue-200: #dcc9a8;
+  --color-blue-300: #c8a878;
+  --color-blue-400: #ac8347;
+  --color-blue-500: #9a6c2a;
+  --color-blue-600: #8f5a18;
+  --color-blue-700: #6d4312;
+  --color-blue-800: #57350e;
+  --color-blue-900: #462b0c;
+  --color-blue-950: #2b1a07;
+
+  --color-indigo-50: #f6f1e8;
+  --color-indigo-100: #ece2d0;
+  --color-indigo-200: #dcc9a8;
+  --color-indigo-300: #c8a878;
+  --color-indigo-400: #ac8347;
+  --color-indigo-500: #9a6c2a;
+  --color-indigo-600: #6d4312;
+  --color-indigo-700: #57350e;
+  --color-indigo-800: #462b0c;
+  --color-indigo-900: #2b1a07;
+  --color-indigo-950: #1d1105;
+
+  --color-primary: #8f5a18;
+  --color-primary-dark: #6d4312;
+  --color-primary-soft: #f6f1e8;
+  --color-info: #8f5a18;
+  --color-info-soft: #f6f1e8;
+
+  /* 中性层转暖调 */
+  --color-panel: #ece8de;
+  --color-border: #dfdbd1;
+  --color-sidebar: #f2ede3;
+  --color-sidebar-elevated: #e6dfd1;
+  --color-sidebar-border: #ddd6c8;
+  --color-sidebar-active: #8f5a18;
+
+  /* skill 语义 token：primary 转棕（HSL 三元组） */
+  --primary: 30 71% 33%;
+  --border: 40 20% 82%;
+  --muted-foreground: 35 12% 42%;
+
+  /* 卡片/导航底改暖纸调 */
+  --card-bg: linear-gradient(110deg,
+    color-mix(in srgb, hsl(var(--primary)) 7%, #fdfbf7) 0%,
+    #fdfbf7 58%,
+    color-mix(in srgb, hsl(var(--primary)) 3%, #fdfbf7) 100%);
+  --card-border: hsl(var(--primary) / 16%);
+  --chrome-bg: color-mix(in srgb, #f7f5f0 86%, hsl(var(--primary)) 7%);
+}
+
+/* 棕色主题：body 换暖纸底 + 颗粒磨砂（蓝色主题是光晕渐变，两者互斥） */
+[data-theme='brown'] body {
+  background: var(--color-paper);
+}
+[data-theme='brown'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+}
+
 /* ---- skill 组件基元：.card / .btn-pri / .btn-ghost / .field / .tag / .num ----
    放 @layer components，Tailwind 原子类仍可覆盖。 */
 @layer components {

@@ -36,7 +36,8 @@
           <i class="fa-solid fa-robot text-blue-600 text-xs"></i>
           <span class="text-[13px] font-medium text-slate-600">AI 代码助手</span>
         </div>
-        <button class="icon-btn ml-auto" :title="showPreview ? '隐藏预览' : '显示预览'" @click="showPreview = !showPreview">
+        <!-- 没选文件时预览区本来就不渲染，切换按钮跟着隐藏，避免点了没反应 -->
+        <button v-if="selectedFile" class="icon-btn ml-auto" :title="showPreview ? '隐藏预览' : '显示预览'" @click="showPreview = !showPreview">
           <i class="fa-solid" :class="showPreview ? 'fa-angles-right' : 'fa-angles-left'"></i>
         </button>
       </div>
@@ -213,24 +214,23 @@
       </div>
     </section>
 
-    <!-- Right: file preview -->
-    <aside v-if="showPreview" class="code-preview">
+    <!-- Right: file preview（没选文件就整块不渲染，不占版面）-->
+    <aside v-if="showPreview && selectedFile" class="code-preview">
       <div class="code-preview-head">
         <span class="text-[12.5px] font-mono text-slate-500 truncate" :title="selectedFile">
-          {{ selectedFile || '未选择文件' }}
+          {{ selectedFile }}
         </span>
-        <button v-if="selectedFile" class="icon-btn" title="重新读取" @click="reloadFile">
+        <button class="icon-btn" title="重新读取" @click="reloadFile">
           <i class="fa-solid fa-arrows-rotate text-[11px]"></i>
+        </button>
+        <button class="icon-btn" title="关闭预览" @click="closePreview">
+          <i class="fa-solid fa-xmark text-[11px]"></i>
         </button>
       </div>
       <div class="code-preview-body scrollbar-thin">
         <div v-if="fileLoading" class="p-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> 读取中…</div>
         <div v-else-if="fileError" class="p-4 text-xs text-amber-500">{{ fileError }}</div>
-        <pre v-else-if="fileContent !== null" class="code-source">{{ fileContent }}</pre>
-        <div v-else class="p-6 text-center text-xs text-slate-400">
-          <i class="fa-regular fa-file-lines text-2xl text-slate-300 mb-2 block"></i>
-          在左侧文件树里点一个文件查看内容
-        </div>
+        <pre v-else class="code-source">{{ fileContent }}</pre>
       </div>
     </aside>
 
@@ -496,6 +496,13 @@ const loadFile = async (rel) => {
 };
 
 const reloadFile = () => { if (selectedFile.value) loadFile(selectedFile.value); };
+
+// 关闭预览：清掉选中文件，预览区整块收起（不是只藏起来留个空壳）
+const closePreview = () => {
+  selectedFile.value = '';
+  fileContent.value = null;
+  fileError.value = '';
+};
 
 // ---- chat ----------------------------------------------------------------
 

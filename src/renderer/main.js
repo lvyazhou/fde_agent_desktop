@@ -4,6 +4,7 @@ import router from './router';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './styles/tailwind.css';
 import { installAndroidBridge } from './platform/bridge.js';
+import { initTheme } from './composables/useTheme.js';
 
 // 平台桥接:
 // - 桌面(Electron):preload 已把 window.api 注入好,跳过。
@@ -12,6 +13,9 @@ import { installAndroidBridge } from './platform/bridge.js';
 if (!window.api) {
   installAndroidBridge();
 }
+
+// 挂载前套用已保存的主题，避免首帧用默认色再跳变
+initTheme();
 
 createApp(App).use(router).mount('#app');
 

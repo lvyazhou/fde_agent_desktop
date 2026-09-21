@@ -177,6 +177,36 @@
         </button>
       </div>
 
+      <!-- 外观主题 -->
+      <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
+            <i class="fa-solid fa-palette text-blue-700"></i>
+          </div>
+          <h2 class="font-semibold text-slate-800">外观主题</h2>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button
+            v-for="t in THEME_OPTIONS"
+            :key="t.key"
+            type="button"
+            @click="setTheme(t.key)"
+            class="text-left rounded-xl border p-3.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+            :class="theme === t.key ? 'border-blue-400 bg-blue-50/60' : 'border-slate-200 hover:border-slate-300'"
+          >
+            <div class="flex items-center gap-2.5 mb-2">
+              <!-- 色卡预览：直接用写死的色值，避免受当前主题影响 -->
+              <span class="flex gap-1 shrink-0">
+                <span v-for="c in t.swatch" :key="c" class="w-4 h-4 rounded" :style="{ background: c }"></span>
+              </span>
+              <span class="text-[13px] font-semibold text-slate-800">{{ t.name }}</span>
+              <i v-if="theme === t.key" class="fa-solid fa-circle-check text-blue-600 text-[12px] ml-auto"></i>
+            </div>
+            <p class="text-[11.5px] text-slate-500 leading-relaxed">{{ t.desc }}</p>
+          </button>
+        </div>
+      </div>
+
       <!-- Data Storage -->
       <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
         <div class="flex items-center gap-3 mb-4">
@@ -227,6 +257,24 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { COMMON_MODELS, CUSTOM_MODEL, DEFAULT_MODEL, isCommonModel } from '../../constants/models.js';
+import { useTheme } from '../../composables/useTheme.js';
+
+const { theme, setTheme } = useTheme();
+
+const THEME_OPTIONS = [
+  {
+    key: 'blue',
+    name: '蓝色玻璃',
+    desc: '品牌蓝 + 四角光晕，卡片走浅蓝斜向渐变，偏清爽的产品感。',
+    swatch: ['#2563eb', '#6090f6', '#eff4ff'],
+  },
+  {
+    key: 'brown',
+    name: '暖棕磨砂',
+    desc: '黄铜棕 + 暖纸底，叠一层颗粒噪点，接近纸张手感的阅读氛围。',
+    swatch: ['#8f5a18', '#ac8347', '#f7f5f0'],
+  },
+];
 
 const apiKey = ref('');
 const baseUrl = ref('');
