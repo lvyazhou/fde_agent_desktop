@@ -32,13 +32,13 @@ export const FIVE_STAGE_MGMT = [
   },
   {
     id: 3,
-    name: '产品实施计划说明书',
-    desc: '定位到产品复制模式,由 FDE 项目经理和交付共同完成。',
-    icon: 'fa-solid fa-file-contract',
-    // HIS 厂商标品交付 SOP 举例
+    name: '产品实施计划表',
+    desc: '定位到产品复制模式,以新版《产品实施计划表.xlsx》为准,由 FDE 项目经理和交付共同完成。',
+    icon: 'fa-solid fa-file-excel',
+    // 新版 xlsx 三张表:前期调研清单 / 实施计划总表 / 里程碑节点
     example: {
-      title: '举例:HIS 厂商 · 标品交付 SOP',
-      steps: ['账号开通', '数据治理', '智能体调试', '平台调试', '客户试用'],
+      title: '新版产品实施计划表 · 三张表协同',
+      steps: ['前期调研清单', '实施计划总表', '里程碑节点'],
     },
   },
   {

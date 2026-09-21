@@ -1202,37 +1202,31 @@ const STAGE3_DELIVERABLES = [
   {
     key: 'final-req', name: '需求最终确认表', short: '需求确认表',
     icon: 'fa-solid fa-file-signature', file: 'stage3/final-req.md',
-    tpl: { stage: '03', md: '2.4-产品需求文档PRD(模板)【交付】.md' }, // 无独立 md 模板时以 PRD 模板兜底结构
+    tplHtml: { stage: '03', html: '2-需求最终确认表【交付】.html' },
     hint: '把阶段②收敛后的需求签字定稿——项目概述/痛点/AI赋能方案/需求清单/验收口径。',
   },
   {
     key: 'agent-design', name: '智能体设计表', short: '设计表',
     icon: 'fa-solid fa-diagram-project', file: 'stage3/agent-design.md',
-    tpl: { stage: '03', md: '1-智能体设计表【交付】.md' },
+    tplHtml: { stage: '03', html: '1-智能体设计表【交付】.html' },
     hint: '一个环节一个智能体：身份卡→五层拆解→六组件→提示词→知识库→技能→A/B→验收上线。',
   },
   {
-    key: 'task-plan', name: '项目任务计划表', short: '任务计划',
-    icon: 'fa-solid fa-calendar-check', file: 'stage3/task-plan.md',
-    tpl: { stage: '03', md: '0-阶段三规范说明.md' },
-    hint: '把签字定死的需求拆成可排期的任务：每个环节的任务、责任人、工期、前置依赖、交付物，作为阶段④建工作台的排期依据。',
+    key: 'impl-plan', name: '产品实施计划表', short: '实施计划',
+    icon: 'fa-solid fa-calendar-check', file: 'stage3/impl-plan.md',
+    tplHtml: { stage: '03', html: '3-产品实施计划表【交付】.html' },
+    hint: '把签字定死的需求拆成可排期的实施计划：前期调研（网络/服务器/VPN/业务系统/数据库）、SDR 部署、里程碑节点，每项带责任人/工期/前置依赖/交付物，作为阶段④建工作台的排期依据。',
   },
   {
-    key: 'acceptance', name: '项目验收标准表', short: '验收标准',
-    icon: 'fa-solid fa-clipboard-check', file: 'stage3/acceptance.md',
-    tpl: { stage: '03', md: '2.4-产品需求文档PRD(模板)【交付】.md' },
-    hint: '每条需求对应可量化的验收口径（如问数≤30秒、准确率≥95%）：验收项、判定标准、测试方法、数据来源、责任人。阶段⑤对账依据。',
-  },
-  {
-    key: 'data-metric', name: '业务数据口径模版', short: '数据口径',
+    key: 'data-metric', name: '业务数据口径模板', short: '数据口径',
     icon: 'fa-solid fa-ruler-combined', file: 'stage3/data-metric.md',
-    tpl: { stage: '03', md: '11-业务数据口径模版【交付】.md' },
-    hint: '按 章/节/指标/指标类型/指标口径/逻辑/示例 把每个指标的计数·去重·过滤·优先级口径定死，作为阶段④建模、阶段⑤验收的对账依据。',
+    tplHtml: { stage: '03', html: '4-业务数据口径模板【研发交付】.html' },
+    hint: '按 章/节/指标/指标类型/取数SQL/数据来源表 把每个指标的取数出处与计算口径定死；数据集优先复用 SDR 标准库、新增部分登记数据集清单，作为阶段④建模、阶段⑤验收的对账依据。',
   },
   {
-    key: 'prd', name: '产品需求文档 PRD（定稿）', short: 'PRD',
+    key: 'prd', name: '产品需求文档PRD(范例)', short: 'PRD',
     icon: 'fa-solid fa-file-lines', file: 'stage3/prd.md',
-    tpl: { stage: '03', md: '2.4-产品需求文档PRD(模板)【交付】.md' },
+    tplHtml: { stage: '03', html: '5-PRD【交付】.html' },
     hint: '需求签字后升级为定稿版 PRD——目标/功能/交互三层，功能可追溯到需求。',
   },
 ];

@@ -46,23 +46,23 @@
             </div>
             <div class="flex items-center gap-2.5 text-[11px]">
               <span
-                class="group/badge relative flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-blue-50 border border-blue-500/14 cursor-help transition-colors hover:bg-blue-100/60"
+                class="group/badge relative flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-blue-50 border border-blue-500/14 cursor-help transition-colors hover:bg-blue-100/60 shrink-0"
                 title="节奏卡点：全程只跟甲方碰 2 次面 + 1 次签字确认出原型，逼自己一次性问清、避免反复拉扯"
               >
-                <span class="w-9 h-7 flex items-center justify-center rounded-lg bg-blue-600 text-white font-mono font-bold text-[13px] shrink-0">2+1</span>
-                <span class="flex flex-col leading-tight">
-                  <span class="text-slate-700 font-semibold text-[11px]">2 次对接 + 1 次签字</span>
-                  <span class="text-slate-400 text-[10px]">碰 2 次面即出原型</span>
+                <span class="min-w-[42px] h-7 px-2 flex items-center justify-center rounded-lg bg-blue-600 text-white font-mono font-bold text-[13px] shrink-0 whitespace-nowrap">2+1</span>
+                <span class="flex flex-col leading-tight min-w-0">
+                  <span class="text-slate-700 font-semibold text-[11px] whitespace-nowrap">2 次对接 + 1 次签字</span>
+                  <span class="text-slate-400 text-[10px] whitespace-nowrap">碰 2 次面即出原型</span>
                 </span>
               </span>
               <span
-                class="group/badge relative flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-blue-50 border border-blue-500/14 cursor-help transition-colors hover:bg-blue-100/60"
+                class="group/badge relative flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-blue-50 border border-blue-500/14 cursor-help transition-colors hover:bg-blue-100/60 shrink-0"
                 title="交付时限：按项目大小定死交付天数——小项目 3 天 / 中 7 天 / 大 14 天，两线齐备才起算"
               >
-                <span class="w-9 h-7 flex items-center justify-center rounded-lg bg-blue-600 text-white font-mono font-bold text-[12px] shrink-0">3/7/14</span>
-                <span class="flex flex-col leading-tight">
-                  <span class="text-slate-700 font-semibold text-[11px]">小 3 / 中 7 / 大 14 天</span>
-                  <span class="text-slate-400 text-[10px]">按规模定交付时限</span>
+                <span class="min-w-[58px] h-7 px-2 flex items-center justify-center rounded-lg bg-blue-600 text-white font-mono font-bold text-[12px] shrink-0 whitespace-nowrap">3/7/14</span>
+                <span class="flex flex-col leading-tight min-w-0">
+                  <span class="text-slate-700 font-semibold text-[11px] whitespace-nowrap">小 3 / 中 7 / 大 14 天</span>
+                  <span class="text-slate-400 text-[10px] whitespace-nowrap">按规模定交付时限</span>
                 </span>
               </span>
             </div>
@@ -82,7 +82,7 @@
           <div class="flex items-center gap-2 overflow-x-auto pb-1">
             <span class="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 w-24">
               <span class="w-5 h-5 rounded-full bg-slate-500 text-white flex items-center justify-center text-[11px] font-bold shrink-0">2</span>
-              环境地基线
+              实施地基线
             </span>
             <template v-for="(node, i) in envLine" :key="'e'+i">
               <div
@@ -181,10 +181,14 @@ const loading = ref(true);
 // 两条并行推进线(流程图节点)——取自手册"全流程一张图"
 const demandLine = ['客户/行业需求', '①调研备弹', '②需求沟通·原型', '③需求确认·智能体', '④工作台上线', '⑤试用定稿', '沉淀复制'];
 const envLine = [
-  { label: '摸底踩点', hint: '摸网络拓扑' },
-  { label: '开 VPN', hint: '问信息科要账号' },
-  { label: '部署基础服务', hint: '部署智能体数据基座' },
-  { label: '底座就绪', hint: '全部 ready' },
+  { label: '前期调研', hint: '网络/服务器/VPN' },
+  { label: '系统与数据库确认', hint: 'HIS/LIS/EMR/账号' },
+  { label: 'SDR表结构设计', hint: '0→1 底层逻辑' },
+  { label: '建表SQL与部署', hint: '执行SQL/安装SDR' },
+  { label: 'SDR试点验证', hint: '数据接入/指标跑通' },
+  { label: 'SAAS平台配置', hint: '租户/账号/权限' },
+  { label: '智能体部署接入', hint: '参数/SDR数据源' },
+  { label: '试用培训与验收', hint: '反馈/修复/交付' },
 ];
 
 // 合并 fde-stages.js(阶段语义)与 manifest(实际文件)

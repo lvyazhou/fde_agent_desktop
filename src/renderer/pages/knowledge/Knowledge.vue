@@ -110,16 +110,26 @@
         </div>
 
         <!-- 筛选 chips(仅阶段视图) -->
-        <div v-if="active !== 'projects'" class="flex items-center gap-2 mb-4">
-          <button
-            v-for="c in categories"
-            :key="c.key"
-            @click="catFilter = c.key"
-            class="px-3 py-1.5 rounded-lg text-[12.5px] transition"
-            :class="catFilter === c.key
-              ? 'bg-blue-600 text-white shadow-sm'
-              : 'glass-card border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600'"
-          >{{ c.label }}</button>
+        <div v-if="active !== 'projects'" class="flex flex-wrap items-center gap-2 mb-4">
+          <div class="flex items-center gap-1.5">
+            <button
+              v-for="c in categories"
+              :key="c.key"
+              @click="catFilter = c.key"
+              class="filter-chip"
+              :class="catFilter === c.key ? 'filter-chip--active' : ''"
+            >{{ c.label }}</button>
+          </div>
+          <div v-if="showKnowledgeTypeFilter" class="filter-divider"></div>
+          <div v-if="showKnowledgeTypeFilter" class="flex items-center gap-1.5">
+            <button
+              v-for="c in knowledgeTypeFilters"
+              :key="c.key"
+              @click="knowledgeTypeFilter = c.key"
+              class="filter-chip filter-chip--soft"
+              :class="knowledgeTypeFilter === c.key ? 'filter-chip--active' : ''"
+            >{{ c.label }}</button>
+          </div>
         </div>
 
         <!-- ═══ 本项目产物视图 ═══ -->
@@ -156,12 +166,12 @@
                     </div>
                   </button>
                   <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                    <button @click.stop="openProjectDoc(pj, item)" class="text-blue-500 font-medium hover:text-blue-700"><i class="fa-solid fa-eye mr-1"></i>预览</button>
+                    <button @click.stop="openProjectDoc(pj, item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>预览</button>
                     <button
                       @click.stop="openArchive(pj, item)"
-                      class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] font-medium text-blue-600 hover:bg-blue-50 transition"
+                      class="card-action card-action--primary"
                     >
-                      <i class="fa-solid fa-inbox text-[11px]"></i>归档到知识库
+                      <i class="fa-solid fa-inbox"></i>归档到知识库
                     </button>
                   </div>
                 </div>
@@ -172,7 +182,46 @@
 
         <!-- ═══ 阶段/全部视图卡片网格 ═══ -->
         <template v-else>
-        <div v-if="filtered.length" class="kb-grid">
+        <!-- 知识子类型分区(调研/技术/产品):仅当 filtered 里存在带 knowledgeType 的知识项时显示 -->
+        <div v-for="grp in knowledgeGroups" :key="grp.type" class="mb-7">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="ktype-dot" :class="'ktype-dot--' + grp.type"><i :class="grp.icon" class="text-[11px]"></i></span>
+            <h3 class="text-[14px] font-bold text-slate-700">{{ grp.label }}</h3>
+            <span class="text-[11px] text-slate-400 font-medium">{{ grp.items.length }} 篇</span>
+          </div>
+          <div class="kb-grid">
+            <div
+              v-for="item in grp.items"
+              :key="item.stageDir + '/' + item.file"
+              class="kb-card text-left group"
+            >
+              <div class="kb-card__accent" :style="{ background: fmtColor(item.type) }"></div>
+              <button class="block w-full text-left" @click="openDoc(item)">
+                <div class="flex items-start gap-3">
+                  <span class="fmt-badge" :style="{ background: fmtColor(item.type) }">{{ item.type.toUpperCase() }}</span>
+                  <div class="flex-1 min-w-0">
+                    <h3 class="text-[13.5px] font-semibold text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">{{ item.title }}</h3>
+                    <div class="flex items-center gap-1.5 mt-1.5">
+                      <span class="cat-chip cat-chip--kn">{{ grp.label }}</span>
+                      <span class="text-[11px] text-slate-400">阶段{{ CN_NUM[item.stageIndex] }}</span>
+                      <span v-if="item.uploaded" class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">已归档</span>
+                    </div>
+                  </div>
+                </div>
+              </button>
+              <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="truncate">{{ stageShort(item.stageIndex) }}</span>
+                <div class="flex items-center gap-2 shrink-0">
+                  <button @click.stop="openDoc(item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>预览</button>
+                  <button @click.stop="deleteDoc(item)" class="card-action card-action--danger"><i class="fa-solid fa-trash"></i>删除</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 其余项(交付物/规范/无子类型知识)普通网格 + 分页 -->
+        <div v-if="pagedItems.length" class="kb-grid">
           <div
             v-for="item in pagedItems"
             :key="item.stageDir + '/' + item.file"
@@ -195,13 +244,13 @@
             <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
               <span class="truncate">{{ stageShort(item.stageIndex) }}</span>
               <div class="flex items-center gap-2 shrink-0">
-                <button @click.stop="openDoc(item)" class="text-blue-500 font-medium hover:text-blue-700"><i class="fa-solid fa-eye mr-1"></i>预览</button>
-                <button @click.stop="deleteDoc(item)" class="text-danger font-medium hover:text-danger-deep"><i class="fa-solid fa-trash mr-1"></i>删除</button>
+                <button @click.stop="openDoc(item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>预览</button>
+                <button @click.stop="deleteDoc(item)" class="card-action card-action--danger"><i class="fa-solid fa-trash"></i>删除</button>
               </div>
             </div>
           </div>
         </div>
-        <div v-else class="text-center py-20 text-slate-300">
+        <div v-if="!filtered.length" class="text-center py-20 text-slate-300">
           <i class="fa-solid fa-box-open text-5xl mb-3"></i>
           <p class="text-[13px]">该分类下暂无文档</p>
         </div>
@@ -331,6 +380,9 @@ const stages = ref([]);       // manifest.stages,并给每个 item 注入 stageD
 const active = ref('all');    // 'all' | stage.dir
 const keyword = ref('');
 const catFilter = ref('all'); // all | deliverable | knowledge | spec
+const knowledgeTypeFilter = ref('all'); // all | 调研 | 技术 | 产品
+const currentPage = ref(1);
+const pageSize = ref(12);
 const selected = ref(null);   // 当前预览的 item(含 stageDir)
 const selectedProjectSlug = ref(''); // 非空=预览的是「本项目产物」,DocViewer 走项目文件读取
 
@@ -357,6 +409,19 @@ const categories = [
   { key: 'knowledge', label: '知识' },
   { key: 'spec', label: '规范' },
 ];
+
+const KNOWLEDGE_TYPE_ORDER = ['调研', '技术', '产品'];
+const KNOWLEDGE_TYPE_META = {
+  调研: { label: '调研知识', icon: 'fa-solid fa-magnifying-glass' },
+  技术: { label: '技术知识', icon: 'fa-solid fa-microchip' },
+  产品: { label: '产品知识', icon: 'fa-solid fa-cube' },
+};
+const knowledgeTypeFilters = [
+  { key: 'all', label: '全部知识' },
+  ...KNOWLEDGE_TYPE_ORDER.map((type) => ({ key: type, label: KNOWLEDGE_TYPE_META[type].label.replace('知识', '') })),
+];
+const firstStageDir = computed(() => stages.value[0]?.dir || '');
+const showKnowledgeTypeFilter = computed(() => active.value === firstStageDir.value);
 
 async function loadManifest() {
   try {
@@ -492,9 +557,12 @@ const activeName = computed(() => {
 
 const filtered = computed(() => {
   let list = active.value === 'all'
-    ? allItems.value
+    ? allItems.value.filter((it) => !it.knowledgeType)
     : (stages.value.find((s) => s.dir === active.value)?.items || []);
   if (catFilter.value !== 'all') list = list.filter((it) => it.category === catFilter.value);
+  if (showKnowledgeTypeFilter.value && knowledgeTypeFilter.value !== 'all') {
+    list = list.filter((it) => it.knowledgeType === knowledgeTypeFilter.value);
+  }
   if (keyword.value.trim()) {
     const kw = keyword.value.trim();
     list = list.filter((it) => it.title.includes(kw));
@@ -502,16 +570,33 @@ const filtered = computed(() => {
   return list;
 });
 
-// ── 分页(阶段/全部视图) ──
-const currentPage = ref(1);
-const pageSize = ref(12);
-const totalPages = computed(() => Math.max(1, Math.ceil(filtered.value.length / pageSize.value)));
+const knowledgeGroups = computed(() => {
+  if (!showKnowledgeTypeFilter.value || knowledgeTypeFilter.value !== 'all') return [];
+  const typed = filtered.value.filter((it) => it.knowledgeType);
+  if (!typed.length) return [];
+  return KNOWLEDGE_TYPE_ORDER
+    .map((t) => ({
+      type: t,
+      label: KNOWLEDGE_TYPE_META[t]?.label || t,
+      icon: KNOWLEDGE_TYPE_META[t]?.icon || 'fa-solid fa-lightbulb',
+      items: typed.filter((it) => it.knowledgeType === t),
+    }))
+    .filter((g) => g.items.length);
+});
+const ungroupedItems = computed(() => {
+  if (showKnowledgeTypeFilter.value && knowledgeTypeFilter.value !== 'all') return filtered.value;
+  return filtered.value.filter((it) => !it.knowledgeType);
+});
+
+// ── 分页(仅作用于 ungroupedItems) ──
+const totalPages = computed(() => Math.max(1, Math.ceil(ungroupedItems.value.length / pageSize.value)));
 const pagedItems = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
-  return filtered.value.slice(start, start + pageSize.value);
+  return ungroupedItems.value.slice(start, start + pageSize.value);
 });
 // 筛选条件变化 / 切换分类 / 搜索时,回到第 1 页
-watch([active, catFilter, keyword], () => { currentPage.value = 1; });
+watch([active, catFilter, keyword, knowledgeTypeFilter], () => { currentPage.value = 1; });
+watch(showKnowledgeTypeFilter, (visible) => { if (!visible) knowledgeTypeFilter.value = 'all'; });
 // 当前页超出范围(如删除后)自动回退
 watch(totalPages, (tp) => { if (currentPage.value > tp) currentPage.value = tp; });
 
@@ -561,6 +646,26 @@ function openProjectDoc(pj, item) {
 }
 .kb-tree { width: 240px; background: color-mix(in srgb, hsl(var(--background)) 92%, hsl(var(--primary)) 4%) !important; border-color: var(--color-sidebar-border) !important; }
 
+.kb-bg :deep(.btn-sm),
+.kb-bg :deep(.btn-sm-pri) {
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  gap: 6px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+.kb-bg :deep(.btn-sm:hover),
+.kb-bg :deep(.btn-sm-pri:hover) {
+  transform: translateY(-1px);
+}
+.kb-bg :deep(.btn-sm-pri) {
+  box-shadow: 0 8px 18px hsl(var(--primary) / 18%);
+}
+.kb-bg :deep(.btn-sm-pri:hover) {
+  box-shadow: 0 10px 24px hsl(var(--primary) / 24%);
+}
+
 /* 自适应卡片网格:列数随宽度自动增减(最小 260px 一列),窄屏 2 列宽屏可到 4-5 列 */
 .kb-grid {
   display: grid;
@@ -568,41 +673,106 @@ function openProjectDoc(pj, item) {
   gap: 16px;
 }
 
+/* 筛选按钮 */
+.filter-chip {
+  height: 31px;
+  padding: 0 13px;
+  border: 1px solid #dfe7f2;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #526174;
+  font-size: 12.5px;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+.filter-chip:hover {
+  transform: translateY(-1px);
+  border-color: #a9c2f5;
+  color: #2563eb;
+  background: #f8fbff;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
+}
+.filter-chip--active {
+  color: #fff;
+  border-color: #2563eb;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.20);
+}
+.filter-chip--active:hover {
+  color: #fff;
+  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+}
+.filter-chip--soft {
+  height: 29px;
+  padding: 0 11px;
+  font-size: 12px;
+}
+.filter-divider {
+  width: 1px;
+  height: 18px;
+  margin: 0 2px;
+  background: #dbe3ef;
+}
+
 /* 分页按钮 */
 .pgn {
-  min-width: 32px;
-  height: 32px;
+  min-width: 31px;
+  height: 31px;
   padding: 0 9px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: #fff;
+  border-radius: 9px;
+  border: 1px solid #dfe7f2;
+  background: rgba(255, 255, 255, 0.9);
   color: #64748b;
-  font-size: 13px;
+  font-size: 12.5px;
+  font-weight: 500;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
 }
-.pgn:hover:not(:disabled) { border-color: #93b4fb; color: #2563eb; }
-.pgn--cur { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 600; }
-.pgn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pgn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: #a9c2f5;
+  color: #2563eb;
+  background: #f8fbff;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
+}
+.pgn--cur {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border-color: #2563eb;
+  color: #fff;
+  font-weight: 650;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+}
+.pgn:disabled { opacity: 0.42; cursor: not-allowed; }
 
 .tree-node {
   width: 100%;
+  min-height: 34px;
   display: flex;
   align-items: center;
   gap: 9px;
-  padding: 8px 10px;
-  border-radius: 9px;
+  padding: 7px 10px;
+  border-radius: 10px;
   font-size: 12.5px;
   color: #475569;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, transform 0.15s;
+  transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
 }
-.tree-node:hover { background: var(--color-sidebar-elevated); color: var(--color-sidebar-text-strong); }
-.tree-node:hover .tree-badge { transform: scale(1.06); }
+.tree-node:hover {
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--color-sidebar-text-strong);
+  transform: translateX(1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.06);
+}
+.tree-node:hover .tree-badge { transform: scale(1.04); }
 .tree-node--active {
-  background: var(--color-sidebar-elevated);
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(59, 130, 246, 0.08));
   color: var(--color-sidebar-text-strong);
   font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.09);
 }
 
 .tree-badge {
@@ -629,7 +799,29 @@ function openProjectDoc(pj, item) {
   padding: 1px 7px;
   flex-shrink: 0;
 }
-.tree-node--active .tree-count { color: var(--color-sidebar-text-strong); background: var(--color-sidebar-elevated); }
+.tree-node--active .tree-count { color: #2563eb; background: rgba(255, 255, 255, 0.76); }
+
+.card-action {
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.card-action:hover { transform: translateY(-1px); }
+.card-action i { font-size: 10.5px; }
+.card-action--primary { color: #2563eb; }
+.card-action--primary:hover { background: #eff6ff; border-color: #dbeafe; color: #1d4ed8; }
+.card-action--danger { color: #dc2626; }
+.card-action--danger:hover { background: #fef2f2; border-color: #fee2e2; color: #b91c1c; }
 
 /* 统计卡片 */
 .stat-card {
@@ -711,6 +903,21 @@ function openProjectDoc(pj, item) {
 .cat-chip--kn { background: #e0f2fe; color: #0369a1; }
 .cat-chip--dl { background: #eff6ff; color: #2563eb; }
 .cat-chip--sp { background: #f1f5f9; color: #64748b; }
+
+/* 知识子类型分区圆点(蓝色系,深浅区分调研/技术/产品) */
+.ktype-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  color: #fff;
+  flex-shrink: 0;
+}
+.ktype-dot--调研 { background: #0ea5e9; }
+.ktype-dot--技术 { background: #2563eb; }
+.ktype-dot--产品 { background: #1d4ed8; }
 
 .line-clamp-2 {
   display: -webkit-box;
