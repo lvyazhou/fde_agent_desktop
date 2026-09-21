@@ -1,15 +1,15 @@
 <template>
-  <div class="flex flex-col h-full min-h-0 paper-grain">
+  <div class="flex flex-col h-full min-h-0 bg-transparent">
     <!-- 顶部:标题(去渐变,改暖棕竖条 — Swiss 风格避免装饰性渐变) -->
-    <div class="flex items-center gap-3 px-6 py-4 bg-white border-b border-paper-line/70 shrink-0 relative">
-      <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-brass"></div>
-      <span class="w-8 h-8 rounded-lg bg-paper-faint text-brass flex items-center justify-center shrink-0">
+    <div class="flex items-center gap-3 px-6 py-4 bg-white border-b border-blue-500/14 shrink-0 relative">
+      <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-blue-600"></div>
+      <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
         <i class="fa-solid fa-clipboard-list text-[13px]"></i>
       </span>
       <div class="min-w-0 flex-1">
         <div class="flex items-center gap-2">
           <h1 class="text-[15px] font-semibold text-slate-800 truncate">FDE 项目规范</h1>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-paper-faint text-brass font-medium shrink-0">极库云项目管理制度</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium shrink-0">极库云项目管理制度</span>
         </div>
         <p class="text-[12px] text-slate-500 truncate">五阶段项目管理 · 需求管理 · 产品复制模式</p>
       </div>
@@ -18,17 +18,17 @@
     <!-- 主体:左锚点目录 + 右内容(章节多,靠滚动找太费劲) -->
     <div class="flex-1 min-h-0 flex overflow-hidden">
       <!-- 锚点目录 -->
-      <nav class="w-[180px] shrink-0 border-r border-paper-line/60 bg-paper/40 overflow-y-auto py-4 px-3 hidden lg:block" aria-label="章节导航">
+      <nav class="w-[180px] shrink-0 border-r border-blue-500/12 bg-blue-50/30 overflow-y-auto py-4 px-3 hidden lg:block" aria-label="章节导航">
         <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 mb-2">目录</div>
         <button
           v-for="sec in sections"
           :key="sec.id"
           type="button"
           @click="scrollTo(sec.id)"
-          class="w-full text-left px-2 py-1.5 rounded-lg mb-0.5 text-[12px] transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40"
-          :class="activeSection === sec.id ? 'bg-white text-brass font-semibold border border-paper-line/70' : 'text-slate-500 hover:bg-white/70 border border-transparent'"
+          class="w-full text-left px-2 py-1.5 rounded-lg mb-0.5 text-[12px] transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+          :class="activeSection === sec.id ? 'bg-white text-blue-600 font-semibold border border-blue-500/14' : 'text-slate-500 hover:bg-white/70 border border-transparent'"
         >
-          <span class="w-4 text-center text-[11px] shrink-0" :class="activeSection === sec.id ? 'text-brass' : 'text-slate-300'">{{ sec.no }}</span>
+          <span class="w-4 text-center text-[11px] shrink-0" :class="activeSection === sec.id ? 'text-blue-600' : 'text-slate-300'">{{ sec.no }}</span>
           <span class="truncate">{{ sec.label }}</span>
         </button>
       </nav>
@@ -41,7 +41,7 @@
         <section id="sec-stage" data-sec="sec-stage">
           <h2 class="section-title">
             <span class="section-no">一</span>
-            <i class="fa-solid fa-layer-group text-brass"></i>
+            <i class="fa-solid fa-layer-group text-blue-600"></i>
             五阶段项目管理
           </h2>
           <div class="space-y-3">
@@ -56,21 +56,21 @@
                 v-for="s in group.items"
                 :key="s.id"
                 :type="s.template ? 'button' : undefined"
-                class="bg-white rounded-xl border border-paper-line/70 p-4 flex flex-col text-left transition-colors duration-200"
-                :class="s.template ? 'cursor-pointer hover:border-brass/45 group/card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40' : ''"
+                class="bg-white rounded-xl border border-blue-500/14 p-4 flex flex-col text-left transition-colors duration-200"
+                :class="s.template ? 'cursor-pointer hover:border-blue-400 group/card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40' : ''"
                 @click="s.template && openTemplate(s)"
               >
               <!-- 顶部常驻提示:点击查看模板(仅有 template 的卡片) -->
               <div
                 v-if="s.template"
-                class="mb-2.5 -mt-0.5 inline-flex self-start items-center gap-1.5 px-2 py-1 rounded-md bg-paper-faint text-brass text-[10px] font-medium group-hover/card:bg-brass group-hover/card:text-white transition-colors"
+                class="mb-2.5 -mt-0.5 inline-flex self-start items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 text-blue-600 text-[10px] font-medium group-hover/card:bg-blue-600 group-hover/card:text-white transition-colors"
               >
                 <i class="fa-solid fa-hand-pointer text-[10px]"></i>
                 点击查看模板
                 <i class="fa-solid fa-arrow-right-long text-[9px]"></i>
               </div>
               <div class="flex items-center gap-2.5 mb-2">
-                <span class="w-8 h-8 rounded-lg bg-brass-deep text-white flex items-center justify-center shrink-0">
+                <span class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0">
                   <i :class="s.icon" class="text-[13px]"></i>
                 </span>
                 <div class="min-w-0 flex-1">
@@ -81,9 +81,9 @@
               <p class="text-[12px] text-slate-500 leading-relaxed">{{ s.desc }}</p>
 
               <!-- 交付物清单(复用作战链 deliverables) -->
-              <div v-if="s.deliverables && s.deliverables.length" class="mt-3 pt-3 border-t border-paper-line/50">
+              <div v-if="s.deliverables && s.deliverables.length" class="mt-3 pt-3 border-t border-blue-500/10">
                 <div class="text-[10px] text-slate-400 mb-1.5">
-                  <i class="fa-solid fa-box-open mr-1 text-brass/70"></i>输出交付物
+                  <i class="fa-solid fa-box-open mr-1 text-blue-600/70"></i>输出交付物
                 </div>
                 <div class="space-y-1.5">
                   <div
@@ -91,33 +91,33 @@
                     :key="di"
                     class="text-[11px] text-slate-600 flex items-start gap-1.5 leading-snug"
                   >
-                    <i class="fa-solid fa-circle text-brass/40 text-[4px] mt-1.5 shrink-0"></i>
+                    <i class="fa-solid fa-circle text-blue-600/40 text-[4px] mt-1.5 shrink-0"></i>
                     <span class="min-w-0">
                       {{ d.name }}
                       <span v-if="d.form" class="text-[10px] text-slate-400 ml-0.5">· {{ formLabel(d.form) }}</span>
-                      <span v-if="d.sign" class="ml-1 text-[10px] px-1 py-0.5 rounded bg-brass/12 text-brass whitespace-nowrap">{{ d.sign }}</span>
+                      <span v-if="d.sign" class="ml-1 text-[10px] px-1 py-0.5 rounded bg-blue-600/12 text-blue-600 whitespace-nowrap">{{ d.sign }}</span>
                     </span>
                   </div>
                 </div>
               </div>
 
               <!-- 节奏标签(日报/周报) -->
-              <div v-if="s.cadence" class="mt-2 inline-flex self-start items-center gap-1.5 px-2 py-1 rounded-md bg-brass/10 border border-brass/20 text-[11px] text-brass font-medium">
+              <div v-if="s.cadence" class="mt-2 inline-flex self-start items-center gap-1.5 px-2 py-1 rounded-md bg-blue-600/10 border border-blue-200 text-[11px] text-blue-600 font-medium">
                 <i class="fa-solid fa-clock text-[10px]"></i>{{ s.cadence }}
               </div>
 
               <!-- 相关材料标签 -->
               <div v-if="s.tags" class="mt-2 flex flex-wrap gap-1">
-                <span v-for="t in s.tags" :key="t" class="text-[11px] px-1.5 py-0.5 rounded bg-paper-faint text-slate-500 border border-paper-line/60">{{ t }}</span>
+                <span v-for="t in s.tags" :key="t" class="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-slate-500 border border-blue-500/12">{{ t }}</span>
               </div>
 
               <!-- HIS 标品交付 SOP 举例 -->
-              <div v-if="s.example" class="mt-3 pt-3 border-t border-paper-line/50">
+              <div v-if="s.example" class="mt-3 pt-3 border-t border-blue-500/10">
                 <div class="text-[11px] text-slate-400 mb-2">{{ s.example.title }}</div>
                 <div class="flex items-center gap-1 flex-wrap">
                   <template v-for="(step, i) in s.example.steps" :key="step">
-                    <span class="text-[11px] px-2 py-1 rounded-md bg-paper-faint text-slate-700 whitespace-nowrap">{{ i + 1 }}. {{ step }}</span>
-                    <i v-if="i < s.example.steps.length - 1" class="fa-solid fa-arrow-right text-brass/40 text-[9px]"></i>
+                    <span class="text-[11px] px-2 py-1 rounded-md bg-blue-50 text-slate-700 whitespace-nowrap">{{ i + 1 }}. {{ step }}</span>
+                    <i v-if="i < s.example.steps.length - 1" class="fa-solid fa-arrow-right text-blue-600/40 text-[9px]"></i>
                   </template>
                 </div>
               </div>
@@ -130,15 +130,15 @@
         <section id="sec-req" data-sec="sec-req">
           <h2 class="section-title">
             <span class="section-no">二</span>
-            <i class="fa-solid fa-list-check text-brass"></i>
+            <i class="fa-solid fa-list-check text-blue-600"></i>
             项目需求管理
           </h2>
           <p class="text-[12px] text-slate-500 mb-3">{{ reqMgmt.intro }}</p>
 
           <!-- 角色分工 -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div v-for="r in reqMgmt.roles" :key="r.name" class="bg-white rounded-xl border border-paper-line/70 p-4 flex items-start gap-3">
-              <span class="w-9 h-9 rounded-lg bg-paper-faint text-brass flex items-center justify-center shrink-0">
+            <div v-for="r in reqMgmt.roles" :key="r.name" class="bg-white rounded-xl border border-blue-500/14 p-4 flex items-start gap-3">
+              <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <i :class="r.icon"></i>
               </span>
               <div class="min-w-0">
@@ -149,18 +149,18 @@
           </div>
 
           <!-- 迭代版本规划举例 -->
-          <div class="bg-white rounded-xl border border-paper-line/70 p-4 mb-3">
+          <div class="bg-white rounded-xl border border-blue-500/14 p-4 mb-3">
             <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5">{{ reqMgmt.example.title }}</h3>
             <p class="text-[12px] text-slate-500 mb-3">{{ reqMgmt.example.desc }}</p>
             <div class="flex items-stretch gap-2 overflow-x-auto pb-1">
               <div
                 v-for="it in reqMgmt.example.iterations"
                 :key="it.version"
-                class="shrink-0 min-w-[160px] flex-1 rounded-lg border border-paper-line/60 bg-paper-faint/50 p-3"
+                class="shrink-0 min-w-[160px] flex-1 rounded-lg border border-blue-500/12 bg-blue-50/40 p-3"
               >
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-[12px] font-mono font-semibold text-brass-deep">{{ it.version }}</span>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-brass text-white font-semibold">{{ it.priority }}</span>
+                  <span class="text-[12px] font-mono font-semibold text-blue-700">{{ it.version }}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600 text-white font-semibold">{{ it.priority }}</span>
                 </div>
                 <div class="text-[11px] text-slate-500">{{ it.label }}</div>
               </div>
@@ -168,9 +168,9 @@
           </div>
 
           <!-- 项目主动跟进 -->
-          <div class="bg-white rounded-xl border border-paper-line/70 p-4">
+          <div class="bg-white rounded-xl border border-blue-500/14 p-4">
             <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5 flex items-center gap-1.5">
-              <i class="fa-solid fa-bullseye text-brass text-[12px]"></i>项目主动跟进
+              <i class="fa-solid fa-bullseye text-blue-600 text-[12px]"></i>项目主动跟进
             </h3>
             <p class="text-[12px] text-slate-500 mb-3">{{ reqMgmt.followUp.desc }}</p>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -189,7 +189,7 @@
         <section id="sec-copy" data-sec="sec-copy">
           <h2 class="section-title">
             <span class="section-no">三</span>
-            <i class="fa-solid fa-copy text-brass"></i>
+            <i class="fa-solid fa-copy text-blue-600"></i>
             产品复制模式
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -197,12 +197,12 @@
               v-for="m in modes"
               :key="m.key"
               class="bg-white rounded-xl border p-4"
-              :class="m.accent === 'blue' ? 'border-brass/30' : 'border-brass-deep/30'"
+              :class="m.accent === 'blue' ? 'border-blue-200' : 'border-blue-300'"
             >
               <div class="flex items-center gap-2.5 mb-3">
                 <span
                   class="w-9 h-9 rounded-lg text-white flex items-center justify-center shrink-0"
-                  :class="m.accent === 'blue' ? 'bg-brass' : 'bg-brass-deep'"
+                  :class="m.accent === 'blue' ? 'bg-blue-600' : 'bg-blue-600'"
                 >
                   <i :class="m.icon"></i>
                 </span>
@@ -210,7 +210,7 @@
               </div>
               <ul class="space-y-2">
                 <li v-for="(p, i) in m.points" :key="i" class="text-[12px] text-slate-600 leading-relaxed flex items-start gap-2">
-                  <i class="fa-solid fa-circle text-[4px] mt-1.5 shrink-0 text-brass/40"></i>
+                  <i class="fa-solid fa-circle text-[4px] mt-1.5 shrink-0 text-blue-600/40"></i>
                   <span>{{ p }}</span>
                 </li>
               </ul>
@@ -221,7 +221,7 @@
         <!-- 四、极库云资源 -->
         <section id="sec-links" data-sec="sec-links">
           <h2 class="section-title">
-            <i class="fa-solid fa-link text-brass"></i>
+            <i class="fa-solid fa-link text-blue-600"></i>
             极库云资源
           </h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -230,15 +230,15 @@
               :key="lk.url"
               type="button"
               @click="openLink(lk.url)"
-              class="group text-left bg-white rounded-xl border border-paper-line/70 hover:border-brass/45 transition-colors duration-200 cursor-pointer p-4 flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40"
+              class="group text-left bg-white rounded-xl border border-blue-500/14 hover:border-blue-400 transition-colors duration-200 cursor-pointer p-4 flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
             >
-              <span class="w-9 h-9 rounded-lg bg-paper-faint text-brass flex items-center justify-center shrink-0">
+              <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <i :class="lk.icon"></i>
               </span>
               <div class="min-w-0 flex-1">
                 <div class="text-[13px] font-semibold text-slate-800 flex items-center gap-1.5">
                   <span class="truncate">{{ lk.title }}</span>
-                  <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-brass transition-colors shrink-0"></i>
+                  <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-300 group-hover:text-blue-600 transition-colors shrink-0"></i>
                 </div>
                 <p class="text-[11px] text-slate-500 leading-relaxed mt-0.5">{{ lk.desc }}</p>
               </div>
@@ -259,14 +259,14 @@
       @close="activeTemplate = null"
     >
       <template #header-icon>
-        <div class="w-9 h-9 rounded-lg bg-brass-deep flex items-center justify-center text-white">
+        <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white">
           <i :class="activeTemplate?.icon || 'fa-solid fa-file-lines'"></i>
         </div>
       </template>
       <template #header-actions>
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-slate-600 hover:text-brass hover:bg-paper-faint transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brass/40"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
           @click="copyTemplate"
         >
           <i :class="copied ? 'fa-solid fa-check text-emerald-500' : 'fa-regular fa-copy'" class="text-[12px]"></i>
@@ -276,11 +276,11 @@
 
       <div class="p-6">
         <!-- 文档纸张卡片 -->
-        <div class="rounded-xl bg-white overflow-hidden border border-paper-line/70">
+        <div class="rounded-xl bg-white overflow-hidden border border-blue-500/14">
           <!-- 顶部棕色条 + 文件名标签 -->
-          <div class="h-1 bg-brass"></div>
+          <div class="h-1 bg-blue-600"></div>
           <div class="flex items-center gap-2 px-6 pt-4 pb-2">
-            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-paper-faint text-slate-500 text-[11px] font-mono">
+            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-blue-50 text-slate-500 text-[11px] font-mono">
               <i class="fa-regular fa-file-lines text-[10px]"></i>
               {{ activeTemplate?.filename || 'template.md' }}
             </span>
@@ -394,8 +394,8 @@ const copyTemplate = async () => {
   width: 1.375rem;
   height: 1.375rem;
   border-radius: 0.375rem;
-  background: var(--color-paper-faint);
-  color: var(--color-brass);
+  background: var(--color-blue-50);
+  color: #2563eb;
   font-size: 12px;
   font-weight: 700;
   display: inline-flex;
