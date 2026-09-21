@@ -44,6 +44,7 @@
   --color-warning-soft: #fdf3e7;
   --color-danger: #dc2626;
   --color-danger-soft: #fdeaea;
+  --color-danger-deep: #b91c1c;  /* hover 态：base 用 danger，hover 用 deep，避免同色塌缩 */
   --color-info: #2563eb;
   --color-info-soft: #eff4ff;
 

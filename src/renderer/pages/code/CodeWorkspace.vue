@@ -162,7 +162,7 @@
             </div>
             <button
               @click="composer.removeAttachment(ai)"
-              class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center shadow-sm"
+              class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-danger text-white text-[9px] flex items-center justify-center shadow-sm"
             >
               <i class="fa-solid fa-xmark"></i>
             </button>
@@ -186,7 +186,7 @@
           >
             <i class="fa-solid text-sm" :class="composer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
           </button>
-          <span v-if="composer.isRecording.value" class="text-[11px] text-rose-500 font-medium tabular-nums shrink-0">{{ composer.recordSeconds.value }}s</span>
+          <span v-if="composer.isRecording.value" class="text-[11px] text-danger font-medium tabular-nums shrink-0">{{ composer.recordSeconds.value }}s</span>
           <span v-else-if="composer.isTranscribing.value" class="text-[11px] text-blue-500 font-medium shrink-0">识别中…</span>
 
           <textarea

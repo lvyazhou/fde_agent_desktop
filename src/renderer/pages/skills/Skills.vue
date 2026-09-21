@@ -175,7 +175,7 @@
                 <button @click="openDir(selected)" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-slate-600 hover:bg-slate-100 transition" title="打开技能目录">
                   <i class="fa-solid fa-folder-open text-[11px]"></i><span>打开目录</span>
                 </button>
-                <button @click="deleteSkill(selected)" :disabled="deleting" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-rose-500 hover:bg-rose-50 transition disabled:opacity-50" title="删除技能">
+                <button @click="deleteSkill(selected)" :disabled="deleting" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-danger hover:bg-danger-soft transition disabled:opacity-50" title="删除技能">
                   <i class="fa-solid fa-trash text-[11px]"></i><span>删除</span>
                 </button>
                 <button @click="selected = null" class="w-8 h-8 rounded-lg text-slate-400 hover:bg-slate-100 transition"><i class="fa-solid fa-xmark"></i></button>

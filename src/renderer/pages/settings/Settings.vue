@@ -94,7 +94,7 @@
                   </button>
                 </span>
               </div>
-              <p v-else class="text-[12px] text-rose-500 mb-2">
+              <p v-else class="text-[12px] text-danger mb-2">
                 <i class="fa-solid fa-circle-exclamation mr-1"></i>至少勾选或添加一个模型
               </p>
 
@@ -149,7 +149,7 @@
             <span v-if="saveStatus === 'success'" class="text-xs text-blue-600 font-medium">
               <i class="fa-solid fa-circle-check mr-1"></i>已保存，引擎已重启
             </span>
-            <span v-else-if="saveStatus === 'error'" class="text-xs text-rose-600 font-medium">
+            <span v-else-if="saveStatus === 'error'" class="text-xs text-danger-deep font-medium">
               <i class="fa-solid fa-triangle-exclamation mr-1"></i>保存失败
             </span>
           </div>

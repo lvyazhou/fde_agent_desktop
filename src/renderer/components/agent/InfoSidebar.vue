@@ -40,7 +40,7 @@
           <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div
               class="h-full rounded-full transition-all duration-500"
-              :class="contextUsage.used / contextUsage.size > 0.8 ? 'bg-rose-500' : contextUsage.used / contextUsage.size > 0.6 ? 'bg-amber-500' : 'bg-blue-500'"
+              :class="contextUsage.used / contextUsage.size > 0.8 ? 'bg-warning' : contextUsage.used / contextUsage.size > 0.6 ? 'bg-amber-500' : 'bg-blue-500'"
               :style="{ width: Math.min(100, contextUsage.used / contextUsage.size * 100) + '%' }"
             ></div>
           </div>
@@ -122,7 +122,7 @@
       <!-- 4. Execution Logs -->
       <AccordionSection title="执行日志" icon="fa-solid fa-terminal" icon-color="#2563eb" :default-open="true">
         <template #action>
-          <button v-if="logs.length > 0" @click="$emit('clear-logs')" class="text-slate-400 hover:text-rose-500 transition-colors" title="清空日志">
+          <button v-if="logs.length > 0" @click="$emit('clear-logs')" class="text-slate-400 hover:text-danger transition-colors" title="清空日志">
             <i class="fa-solid fa-trash-can text-[10px]"></i>
           </button>
         </template>
@@ -159,10 +159,10 @@
             v-for="t in deliverableThreads"
             :key="t.key"
             @click="$emit('open-deliverable', t.key)"
-            class="w-full text-left rounded-lg px-2 py-1.5 hover:bg-violet-50 transition-colors cursor-pointer"
+            class="w-full text-left rounded-lg px-2 py-1.5 hover:bg-blue-50 transition-colors cursor-pointer"
           >
             <div class="flex items-center gap-1.5">
-              <i class="fa-solid fa-comment-dots text-[9px] text-violet-500 shrink-0"></i>
+              <i class="fa-solid fa-comment-dots text-[9px] text-blue-500 shrink-0"></i>
               <span class="text-[12px] font-medium text-slate-700 truncate">{{ t.name || t.key }}</span>
               <span class="ml-auto text-[10px] text-slate-400 shrink-0">{{ t.count }} 轮</span>
             </div>
@@ -267,9 +267,9 @@ const displaySkills = computed(() => {
 const logClass = (log) => {
   const map = {
     thought: 'bg-slate-50',
-    tool: log.status === 'running' ? 'bg-sky-50 border-l-2 border-sky-400' : log.status === 'failed' ? 'bg-rose-50 border-l-2 border-rose-400' : 'bg-blue-50 border-l-2 border-blue-400',
+    tool: log.status === 'running' ? 'bg-sky-50 border-l-2 border-sky-400' : log.status === 'failed' ? 'bg-danger-soft border-l-2 border-danger' : 'bg-blue-50 border-l-2 border-blue-400',
     usage: 'bg-amber-50',
-    error: 'bg-rose-50',
+    error: 'bg-danger-soft',
     info: 'bg-blue-50',
   };
   return map[log.type] || 'bg-slate-50';
@@ -278,9 +278,9 @@ const logClass = (log) => {
 const logIcon = (log) => {
   const map = {
     thought: 'fa-solid fa-brain text-slate-400',
-    tool: log.status === 'running' ? 'fa-solid fa-gear fa-spin text-sky-500' : log.status === 'failed' ? 'fa-solid fa-circle-xmark text-rose-500' : 'fa-solid fa-circle-check text-blue-500',
+    tool: log.status === 'running' ? 'fa-solid fa-gear fa-spin text-sky-500' : log.status === 'failed' ? 'fa-solid fa-circle-xmark text-danger' : 'fa-solid fa-circle-check text-blue-500',
     usage: 'fa-solid fa-chart-pie text-amber-500',
-    error: 'fa-solid fa-triangle-exclamation text-rose-500',
+    error: 'fa-solid fa-triangle-exclamation text-danger',
     info: 'fa-solid fa-circle-info text-blue-500',
   };
   return map[log.type] || 'fa-solid fa-circle text-slate-400';

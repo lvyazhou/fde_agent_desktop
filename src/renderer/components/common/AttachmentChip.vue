@@ -77,11 +77,11 @@ const isImage = computed(() => {
 const iconClass = computed(() => {
   const e = ext();
   const mt = (props.att && props.att.media_type) || '';
-  if (isImage.value) return 'fa-image text-purple-500';
-  if (e === 'pdf' || mt.includes('pdf')) return 'fa-file-pdf text-rose-500';
+  if (isImage.value) return 'fa-image text-indigo-500';
+  if (e === 'pdf' || mt.includes('pdf')) return 'fa-file-pdf text-danger';
   if (['doc', 'docx'].includes(e) || mt.includes('word')) return 'fa-file-word text-blue-500';
   if (['xls', 'xlsx', 'csv'].includes(e) || mt.includes('sheet') || mt.includes('excel')) return 'fa-file-excel text-emerald-600';
-  if (['ppt', 'pptx'].includes(e) || mt.includes('presentation')) return 'fa-file-powerpoint text-orange-500';
+  if (['ppt', 'pptx'].includes(e) || mt.includes('presentation')) return 'fa-file-powerpoint text-amber-600';
   if (['zip', 'rar', '7z', 'gz', 'tar'].includes(e)) return 'fa-file-zipper text-amber-500';
   if (['js', 'ts', 'py', 'java', 'go', 'rs', 'c', 'cpp', 'json', 'html', 'css', 'sh', 'vue', 'jsx', 'tsx'].includes(e)) return 'fa-file-code text-indigo-500';
   if (typeof (props.att && props.att.text) === 'string') return 'fa-file-lines text-blue-500';

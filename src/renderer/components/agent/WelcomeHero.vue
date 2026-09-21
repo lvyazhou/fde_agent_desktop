@@ -15,11 +15,11 @@
           <p class="text-[11px] text-slate-500 leading-relaxed">
             <span class="text-amber-500">①</span> <b class="text-slate-700">调研备弹</b> ·
             <span class="text-blue-500">②</span> <b class="text-slate-700">需求沟通+原型</b>(对接确认表→PRD→可交互原型) ·
-            <span class="text-violet-500">③</span> <b class="text-slate-700">需求确认+智能体设计</b>
+            <span class="text-blue-500">③</span> <b class="text-slate-700">需求确认+智能体设计</b>
           </p>
           <p class="text-[11px] text-slate-500 leading-relaxed">
-            <span class="text-teal-500">④</span> <b class="text-slate-700">纳米Work 工作台上线</b> ·
-            <span class="text-rose-500">⑤</span> <b class="text-slate-700">客户试用+定稿</b> —— 每阶段输出即交付物,一环扣一环
+            <span class="text-blue-400">④</span> <b class="text-slate-700">纳米Work 工作台上线</b> ·
+            <span class="text-danger">⑤</span> <b class="text-slate-700">客户试用+定稿</b> —— 每阶段输出即交付物,一环扣一环
           </p>
         </div>
         <p class="text-[10px] text-slate-400 mb-5">新建 FDE 项目按阶段推进,或在下方直接提问:</p>
@@ -77,7 +77,7 @@
                 <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
                 <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
               </div>
-              <button @click="attachments.splice(ai, 1)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[8px] flex items-center justify-center opacity-0 group-hover/att:opacity-100 transition-opacity cursor-pointer">
+              <button @click="attachments.splice(ai, 1)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-danger text-white text-[8px] flex items-center justify-center opacity-0 group-hover/att:opacity-100 transition-opacity cursor-pointer">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </div>
@@ -106,12 +106,12 @@
                 @click="toggleRecording"
                 :disabled="!recordingSupported"
                 class="w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                :class="isRecording ? 'text-white bg-rose-500 hover:bg-rose-600' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-blue-600'"
+                :class="isRecording ? 'text-white bg-danger hover:bg-danger-deep' : 'bg-slate-50 hover:bg-slate-100 text-slate-400 hover:text-blue-600'"
                 :title="recordingSupported ? (isRecording ? '停止录音' : '语音输入') : '当前环境不支持录音'"
               >
                 <i class="fa-solid text-xs" :class="isRecording ? 'fa-stop' : 'fa-microphone'"></i>
               </button>
-              <span v-if="isRecording" class="text-[10px] text-rose-500 font-medium select-none tabular-nums">{{ recordSeconds }}s</span>
+              <span v-if="isRecording" class="text-[10px] text-danger font-medium select-none tabular-nums">{{ recordSeconds }}s</span>
               <span v-else-if="isTranscribing" class="text-[10px] text-blue-500 font-medium select-none">识别中…</span>
               <button
                 @click="handleSend"

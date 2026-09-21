@@ -236,7 +236,7 @@
                 </button>
                 <button
                   @click="removeApp(selected)"
-                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-danger/30 text-danger-deep hover:bg-danger-soft transition"
                 >
                   <i class="fa-solid fa-trash text-[10px]"></i>删除
                 </button>
@@ -257,7 +257,7 @@
                 </button>
                 <button
                   @click="removeApp(selected)"
-                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-rose-200 text-rose-600 hover:bg-rose-50 transition"
+                  class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium border border-danger/30 text-danger-deep hover:bg-danger-soft transition"
                 >
                   <i class="fa-solid fa-eye-slash text-[10px]"></i>移除
                 </button>
@@ -345,7 +345,7 @@
                 <span
                   v-for="s in selected.skills"
                   :key="s"
-                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] bg-violet-50 text-violet-700 border border-violet-100"
+                  class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[12px] bg-blue-50 text-blue-700 border border-blue-100"
                 >
                   <i class="fa-solid fa-puzzle-piece text-[9px]"></i>{{ s }}
                 </span>
@@ -443,7 +443,7 @@
           <div class="flex-1 min-h-0 overflow-y-auto p-6 space-y-4">
             <div class="grid grid-cols-2 gap-4">
               <div class="col-span-2">
-                <label class="ed-label">应用名称 <span class="text-rose-500">*</span></label>
+                <label class="ed-label">应用名称 <span class="text-danger">*</span></label>
                 <input v-model="form.name" type="text" class="ed-input" placeholder="例如：营销文案生成器" />
               </div>
               <div>
@@ -682,7 +682,7 @@
                 </div>
                 <button
                   @click="deleteAssetKnowledge(f)"
-                  class="w-7 h-7 rounded-md text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition shrink-0"
+                  class="w-7 h-7 rounded-md text-slate-300 hover:text-danger-deep hover:bg-danger-soft transition shrink-0"
                   title="删除"
                 >
                   <i class="fa-solid fa-trash text-[10px]"></i>
@@ -703,7 +703,7 @@
       <div
         v-if="toast.show"
         class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded-xl text-[12.5px] font-medium text-white shadow-lg"
-        :class="toast.type === 'error' ? 'bg-rose-600' : 'bg-slate-800'"
+        :class="toast.type === 'error' ? 'bg-danger-deep' : 'bg-slate-800'"
       >
         <i class="fa-solid mr-1.5" :class="toast.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'"></i>{{ toast.msg }}
       </div>

@@ -82,7 +82,7 @@
                 v-if="(deliverableMsgs[dkey(currentStage, d.key)] || []).length > 0"
                 @click.stop="clearDeliverableChat(d.key)"
                 type="button"
-                class="absolute top-1.5 right-1.5 w-5 h-5 rounded-md flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-rose-500 hover:bg-rose-50 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60"
+                class="absolute top-1.5 right-1.5 w-5 h-5 rounded-md flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-danger hover:bg-danger-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/60"
                 title="清空该交付物的对话记录"
                 aria-label="清空该交付物的对话记录"
               >
@@ -268,7 +268,7 @@
                       <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
                       <span class="text-[11.5px] text-slate-700 truncate">{{ att.name }}</span>
                     </div>
-                    <button @click="dlvComposer.removeAttachment(ai)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[8px] flex items-center justify-center">
+                    <button @click="dlvComposer.removeAttachment(ai)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-700/90 hover:bg-danger text-white text-[8px] flex items-center justify-center">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
                   </div>
@@ -290,7 +290,7 @@
                     <button @click="dlvComposer.pickFile" :disabled="isStreaming" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40">
                       <i class="fa-solid fa-paperclip text-xs"></i>
                     </button>
-                    <button @click="dlvComposer.toggleRecording" :disabled="isStreaming || !dlvComposer.recordingSupported" class="w-8 h-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-40" :class="dlvComposer.isRecording.value ? 'text-white bg-rose-500' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'">
+                    <button @click="dlvComposer.toggleRecording" :disabled="isStreaming || !dlvComposer.recordingSupported" class="w-8 h-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-40" :class="dlvComposer.isRecording.value ? 'text-white bg-danger' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'">
                       <i class="fa-solid text-xs" :class="dlvComposer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
                     </button>
                   </div>
@@ -632,7 +632,7 @@
                     <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
                     <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
                   </div>
-                  <button @click="iterateComposer.removeAttachment(ai)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[8px] flex items-center justify-center shadow-sm">
+                  <button @click="iterateComposer.removeAttachment(ai)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-danger text-white text-[8px] flex items-center justify-center shadow-sm">
                     <i class="fa-solid fa-xmark"></i>
                   </button>
                 </div>
@@ -653,7 +653,7 @@
                 <button @click="iterateComposer.pickFile" :disabled="isStreaming" class="mb-1.5 w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed" title="上传文件">
                   <i class="fa-solid fa-paperclip text-xs"></i>
                 </button>
-                <button @click="iterateComposer.toggleRecording" :disabled="isStreaming || !iterateComposer.recordingSupported" class="mb-1.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="iterateComposer.isRecording.value ? 'text-white bg-rose-500 hover:bg-rose-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="iterateComposer.recordingSupported ? (iterateComposer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
+                <button @click="iterateComposer.toggleRecording" :disabled="isStreaming || !iterateComposer.recordingSupported" class="mb-1.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="iterateComposer.isRecording.value ? 'text-white bg-danger hover:bg-danger-deep' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="iterateComposer.recordingSupported ? (iterateComposer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
                   <i class="fa-solid text-xs" :class="iterateComposer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
                 </button>
                 <button
@@ -792,7 +792,7 @@
                       <i class="fa-solid fa-file-lines text-blue-500 text-base shrink-0"></i>
                       <span class="text-[12px] text-slate-700 truncate">{{ att.name }}</span>
                     </div>
-                    <button @click="stage3Composer.removeAttachment(ai)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center shadow-sm">
+                    <button @click="stage3Composer.removeAttachment(ai)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-danger text-white text-[9px] flex items-center justify-center shadow-sm">
                       <i class="fa-solid fa-xmark"></i>
                     </button>
                   </div>
@@ -814,10 +814,10 @@
                     <button @click="stage3Composer.pickFile" :disabled="isStreaming" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传文件">
                       <i class="fa-solid fa-paperclip text-sm"></i>
                     </button>
-                    <button @click="stage3Composer.toggleRecording" :disabled="isStreaming || !stage3Composer.recordingSupported" class="w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="stage3Composer.isRecording.value ? 'text-white bg-rose-500 hover:bg-rose-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="stage3Composer.recordingSupported ? (stage3Composer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
+                    <button @click="stage3Composer.toggleRecording" :disabled="isStreaming || !stage3Composer.recordingSupported" class="w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="stage3Composer.isRecording.value ? 'text-white bg-danger hover:bg-danger-deep' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="stage3Composer.recordingSupported ? (stage3Composer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
                       <i class="fa-solid text-sm" :class="stage3Composer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
                     </button>
-                    <span v-if="stage3Composer.isRecording.value" class="text-[11px] text-rose-500 font-medium tabular-nums">{{ stage3Composer.recordSeconds.value }}s</span>
+                    <span v-if="stage3Composer.isRecording.value" class="text-[11px] text-danger font-medium tabular-nums">{{ stage3Composer.recordSeconds.value }}s</span>
                     <span v-else-if="stage3Composer.isTranscribing.value" class="text-[11px] text-blue-500 font-medium">识别中…</span>
                   </div>
                   <div class="flex items-center gap-2.5">
@@ -1321,11 +1321,11 @@ function zoomStep(delta) { setZoom(previewZoom.value + delta); }
 // 按扩展名给文件树选图标 / 颜色
 function fileIcon(rel) {
   const n = (rel || '').toLowerCase();
-  if (/\.html?$/.test(n)) return { icon: 'fa-solid fa-file-code', color: 'text-orange-500' };
+  if (/\.html?$/.test(n)) return { icon: 'fa-solid fa-file-code', color: 'text-amber-600' };
   if (/\.jsx?$|\.mjs$/.test(n)) return { icon: 'fa-brands fa-js', color: 'text-yellow-500' };
   if (/\.css$/.test(n)) return { icon: 'fa-brands fa-css3-alt', color: 'text-sky-500' };
   if (/\.json$/.test(n)) return { icon: 'fa-solid fa-database', color: 'text-emerald-500' };
-  if (/\.(png|jpe?g|gif|svg|webp)$/.test(n)) return { icon: 'fa-solid fa-image', color: 'text-purple-500' };
+  if (/\.(png|jpe?g|gif|svg|webp)$/.test(n)) return { icon: 'fa-solid fa-image', color: 'text-indigo-500' };
   if (/\.md$/.test(n)) return { icon: 'fa-solid fa-file-lines', color: 'text-slate-500' };
   return { icon: 'fa-solid fa-file', color: 'text-slate-400' };
 }

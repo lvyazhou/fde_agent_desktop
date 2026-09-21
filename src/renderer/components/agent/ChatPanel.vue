@@ -140,7 +140,7 @@
               <button @click="msg.feedback = msg.feedback === 'up' ? null : 'up'" class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer" :class="msg.feedback === 'up' ? 'text-blue-600 bg-blue-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'" title="赞">
                 <i class="text-[13px]" :class="msg.feedback === 'up' ? 'fa-solid fa-thumbs-up' : 'fa-regular fa-thumbs-up'"></i>
               </button>
-              <button @click="msg.feedback = msg.feedback === 'down' ? null : 'down'" class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer" :class="msg.feedback === 'down' ? 'text-rose-500 bg-rose-50' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'" title="踩">
+              <button @click="msg.feedback = msg.feedback === 'down' ? null : 'down'" class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer" :class="msg.feedback === 'down' ? 'text-danger bg-danger-soft' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'" title="踩">
                 <i class="text-[13px]" :class="msg.feedback === 'down' ? 'fa-solid fa-thumbs-down' : 'fa-regular fa-thumbs-down'"></i>
               </button>
               <button @click="$emit('regenerate', idx)" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer" title="重新生成">
@@ -156,7 +156,7 @@
                   <button @click="$emit('feedback', idx); menuIdx = null" class="w-full px-3 py-2 flex items-center gap-2.5 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
                     <i class="fa-regular fa-comment-dots text-[12px] text-slate-400 w-4"></i>反馈
                   </button>
-                  <button @click="$emit('delete', idx); menuIdx = null" class="w-full px-3 py-2 flex items-center gap-2.5 text-[13px] text-rose-500 hover:bg-rose-50 transition-colors cursor-pointer">
+                  <button @click="$emit('delete', idx); menuIdx = null" class="w-full px-3 py-2 flex items-center gap-2.5 text-[13px] text-danger hover:bg-danger-soft transition-colors cursor-pointer">
                     <i class="fa-regular fa-trash-can text-[12px] w-4"></i>删除
                   </button>
                 </div>
@@ -202,7 +202,7 @@
                   <div class="text-[10px] text-slate-400">{{ att.text != null ? '文本' : '文件' }}</div>
                 </div>
               </div>
-              <button @click="chatAttachments.splice(ai, 1)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-rose-500 text-white text-[9px] flex items-center justify-center transition-colors cursor-pointer shadow-sm">
+              <button @click="chatAttachments.splice(ai, 1)" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-slate-700/90 hover:bg-danger text-white text-[9px] flex items-center justify-center transition-colors cursor-pointer shadow-sm">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </div>
@@ -263,12 +263,12 @@
                 @click="toggleRecording"
                 :disabled="isStreaming || !recordingSupported"
                 class="w-8 h-8 rounded-full flex items-center justify-center transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                :class="isRecording ? 'text-white bg-rose-500 hover:bg-rose-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'"
+                :class="isRecording ? 'text-white bg-danger hover:bg-danger-deep' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'"
                 :title="recordingSupported ? (isRecording ? '停止录音' : '语音输入') : '当前环境不支持录音'"
               >
                 <i class="fa-solid text-xs" :class="isRecording ? 'fa-stop' : 'fa-microphone'"></i>
               </button>
-              <span v-if="isRecording" class="text-[11px] text-rose-500 font-medium select-none tabular-nums">{{ recordSeconds }}s · 点击停止</span>
+              <span v-if="isRecording" class="text-[11px] text-danger font-medium select-none tabular-nums">{{ recordSeconds }}s · 点击停止</span>
               <span v-else-if="isTranscribing" class="text-[11px] text-blue-500 font-medium select-none">识别中…</span>
               <button
                 @click="triggerSlash"

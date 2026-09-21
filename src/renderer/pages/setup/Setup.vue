@@ -46,7 +46,7 @@
 
             <!-- 授权状态 -->
             <div v-if="licState" class="mb-4 p-3 rounded-xl text-[12px] flex items-start gap-2"
-                 :class="licState.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
+                 :class="licState.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-danger-soft text-danger-deep'">
               <i class="fa-solid mt-0.5" :class="licState.ok ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
               <span>{{ licStatusText }}</span>
             </div>
@@ -84,7 +84,7 @@
                 </span>
                 <div class="min-w-0 flex-1">
                   <div class="text-[13px] font-semibold text-slate-800">{{ c.label }}</div>
-                  <div class="text-[12px] mt-0.5" :class="c.state === 'fail' ? 'text-rose-600' : 'text-slate-500'">{{ c.detail }}</div>
+                  <div class="text-[12px] mt-0.5" :class="c.state === 'fail' ? 'text-danger-deep' : 'text-slate-500'">{{ c.detail }}</div>
                 </div>
                 <button
                   v-if="c.key === 'acp' && c.state === 'fail'"
@@ -111,7 +111,7 @@
                 下一步:配置 API Key <i class="fa-solid fa-arrow-right text-[11px] ml-1"></i>
               </button>
             </div>
-            <p v-if="!engineReady && !checking" class="text-[11px] text-rose-500 mt-3 text-right">
+            <p v-if="!engineReady && !checking" class="text-[11px] text-danger mt-3 text-right">
               引擎未就绪,先解决上方红色项。开发模式需先在 hermes-agent 建好 .venv。
             </p>
           </div>
@@ -158,7 +158,7 @@
                   </button>
                 </span>
               </div>
-              <p v-else class="text-[12px] text-rose-500 mb-2">
+              <p v-else class="text-[12px] text-danger mb-2">
                 <i class="fa-solid fa-circle-exclamation mr-1"></i>至少勾选或添加一个模型
               </p>
               <div class="border border-slate-200 rounded-xl p-3 max-h-44 overflow-y-auto space-y-1">
@@ -196,7 +196,7 @@
 
             <!-- 测试结果 -->
             <div v-if="testResult" class="mb-4 p-3 rounded-xl text-[12px] flex items-start gap-2"
-                 :class="testResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'">
+                 :class="testResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-danger-soft text-danger-deep'">
               <i class="fa-solid mt-0.5" :class="testResult.ok ? 'fa-circle-check' : 'fa-circle-exclamation'"></i>
               <span v-if="testResult.ok">连接成功,响应 {{ testResult.latencyMs }}ms。可以继续。</span>
               <span v-else>{{ testResult.error }}</span>
@@ -330,8 +330,8 @@ const checkRows = computed(() => {
   ];
 });
 
-const rowClass = (s) => ({ ok: 'border-emerald-100 bg-emerald-50/40', fail: 'border-rose-100 bg-rose-50/40', warn: 'border-amber-100 bg-amber-50/40', pending: 'border-slate-100 bg-slate-50/40' }[s]);
-const iconWrapClass = (s) => ({ ok: 'bg-emerald-100 text-emerald-600', fail: 'bg-rose-100 text-rose-600', warn: 'bg-amber-100 text-amber-600', pending: 'bg-slate-100 text-slate-400' }[s]);
+const rowClass = (s) => ({ ok: 'border-emerald-100 bg-emerald-50/40', fail: 'border-danger-soft bg-danger-soft/40', warn: 'border-amber-100 bg-amber-50/40', pending: 'border-slate-100 bg-slate-50/40' }[s]);
+const iconWrapClass = (s) => ({ ok: 'bg-emerald-100 text-emerald-600', fail: 'bg-danger-soft text-danger-deep', warn: 'bg-amber-100 text-amber-600', pending: 'bg-slate-100 text-slate-400' }[s]);
 const iconClass = (s) => ({ ok: 'fa-solid fa-check text-sm', fail: 'fa-solid fa-xmark text-sm', warn: 'fa-solid fa-triangle-exclamation text-xs', pending: 'fa-solid fa-spinner fa-spin text-xs' }[s]);
 
 const runCheck = async () => {

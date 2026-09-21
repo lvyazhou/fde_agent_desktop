@@ -58,7 +58,7 @@
           </button>
           <button
             @click.stop="confirmDeleteProject(project)"
-            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all"
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 hover:text-danger hover:bg-danger-soft transition-all"
             title="删除项目"
           >
             <i class="fa-solid fa-trash-can text-xs"></i>
@@ -131,8 +131,8 @@
     <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="showDeleteConfirm = false">
       <div class="bg-white rounded-2xl shadow-xl p-6 w-[360px]">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center">
-            <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+          <div class="w-10 h-10 rounded-full bg-danger-soft flex items-center justify-center">
+            <i class="fa-solid fa-triangle-exclamation text-danger"></i>
           </div>
           <div>
             <h4 class="font-semibold text-slate-800">确认删除</h4>
@@ -151,7 +151,7 @@
           </button>
           <button
             @click="doDelete"
-            class="px-4 py-2 text-sm bg-rose-500 hover:bg-rose-600 text-white rounded-lg transition-colors"
+            class="px-4 py-2 text-sm bg-danger hover:bg-danger-deep text-white rounded-lg transition-colors"
           >
             确认删除
           </button>

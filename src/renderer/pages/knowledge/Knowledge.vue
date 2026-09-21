@@ -196,7 +196,7 @@
               <span class="truncate">{{ stageShort(item.stageIndex) }}</span>
               <div class="flex items-center gap-2 shrink-0">
                 <button @click.stop="openDoc(item)" class="text-blue-500 font-medium hover:text-blue-700"><i class="fa-solid fa-eye mr-1"></i>预览</button>
-                <button @click.stop="deleteDoc(item)" class="text-rose-400 font-medium hover:text-rose-600"><i class="fa-solid fa-trash mr-1"></i>删除</button>
+                <button @click.stop="deleteDoc(item)" class="text-danger font-medium hover:text-danger-deep"><i class="fa-solid fa-trash mr-1"></i>删除</button>
               </div>
             </div>
           </div>
