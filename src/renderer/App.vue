@@ -55,17 +55,10 @@ const removeToast = (id) => {
 }
 
 const adjustZoom = () => {
-  // 设定设计稿基准宽度，比如 1440
-  const baseWidth = 1440
-  // 计算缩放比例
-  let zoom = window.innerWidth / baseWidth
-  
-  // 限制缩放比例范围
-  if (zoom > 1) zoom = 1
-  if (zoom < 0.6) zoom = 0.6
-
-  // 使用 document.body.style.zoom 缩放页面
-  document.body.style.zoom = zoom
+  // 全站布局已是响应式 flex（各页 flex-1 / min-h-0，三栏按比例铺满），
+  // 不再用 body.style.zoom 整体缩放——那样窄窗口会把整页缩小、宽窗口封顶 1 不铺满，
+  // 表现为「不自适应」。这里恒定 1，交给 CSS flex 自然随窗口宽度伸缩。
+  document.body.style.zoom = 1
 }
 
 let removeNotifyListener = null

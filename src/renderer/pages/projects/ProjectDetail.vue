@@ -293,8 +293,8 @@
                 <!-- Assistant -->
                 <div v-else class="w-full flex flex-col items-start">
                   <div class="flex items-center gap-2 mb-2">
-                    <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0">
-                      <i class="fa-solid fa-robot text-white text-[12px]"></i>
+                    <div class="w-7 h-7 rounded-lg overflow-hidden bg-blue-50 flex items-center justify-center shrink-0">
+                      <img :src="botAvatar" alt="FDE 智能助手" class="w-full h-full object-cover" />
                     </div>
                     <span class="text-[13px] font-semibold text-slate-700">FDE 智能助手</span>
                     <span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full"
@@ -307,7 +307,7 @@
                   <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0" class="mb-2.5 w-full">
                     <button type="button" class="flex items-center gap-2 text-left" @click="msg.expanded = !msg.expanded">
                       <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-gradient-to-br from-blue-100 to-indigo-50'">
-                        <i class="fa-solid fa-brain text-xs" :class="msg.thinkingDone ? 'text-slate-400' : 'text-blue-500 animate-pulse'"></i>
+                        <i class="fa-solid fa-brain text-xs" :class="msg.thinkingDone ? 'text-slate-400' : 'text-blue-500 thinking-breathe'"></i>
                       </div>
                       <span class="text-[12px] font-semibold" :class="msg.thinkingDone ? 'text-slate-500' : 'text-blue-700'">
                         {{ !msg.thinkingDone ? '深度推理中' : (msg.expanded ? '收起推理过程' : `推理完成 · ${msg.thinkingSteps.length} 步`) }}
@@ -1019,6 +1019,8 @@ import Stage3Deliverables from '@/components/workbench/StageDeliverables.vue';
 import ImageLightbox from '@/components/common/ImageLightbox.vue';
 import AttachmentChip from '@/components/common/AttachmentChip.vue';
 import ModelSelector from '@/components/agent/ModelSelector.vue';
+import topBg from '@/assets/top.png';
+import botAvatar from '@/assets/bot.png';
 import { FDE_STAGES, getStage, DEFAULT_STAGE } from '@/data/fde-stages';
 import { useChatComposer } from '@/composables/useChatComposer';
 
@@ -3198,29 +3200,28 @@ textarea {
 
 /* ===== 截图版工作台样式（全部走 token / 品牌蓝）===== */
 
-/* 顶部蓝色 Hero 带 */
+/* 顶部浅色 Hero 带 + 右侧 top.png 背景图 */
 .hero-band {
-  background: linear-gradient(105deg,
-    hsl(var(--primary)) 0%,
-    color-mix(in srgb, hsl(var(--primary)) 78%, white) 62%,
-    color-mix(in srgb, hsl(var(--primary)) 60%, white) 100%);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, hsl(var(--primary)) 5%, hsl(var(--background))) 0%,
+    hsl(var(--background)) 100%);
 }
 .pl-9\.5 { padding-left: 2.375rem; }
-/* Hero 右侧装饰图标（半透明白，错落分布） */
-.hero-deco {
+/* top.png 贴右侧、纵向居中、不遮挡左侧文字 */
+.hero-bg {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  height: 220%;
+  max-width: none;
+  object-fit: contain;
+  object-position: right center;
   pointer-events: none;
-  overflow: hidden;
+  opacity: 0.95;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 28%);
+  mask-image: linear-gradient(to right, transparent 0%, #000 28%);
 }
-.hero-deco .deco-ico {
-  position: absolute;
-  color: rgba(255, 255, 255, 0.14);
-}
-.hero-deco .deco-1 { right: 30%; top: 14%; font-size: 42px; transform: rotate(-8deg); }
-.hero-deco .deco-2 { right: 17%; bottom: 8%; font-size: 54px; }
-.hero-deco .deco-3 { right: 42%; bottom: 16%; font-size: 30px; color: rgba(255,255,255,0.10); }
-.hero-deco .deco-4 { right: 6%; top: 22%; font-size: 38px; transform: rotate(10deg); }
 
 /* 五阶段步骤条编号圈 */
 .step-dot {
@@ -3272,6 +3273,19 @@ textarea {
 }
 .result-act:disabled { opacity: .45; cursor: not-allowed; }
 .result-act-icon { padding: 0; width: 28px; justify-content: center; }
+
+/* 深度推理中：柔和呼吸，替代刺眼的 animate-pulse（0↔1 快闪）。
+   幅度小、周期长，尊重「减少动效」偏好。 */
+@keyframes thinking-breathe {
+  0%, 100% { opacity: .55; }
+  50% { opacity: 1; }
+}
+.thinking-breathe {
+  animation: thinking-breathe 1.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .thinking-breathe { animation: none; opacity: .85; }
+}
 
 /* Markdown Body — document reading feel */
 :deep(.markdown-body) {
