@@ -65,7 +65,7 @@
                 <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
               </template>
             </div>
-            <div class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words inline-block text-left">
+            <div class="rounded-[18px] px-3.5 py-2 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words inline-block text-left">
               {{ msg.displayContent || msg.content }}
             </div>
           </div>
@@ -178,7 +178,7 @@
             v-for="(cmd, ci) in filteredCommands"
             :key="cmd.name || ci"
             @click="selectCommand(cmd)"
-            class="px-4 py-2.5 hover:bg-blue-50/70 cursor-pointer flex items-center gap-3 text-[12px] transition-colors"
+            class="px-3.5 py-2 hover:bg-blue-50/70 cursor-pointer flex items-center gap-3 text-[12px] transition-colors"
           >
             <span class="text-blue-600 font-mono font-semibold shrink-0">/{{ cmd.name }}</span>
             <span class="text-slate-500 truncate">{{ cmd.hint || cmd.description || '' }}</span>

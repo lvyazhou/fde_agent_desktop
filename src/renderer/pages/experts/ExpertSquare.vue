@@ -205,7 +205,7 @@
         <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
-              <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
                 <i :class="'fa-solid fa-' + (selected.icon || 'rocket')"></i>
               </span>
               <div class="min-w-0">
@@ -427,7 +427,7 @@
         <aside class="absolute right-0 top-0 bottom-0 w-[680px] max-w-[94vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
-              <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: form.color || '#2563eb' }">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: form.color || '#2563eb' }">
                 <i :class="'fa-solid fa-' + (form.icon || 'rocket')"></i>
               </span>
               <div class="min-w-0">
@@ -544,7 +544,7 @@
               <button
                 @click="saveApp(false)"
                 :disabled="saving"
-                class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm shadow-blue-500/25 disabled:opacity-50"
+                class="flex-1 flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm shadow-blue-500/25 disabled:opacity-50"
               >
                 <i class="fa-solid fa-floppy-disk text-[11px]"></i>保存修改
               </button>
@@ -557,14 +557,14 @@
               <button
                 @click="saveApp(false)"
                 :disabled="saving"
-                class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold glass-card border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 transition disabled:opacity-50"
+                class="flex-1 flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-semibold glass-card border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 transition disabled:opacity-50"
               >
                 <i class="fa-solid fa-floppy-disk text-[11px]"></i>保存草稿
               </button>
               <button
                 @click="saveApp(true)"
                 :disabled="saving"
-                class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm shadow-blue-500/25 disabled:opacity-50"
+                class="flex-1 flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-[13px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm shadow-blue-500/25 disabled:opacity-50"
               >
                 <i class="fa-solid fa-rocket text-[11px]"></i>发布到广场
               </button>
@@ -585,7 +585,7 @@
         <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
-              <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0 bg-gradient-to-br from-blue-500 to-blue-700">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 bg-gradient-to-br from-blue-500 to-blue-700">
                 <i class="fa-solid fa-database"></i>
               </span>
               <div class="min-w-0">
@@ -702,7 +702,7 @@
     <transition name="toast">
       <div
         v-if="toast.show"
-        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-4 py-2.5 rounded-xl text-[12.5px] font-medium text-white shadow-lg"
+        class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[70] px-3.5 py-2 rounded-xl text-[12.5px] font-medium text-white shadow-lg"
         :class="toast.type === 'error' ? 'bg-danger-deep' : 'bg-slate-800'"
       >
         <i class="fa-solid mr-1.5" :class="toast.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check'"></i>{{ toast.msg }}

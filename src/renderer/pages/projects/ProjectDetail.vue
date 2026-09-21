@@ -133,7 +133,7 @@
         <!-- 中栏：对话区 (flex-1) -->
         <div class="flex flex-col min-w-0 relative glass-card" style="flex: 4.5 1 0">
           <!-- 顶部：当前交付物标题栏 -->
-          <div v-if="selectedDeliverable" class="shrink-0 flex items-center gap-3 px-5 py-2.5 border-b border-slate-100 bg-white/95">
+          <div v-if="selectedDeliverable" class="shrink-0 flex items-center gap-3 px-4 py-2 border-b border-slate-100 bg-white/95">
             <button
               v-if="leftPanelCollapsed"
               @click="leftPanelCollapsed = false"
@@ -159,7 +159,7 @@
           >
             <!-- Loading -->
             <div v-if="messagesLoading" class="flex flex-col items-center justify-center py-24">
-              <div class="relative w-10 h-10 mb-4">
+              <div class="relative w-9 h-9 mb-4">
                 <div class="absolute inset-0 rounded-full border-2 border-blue-100"></div>
                 <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin"></div>
               </div>
@@ -208,7 +208,7 @@
                       <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
                     </template>
                   </div>
-                  <div v-if="msg.content" class="rounded-[16px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                  <div v-if="msg.content" class="rounded-[16px] px-3.5 py-2 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
                     {{ msg.content }}
                   </div>
                 </div>
@@ -362,7 +362,7 @@
                 <p class="text-[12px] text-slate-400 leading-relaxed pl-5">{{ selectedDeliverable ? selectedDeliverable.hint : '从左侧选一件交付物' }}</p>
               </div>
               <div class="flex-1 glass-card rounded-xl border border-slate-200/70 shadow-sm overflow-hidden">
-                <div class="px-4 py-2.5 border-b border-slate-100 bg-transparent/60 flex items-center gap-2">
+                <div class="px-3.5 py-2 border-b border-slate-100 bg-transparent/60 flex items-center gap-2">
                   <div class="w-3 h-3 rounded-sm bg-slate-200"></div>
                   <div class="h-2 w-28 bg-slate-200 rounded-full"></div>
                 </div>
@@ -388,7 +388,7 @@
             <!-- Word 成品预览 -->
             <div v-else-if="livePreviewMode === 'docx' && livePreviewDocxHtml"
               class="glass-card mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
-              <div class="px-5 py-2.5 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
+              <div class="px-4 py-2 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
                 <i class="fa-solid fa-file-word text-blue-500 text-[12px]"></i>
                 <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }} · Word</span>
               </div>
@@ -398,7 +398,7 @@
             <!-- Markdown 预览 / 在线编辑 -->
             <div v-else
               class="glass-card mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
-              <div class="px-5 py-2.5 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
+              <div class="px-4 py-2 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
                 <i class="fa-solid fa-file-lines text-slate-400 text-[12px]"></i>
                 <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }}</span>
                 <span v-if="livePreviewStreaming" class="ml-auto text-[11.5px] text-emerald-600">正在写入…</span>
@@ -479,7 +479,7 @@
         </div>
         <!-- Preview pane -->
         <div class="flex-1 flex flex-col min-w-0">
-          <div class="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-slate-100 glass-card">
+          <div class="shrink-0 flex items-center gap-3 px-3.5 py-2 border-b border-slate-100 glass-card">
             <button
               @click="openInBrowser"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
@@ -543,7 +543,7 @@
                 >
                   <!-- User -->
                   <div v-if="msg.role === 'user'" class="max-w-[80%] flex flex-col items-end">
-                    <div v-if="msg.content" class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                    <div v-if="msg.content" class="rounded-[18px] px-3.5 py-2 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
                       {{ msg.content }}
                     </div>
                   </div>
@@ -720,7 +720,7 @@
                       <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
                     </template>
                   </div>
-                  <div v-if="msg.content" class="rounded-[18px] px-4 py-2.5 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                  <div v-if="msg.content" class="rounded-[18px] px-3.5 py-2 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
                     {{ msg.content }}
                   </div>
                 </div>
@@ -807,13 +807,13 @@
                 ></textarea>
                 <div class="flex items-center justify-between px-3 pb-3 pt-1.5 gap-2.5">
                   <div class="flex items-center gap-1.5">
-                    <button @click="stage3Composer.pickImage" :disabled="isStreaming" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传图片">
+                    <button @click="stage3Composer.pickImage" :disabled="isStreaming" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传图片">
                       <i class="fa-solid fa-image text-sm"></i>
                     </button>
-                    <button @click="stage3Composer.pickFile" :disabled="isStreaming" class="w-9 h-9 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传文件">
+                    <button @click="stage3Composer.pickFile" :disabled="isStreaming" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title="上传文件">
                       <i class="fa-solid fa-paperclip text-sm"></i>
                     </button>
-                    <button @click="stage3Composer.toggleRecording" :disabled="isStreaming || !stage3Composer.recordingSupported" class="w-9 h-9 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="stage3Composer.isRecording.value ? 'text-white bg-danger hover:bg-danger-deep' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="stage3Composer.recordingSupported ? (stage3Composer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
+                    <button @click="stage3Composer.toggleRecording" :disabled="isStreaming || !stage3Composer.recordingSupported" class="w-8 h-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-40 disabled:cursor-not-allowed" :class="stage3Composer.isRecording.value ? 'text-white bg-danger hover:bg-danger-deep' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" :title="stage3Composer.recordingSupported ? (stage3Composer.isRecording.value ? '停止录音' : '语音输入') : '当前环境不支持录音'">
                       <i class="fa-solid text-sm" :class="stage3Composer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
                     </button>
                     <span v-if="stage3Composer.isRecording.value" class="text-[11px] text-danger font-medium tabular-nums">{{ stage3Composer.recordSeconds.value }}s</span>
@@ -824,7 +824,7 @@
                     <button
                       v-if="isStreaming"
                       @click="cancelStream"
-                      class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all shadow-sm"
+                      class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all shadow-sm"
                       title="停止生成"
                     >
                       <span class="w-3 h-3 rounded-[3px] glass-card"></span>
@@ -833,7 +833,7 @@
                       v-else
                       @click="sendStage3"
                       :disabled="!stage3Input.trim() && stage3Composer.attachments.value.length === 0"
-                      class="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
+                      class="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
                       :class="(stage3Input.trim() || stage3Composer.attachments.value.length) ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30 hover:shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300 cursor-not-allowed'"
                     >
                       <i class="fa-solid fa-arrow-up text-sm"></i>
@@ -874,7 +874,7 @@
   <transition name="fade">
     <div
       v-if="toast.show"
-      class="fixed top-4 right-4 z-[9999] max-w-md px-4 py-2.5 rounded-lg shadow-lg text-sm border"
+      class="fixed top-4 right-4 z-[9999] max-w-md px-3.5 py-2 rounded-lg shadow-lg text-sm border"
       :class="toast.type === 'success' ? 'glass-card border-emerald-300 text-emerald-700'
         : toast.type === 'error' ? 'glass-card border-red-300 text-red-700'
         : 'glass-card border-blue-200 text-blue-700'"

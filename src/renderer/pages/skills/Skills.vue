@@ -159,7 +159,7 @@
         <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
-              <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
                 <i :class="faIcon(selected.icon, 'cube')"></i>
               </span>
               <div class="min-w-0">
@@ -219,7 +219,7 @@
                 <div>
                   <label class="block text-[12px] font-medium text-slate-600 mb-1.5">图标 <span class="text-slate-400 font-normal">(Font Awesome 名)</span></label>
                   <div class="flex items-center gap-2">
-                    <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
+                    <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
                       <i :class="faIcon(form.icon, 'cube')"></i>
                     </span>
                     <input v-model="form.icon" type="text" placeholder="如 star / wand-magic-sparkles"
@@ -251,7 +251,7 @@
           <!-- Header -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
-              <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0 bg-gradient-to-br from-blue-500 to-blue-700">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0 bg-gradient-to-br from-blue-500 to-blue-700">
                 <i class="fa-solid fa-cloud-arrow-down"></i>
               </span>
               <div class="min-w-0">
@@ -416,7 +416,7 @@
 
     <!-- Toast -->
     <transition name="fade">
-      <div v-if="toast" class="fixed top-4 right-4 z-[60] bg-slate-800 text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2">
+      <div v-if="toast" class="fixed top-4 right-4 z-[60] bg-slate-800 text-white text-[13px] px-3.5 py-2 rounded-lg shadow-lg flex items-center gap-2">
         <i class="fa-solid fa-circle-check text-blue-400"></i>{{ toast }}
       </div>
     </transition>

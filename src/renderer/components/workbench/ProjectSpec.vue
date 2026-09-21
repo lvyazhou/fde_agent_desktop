@@ -138,7 +138,7 @@
           <!-- 角色分工 -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
             <div v-for="r in reqMgmt.roles" :key="r.name" class="glass-card rounded-xl border border-blue-500/14 p-4 flex items-start gap-3">
-              <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <i :class="r.icon"></i>
               </span>
               <div class="min-w-0">
@@ -201,7 +201,7 @@
             >
               <div class="flex items-center gap-2.5 mb-3">
                 <span
-                  class="w-9 h-9 rounded-lg text-white flex items-center justify-center shrink-0"
+                  class="w-8 h-8 rounded-lg text-white flex items-center justify-center shrink-0"
                   :class="m.accent === 'blue' ? 'bg-blue-600' : 'bg-blue-600'"
                 >
                   <i :class="m.icon"></i>
@@ -232,7 +232,7 @@
               @click="openLink(lk.url)"
               class="group text-left glass-card rounded-xl border border-blue-500/14 hover:border-blue-400 transition-colors duration-200 cursor-pointer p-4 flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
             >
-              <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <i :class="lk.icon"></i>
               </span>
               <div class="min-w-0 flex-1">
@@ -259,7 +259,7 @@
       @close="activeTemplate = null"
     >
       <template #header-icon>
-        <div class="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+        <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
           <i :class="activeTemplate?.icon || 'fa-solid fa-file-lines'"></i>
         </div>
       </template>

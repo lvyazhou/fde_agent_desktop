@@ -94,7 +94,7 @@
           <button
             @click="$emit('generate', selected)"
             :disabled="busy"
-            class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl bg-blue-700 hover:bg-blue-800 text-white transition-colors shadow-sm disabled:opacity-50"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl bg-blue-700 hover:bg-blue-800 text-white transition-colors shadow-sm disabled:opacity-50"
           >
             <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
             生成{{ activeDeliverable?.short }}

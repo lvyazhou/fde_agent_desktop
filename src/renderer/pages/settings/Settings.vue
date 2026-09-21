@@ -6,7 +6,7 @@
       <!-- AI Model Config -->
       <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+          <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-robot text-blue-700"></i>
           </div>
           <h2 class="font-semibold text-slate-800">AI 模型配置</h2>
@@ -19,7 +19,7 @@
                 :type="showApiKey ? 'text' : 'password'"
                 v-model="apiKey"
                 placeholder="sk-... 请输入你的 AI API Key"
-                class="w-full px-4 py-2.5 pr-10 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+                class="w-full px-3.5 py-2 pr-10 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
               />
               <button
                 @click="showApiKey = !showApiKey"
@@ -38,7 +38,7 @@
             <input
               v-model="baseUrl"
               placeholder="https://api.openai.com/v1（留空使用默认）"
-              class="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+              class="w-full px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
             />
           </div>
           <div>
@@ -49,7 +49,7 @@
               <div class="relative">
                 <select
                   v-model="modelSelect"
-                  class="w-full appearance-none px-4 py-2.5 pr-10 border border-slate-200 rounded-xl text-sm glass-card focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                  class="w-full appearance-none px-3.5 py-2 pr-10 border border-slate-200 rounded-xl text-sm glass-card focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
                 >
                   <option value="" disabled>请选择模型…</option>
                   <optgroup label="强 · 首选">
@@ -66,7 +66,7 @@
                 v-if="isCustomModel"
                 v-model="customModel"
                 placeholder="按网关支持的名称填写，如 gpt-4o、qwen/qwen3-max"
-                class="w-full mt-2 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+                class="w-full mt-2 px-3.5 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
               />
               <p class="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
                 <i class="fa-solid fa-circle-info text-slate-300"></i>
@@ -159,7 +159,7 @@
       <!-- MCP Servers -->
       <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+          <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-plug text-blue-700"></i>
           </div>
           <h2 class="font-semibold text-slate-800">MCP 服务器</h2>
@@ -180,7 +180,7 @@
       <!-- Data Storage -->
       <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+          <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-hard-drive text-blue-700"></i>
           </div>
           <h2 class="font-semibold text-slate-800">数据存储</h2>
@@ -200,7 +200,7 @@
       <!-- About -->
       <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
+          <div class="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-circle-info text-blue-700"></i>
           </div>
           <h2 class="font-semibold text-slate-800">关于</h2>

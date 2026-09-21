@@ -30,7 +30,7 @@
             </div>
             <button
               @click="goCoach"
-              class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-600 transition-colors cursor-pointer shrink-0"
+              class="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-600 transition-colors cursor-pointer shrink-0"
             >
               <i class="fa-solid fa-headset"></i>
               <span>找 FDE 教练陪练聊需求</span>
@@ -149,7 +149,7 @@
                 </div>
 
                 <!-- 底部:节奏 + 进入箭头 -->
-                <div class="px-4 py-2.5 bg-blue-50/40 border-t border-blue-500/10 flex items-center gap-1.5 text-[10px] text-slate-400">
+                <div class="px-3.5 py-2 bg-blue-50/40 border-t border-blue-500/10 flex items-center gap-1.5 text-[10px] text-slate-400">
                   <i class="fa-solid fa-clock w-3 text-slate-300"></i>
                   <span class="truncate">{{ s.rhythm || s.duration }}</span>
                   <i class="fa-solid fa-arrow-right ml-auto text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all"></i>

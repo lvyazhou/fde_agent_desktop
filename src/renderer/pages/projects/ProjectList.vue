@@ -8,7 +8,7 @@
       </div>
       <RouterLink
         to="/projects/new"
-        class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-700/20"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-700/20"
       >
         <i class="fa-solid fa-plus text-xs"></i>
         <span>新建项目</span>
@@ -67,7 +67,7 @@
         <!-- Card content -->
         <div class="p-5">
           <div class="flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
               <i class="fa-solid fa-cube text-blue-700"></i>
             </div>
             <!-- FDE stage badge -->
@@ -131,7 +131,7 @@
     <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="showDeleteConfirm = false">
       <div class="glass-card rounded-2xl shadow-xl p-6 w-[360px]">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-10 h-10 rounded-full bg-danger-soft flex items-center justify-center">
+          <div class="w-9 h-9 rounded-full bg-danger-soft flex items-center justify-center">
             <i class="fa-solid fa-triangle-exclamation text-danger"></i>
           </div>
           <div>
@@ -163,7 +163,7 @@
     <div v-if="showRename" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="showRename = false">
       <div class="glass-card rounded-2xl shadow-xl p-6 w-[400px]">
         <div class="flex items-center gap-3 mb-4">
-          <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+          <div class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-pen text-blue-600"></i>
           </div>
           <div>

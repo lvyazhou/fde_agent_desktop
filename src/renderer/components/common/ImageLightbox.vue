@@ -20,7 +20,7 @@
       <!-- Close button -->
       <button
         type="button"
-        class="absolute top-5 right-5 w-10 h-10 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+        class="absolute top-5 right-5 w-9 h-9 rounded-full flex items-center justify-center bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
         title="关闭 (Esc)"
         @click="close"
       >
@@ -32,14 +32,14 @@
         class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 px-2 py-1.5 rounded-full bg-white/10 backdrop-blur-sm"
         @click.stop
       >
-        <button type="button" class="w-9 h-9 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer" title="缩小" @click="zoomBy(-0.25)">
+        <button type="button" class="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer" title="缩小" @click="zoomBy(-0.25)">
           <i class="fa-solid fa-magnifying-glass-minus text-sm"></i>
         </button>
         <span class="text-white text-[12px] font-medium w-14 text-center tabular-nums">{{ Math.round(scale * 100) }}%</span>
-        <button type="button" class="w-9 h-9 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer" title="放大" @click="zoomBy(0.25)">
+        <button type="button" class="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer" title="放大" @click="zoomBy(0.25)">
           <i class="fa-solid fa-magnifying-glass-plus text-sm"></i>
         </button>
-        <button type="button" class="w-9 h-9 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer" title="复位" @click="reset">
+        <button type="button" class="w-8 h-8 rounded-full flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer" title="复位" @click="reset">
           <i class="fa-solid fa-arrows-rotate text-sm"></i>
         </button>
       </div>

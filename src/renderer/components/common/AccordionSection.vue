@@ -2,7 +2,7 @@
   <div class="border-b border-slate-100 last:border-b-0">
     <button
       @click="open = !open"
-      class="w-full flex items-center justify-between px-4 py-2.5 text-left hover:bg-slate-50/50 transition-colors cursor-pointer"
+      class="w-full flex items-center justify-between px-3.5 py-2 text-left hover:bg-slate-50/50 transition-colors cursor-pointer"
     >
       <div class="flex items-center gap-2 flex-1 min-w-0">
         <i :class="icon" class="text-xs w-4 text-center shrink-0" :style="{ color: iconColor }"></i>

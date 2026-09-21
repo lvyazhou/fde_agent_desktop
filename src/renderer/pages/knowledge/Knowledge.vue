@@ -313,7 +313,7 @@
 
     <!-- Toast -->
     <transition name="fade">
-      <div v-if="toast" class="fixed top-4 right-4 z-[60] bg-slate-800 text-white text-[13px] px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2">
+      <div v-if="toast" class="fixed top-4 right-4 z-[60] bg-slate-800 text-white text-[13px] px-3.5 py-2 rounded-lg shadow-lg flex items-center gap-2">
         <i class="fa-solid fa-circle-check text-blue-400"></i>{{ toast }}
       </div>
     </transition>

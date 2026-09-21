@@ -9,14 +9,14 @@
       <div class="flex items-center gap-2">
         <button
           @click="createWorkspace"
-          class="inline-flex items-center gap-2 px-4 py-2.5 glass-card hover:bg-transparent text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
+          class="inline-flex items-center gap-2 px-3.5 py-2 glass-card hover:bg-transparent text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
         >
           <i class="fa-solid fa-folder-plus text-xs"></i>
           <span>新建项目</span>
         </button>
         <button
           @click="openFolder"
-          class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-700/20"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-700/20"
         >
           <i class="fa-solid fa-folder-open text-xs"></i>
           <span>打开文件夹</span>
@@ -78,7 +78,7 @@
         </div>
         <div class="p-5">
           <div class="flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+            <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
               <i class="fa-solid fa-folder-tree text-blue-700"></i>
             </div>
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-medium">

@@ -2,7 +2,7 @@
   <div class="w-[480px] shrink-0 glass-card border-l border-slate-200/60 flex flex-col overflow-hidden">
     <!-- Header -->
     <div class="shrink-0 px-4 py-3 border-b border-slate-100 flex items-center gap-3 min-w-0">
-      <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" :style="{ background: iconBg }">
+      <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" :style="{ background: iconBg }">
         <i :class="'fa-solid ' + iconClass" class="text-[14px]" :style="{ color: iconColor }"></i>
       </div>
       <div class="flex-1 min-w-0">

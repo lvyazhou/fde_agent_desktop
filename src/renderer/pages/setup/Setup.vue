@@ -52,18 +52,18 @@
             </div>
 
             <div class="flex items-center justify-between mt-6">
-              <button @click="refreshLicense" :disabled="licLoading" class="text-[13px] px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50">
+              <button @click="refreshLicense" :disabled="licLoading" class="text-[13px] px-3.5 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50">
                 <i class="fa-solid" :class="licLoading ? 'fa-spinner fa-spin' : 'fa-rotate-right'"></i> 刷新状态
               </button>
               <div class="flex items-center gap-2">
-                <button @click="importLicense" :disabled="importing" class="text-[13px] px-4 py-2.5 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40">
+                <button @click="importLicense" :disabled="importing" class="text-[13px] px-3.5 py-2 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40">
                   <i class="fa-solid" :class="importing ? 'fa-spinner fa-spin' : 'fa-file-import'"></i>
                   {{ importing ? ' 导入中' : ' 导入授权文件' }}
                 </button>
                 <button
                   @click="goNextFromLicense"
                   :disabled="!(licState && licState.ok)"
-                  class="text-[13px] px-5 py-2.5 rounded-xl font-medium text-white transition-colors"
+                  class="text-[13px] px-4 py-2 rounded-xl font-medium text-white transition-colors"
                   :class="(licState && licState.ok) ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'"
                 >
                   下一步 <i class="fa-solid fa-arrow-right text-[11px] ml-1"></i>
@@ -99,13 +99,13 @@
             </div>
 
             <div class="flex items-center justify-between mt-7">
-              <button @click="runCheck" :disabled="checking" class="text-[13px] px-4 py-2.5 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50">
+              <button @click="runCheck" :disabled="checking" class="text-[13px] px-3.5 py-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors disabled:opacity-50">
                 <i class="fa-solid" :class="checking ? 'fa-spinner fa-spin' : 'fa-rotate-right'"></i> 重新检查
               </button>
               <button
                 @click="goNextFromCheck"
                 :disabled="checking"
-                class="text-[13px] px-5 py-2.5 rounded-xl font-medium text-white transition-colors disabled:opacity-50"
+                class="text-[13px] px-4 py-2 rounded-xl font-medium text-white transition-colors disabled:opacity-50"
                 :class="engineReady ? 'bg-blue-600 hover:bg-blue-700' : 'bg-slate-300 cursor-not-allowed'"
               >
                 下一步:配置 API Key <i class="fa-solid fa-arrow-right text-[11px] ml-1"></i>
@@ -203,14 +203,14 @@
             </div>
 
             <div class="flex items-center justify-between mt-6">
-              <button @click="step = 1" class="text-[13px] px-4 py-2.5 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">
+              <button @click="step = 1" class="text-[13px] px-3.5 py-2 rounded-xl text-slate-500 hover:bg-slate-100 transition-colors">
                 <i class="fa-solid fa-arrow-left text-[11px] mr-1"></i> 上一步
               </button>
               <div class="flex items-center gap-2">
                 <button
                   @click="testConn"
                   :disabled="!apiKey.trim() || testing"
-                  class="text-[13px] px-4 py-2.5 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40"
+                  class="text-[13px] px-3.5 py-2 rounded-xl border border-blue-200 text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-40"
                 >
                   <i class="fa-solid" :class="testing ? 'fa-spinner fa-spin' : 'fa-plug'"></i>
                   {{ testing ? ' 测试中' : ' 测试连接' }}
@@ -218,7 +218,7 @@
                 <button
                   @click="saveAndFinish"
                   :disabled="!(testResult && testResult.ok) || saving || (!isThreeSixty && selectedModels.length === 0)"
-                  class="text-[13px] px-5 py-2.5 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+                  class="text-[13px] px-4 py-2 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
                 >
                   <i class="fa-solid" :class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
                   {{ saving ? ' 保存中' : ' 保存并进入' }}

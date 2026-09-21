@@ -1,7 +1,7 @@
 ﻿<template>
   <div class="w-[280px] shrink-0 glass-card border-l border-slate-200/60 flex flex-col overflow-hidden">
     <!-- Header -->
-    <div class="shrink-0 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
+    <div class="shrink-0 px-3.5 py-2 border-b border-slate-100 flex items-center justify-between">
       <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">智能体</span>
       <button class="text-slate-400 hover:text-slate-600 text-xs" @click="$emit('close')">
         <i class="fa-solid fa-chevron-right"></i>
