@@ -133,6 +133,15 @@
     border-radius: 12px;
     box-shadow: var(--shadow-card-token);
   }
+  /* 卡片玻璃底：替代实心 bg-white。按 skill，卡片用渐变近实底、不加 blur。
+     全站 150 处 bg-white 会把 body 的蓝色光晕整块遮住，改用这个类才有玻璃层次。 */
+  .glass-card {
+    background: var(--card-bg);
+  }
+  /* 面板/栏目底：比卡片更淡的一层，用于侧边栏内的分区、列表容器 */
+  .glass-panel {
+    background: color-mix(in srgb, hsl(var(--background)) 92%, hsl(var(--primary)) 4%);
+  }
   /* 毛玻璃：仅顶栏 / 侧栏可用（skill 规定卡片不得加 blur） */
   .chrome-glass {
     background: var(--chrome-bg);

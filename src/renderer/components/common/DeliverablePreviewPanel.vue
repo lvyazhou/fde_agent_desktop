@@ -1,5 +1,5 @@
 <template>
-  <div class="w-[480px] shrink-0 bg-white border-l border-slate-200/60 flex flex-col overflow-hidden">
+  <div class="w-[480px] shrink-0 glass-card border-l border-slate-200/60 flex flex-col overflow-hidden">
     <!-- Header -->
     <div class="shrink-0 px-4 py-3 border-b border-slate-100 flex items-center gap-3 min-w-0">
       <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" :style="{ background: iconBg }">
@@ -50,7 +50,7 @@
 
       <!-- Text/source preview -->
       <div v-else-if="file.previewKind === 'text' && textContent !== null" class="p-4 overflow-auto h-full">
-        <pre class="text-[12px] leading-relaxed text-slate-700 bg-white rounded-lg border border-slate-200 p-4 overflow-auto whitespace-pre-wrap break-words font-mono">{{ textContent }}</pre>
+        <pre class="text-[12px] leading-relaxed text-slate-700 glass-card rounded-lg border border-slate-200 p-4 overflow-auto whitespace-pre-wrap break-words font-mono">{{ textContent }}</pre>
       </div>
 
       <!-- Unsupported / fallback -->
@@ -66,7 +66,7 @@
               <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
               用系统程序打开
             </button>
-            <button @click="saveAs" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer">
+            <button @click="saveAs" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg glass-card border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors cursor-pointer">
               <i class="fa-solid fa-download text-[10px]"></i>
               另存为
             </button>

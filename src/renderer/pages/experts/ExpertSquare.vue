@@ -60,7 +60,7 @@
               class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-medium border active:scale-95 transition-all"
               :class="devMode
                 ? 'bg-blue-600 border-blue-600 text-white'
-                : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'"
+                : 'glass-card border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'"
             >
               <i class="fa-solid fa-code text-[9px]"></i>开发者
             </button>
@@ -202,7 +202,7 @@
     <transition name="drawer">
       <div v-if="selected" class="fixed inset-0 z-50">
         <div class="absolute inset-0 bg-slate-900/40" @click="selected = null"></div>
-        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] bg-white shadow-2xl flex flex-col">
+        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
@@ -424,7 +424,7 @@
     <transition name="drawer">
       <div v-if="editing" class="fixed inset-0 z-[60]">
         <div class="absolute inset-0 bg-slate-900/40" @click="closeEditor"></div>
-        <aside class="absolute right-0 top-0 bottom-0 w-[680px] max-w-[94vw] bg-white shadow-2xl flex flex-col">
+        <aside class="absolute right-0 top-0 bottom-0 w-[680px] max-w-[94vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: form.color || '#2563eb' }">
@@ -557,7 +557,7 @@
               <button
                 @click="saveApp(false)"
                 :disabled="saving"
-                class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold bg-white border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 transition disabled:opacity-50"
+                class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold glass-card border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-600 transition disabled:opacity-50"
               >
                 <i class="fa-solid fa-floppy-disk text-[11px]"></i>保存草稿
               </button>
@@ -582,7 +582,7 @@
     <transition name="drawer">
       <div v-if="assetDrawerOpen" class="fixed inset-0 z-[65]">
         <div class="absolute inset-0 bg-slate-900/40" @click="assetDrawerOpen = false"></div>
-        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] bg-white shadow-2xl flex flex-col">
+        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0 bg-gradient-to-br from-blue-500 to-blue-700">

@@ -68,14 +68,14 @@
           <button
             @click="refresh"
             :disabled="importing"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition cursor-pointer active:scale-95"
+            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium glass-card border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition cursor-pointer active:scale-95"
             title="重新扫描技能库"
           >
             <i class="fa-solid fa-rotate text-[11px]" :class="refreshing ? 'fa-spin' : ''"></i>刷新
           </button>
           <button
             @click="openHub"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition cursor-pointer active:scale-95"
+            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium glass-card border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition cursor-pointer active:scale-95"
             title="从 360 SkillHub 搜索并安装技能"
           >
             <i class="fa-solid fa-cloud-arrow-down text-[11px]"></i>技能中心
@@ -156,7 +156,7 @@
     <transition name="drawer">
       <div v-if="selected" class="fixed inset-0 z-50">
         <div class="absolute inset-0 bg-slate-900/40" @click="!editing && (selected = null)"></div>
-        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] bg-white shadow-2xl flex flex-col">
+        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-9 h-9 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
@@ -191,7 +191,7 @@
             </div>
           </div>
 
-          <div class="flex-1 min-h-0 overflow-y-auto p-6 bg-white">
+          <div class="flex-1 min-h-0 overflow-y-auto p-6 glass-card">
             <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-slate-400">
               <div class="w-8 h-8 rounded-full border-2 border-blue-100 border-t-blue-500 animate-spin mb-3"></div>
               <span class="text-[12px]">加载中…</span>
@@ -212,7 +212,7 @@
                 <div>
                   <label class="block text-[12px] font-medium text-slate-600 mb-1.5">分类</label>
                   <select v-model="form.category"
-                    class="w-full px-3 py-2 rounded-lg border border-slate-200 text-[13px] text-slate-800 bg-white focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
+                    class="w-full px-3 py-2 rounded-lg border border-slate-200 text-[13px] text-slate-800 glass-card focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100">
                     <option v-for="g in SKILL_GROUP_OPTIONS" :key="g.id" :value="g.id">{{ g.name }}</option>
                   </select>
                 </div>
@@ -247,7 +247,7 @@
     <transition name="drawer">
       <div v-if="hubOpen" class="fixed inset-0 z-50">
         <div class="absolute inset-0 bg-slate-900/40" @click="hubOpen = false"></div>
-        <aside class="absolute right-0 top-0 bottom-0 w-[1100px] max-w-[95vw] bg-white shadow-2xl flex flex-col">
+        <aside class="absolute right-0 top-0 bottom-0 w-[1100px] max-w-[95vw] glass-card shadow-2xl flex flex-col">
           <!-- Header -->
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
@@ -265,7 +265,7 @@
           <!-- 两栏布局 -->
           <div class="flex-1 min-h-0 flex">
             <!-- 左侧:搜索 + 分类树 -->
-            <aside class="w-[200px] shrink-0 flex flex-col border-r border-slate-200/70 bg-white">
+            <aside class="w-[200px] shrink-0 flex flex-col border-r border-slate-200/70 glass-card">
               <div class="px-3 pt-3 pb-2.5 border-b border-slate-100 shrink-0">
                 <div class="relative">
                   <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
@@ -377,7 +377,7 @@
     <transition name="fade">
       <div v-if="importing || importResult" class="fixed inset-0 z-[55] flex items-center justify-center">
         <div class="absolute inset-0 bg-slate-900/40"></div>
-        <div class="relative w-[420px] max-w-[92vw] bg-white rounded-2xl shadow-2xl p-6">
+        <div class="relative w-[420px] max-w-[92vw] glass-card rounded-2xl shadow-2xl p-6">
           <div class="flex items-center gap-2 mb-5">
             <i class="fa-solid fa-file-zipper text-blue-600"></i>
             <span class="text-[15px] font-bold text-slate-800">导入技能包</span>

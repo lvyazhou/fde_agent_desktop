@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="w-[240px] shrink-0 bg-white border-r border-slate-200/60 flex flex-col">
+  <div class="w-[240px] shrink-0 glass-card border-r border-slate-200/60 flex flex-col">
     <!-- Header -->
     <div class="shrink-0 px-4 py-3 border-b border-slate-100">
       <div class="flex items-center justify-between mb-3">

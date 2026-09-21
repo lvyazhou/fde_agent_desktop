@@ -9,7 +9,7 @@
       <div class="flex items-center gap-2">
         <button
           @click="createWorkspace"
-          class="inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-transparent text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
+          class="inline-flex items-center gap-2 px-4 py-2.5 glass-card hover:bg-transparent text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
         >
           <i class="fa-solid fa-folder-plus text-xs"></i>
           <span>新建项目</span>
@@ -51,7 +51,7 @@
         </button>
         <button
           @click="createWorkspace"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-transparent text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
+          class="inline-flex items-center gap-2 px-6 py-3 glass-card hover:bg-transparent text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
         >
           <i class="fa-solid fa-folder-plus text-xs"></i>
           <span>新建项目</span>
@@ -64,7 +64,7 @@
       <div
         v-for="ws in workspaces"
         :key="ws.id"
-        class="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all cursor-pointer"
+        class="group relative glass-card rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all cursor-pointer"
         @click="openWorkspace(ws.id)"
       >
         <div class="absolute top-3 right-3 z-10 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
@@ -101,7 +101,7 @@
       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40"
       @click.self="cancelNameDialog"
     >
-      <div class="w-[420px] max-w-[90vw] bg-white rounded-2xl shadow-xl border border-slate-100 p-6">
+      <div class="w-[420px] max-w-[90vw] glass-card rounded-2xl shadow-xl border border-slate-100 p-6">
         <h3 class="text-base font-semibold text-slate-800 mb-1">新建项目</h3>
         <p class="text-xs text-slate-500 mb-4">给项目起个名字，下一步选择父目录，会在里面建一个同名文件夹。</p>
         <input

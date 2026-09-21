@@ -5,7 +5,7 @@
       :key="tab.value"
       class="px-4 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5"
       :class="modelValue === tab.value
-        ? 'bg-white text-slate-900 shadow-sm'
+        ? 'glass-card text-slate-900 shadow-sm'
         : 'text-slate-500 hover:text-slate-900'"
       @click="$emit('update:modelValue', tab.value)"
     >

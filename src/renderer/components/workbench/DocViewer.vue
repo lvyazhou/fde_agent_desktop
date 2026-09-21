@@ -38,7 +38,7 @@
 
     <!-- 内容区 -->
     <!-- html 原型:铺满 iframe,内边距归零(走本地静态服务,fetch data 可正常加载) -->
-    <div v-if="isHtmlPreview" class="flex-1 min-h-0 bg-white">
+    <div v-if="isHtmlPreview" class="flex-1 min-h-0 glass-card">
       <div v-if="loading" class="flex flex-col items-center justify-center h-full text-slate-400">
         <div class="w-8 h-8 rounded-full border-2 border-blue-100 border-t-blue-500 animate-spin mb-3"></div>
         <span class="text-[12px]">加载中...</span>
@@ -55,7 +55,7 @@
       ></iframe>
     </div>
 
-    <div v-else class="flex-1 min-h-0 overflow-y-auto p-6 bg-white">
+    <div v-else class="flex-1 min-h-0 overflow-y-auto p-6 glass-card">
       <!-- md / docx(html快照) 内嵌渲染 -->
       <div v-if="canPreview">
         <div v-if="loading" class="flex flex-col items-center justify-center py-20 text-slate-400">
@@ -108,7 +108,7 @@
           </button>
           <button
             @click="downloadFile"
-            class="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+            class="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-medium glass-card border border-slate-200 text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
           >
             <i class="fa-solid fa-download text-[12px]"></i>
             <span>下载</span>

@@ -1,7 +1,7 @@
 <template>
   <div class="flex-1 flex flex-col min-h-0 overflow-hidden">
     <!-- Top bar: project name + tab bar -->
-    <div class="shrink-0 bg-white border-b border-slate-200/80 px-6 pt-2 pb-0">
+    <div class="shrink-0 glass-card border-b border-slate-200/80 px-6 pt-2 pb-0">
       <div class="flex items-center gap-3 mb-2">
         <RouterLink to="/projects" class="text-slate-400 hover:text-blue-700 transition-colors">
           <i class="fa-solid fa-arrow-left text-sm"></i>
@@ -131,7 +131,7 @@
         </div>
 
         <!-- 中栏：对话区 (flex-1) -->
-        <div class="flex flex-col min-w-0 relative bg-white" style="flex: 4.5 1 0">
+        <div class="flex flex-col min-w-0 relative glass-card" style="flex: 4.5 1 0">
           <!-- 顶部：当前交付物标题栏 -->
           <div v-if="selectedDeliverable" class="shrink-0 flex items-center gap-3 px-5 py-2.5 border-b border-slate-100 bg-white/95">
             <button
@@ -238,7 +238,7 @@
                     </button>
                     <div v-if="msg.expanded" class="mt-2 ml-3.5 pl-4 border-l-2 border-blue-100 space-y-0.5 max-h-[200px] overflow-y-auto scrollbar-hide">
                       <div v-for="(step, si) in msg.thinkingSteps" :key="si" v-show="step.visible !== false" class="flex items-start gap-2 py-0.5">
-                        <div class="w-4 h-4 rounded flex items-center justify-center shrink-0 mt-0.5 bg-white border border-slate-200/60 text-slate-400">
+                        <div class="w-4 h-4 rounded flex items-center justify-center shrink-0 mt-0.5 glass-card border border-slate-200/60 text-slate-400">
                           <i :class="step.icon || 'fa-solid fa-circle'" class="text-[7px]"></i>
                         </div>
                         <span class="text-[11.5px] leading-relaxed text-slate-500 compact-markdown" v-html="renderMarkdown(step.text)"></span>
@@ -264,7 +264,7 @@
                 <div v-if="dlvComposer.attachments.value.length" class="flex items-center gap-2 px-4 pt-3 flex-wrap">
                   <div v-for="(att, ai) in dlvComposer.attachments.value" :key="ai" class="relative">
                     <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-12 h-12 object-cover rounded-lg border border-slate-200" />
-                    <div v-else class="flex items-center gap-2 h-12 px-2.5 rounded-lg border border-slate-200 bg-white max-w-[180px]">
+                    <div v-else class="flex items-center gap-2 h-12 px-2.5 rounded-lg border border-slate-200 glass-card max-w-[180px]">
                       <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
                       <span class="text-[11.5px] text-slate-700 truncate">{{ att.name }}</span>
                     </div>
@@ -297,7 +297,7 @@
                   <div class="flex items-center gap-2">
                     <span class="text-[10.5px] text-slate-300 select-none">Ctrl+Enter</span>
                     <button v-if="isStreaming" @click="cancelStream" class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center">
-                      <span class="w-2.5 h-2.5 rounded-[2px] bg-white"></span>
+                      <span class="w-2.5 h-2.5 rounded-[2px] glass-card"></span>
                     </button>
                     <button v-else @click="dlvSend" :disabled="!dlvInput.trim() && dlvComposer.attachments.value.length === 0"
                       class="w-8 h-8 rounded-full flex items-center justify-center transition-all"
@@ -324,7 +324,7 @@
           :style="rightPanelCollapsed ? 'flex: 0 0 40px' : (rightPanelUserWidth ? 'flex: 0 0 ' + rightPanelUserWidth + 'px' : 'flex: 4.5 1 0; min-width: 320px')"
         >
           <!-- 顶栏 -->
-          <div class="shrink-0 flex items-center gap-2 px-2.5 py-2 border-b border-slate-100 bg-white">
+          <div class="shrink-0 flex items-center gap-2 px-2.5 py-2 border-b border-slate-100 glass-card">
             <button
               class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors"
               :title="rightPanelCollapsed ? '展开文档面板' : '折叠'"
@@ -341,8 +341,8 @@
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>写入中
               </span>
               <div class="flex items-center gap-0.5 rounded-md bg-slate-100 p-0.5 ml-1">
-                <button @click="livePreviewMode = 'md'" class="px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors" :class="livePreviewMode === 'md' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">MD</button>
-                <button @click="switchToDocxView" :disabled="!livePreviewDocxHtml" class="px-1.5 py-0.5 rounded text-[10px] font-medium disabled:opacity-40" :class="livePreviewMode === 'docx' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">Word</button>
+                <button @click="livePreviewMode = 'md'" class="px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors" :class="livePreviewMode === 'md' ? 'glass-card text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">MD</button>
+                <button @click="switchToDocxView" :disabled="!livePreviewDocxHtml" class="px-1.5 py-0.5 rounded text-[10px] font-medium disabled:opacity-40" :class="livePreviewMode === 'docx' ? 'glass-card text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">Word</button>
               </div>
               <button @click="openDeliverableDocx" :disabled="!livePreviewDocxHtml" class="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-40 ml-0.5" title="用 Word 打开">
                 <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>
@@ -361,7 +361,7 @@
                 </div>
                 <p class="text-[12px] text-slate-400 leading-relaxed pl-5">{{ selectedDeliverable ? selectedDeliverable.hint : '从左侧选一件交付物' }}</p>
               </div>
-              <div class="flex-1 bg-white rounded-xl border border-slate-200/70 shadow-sm overflow-hidden">
+              <div class="flex-1 glass-card rounded-xl border border-slate-200/70 shadow-sm overflow-hidden">
                 <div class="px-4 py-2.5 border-b border-slate-100 bg-transparent/60 flex items-center gap-2">
                   <div class="w-3 h-3 rounded-sm bg-slate-200"></div>
                   <div class="h-2 w-28 bg-slate-200 rounded-full"></div>
@@ -387,7 +387,7 @@
 
             <!-- Word 成品预览 -->
             <div v-else-if="livePreviewMode === 'docx' && livePreviewDocxHtml"
-              class="bg-white mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
+              class="glass-card mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
               <div class="px-5 py-2.5 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
                 <i class="fa-solid fa-file-word text-blue-500 text-[12px]"></i>
                 <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }} · Word</span>
@@ -397,7 +397,7 @@
 
             <!-- Markdown 预览 / 在线编辑 -->
             <div v-else
-              class="bg-white mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
+              class="glass-card mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
               <div class="px-5 py-2.5 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
                 <i class="fa-solid fa-file-lines text-slate-400 text-[12px]"></i>
                 <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }}</span>
@@ -479,7 +479,7 @@
         </div>
         <!-- Preview pane -->
         <div class="flex-1 flex flex-col min-w-0">
-          <div class="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-slate-100 bg-white">
+          <div class="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-slate-100 glass-card">
             <button
               @click="openInBrowser"
               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
@@ -571,7 +571,7 @@
                       </button>
                       <div class="mt-2 ml-4 pl-4 border-l-2 border-blue-200/40 space-y-0.5 max-h-[220px] overflow-y-auto scrollbar-hide">
                         <div v-for="(step, si) in msg.thinkingSteps" :key="si" v-show="step.visible !== false" class="flex items-start gap-2.5 py-1">
-                          <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 bg-white border border-slate-200/60 text-slate-400">
+                          <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 glass-card border border-slate-200/60 text-slate-400">
                             <i :class="step.icon || 'fa-solid fa-circle'" class="text-[8px]"></i>
                           </div>
                           <span class="text-[12px] leading-relaxed text-slate-600 compact-markdown" v-html="renderMarkdown(step.text)"></span>
@@ -601,7 +601,7 @@
             <div v-else-if="!selectedFile" class="flex items-center justify-center h-full text-sm text-slate-400">
               选择左侧文件进行预览
             </div>
-            <div v-else-if="isHtmlSelected" class="w-full h-full overflow-hidden bg-white">
+            <div v-else-if="isHtmlSelected" class="w-full h-full overflow-hidden glass-card">
               <iframe
                 :key="iframeKey"
                 :src="iframeSrc"
@@ -622,13 +622,13 @@
           </div>
 
           <!-- 迭代对话条（就地改原型，原「迭代修改」tab 并入这里）-->
-          <div v-if="prototypeFiles.length > 0 || isStreaming" class="shrink-0 border-t border-slate-100 bg-white px-4 py-3">
+          <div v-if="prototypeFiles.length > 0 || isStreaming" class="shrink-0 border-t border-slate-100 glass-card px-4 py-3">
             <div class="max-w-3xl mx-auto">
               <!-- 附件预览 -->
               <div v-if="iterateComposer.attachments.value.length" class="flex items-center gap-2 mb-2 flex-wrap">
                 <div v-for="(att, ai) in iterateComposer.attachments.value" :key="ai" class="relative group/att">
                   <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-12 h-12 object-cover rounded-lg border border-slate-200" />
-                  <div v-else class="flex items-center gap-1.5 h-12 px-2.5 rounded-lg border border-slate-200 bg-white max-w-[160px]">
+                  <div v-else class="flex items-center gap-1.5 h-12 px-2.5 rounded-lg border border-slate-200 glass-card max-w-[160px]">
                     <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
                     <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
                   </div>
@@ -662,7 +662,7 @@
                   class="mb-1.5 w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center shrink-0"
                   title="停止"
                 >
-                  <span class="w-3 h-3 rounded-[3px] bg-white"></span>
+                  <span class="w-3 h-3 rounded-[3px] glass-card"></span>
                 </button>
                 <button
                   v-else
@@ -684,7 +684,7 @@
       <!-- 阶段③ 对话 Tab (chat3) — 豆包风格,与「智能对话」一致 -->
       <div v-else-if="activeTab === 'chat3'" class="flex h-full w-full">
         <!-- Center: Chat area -->
-        <div class="flex-1 flex flex-col min-w-0 relative bg-white">
+        <div class="flex-1 flex flex-col min-w-0 relative glass-card">
           <div ref="stage3ChatRef" class="flex-1 overflow-y-auto px-4 pt-6" :class="stage3Messages.length > 0 ? 'pb-[150px]' : ''">
             <!-- Empty state -->
             <div v-if="stage3Messages.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6">
@@ -752,7 +752,7 @@
                     </button>
                     <div class="mt-2 ml-4 pl-4 border-l-2 border-blue-200/40 space-y-0.5 max-h-[220px] overflow-y-auto scrollbar-hide">
                       <div v-for="(step, si) in msg.thinkingSteps" :key="si" v-show="step.visible !== false" class="flex items-start gap-2.5 py-1">
-                        <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 bg-white border border-slate-200/60 text-slate-400">
+                        <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 glass-card border border-slate-200/60 text-slate-400">
                           <i :class="step.icon || 'fa-solid fa-circle'" class="text-[8px]"></i>
                         </div>
                         <span class="text-[12px] leading-relaxed text-slate-600 compact-markdown" v-html="renderMarkdown(step.text)"></span>
@@ -777,7 +777,7 @@
                   :key="act.key"
                   @click="runQuickAction(act)"
                   :disabled="isStreaming || deliverableBusy"
-                  class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium glass-card border border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-700 hover:bg-blue-50/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <i :class="act.icon" class="text-[8px] text-blue-500"></i>
                   {{ act.label }}
@@ -788,7 +788,7 @@
                 <div v-if="stage3Composer.attachments.value.length" class="flex items-center gap-2 px-5 pt-4 flex-wrap">
                   <div v-for="(att, ai) in stage3Composer.attachments.value" :key="ai" class="relative group/att">
                     <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-14 h-14 object-cover rounded-xl border border-slate-200" />
-                    <div v-else class="flex items-center gap-2 h-14 px-3 rounded-xl border border-slate-200 bg-white max-w-[200px]">
+                    <div v-else class="flex items-center gap-2 h-14 px-3 rounded-xl border border-slate-200 glass-card max-w-[200px]">
                       <i class="fa-solid fa-file-lines text-blue-500 text-base shrink-0"></i>
                       <span class="text-[12px] text-slate-700 truncate">{{ att.name }}</span>
                     </div>
@@ -828,7 +828,7 @@
                       class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all shadow-sm"
                       title="停止生成"
                     >
-                      <span class="w-3 h-3 rounded-[3px] bg-white"></span>
+                      <span class="w-3 h-3 rounded-[3px] glass-card"></span>
                     </button>
                     <button
                       v-else
@@ -876,9 +876,9 @@
     <div
       v-if="toast.show"
       class="fixed top-4 right-4 z-[9999] max-w-md px-4 py-2.5 rounded-lg shadow-lg text-sm border"
-      :class="toast.type === 'success' ? 'bg-white border-emerald-300 text-emerald-700'
-        : toast.type === 'error' ? 'bg-white border-red-300 text-red-700'
-        : 'bg-white border-blue-200 text-blue-700'"
+      :class="toast.type === 'success' ? 'glass-card border-emerald-300 text-emerald-700'
+        : toast.type === 'error' ? 'glass-card border-red-300 text-red-700'
+        : 'glass-card border-blue-200 text-blue-700'"
     >
       <i class="fa-solid mr-1.5" :class="toast.type === 'success' ? 'fa-circle-check'
         : toast.type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-info'"></i>

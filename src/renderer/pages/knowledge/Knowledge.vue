@@ -90,7 +90,7 @@
             v-else
             @click="loadProjects"
             :disabled="scanningProjects"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition"
+            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium glass-card border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition"
           >
             <i class="fa-solid fa-rotate text-[11px]" :class="scanningProjects ? 'fa-spin' : ''"></i>重新扫描
           </button>
@@ -118,7 +118,7 @@
             class="px-3 py-1.5 rounded-lg text-[12.5px] transition"
             :class="catFilter === c.key
               ? 'bg-blue-600 text-white shadow-sm'
-              : 'bg-white border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600'"
+              : 'glass-card border border-slate-200 text-slate-600 hover:border-blue-400 hover:text-blue-600'"
           >{{ c.label }}</button>
         </div>
 
@@ -228,7 +228,7 @@
     <transition name="drawer">
       <div v-if="selected" class="fixed inset-0 z-50" @keydown.esc="selected = null">
         <div class="absolute inset-0 bg-slate-900/40" @click="selected = null"></div>
-        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] bg-white shadow-2xl flex flex-col">
+        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
           <DocViewer :stage="selected.stageDir || ''" :item="selected" :project-slug="selectedProjectSlug" />
         </aside>
       </div>
@@ -238,7 +238,7 @@
     <transition name="fade">
       <div v-if="showUpload" class="fixed inset-0 z-50 flex items-center justify-center">
         <div class="absolute inset-0 bg-slate-900/40" @click="showUpload = false"></div>
-        <div class="relative w-[440px] max-w-[92vw] bg-white rounded-2xl shadow-2xl p-6">
+        <div class="relative w-[440px] max-w-[92vw] glass-card rounded-2xl shadow-2xl p-6">
           <div class="flex items-center gap-2 mb-4">
             <i class="fa-solid fa-cloud-arrow-up text-blue-600"></i>
             <span class="text-[15px] font-bold text-slate-800">上传文档归档</span>
@@ -257,7 +257,7 @@
               v-for="c in [{k:'deliverable',l:'交付物'},{k:'knowledge',l:'知识'}]" :key="c.k"
               @click="uploadCat = c.k"
               class="flex-1 py-2 rounded-lg text-[13px] border transition"
-              :class="uploadCat === c.k ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'"
+              :class="uploadCat === c.k ? 'bg-blue-600 text-white border-blue-600' : 'glass-card text-slate-600 border-slate-200 hover:border-blue-400'"
             >{{ c.l }}</button>
           </div>
           <button
@@ -276,7 +276,7 @@
     <transition name="fade">
       <div v-if="showArchive" class="fixed inset-0 z-50 flex items-center justify-center">
         <div class="absolute inset-0 bg-slate-900/40" @click="showArchive = false"></div>
-        <div class="relative w-[440px] max-w-[92vw] bg-white rounded-2xl shadow-2xl p-6">
+        <div class="relative w-[440px] max-w-[92vw] glass-card rounded-2xl shadow-2xl p-6">
           <div class="flex items-center gap-2 mb-4">
             <i class="fa-solid fa-inbox text-blue-600"></i>
             <span class="text-[15px] font-bold text-slate-800">归档到知识库</span>
@@ -296,7 +296,7 @@
               v-for="c in [{k:'deliverable',l:'交付物'},{k:'knowledge',l:'知识'}]" :key="c.k"
               @click="archiveCat = c.k"
               class="flex-1 py-2 rounded-lg text-[13px] border transition"
-              :class="archiveCat === c.k ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'"
+              :class="archiveCat === c.k ? 'bg-blue-600 text-white border-blue-600' : 'glass-card text-slate-600 border-slate-200 hover:border-blue-400'"
             >{{ c.l }}</button>
           </div>
           <button

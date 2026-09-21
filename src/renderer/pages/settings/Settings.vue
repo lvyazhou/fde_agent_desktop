@@ -4,7 +4,7 @@
       <h1 class="text-2xl font-bold text-slate-800 mb-8">设置</h1>
 
       <!-- AI Model Config -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
+      <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-robot text-blue-700"></i>
@@ -49,7 +49,7 @@
               <div class="relative">
                 <select
                   v-model="modelSelect"
-                  class="w-full appearance-none px-4 py-2.5 pr-10 border border-slate-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
+                  class="w-full appearance-none px-4 py-2.5 pr-10 border border-slate-200 rounded-xl text-sm glass-card focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all"
                 >
                   <option value="" disabled>请选择模型…</option>
                   <optgroup label="强 · 首选">
@@ -157,7 +157,7 @@
       </div>
 
       <!-- MCP Servers -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
+      <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-plug text-blue-700"></i>
@@ -178,7 +178,7 @@
       </div>
 
       <!-- Data Storage -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
+      <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6 mb-6">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-hard-drive text-blue-700"></i>
@@ -198,7 +198,7 @@
       </div>
 
       <!-- About -->
-      <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+      <div class="glass-card rounded-2xl border border-slate-100 shadow-sm p-6">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-circle-info text-blue-700"></i>

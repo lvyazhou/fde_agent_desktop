@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full min-h-0 bg-transparent">
     <!-- 顶部:返回 + 阶段标题 -->
-    <div class="flex items-center gap-3 px-6 py-4 bg-white border-b border-slate-200/80 shrink-0">
+    <div class="flex items-center gap-3 px-6 py-4 glass-card border-b border-slate-200/80 shrink-0">
       <button
         @click="$emit('back')"
         class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors cursor-pointer"
@@ -30,13 +30,13 @@
     <!-- 主体:左文件列表 + 右预览 -->
     <div class="flex-1 min-h-0 flex overflow-hidden">
       <!-- 左侧:要素 + 文件清单 -->
-      <div class="w-[340px] shrink-0 border-r border-slate-200/80 overflow-y-auto bg-white">
+      <div class="w-[340px] shrink-0 border-r border-slate-200/80 overflow-y-auto glass-card">
         <!-- 要素卡 -->
         <div class="p-4 space-y-3 border-b border-slate-100">
           <div class="bg-slate-50 rounded-xl p-3">
             <div class="text-[11px] text-slate-400 mb-1"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i>输入</div>
             <div class="flex flex-wrap gap-1">
-              <span v-for="inp in stage.inputs" :key="inp" class="text-[11px] px-1.5 py-0.5 rounded bg-white text-slate-600 border border-slate-200/60">{{ inp }}</span>
+              <span v-for="inp in stage.inputs" :key="inp" class="text-[11px] px-1.5 py-0.5 rounded glass-card text-slate-600 border border-slate-200/60">{{ inp }}</span>
             </div>
           </div>
           <div class="bg-slate-50 rounded-xl p-3">

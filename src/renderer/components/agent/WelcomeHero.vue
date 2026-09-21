@@ -29,7 +29,7 @@
           <div
             v-for="card in featureCards"
             :key="card.key"
-            class="bg-white rounded-xl border border-slate-200/80 hover:shadow-lg hover:border-blue-300 transition-all px-4 py-3 group"
+            class="glass-card rounded-xl border border-slate-200/80 hover:shadow-lg hover:border-blue-300 transition-all px-4 py-3 group"
           >
             <!-- Card header -->
             <div class="flex items-center gap-2 mb-2.5">
@@ -57,9 +57,9 @@
     </div>
 
     <!-- Fixed bottom input area -->
-    <div class="shrink-0 px-6 pb-3 pt-2 bg-white">
+    <div class="shrink-0 px-6 pb-3 pt-2 glass-card">
       <div class="max-w-3xl mx-auto">
-        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm">
+        <div class="glass-card border border-slate-200 rounded-2xl shadow-sm">
           <textarea
             ref="inputRef"
             v-model="inputText"
@@ -73,7 +73,7 @@
           <div v-if="attachments.length > 0" class="flex items-center gap-2 px-4 py-1.5 flex-wrap">
             <div v-for="(att, ai) in attachments" :key="ai" class="relative group/att">
               <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-12 h-12 object-cover rounded-lg border border-slate-200" />
-              <div v-else class="flex items-center gap-1.5 h-12 px-2.5 rounded-lg border border-slate-200 bg-white max-w-[160px]">
+              <div v-else class="flex items-center gap-1.5 h-12 px-2.5 rounded-lg border border-slate-200 glass-card max-w-[160px]">
                 <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
                 <span class="text-[11px] text-slate-600 truncate">{{ att.name }}</span>
               </div>

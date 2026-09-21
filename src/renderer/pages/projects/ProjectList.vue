@@ -44,7 +44,7 @@
       <div
         v-for="project in projects"
         :key="project.slug"
-        class="group relative bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all cursor-pointer"
+        class="group relative glass-card rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200/50 transition-all cursor-pointer"
         @click="openProject(project.slug)"
       >
         <!-- Action buttons (visible on hover) -->
@@ -129,7 +129,7 @@
 
     <!-- Delete confirmation dialog -->
     <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="showDeleteConfirm = false">
-      <div class="bg-white rounded-2xl shadow-xl p-6 w-[360px]">
+      <div class="glass-card rounded-2xl shadow-xl p-6 w-[360px]">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-10 h-10 rounded-full bg-danger-soft flex items-center justify-center">
             <i class="fa-solid fa-triangle-exclamation text-danger"></i>
@@ -161,7 +161,7 @@
 
     <!-- Rename dialog -->
     <div v-if="showRename" class="fixed inset-0 bg-black/30 flex items-center justify-center z-50" @click.self="showRename = false">
-      <div class="bg-white rounded-2xl shadow-xl p-6 w-[400px]">
+      <div class="glass-card rounded-2xl shadow-xl p-6 w-[400px]">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
             <i class="fa-solid fa-pen text-blue-600"></i>

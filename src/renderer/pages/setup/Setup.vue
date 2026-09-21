@@ -27,7 +27,7 @@
           </template>
         </div>
 
-        <div class="bg-white rounded-3xl border border-slate-200/70 shadow-lg shadow-blue-500/5 p-8">
+        <div class="glass-card rounded-3xl border border-slate-200/70 shadow-lg shadow-blue-500/5 p-8">
           <!-- 步骤1:授权 -->
           <div v-if="step === 0">
             <h1 class="text-xl font-bold text-slate-800 mb-1">软件授权</h1>
@@ -37,7 +37,7 @@
             <div class="rounded-2xl border border-slate-200 bg-transparent/60 p-4 mb-4">
               <div class="text-[11px] text-slate-400 mb-1.5">本机机器码</div>
               <div class="flex items-center gap-2">
-                <code class="flex-1 min-w-0 text-[13px] font-mono text-slate-700 bg-white border border-slate-200 rounded-lg px-3 py-2 truncate">{{ machineSn || '计算中...' }}</code>
+                <code class="flex-1 min-w-0 text-[13px] font-mono text-slate-700 glass-card border border-slate-200 rounded-lg px-3 py-2 truncate">{{ machineSn || '计算中...' }}</code>
                 <button @click="copySn" :disabled="!machineSn" class="shrink-0 text-[12px] px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-40">
                   <i class="fa-solid" :class="copied ? 'fa-check' : 'fa-copy'"></i> {{ copied ? '已复制' : '复制' }}
                 </button>

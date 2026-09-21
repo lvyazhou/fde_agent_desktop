@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-white border-b border-slate-200/80 px-5 py-3 shrink-0">
+  <div class="glass-card border-b border-slate-200/80 px-5 py-3 shrink-0">
     <!-- 标题 -->
     <div class="flex items-center gap-2 mb-2.5">
       <span class="w-5 h-5 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">

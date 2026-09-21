@@ -6,7 +6,7 @@
     <TransitionGroup name="toast">
       <div v-for="toast in toasts" :key="toast.id"
            @click="handleToastClick(toast)"
-           class="bg-white rounded-xl shadow-xl border border-slate-100 p-4 w-80 flex items-start gap-3 transform transition-all relative overflow-hidden cursor-pointer hover:bg-slate-50">
+           class="glass-card rounded-xl shadow-xl border border-slate-100 p-4 w-80 flex items-start gap-3 transform transition-all relative overflow-hidden cursor-pointer hover:bg-slate-50">
         <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
         <div class="mt-0.5 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
           <i class="fa-solid fa-bell text-blue-500"></i>

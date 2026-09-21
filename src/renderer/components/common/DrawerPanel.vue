@@ -9,7 +9,7 @@
         />
         <!-- Panel -->
         <div
-          class="bg-white h-full shadow-2xl relative z-50 flex flex-col transition-transform duration-300"
+          class="glass-card h-full shadow-2xl relative z-50 flex flex-col transition-transform duration-300"
           :class="[placement === 'left' ? 'border-r border-slate-200' : 'border-l border-slate-200', panelClass]"
           :style="{ width: width, '--drawer-translate-x': placement === 'left' ? '-100%' : '100%' }"
         >

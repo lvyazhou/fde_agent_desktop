@@ -1,7 +1,7 @@
 <template>
   <div class="relative group/att inline-flex flex-col">
     <div
-      class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-slate-200 shadow-sm max-w-[240px] cursor-pointer hover:border-blue-300 transition-colors"
+      class="flex items-center gap-2 px-3 py-2 rounded-xl glass-card border border-slate-200 shadow-sm max-w-[240px] cursor-pointer hover:border-blue-300 transition-colors"
       @click="preview"
     >
       <i class="fa-solid text-sm shrink-0" :class="iconClass"></i>
@@ -33,7 +33,7 @@
         class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/60 p-6"
         @click.self="showText = false"
       >
-        <div class="w-full max-w-3xl max-h-[80vh] flex flex-col rounded-2xl bg-white shadow-2xl overflow-hidden" @click.stop>
+        <div class="w-full max-w-3xl max-h-[80vh] flex flex-col rounded-2xl glass-card shadow-2xl overflow-hidden" @click.stop>
           <div class="flex items-center gap-2 px-5 py-3 border-b border-slate-100 shrink-0">
             <i class="fa-solid text-sm" :class="iconClass"></i>
             <span class="text-[13px] font-semibold text-slate-700 truncate flex-1">{{ att.name || '文本预览' }}</span>

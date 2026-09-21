@@ -11,7 +11,7 @@
       </RouterLink>
 
       <!-- Main card -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
+      <div class="glass-card rounded-2xl shadow-sm border border-slate-100 p-8">
         <!-- Icon -->
         <img src="../../assets/logo.png" alt="Logo" class="w-14 h-14 rounded-2xl object-cover mb-6" />
 

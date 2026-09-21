@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full min-h-0 bg-transparent">
     <!-- 顶部:标题 + 外部打开 -->
-    <div class="flex items-center gap-3 px-6 py-4 bg-white border-b border-slate-200/80 shrink-0">
+    <div class="flex items-center gap-3 px-6 py-4 glass-card border-b border-slate-200/80 shrink-0">
       <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shrink-0">
         <i class="fa-solid fa-graduation-cap text-[13px]"></i>
       </span>
@@ -19,7 +19,7 @@
           :key="t.key"
           @click="switchTab(t.key)"
           class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors cursor-pointer"
-          :class="active === t.key ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+          :class="active === t.key ? 'glass-card text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
           :title="t.hint"
         >
           <i :class="t.icon" class="text-[11px]"></i>

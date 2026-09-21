@@ -28,7 +28,7 @@
     >
       <div
         v-if="open"
-        class="absolute z-30 bottom-full mb-2 left-0 w-[280px] max-h-[340px] rounded-2xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col"
+        class="absolute z-30 bottom-full mb-2 left-0 w-[280px] max-h-[340px] rounded-2xl border border-slate-200/80 glass-card shadow-xl shadow-slate-200/50 overflow-hidden flex flex-col"
       >
         <!-- Search -->
         <div class="p-2.5 border-b border-slate-100">

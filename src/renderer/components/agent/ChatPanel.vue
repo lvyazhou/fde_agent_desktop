@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="flex-1 flex flex-col min-w-0 relative bg-white">
+  <div class="flex-1 flex flex-col min-w-0 relative glass-card">
     <!-- Messages area -->
     <div ref="chatContainerRef" class="flex-1 overflow-y-auto px-4 pt-5" :class="messages.length > 0 ? 'pb-[160px]' : ''">
       <!-- Loading state -->
@@ -7,7 +7,7 @@
         <div class="relative w-12 h-12 mb-5">
           <div class="absolute inset-0 rounded-full border-2 border-blue-100"></div>
           <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin"></div>
-          <div class="absolute inset-2 rounded-full bg-white flex items-center justify-center">
+          <div class="absolute inset-2 rounded-full glass-card flex items-center justify-center">
             <i class="fa-solid fa-comments text-blue-400 text-sm"></i>
           </div>
         </div>
@@ -112,7 +112,7 @@
                   v-show="step.visible !== false"
                   class="flex items-start gap-2.5 py-1 group/step"
                 >
-                  <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition-colors" :class="si === msg.thinkingSteps.length - 1 && !msg.thinkingDone ? 'bg-blue-500 text-white shadow-sm' : 'bg-white border border-slate-200/60 text-slate-400'">
+                  <div class="w-5 h-5 rounded-md flex items-center justify-center shrink-0 mt-0.5 transition-colors" :class="si === msg.thinkingSteps.length - 1 && !msg.thinkingDone ? 'bg-blue-500 text-white shadow-sm' : 'glass-card border border-slate-200/60 text-slate-400'">
                     <i :class="step.icon || 'fa-solid fa-circle'" class="text-[8px]"></i>
                   </div>
                   <!-- Browser screenshot or image result -->
@@ -152,7 +152,7 @@
                 <button @click.stop="menuIdx = menuIdx === idx ? null : idx" class="w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer" :class="menuIdx === idx ? 'text-slate-700 bg-slate-100' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'" title="更多">
                   <i class="fa-solid fa-ellipsis text-[13px]"></i>
                 </button>
-                <div v-if="menuIdx === idx" class="absolute left-0 top-full mt-1 w-32 bg-white border border-slate-200/80 rounded-xl shadow-lg shadow-slate-900/10 py-1 z-30 overflow-hidden">
+                <div v-if="menuIdx === idx" class="absolute left-0 top-full mt-1 w-32 glass-card border border-slate-200/80 rounded-xl shadow-lg shadow-slate-900/10 py-1 z-30 overflow-hidden">
                   <button @click="$emit('feedback', idx); menuIdx = null" class="w-full px-3 py-2 flex items-center gap-2.5 text-[13px] text-slate-600 hover:bg-slate-50 transition-colors cursor-pointer">
                     <i class="fa-regular fa-comment-dots text-[12px] text-slate-400 w-4"></i>反馈
                   </button>
@@ -173,7 +173,7 @@
     <div v-if="messages.length > 0" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-10 pb-5 px-4">
       <div class="w-full max-w-4xl mx-auto relative">
         <!-- Slash command palette -->
-        <div v-if="showSlashMenu" class="absolute bottom-full mb-2 left-2 right-2 bg-white border border-slate-200/80 rounded-2xl shadow-xl shadow-slate-900/5 overflow-hidden z-20 max-h-[220px] overflow-y-auto">
+        <div v-if="showSlashMenu" class="absolute bottom-full mb-2 left-2 right-2 glass-card border border-slate-200/80 rounded-2xl shadow-xl shadow-slate-900/5 overflow-hidden z-20 max-h-[220px] overflow-y-auto">
           <div
             v-for="(cmd, ci) in filteredCommands"
             :key="cmd.name || ci"
@@ -189,13 +189,13 @@
         <!-- Doubao-style composer -->
         <div
           class="group/composer rounded-[26px] border transition-all duration-200"
-          :class="isFocused ? 'bg-white border-blue-400/70 shadow-[0_6px_28px_-8px_rgba(59,130,246,0.28)]' : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]'"
+          :class="isFocused ? 'glass-card border-blue-400/70 shadow-[0_6px_28px_-8px_rgba(59,130,246,0.28)]' : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]'"
         >
           <!-- Attachment preview (images + files) -->
           <div v-if="chatAttachments.length > 0" class="flex items-center gap-2 px-5 pt-4 flex-wrap">
             <div v-for="(att, ai) in chatAttachments" :key="ai" class="relative group/att">
               <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-14 h-14 object-cover rounded-xl border border-slate-200" />
-              <div v-else class="flex items-center gap-2 h-14 px-3 rounded-xl border border-slate-200 bg-white max-w-[200px]">
+              <div v-else class="flex items-center gap-2 h-14 px-3 rounded-xl border border-slate-200 glass-card max-w-[200px]">
                 <i class="fa-solid fa-file-lines text-blue-500 text-base shrink-0"></i>
                 <div class="min-w-0">
                   <div class="text-[12px] text-slate-700 truncate">{{ att.name }}</div>
@@ -289,7 +289,7 @@
                 class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-all cursor-pointer shadow-sm"
                 title="停止生成"
               >
-                <span class="w-3 h-3 rounded-[3px] bg-white"></span>
+                <span class="w-3 h-3 rounded-[3px] glass-card"></span>
               </button>
               <button
                 v-else

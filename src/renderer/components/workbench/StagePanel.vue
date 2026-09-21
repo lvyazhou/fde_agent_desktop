@@ -13,18 +13,18 @@
     <!-- 要素卡:输入 / 输出 / 负责人 / 周期 / 成功标准 -->
     <div class="px-6 pb-4">
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div class="bg-white rounded-xl border border-slate-200/80 p-3">
+        <div class="glass-card rounded-xl border border-slate-200/80 p-3">
           <div class="text-[11px] text-slate-400 mb-1.5"><i class="fa-solid fa-arrow-right-to-bracket mr-1"></i>输入</div>
           <div class="flex flex-wrap gap-1">
             <span v-for="inp in stage.inputs" :key="inp" class="text-[11px] px-1.5 py-0.5 rounded bg-slate-50 text-slate-600">{{ inp }}</span>
           </div>
         </div>
-        <div class="bg-white rounded-xl border border-slate-200/80 p-3">
+        <div class="glass-card rounded-xl border border-slate-200/80 p-3">
           <div class="text-[11px] text-slate-400 mb-1.5"><i class="fa-solid fa-flag-checkered mr-1"></i>负责人 / 周期</div>
           <div class="text-[12px] text-slate-700">{{ stage.owner }}</div>
           <div class="text-[11px] text-slate-400 mt-0.5">{{ stage.duration }}</div>
         </div>
-        <div class="bg-white rounded-xl border border-slate-200/80 p-3 col-span-2">
+        <div class="glass-card rounded-xl border border-slate-200/80 p-3 col-span-2">
           <div class="text-[11px] text-slate-400 mb-1.5"><i class="fa-solid fa-circle-check mr-1"></i>成功标准</div>
           <div class="text-[12px] text-slate-600 leading-snug">{{ stage.successCriteria }}</div>
         </div>
@@ -49,7 +49,7 @@
           <div
             v-for="d in stage.deliverables"
             :key="d.key"
-            class="bg-white rounded-xl border border-dashed border-slate-200 p-3 flex items-center gap-3"
+            class="glass-card rounded-xl border border-dashed border-slate-200 p-3 flex items-center gap-3"
           >
             <span class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-300">
               <i :class="formIcon(d.form)"></i>
@@ -63,7 +63,7 @@
             <span class="text-[11px] px-2 py-1 rounded-md bg-slate-50 text-slate-400 shrink-0">待接入</span>
           </div>
         </template>
-        <div v-else class="bg-white rounded-xl border border-dashed border-slate-200 p-6 text-center">
+        <div v-else class="glass-card rounded-xl border border-dashed border-slate-200 p-6 text-center">
           <i class="fa-solid fa-graduation-cap text-slate-300 text-xl mb-2"></i>
           <p class="text-[13px] text-slate-500">本阶段为知识内化,无交付物</p>
           <p class="text-[11px] text-slate-400 mt-1">{{ (stage.internalize || []).join(' · ') }}</p>

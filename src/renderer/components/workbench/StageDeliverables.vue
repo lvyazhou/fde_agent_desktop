@@ -1,7 +1,7 @@
 <template>
   <div class="flex h-full w-full">
     <!-- 左侧：交付物列表 -->
-    <div class="w-[260px] shrink-0 bg-white border-r border-slate-200/60 flex flex-col overflow-hidden">
+    <div class="w-[260px] shrink-0 glass-card border-r border-slate-200/60 flex flex-col overflow-hidden">
       <div class="px-4 py-3 border-b border-slate-100">
         <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">
           <i class="fa-solid fa-box-open text-blue-500 mr-1.5"></i>{{ stageId === 3 ? '阶段③交付物' : '阶段②交付物' }}
@@ -41,7 +41,7 @@
     <!-- 右侧：预览 / 生成 -->
     <div class="flex-1 flex flex-col min-w-0">
       <!-- 工具条 -->
-      <div class="shrink-0 flex items-center gap-3 px-5 py-3 border-b border-slate-100 bg-white">
+      <div class="shrink-0 flex items-center gap-3 px-5 py-3 border-b border-slate-100 glass-card">
         <span class="text-[15px] font-semibold text-slate-700">{{ activeDeliverable?.name }}</span>
         <div class="ml-auto flex items-center gap-2">
           <button
@@ -78,7 +78,7 @@
           <div class="relative w-12 h-12 mb-5">
             <div class="absolute inset-0 rounded-full border-2 border-blue-100"></div>
             <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin"></div>
-            <div class="absolute inset-2 rounded-full bg-white flex items-center justify-center">
+            <div class="absolute inset-2 rounded-full glass-card flex items-center justify-center">
               <i class="fa-solid fa-wand-magic-sparkles text-blue-400 text-sm"></i>
             </div>
           </div>
@@ -88,7 +88,7 @@
 
         <!-- 空态 -->
         <div v-else-if="!content" class="flex flex-col items-center justify-center py-20">
-          <div class="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center mb-4">
+          <div class="w-16 h-16 rounded-2xl glass-card shadow-sm border border-slate-100 flex items-center justify-center mb-4">
             <i :class="activeDeliverable?.icon" class="text-2xl text-slate-300"></i>
           </div>
           <p class="text-[15px] text-slate-500 mb-1">尚未生成《{{ activeDeliverable?.name }}》</p>
@@ -108,7 +108,7 @@
           <textarea
             :value="content"
             @input="$emit('update-content', $event.target.value)"
-            class="w-full h-[calc(100vh-320px)] px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 bg-white"
+            class="w-full h-[calc(100vh-320px)] px-4 py-3 border border-slate-200 rounded-xl text-sm font-mono resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 glass-card"
           ></textarea>
           <div class="mt-3 flex justify-end">
             <button

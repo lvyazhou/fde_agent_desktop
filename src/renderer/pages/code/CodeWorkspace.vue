@@ -156,7 +156,7 @@
               :src="'data:' + att.media_type + ';base64,' + att.data"
               class="w-12 h-12 object-cover rounded-lg border border-slate-200"
             />
-            <div v-else class="flex items-center gap-1.5 h-12 px-2.5 rounded-lg border border-slate-200 bg-white max-w-[170px]">
+            <div v-else class="flex items-center gap-1.5 h-12 px-2.5 rounded-lg border border-slate-200 glass-card max-w-[170px]">
               <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
               <span class="text-[11.5px] text-slate-700 truncate">{{ att.name }}</span>
             </div>

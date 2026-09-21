@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-col h-full min-h-0 bg-transparent">
     <!-- 顶部:标题(去渐变,改暖棕竖条 — Swiss 风格避免装饰性渐变) -->
-    <div class="flex items-center gap-3 px-6 py-4 bg-white border-b border-blue-500/14 shrink-0 relative">
+    <div class="flex items-center gap-3 px-6 py-4 glass-card border-b border-blue-500/14 shrink-0 relative">
       <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-blue-600"></div>
       <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
         <i class="fa-solid fa-clipboard-list text-[13px]"></i>
@@ -26,7 +26,7 @@
           type="button"
           @click="scrollTo(sec.id)"
           class="w-full text-left px-2 py-1.5 rounded-lg mb-0.5 text-[12px] transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-          :class="activeSection === sec.id ? 'bg-white text-blue-600 font-semibold border border-blue-500/14' : 'text-slate-500 hover:bg-white/70 border border-transparent'"
+          :class="activeSection === sec.id ? 'glass-card text-blue-600 font-semibold border border-blue-500/14' : 'text-slate-500 hover:bg-white/70 border border-transparent'"
         >
           <span class="w-4 text-center text-[11px] shrink-0" :class="activeSection === sec.id ? 'text-blue-600' : 'text-slate-300'">{{ sec.no }}</span>
           <span class="truncate">{{ sec.label }}</span>
@@ -56,7 +56,7 @@
                 v-for="s in group.items"
                 :key="s.id"
                 :type="s.template ? 'button' : undefined"
-                class="bg-white rounded-xl border border-blue-500/14 p-4 flex flex-col text-left transition-colors duration-200"
+                class="glass-card rounded-xl border border-blue-500/14 p-4 flex flex-col text-left transition-colors duration-200"
                 :class="s.template ? 'cursor-pointer hover:border-blue-400 group/card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40' : ''"
                 @click="s.template && openTemplate(s)"
               >
@@ -137,7 +137,7 @@
 
           <!-- 角色分工 -->
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div v-for="r in reqMgmt.roles" :key="r.name" class="bg-white rounded-xl border border-blue-500/14 p-4 flex items-start gap-3">
+            <div v-for="r in reqMgmt.roles" :key="r.name" class="glass-card rounded-xl border border-blue-500/14 p-4 flex items-start gap-3">
               <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <i :class="r.icon"></i>
               </span>
@@ -149,7 +149,7 @@
           </div>
 
           <!-- 迭代版本规划举例 -->
-          <div class="bg-white rounded-xl border border-blue-500/14 p-4 mb-3">
+          <div class="glass-card rounded-xl border border-blue-500/14 p-4 mb-3">
             <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5">{{ reqMgmt.example.title }}</h3>
             <p class="text-[12px] text-slate-500 mb-3">{{ reqMgmt.example.desc }}</p>
             <div class="flex items-stretch gap-2 overflow-x-auto pb-1">
@@ -168,7 +168,7 @@
           </div>
 
           <!-- 项目主动跟进 -->
-          <div class="bg-white rounded-xl border border-blue-500/14 p-4">
+          <div class="glass-card rounded-xl border border-blue-500/14 p-4">
             <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5 flex items-center gap-1.5">
               <i class="fa-solid fa-bullseye text-blue-600 text-[12px]"></i>项目主动跟进
             </h3>
@@ -196,7 +196,7 @@
             <div
               v-for="m in modes"
               :key="m.key"
-              class="bg-white rounded-xl border p-4"
+              class="glass-card rounded-xl border p-4"
               :class="m.accent === 'blue' ? 'border-blue-200' : 'border-blue-300'"
             >
               <div class="flex items-center gap-2.5 mb-3">
@@ -230,7 +230,7 @@
               :key="lk.url"
               type="button"
               @click="openLink(lk.url)"
-              class="group text-left bg-white rounded-xl border border-blue-500/14 hover:border-blue-400 transition-colors duration-200 cursor-pointer p-4 flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+              class="group text-left glass-card rounded-xl border border-blue-500/14 hover:border-blue-400 transition-colors duration-200 cursor-pointer p-4 flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
             >
               <span class="w-9 h-9 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
                 <i :class="lk.icon"></i>
@@ -276,7 +276,7 @@
 
       <div class="p-6">
         <!-- 文档纸张卡片 -->
-        <div class="rounded-xl bg-white overflow-hidden border border-blue-500/14">
+        <div class="rounded-xl glass-card overflow-hidden border border-blue-500/14">
           <!-- 顶部棕色条 + 文件名标签 -->
           <div class="h-1 bg-blue-600"></div>
           <div class="flex items-center gap-2 px-6 pt-4 pb-2">

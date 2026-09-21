@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="w-[280px] shrink-0 bg-white border-l border-slate-200/60 flex flex-col overflow-hidden">
+  <div class="w-[280px] shrink-0 glass-card border-l border-slate-200/60 flex flex-col overflow-hidden">
     <!-- Header -->
     <div class="shrink-0 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between">
       <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">智能体</span>
