@@ -117,15 +117,15 @@
             </button>
           </div>
           <!-- 生成按钮 -->
-          <div class="shrink-0 px-3 py-3 border-t border-slate-100">
+          <div class="shrink-0 px-3 py-2.5 border-t border-slate-100">
             <button
               @click="generateDeliverable(deliverableSelected)"
               :disabled="isStreaming || deliverableBusy || !deliverableSelected"
-              class="w-full h-8 inline-flex items-center justify-center gap-1.5 px-2.5 rounded-lg text-[12px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="deliverableBusy ? 'bg-blue-50 text-blue-500' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/25'"
+              class="w-full h-7 inline-flex items-center justify-center gap-1.5 px-2.5 rounded-md text-[11.5px] font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :class="deliverableBusy ? 'bg-blue-50 text-blue-500' : 'bg-blue-600 hover:bg-blue-700 text-white'"
               :title="deliverableBusy ? '生成中…' : `生成${selectedDeliverable ? ' · ' + selectedDeliverable.name : ''}`"
             >
-              <i class="fa-solid text-[10px] shrink-0" :class="deliverableBusy ? 'fa-circle-notch fa-spin' : 'fa-wand-magic-sparkles'"></i>
+              <i class="fa-solid text-[9px] shrink-0" :class="deliverableBusy ? 'fa-circle-notch fa-spin' : 'fa-wand-magic-sparkles'"></i>
               <!-- 单行不换行：交付物名字长时按钮原先被撑成两行 -->
               <span class="truncate">{{ deliverableBusy ? '生成中…' : `生成${selectedDeliverable ? ' · ' + selectedDeliverable.short : ''}` }}</span>
             </button>
