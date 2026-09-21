@@ -2425,6 +2425,20 @@ async function ensureConversationSession(workspace, conversation) {
 
 // 代码工作区对话：cwd = 工作区目录，mode:'default'(每次写文件都要用户确认)。
 // conversationId 指定发往哪条会话；缺省时 findCodeConversation 取最近一条。
+// 取消某条会话正在跑的这一轮。之前前端「停止」只在本地收尾，引擎照跑、
+// 继续往这条会话推 chunk，会追加到已收尾的消息上。
+ipcMain.handle('code:cancel', async (_event, { id, conversationId } = {}) => {
+  try {
+    const { conversation } = findCodeConversation(id, conversationId);
+    if (!conversation || !conversation.sessionId || !acp) return { success: false };
+    acp.notify('session/cancel', { sessionId: conversation.sessionId });
+    return { success: true };
+  } catch (err) {
+    console.error('[main] code:cancel error:', err.message);
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('code:prompt', async (_event, { id, conversationId, text, attachments } = {}) => {
   try {
     if (!acp || !hermesReady) {

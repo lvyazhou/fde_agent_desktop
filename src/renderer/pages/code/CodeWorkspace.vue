@@ -312,6 +312,7 @@ const messages = ref([]);
 const draft = ref('');
 // 每会话是否正在流式(并行时多个可同时为真)。当前会话据此禁用输入。
 const streamingByConv = reactive({});
+const inflightByConv = new Set();   // convId → prompt 仍在 await 中（未返回则引擎还在跑）
 const isStreaming = computed(() => !!streamingByConv[activeConvId.value]);
 const msgScroll = ref(null);
 const inputRef = ref(null);
@@ -517,12 +518,20 @@ const getOrCreateAssistant = (targetMsgs) => {
 const scheduleStreamEnd = (convId) => {
   const t = streamEndTimers.get(convId);
   if (t) clearTimeout(t);
-  streamEndTimers.set(convId, setTimeout(() => finishStream(convId), 1500));
+  // 只作长时兜底：prompt 还没返回说明引擎仍在跑（写文件/跑命令很容易静默十几秒），
+  // 1.5 秒就收尾会误判结束 → 消息提前落盘、输入框放开，用户再发一条就串轮。
+  streamEndTimers.set(convId, setTimeout(() => {
+    if (inflightByConv.has(convId)) { scheduleStreamEnd(convId); return; }
+    finishStream(convId);
+  }, 120000));
 };
 
 const finishStream = (convId) => {
   const t = streamEndTimers.get(convId);
   if (t) { clearTimeout(t); streamEndTimers.delete(convId); }
+  // 幂等：agent_message_end 事件和 prompt 返回都会调，只让第一次生效，
+  // 否则同一轮会重复 saveConversation。
+  if (!streamingByConv[convId]) return;
   const conv = conversations.value.find((c) => c.id === convId);
   if (!conv) return;
   const msgs = conv.messages;
@@ -670,12 +679,15 @@ const send = async () => {
   console.log('[mc] send → conv=', sendConv.title, 'sid=', String(sendConv.sessionId).slice(0,8), 'msgsRef===messages.value?', sendConv.messages === messages.value);
   sendConv.messages.push({ id: Date.now(), role: 'user', content: text, attachments: sentAtts });
   streamingByConv[convId] = true;
+  inflightByConv.add(convId);
   turnStartByConv.set(convId, performance.now());
   pendingMetaByConv.delete(convId);
   scrollToBottom();
   try {
     const result = await window.api.code.prompt(props.id, convId, text, sentAtts);
-    // result.usage 是"跨所有回合累计"，做差得到本回合 token 消耗。
+    inflightByConv.delete(convId);
+    // prompt 返回 = 引擎这一轮真的结束了（或抛错）；agent_message_end 可能已经先到过一次
+    // finishStream 幂等，多调一次不会重复落盘。
     const usage = result && result.usage ? result.usage : null;
     const total = usage ? (usage.totalTokens ?? ((usage.inputTokens || 0) + (usage.outputTokens || 0))) : null;
     const prevTotal = prevTotalByConv.get(convId) || 0;
@@ -689,6 +701,7 @@ const send = async () => {
     });
     if (total != null) prevTotalByConv.set(convId, total);
   } catch (e) {
+    inflightByConv.delete(convId);
     const conv = conversations.value.find((c) => c.id === convId);
     if (conv) {
       const msg = getOrCreateAssistant(conv.messages);
@@ -702,9 +715,13 @@ const send = async () => {
   finishStream(convId);
 };
 
-const cancel = () => {
-  // 引擎侧无独立 code:cancel，先在前端结束本轮流式（下一条消息会 redirect）。
-  if (activeConvId.value) finishStream(activeConvId.value);
+const cancel = async () => {
+  const convId = activeConvId.value;
+  if (!convId) return;
+  // 必须通知引擎真停：只在前端收尾的话引擎照跑，之后的 chunk 会追加到已收尾的消息上。
+  try { await window.api.code.cancel(props.id, convId); } catch (_) { /* 引擎已停也无妨 */ }
+  inflightByConv.delete(convId);
+  finishStream(convId);
 };
 
 onMounted(async () => {

@@ -22,6 +22,7 @@ const validInvokeChannels = new Set([
   'code:read-file',
   'code:write-file',
   'code:prompt',
+  'code:cancel',
   'code:list-conversations',
   'code:new-conversation',
   'code:ensure-session',
@@ -261,6 +262,7 @@ contextBridge.exposeInMainWorld('api', {
         : attachments;
       return invoke('code:prompt', { id, conversationId, text, attachments: clean });
     },
+    cancel(id, conversationId) { return invoke('code:cancel', { id, conversationId }); },
     // 多会话
     listConversations(id) { return invoke('code:list-conversations', { id }); },
     newConversation(id, title) { return invoke('code:new-conversation', { id, title }); },
