@@ -82,7 +82,7 @@
           <button
             v-if="active !== 'projects'"
             @click="openUpload"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12.5px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm"
+            class="btn-sm-pri shrink-0"
           >
             <i class="fa-solid fa-cloud-arrow-up text-[11px]"></i>上传归档
           </button>
@@ -90,7 +90,7 @@
             v-else
             @click="loadProjects"
             :disabled="scanningProjects"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium glass-card border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition"
+            class="btn-sm shrink-0"
           >
             <i class="fa-solid fa-rotate text-[11px]" :class="scanningProjects ? 'fa-spin' : ''"></i>重新扫描
           </button>
@@ -597,11 +597,11 @@ function openProjectDoc(pj, item) {
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.15s;
 }
-.tree-node:hover { background: var(--color-sidebar-elevated); color: #111827; }
+.tree-node:hover { background: var(--color-sidebar-elevated); color: var(--color-sidebar-text-strong); }
 .tree-node:hover .tree-badge { transform: scale(1.06); }
 .tree-node--active {
   background: var(--color-sidebar-elevated);
-  color: #111827;
+  color: var(--color-sidebar-text-strong);
   font-weight: 600;
 }
 
@@ -629,7 +629,7 @@ function openProjectDoc(pj, item) {
   padding: 1px 7px;
   flex-shrink: 0;
 }
-.tree-node--active .tree-count { color: #111827; background: #dcdcd8; }
+.tree-node--active .tree-count { color: var(--color-sidebar-text-strong); background: var(--color-sidebar-elevated); }
 
 /* 统计卡片 */
 .stat-card {

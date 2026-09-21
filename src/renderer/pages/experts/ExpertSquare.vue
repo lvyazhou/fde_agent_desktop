@@ -1362,12 +1362,12 @@ async function openAssetDir(type) {
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.15s;
 }
-.tree-node:hover { background: var(--color-sidebar-elevated); color: #111827; }
+.tree-node:hover { background: var(--color-sidebar-elevated); color: var(--color-sidebar-text-strong); }
 .tree-node:hover .tree-badge { transform: scale(1.06); }
 .tree-node:active { transform: scale(0.97); }
 .tree-node--active {
   background: var(--color-sidebar-elevated);
-  color: #111827;
+  color: var(--color-sidebar-text-strong);
   font-weight: 600;
 }
 .tree-badge {
@@ -1390,7 +1390,7 @@ async function openAssetDir(type) {
   padding: 1px 7px;
   flex-shrink: 0;
 }
-.tree-node--active .tree-count { color: #111827; background: #dcdcd8; }
+.tree-node--active .tree-count { color: var(--color-sidebar-text-strong); background: var(--color-sidebar-elevated); }
 
 .stat-card {
   display: flex;

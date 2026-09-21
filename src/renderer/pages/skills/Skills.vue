@@ -68,14 +68,14 @@
           <button
             @click="refresh"
             :disabled="importing"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium glass-card border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition cursor-pointer active:scale-95"
+            class="btn-sm shrink-0"
             title="重新扫描技能库"
           >
             <i class="fa-solid fa-rotate text-[11px]" :class="refreshing ? 'fa-spin' : ''"></i>刷新
           </button>
           <button
             @click="openHub"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12.5px] font-medium glass-card border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-600 transition cursor-pointer active:scale-95"
+            class="btn-sm shrink-0"
             title="从 360 SkillHub 搜索并安装技能"
           >
             <i class="fa-solid fa-cloud-arrow-down text-[11px]"></i>技能中心
@@ -83,7 +83,7 @@
           <button
             @click="startImport"
             :disabled="importing"
-            class="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-[12.5px] font-medium bg-blue-600 hover:bg-blue-700 text-white transition shadow-sm disabled:opacity-50 cursor-pointer active:scale-95"
+            class="btn-sm-pri shrink-0"
           >
             <i class="fa-solid fa-file-zipper text-[11px]"></i>导入技能包
           </button>
@@ -885,11 +885,11 @@ async function deleteSkill(sk) {
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.15s;
 }
-.tree-node:hover { background: var(--color-sidebar-elevated); color: #111827; }
+.tree-node:hover { background: var(--color-sidebar-elevated); color: var(--color-sidebar-text-strong); }
 .tree-node:hover .tree-badge { transform: scale(1.06); }
 .tree-node--active {
   background: var(--color-sidebar-elevated);
-  color: #111827;
+  color: var(--color-sidebar-text-strong);
   font-weight: 600;
 }
 .tree-badge {
@@ -912,7 +912,7 @@ async function deleteSkill(sk) {
   padding: 1px 7px;
   flex-shrink: 0;
 }
-.tree-node--active .tree-count { color: #111827; background: #dcdcd8; }
+.tree-node--active .tree-count { color: var(--color-sidebar-text-strong); background: var(--color-sidebar-elevated); }
 
 /* 统计卡片 */
 .stat-card {

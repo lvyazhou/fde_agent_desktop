@@ -10,9 +10,9 @@
       </div>
       <button
         @click="$emit('new-chat')"
-        class="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-medium transition-colors flex items-center justify-center gap-2 cursor-pointer"
+        class="btn-sm-pri w-full justify-center"
       >
-        <i class="fa-solid fa-plus text-xs"></i>
+        <i class="fa-solid fa-plus"></i>
         开启新对话
       </button>
     </div>
@@ -42,7 +42,7 @@
           :class="project.slug === currentSlug ? 'bg-slate-100' : 'hover:bg-slate-50'"
         >
           <span class="w-4 shrink-0 flex items-center justify-center">
-            <i class="fa-solid fa-diagram-project text-[11px]" :style="{ color: project.slug === currentSlug ? '#2563eb' : '#94a3b8' }"></i>
+            <i class="fa-solid fa-diagram-project text-[11px]" :class="project.slug === currentSlug ? 'text-blue-600' : 'text-slate-400'"></i>
           </span>
           <span class="flex-1 min-w-0 text-[13px] truncate" :class="project.slug === currentSlug ? 'text-slate-900 font-semibold' : 'text-slate-600'">{{ project.name }}</span>
           <span class="text-[10px] text-slate-400 shrink-0">阶段{{ project.stage }}</span>
@@ -65,7 +65,7 @@
           </span>
           <!-- 普通对话图标 -->
           <span v-else class="w-4 shrink-0 flex items-center justify-center">
-            <i :class="phaseIcon(project.phase)" class="text-[11px]" :style="{ color: project.slug === currentSlug ? '#111827' : '#94a3b8' }"></i>
+            <i class="text-[11px]" :class="[phaseIcon(project.phase), project.slug === currentSlug ? 'text-blue-600' : 'text-slate-400']"></i>
           </span>
           <span class="flex-1 min-w-0 text-[13px] font-medium truncate" :class="project.slug === currentSlug ? 'text-slate-900' : 'text-slate-700'">{{ project.name }}</span>
           <span v-if="project.slug === currentSlug" class="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0"></span>

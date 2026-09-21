@@ -583,6 +583,6 @@ const closeWindow = () => {
   border-radius: 6px; color: var(--color-sidebar-text);
   transition: background 0.18s ease, color 0.18s ease;
 }
-.win-btn:hover { background: var(--color-sidebar-elevated); color: #111827; }
+.win-btn:hover { background: var(--color-sidebar-elevated); color: var(--color-sidebar-text-strong); }
 .win-btn--close:hover { background: #ef4444; color: #ffffff; }
 </style>

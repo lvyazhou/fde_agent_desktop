@@ -7,18 +7,12 @@
         <p class="text-sm text-slate-500 mt-1">打开任意本地文件夹，让 AI 直接在里面读写代码 —— 改动前给你看 diff、由你确认</p>
       </div>
       <div class="flex items-center gap-2">
-        <button
-          @click="createWorkspace"
-          class="inline-flex items-center gap-2 px-3.5 py-2 glass-card hover:bg-transparent text-slate-700 border border-slate-200 rounded-xl text-sm font-medium transition-colors"
-        >
-          <i class="fa-solid fa-folder-plus text-xs"></i>
+        <button @click="createWorkspace" class="btn-sm">
+          <i class="fa-solid fa-folder-plus"></i>
           <span>新建项目</span>
         </button>
-        <button
-          @click="openFolder"
-          class="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-700/20"
-        >
-          <i class="fa-solid fa-folder-open text-xs"></i>
+        <button @click="openFolder" class="btn-sm-pri">
+          <i class="fa-solid fa-folder-open"></i>
           <span>打开文件夹</span>
         </button>
       </div>

@@ -59,14 +59,15 @@
   --shadow-float: 0 12px 32px rgba(37, 99, 235, 0.14);
   --radius-4xl: 2rem;
 
-  /* --- 浅灰白侧边栏调色板(Codex 式:浅灰白侧栏 + 纯白内容区)--- */
-  --color-sidebar: #f7f7f5;          /* 侧栏主底(暖浅灰白) */
-  --color-sidebar-elevated: #ececea; /* 选中/hover 的淡灰底块 */
-  --color-sidebar-border: #e8e8e4;   /* 侧栏与内容区分隔线 */
+  /* --- 侧边栏调色板(冷蓝调,与品牌蓝同一支;原先是暖灰 #f7f7f5/#ececea,
+         在蓝色主题下选中块偏棕、与内容区不搭)--- */
+  --color-sidebar: #f5f7fc;          /* 侧栏主底(极淡蓝白) */
+  --color-sidebar-elevated: #dfe8fa; /* 选中/hover 的淡蓝底块 */
+  --color-sidebar-border: #e4eaf5;   /* 侧栏与内容区分隔线 */
   --color-sidebar-text: #4b5563;     /* 侧栏常态文字 */
-  --color-sidebar-text-strong: #111827; /* 侧栏高亮文字(选中项) */
-  --color-sidebar-muted: #9ca3af;    /* 分组小标题 / 次要文字 */
-  --color-sidebar-active: #2563eb;   /* 图标点缀强调(品牌蓝,克制使用) */
+  --color-sidebar-text-strong: #1d4ed8; /* 侧栏高亮文字(选中项,品牌蓝) */
+  --color-sidebar-muted: #94a3b8;    /* 分组小标题 / 次要文字 */
+  --color-sidebar-active: #2563eb;   /* 图标点缀强调(品牌蓝) */
 
   /* --- 内容区背景(全站统一,收编 #f4f7fb/#f5f7fa/#f8fafc 三套)--- */
   --color-content-bg: transparent;
@@ -168,6 +169,7 @@
   --color-sidebar: #f2ede3;
   --color-sidebar-elevated: #e6dfd1;
   --color-sidebar-border: #ddd6c8;
+  --color-sidebar-text-strong: #6d4312;  /* 选中文字转深棕，跟随主题 */
   --color-sidebar-active: #8f5a18;
 
   /* skill 语义 token：primary 转棕（HSL 三元组） */
@@ -236,6 +238,49 @@
       hsl(var(--primary)));
     box-shadow: 0 5px 12px hsl(var(--primary) / 18%);
   }
+  /* 紧凑档：页头/工具条里的按钮。原先各页手写 px-2~px-4 六七套 padding，
+     视觉割裂；统一到 h28 + 12px 字，比主按钮(h32/14px)低一档。 */
+  .btn-sm {
+    height: 28px;
+    padding: 0 10px;
+    border: 1px solid hsl(var(--border));
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: hsl(var(--muted-foreground));
+    background: hsl(var(--background));
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .btn-sm:hover {
+    border-color: hsl(var(--primary) / 45%);
+    color: hsl(var(--primary));
+  }
+  /* 紧凑主按钮：同尺寸实心版 */
+  .btn-sm-pri {
+    height: 28px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #fff;
+    background: hsl(var(--primary));
+    transition: background .15s;
+  }
+  .btn-sm-pri:hover { background: color-mix(in srgb, hsl(var(--primary)) 88%, black); }
+  .btn-sm:disabled, .btn-sm-pri:disabled { opacity: .5; cursor: not-allowed; }
+  .btn-sm i, .btn-sm-pri i { font-size: 10px; }
+
   .btn-ghost {
     height: 32px;
     padding: 0 14px;
