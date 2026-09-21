@@ -814,7 +814,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       <p class="body">这五类规范别当五个名词背——它们是<b>按项目推进顺序卡在不同节点上的</b>。从签字前到交付后,一条线走下来,每个节点该守哪条规矩,看下面这张时间线就清楚了。</p>
       <div class="flow">
 项目推进时间线 · 每个节点卡一道规矩
-签字前 <span class="amber">交付规范</span>(边界阶段一定死·72h签字制) → 设计时 <span class="amber">设计规范</span>(五层拆解→六组件→Eval)
+签字前 <span class="amber">交付规范</span>(边界阶段一定死·签字制) → 设计时 <span class="amber">设计规范</span>(五层拆解→六组件→Eval)
 → 开发中 <span class="amber">质量规范</span>(每节点检查·卡住不许往下) → 要交付 <span class="amber">验收规范</span>(三条硬标准)
 → 交付后 <span class="amber">复制规范</span>(沉淀模板) + <span class="hl">P0–P3 SLA</span>(出问题分级响应)
       </div>
@@ -830,7 +830,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       </table></div>
       <p class="body">时间线上有三个"闸口"要特别记住——它们是最容易踩坑、也最能防返工的地方:</p>
       <div class="cards c3">
-        <div class="card"><div class="ch">72h 签字制 <span class="tag">签字前</span></div><p>产品原型阶段用 72 小时签字制卡返工:<b>不签字不开工</b>。需求没定死就动手,后面全返工。</p></div>
+        <div class="card"><div class="ch">签字制 <span class="tag">签字前</span></div><p>产品原型阶段用签字制卡返工:<b>不签字不开工</b>。按对接次数走(2+1),不按天卡;需求没定死就动手,后面全返工。</p></div>
         <div class="card"><div class="ch">三个人工确认节点 <span class="tag">全程</span></div><p>原型签字 / 建模评审 / 合并审核。其余交给 AI 自主运行,只在这三处人工把关。</p></div>
         <div class="card"><div class="ch">P0–P3 响应 SLA <span class="tag">交付后</span></div><p>P0 30 分钟响应/当天修,往下按级递减到 P3 一周评估。每条 P0/P1 做<b>响应三件套</b>:复现定位(Trace)+ 最小改动(改完跑评测集)+ 客户回执。</p></div>
       </div>

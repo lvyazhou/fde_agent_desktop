@@ -1,0 +1,418 @@
+<title>FDE 五阶段工作台</title>
+<style>
+  :root{
+    --blue-50:#eff4ff; --blue-100:#dbe6fe; --blue-200:#bfd2fd; --blue-400:#6090f6;
+    --blue-500:#3b73f0; --blue-600:#2563eb; --blue-700:#1d4ed8;
+    --ink:#1e293b; --ink-strong:#0f172a; --muted:#64748b; --faint:#94a3b8;
+    --line:#e4eaf5; --line-soft:#eef2f8;
+    --sidebar:#f5f7fc; --sidebar-elevated:#dfe8fa; --sidebar-border:#e4eaf5;
+    --sidebar-text:#4b5563; --sidebar-strong:#1d4ed8; --sidebar-muted:#94a3b8;
+    --content-bg:#f4f7fb;
+    --success:#059669; --success-soft:#e7f6f0;
+    --card:#ffffff;
+    --shadow-card:0 8px 24px rgba(15,23,42,.06);
+    --font: Inter,'PingFang SC','Microsoft YaHei','Segoe UI',system-ui,sans-serif;
+    --mono: ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:var(--font); color:var(--ink);
+    background:
+      radial-gradient(1200px 500px at 78% -8%, rgba(37,99,235,.10), transparent 60%),
+      var(--content-bg);
+    -webkit-font-smoothing:antialiased;
+  }
+  .fa{font-style:normal;}
+
+  /* ===== app shell ===== */
+  .app-root{display:flex; flex-direction:column; height:100vh; overflow:hidden;}
+  .titlebar{
+    height:36px; flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+    padding:0 10px 0 12px; background:rgba(245,247,252,.8); backdrop-filter:blur(14px) saturate(1.4);
+    border-bottom:1px solid rgba(37,99,235,.12); position:relative; z-index:30;
+  }
+  .tb-left{display:inline-flex; align-items:center; gap:4px;}
+  .tb-collapse{
+    width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center;
+    border-radius:6px; color:var(--sidebar-text); font-size:11px; background:none; border:0; cursor:pointer;
+  }
+  .tb-collapse:hover{background:var(--sidebar-elevated); color:var(--sidebar-strong);}
+  .tb-right{display:inline-flex; align-items:center; gap:4px;}
+  .tb-clock{font-size:11.5px; color:var(--sidebar-muted); letter-spacing:.02em; padding:0 6px; font-family:var(--mono);}
+  .tb-divider{width:1px; height:14px; background:var(--sidebar-border); margin:0 2px;}
+  .win-btn{
+    width:28px; height:26px; display:inline-flex; align-items:center; justify-content:center;
+    border-radius:6px; color:var(--sidebar-text); background:none; border:0; cursor:pointer;
+  }
+  .win-btn:hover{background:var(--sidebar-elevated); color:var(--sidebar-strong);}
+  .win-btn.close:hover{background:#ef4444; color:#fff;}
+
+  .app-body{flex:1; display:flex; min-height:0; overflow:hidden;}
+
+  /* ===== rail ===== */
+  .rail{
+    width:236px; flex-shrink:0; display:flex; flex-direction:column;
+    background:rgba(245,247,252,.86); backdrop-filter:blur(14px) saturate(1.35);
+    border-right:1px solid rgba(37,99,235,.12); overflow:hidden;
+  }
+  .rail-brand{display:flex; align-items:center; gap:10px; padding:14px 16px 12px; min-height:56px;}
+  .rail-logo{
+    width:30px; height:30px; border-radius:9px; flex-shrink:0;
+    background:linear-gradient(135deg,#3b73f0,#1d4ed8);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px;
+    box-shadow:0 2px 8px rgba(37,99,235,.2);
+  }
+  .rail-brand-text{display:flex; flex-direction:column; line-height:1.2; min-width:0;}
+  .rail-brand-name{font-size:13.5px; font-weight:600; color:var(--ink-strong); white-space:nowrap;}
+  .rail-brand-sub{font-size:10px; color:var(--sidebar-muted); margin-top:2px; white-space:nowrap;}
+
+  .rail-nav{flex:1; overflow-y:auto; padding:6px 10px;}
+  .rail-group{margin-bottom:12px;}
+  .rail-group-label{
+    font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--sidebar-muted); padding:6px 10px 4px;
+  }
+  .rail-link{
+    display:flex; align-items:center; gap:11px; padding:8px 11px; margin-bottom:1px;
+    border-radius:8px; font-size:13px; color:var(--sidebar-text); white-space:nowrap;
+    text-decoration:none; cursor:pointer; border:0; background:none; width:100%; text-align:left;
+    transition:background .15s,color .15s;
+  }
+  .rail-ico{font-size:14px; width:18px; text-align:center; flex-shrink:0; color:var(--sidebar-muted); transition:color .15s;}
+  .rail-label{flex:1; overflow:hidden; text-overflow:ellipsis;}
+  .rail-link:hover{background:var(--sidebar-elevated); color:var(--sidebar-strong);}
+  .rail-link:hover .rail-ico{color:var(--sidebar-text);}
+  .rail-link.active{background:var(--sidebar-elevated); color:var(--sidebar-strong); font-weight:500;}
+  .rail-link.active .rail-ico{color:var(--blue-600);}
+
+  .rail-footer{border-top:1px solid var(--sidebar-border); padding:8px 10px; display:flex; flex-direction:column; gap:4px;}
+  .rail-status{display:flex; align-items:center; gap:8px; padding:6px 11px; font-size:12px; color:var(--sidebar-text);}
+  .status-dot{width:8px; height:8px; border-radius:50%; flex-shrink:0;}
+  .dot-blue{background:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.16);}
+  .rail-license{
+    display:flex; align-items:center; gap:5px; margin:0 4px 2px; padding:4px 10px; border-radius:7px;
+    font-size:11px; font-weight:500; color:#166534; background:rgba(5,150,105,.12);
+  }
+  .rail-license .lic-dot{width:6px;height:6px;border-radius:50%;background:#059669;}
+  .rail-set{display:flex; align-items:center; gap:11px; padding:8px 11px; border-radius:8px; font-size:13px; color:var(--sidebar-text); cursor:pointer;}
+  .rail-set:hover{background:var(--sidebar-elevated); color:var(--sidebar-strong);}
+  .rail-version{font-size:10px; color:var(--sidebar-muted); margin-left:auto; font-family:var(--mono);}
+
+  /* ===== content ===== */
+  .app-content{flex:1; min-width:0; min-height:0; overflow:auto; display:flex; flex-direction:column;}
+  .portal{padding:20px 22px; display:flex; flex-direction:column; gap:16px;}
+
+  .card{background:var(--card); border:1px solid rgba(37,99,235,.14); border-radius:16px; box-shadow:var(--shadow-card);}
+
+  /* hero */
+  .hero{position:relative; overflow:hidden; padding:22px 26px; min-height:150px;}
+  .hero-bar{position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--blue-600); z-index:2;}
+  .hero-grad{position:absolute; inset:0; background:linear-gradient(120deg,#f4f8ff 0%, #eef4ff 46%, #e8f0ff 100%);}
+  .hero-bg{
+    position:absolute; right:0; top:0; bottom:0; width:min(58%,880px);
+    background:url('top.png') right center / cover no-repeat;
+    -webkit-mask-image:linear-gradient(90deg, transparent 0%, #000 34%);
+            mask-image:linear-gradient(90deg, transparent 0%, #000 34%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative; z-index:1; display:flex; align-items:flex-start; justify-content:space-between; gap:24px; flex-wrap:wrap;}
+  .hero-main{min-width:0; flex:1; max-width:64%;}
+  .hero-badge{
+    display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:999px;
+    background:var(--blue-50); color:var(--blue-600); font-size:12px; font-weight:500; margin-bottom:10px;
+  }
+  .hero-badge .dot{width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,#3b73f0,#1d4ed8);}
+  .hero-title{font-size:27px; font-weight:800; line-height:1.28; color:var(--ink-strong); margin:0 0 8px; letter-spacing:-.01em; text-wrap:balance;}
+  .hero-desc{font-size:13px; line-height:1.75; color:var(--muted); max-width:640px; margin:0;}
+  .hero-desc b{color:var(--blue-600); font-weight:600;}
+  .hero-cta{
+    display:inline-flex; align-items:center; gap:8px; padding:9px 16px; border-radius:12px;
+    background:var(--blue-600); color:#fff; font-size:13px; font-weight:600; border:0; cursor:pointer; flex-shrink:0;
+    box-shadow:0 6px 16px rgba(37,99,235,.28); transition:background .15s;
+  }
+  .hero-cta:hover{background:var(--blue-700);}
+
+  /* parallel lines */
+  .pl-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:12px; flex-wrap:wrap;}
+  .pl-title{font-size:14px; font-weight:600; color:#334155; display:flex; align-items:center; gap:8px;}
+  .pl-title .fa{color:var(--blue-600);}
+  .pl-badges{display:flex; align-items:center; gap:10px;}
+  .pl-badge{
+    display:flex; align-items:center; gap:8px; padding:6px 12px 6px 6px; border-radius:12px;
+    background:var(--blue-50); border:1px solid rgba(37,99,235,.14);
+  }
+  .pl-badge .num{
+    min-width:42px; height:28px; padding:0 8px; display:flex; align-items:center; justify-content:center;
+    border-radius:8px; background:var(--blue-600); color:#fff; font-family:var(--mono); font-weight:700; font-size:13px; white-space:nowrap;
+  }
+  .pl-badge .num.wide{min-width:58px; font-size:12px;}
+  .pl-badge .txt{display:flex; flex-direction:column; line-height:1.25;}
+  .pl-badge .t1{color:#334155; font-weight:600; font-size:11px; white-space:nowrap;}
+  .pl-badge .t2{color:var(--faint); font-size:10px; white-space:nowrap;}
+
+  .pl-row{display:flex; align-items:center; gap:8px; overflow-x:auto; padding-bottom:4px;}
+  .pl-row + .pl-row{margin-top:12px;}
+  .pl-lead{flex-shrink:0; display:flex; align-items:center; gap:6px; font-size:11px; font-weight:600; width:96px;}
+  .pl-lead .n{width:20px; height:20px; border-radius:50%; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0;}
+  .pl-lead.demand{color:#334155;} .pl-lead.demand .n{background:var(--blue-600);}
+  .pl-lead.env{color:var(--muted);} .pl-lead.env .n{background:#64748b;}
+  .pl-node{flex-shrink:0; padding:8px 12px; border-radius:10px; background:var(--blue-50); font-size:12px; color:#334155; white-space:nowrap;}
+  .pl-node2{flex-shrink:0; padding:6px 12px; border-radius:10px; background:var(--blue-50); display:flex; flex-direction:column; line-height:1.25; white-space:nowrap;}
+  .pl-node2 .l{font-size:12px; font-weight:500; color:var(--muted); display:flex; align-items:center; gap:4px;}
+  .pl-node2 .h{font-size:10px; color:var(--faint);}
+  .pl-node2.done{background:rgba(5,150,105,.08); border:1px solid rgba(5,150,105,.22);}
+  .pl-node2.done .l{color:#047857;} .pl-node2.done .h{color:#10b981;}
+  .pl-arrow{flex-shrink:0; font-size:10px;}
+  .pl-arrow.b{color:rgba(37,99,235,.5);} .pl-arrow.g{color:#cbd5e1;}
+  .pl-foot{margin-top:12px; padding-top:12px; border-top:1px solid rgba(37,99,235,.1); font-size:11px; color:var(--faint);}
+  .pl-foot b{color:var(--muted); font-weight:600;}
+
+  /* stages */
+  .st-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap:12px; flex-wrap:wrap;}
+  .st-h2{font-size:15px; font-weight:600; color:var(--ink-strong); display:flex; align-items:center; gap:8px; margin:0;}
+  .st-h2 .fa{color:var(--blue-600);}
+  .st-sub{font-size:12px; color:var(--faint);}
+  .st-row{display:flex; align-items:stretch; gap:0;}
+  .st-card{
+    flex:1; min-width:0; display:flex; flex-direction:column; text-align:left; cursor:pointer;
+    background:var(--card); border:1px solid rgba(37,99,235,.14); border-radius:16px; overflow:hidden;
+    box-shadow:var(--shadow-card); transition:border-color .15s, box-shadow .15s, transform .15s;
+  }
+  .st-card:hover{border-color:var(--blue-400); box-shadow:0 12px 28px rgba(37,99,235,.12); transform:translateY(-2px);}
+  .st-top{padding:16px 16px 14px;}
+  .st-badge-row{display:flex; align-items:center; gap:8px; margin-bottom:12px;}
+  .st-num{width:34px; height:34px; border-radius:11px; color:#fff; font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .st-ico{width:34px; height:34px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;}
+  .st-name{font-size:15px; font-weight:700; color:var(--ink-strong); line-height:1.3; margin-bottom:10px;}
+  .st-chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+  .st-chip{font-size:11px; padding:3px 9px; border-radius:6px; font-weight:500;}
+  .st-goal{font-size:12px; color:var(--muted); line-height:1.65;}
+  .st-mid{padding:14px 16px 4px;}
+  .st-dlabel{font-size:11px; color:var(--faint); font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:5px;}
+  .st-dlabel .fa{color:var(--blue-600);}
+  .st-dlist{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px;}
+  .st-dlist li{font-size:12px; color:#475569; display:flex; align-items:flex-start; gap:8px; line-height:1.4;}
+  .st-dot{width:5px; height:5px; border-radius:50%; background:var(--blue-500); margin-top:6px; flex-shrink:0;}
+  .st-foot{margin-top:auto; padding:12px 16px; border-top:1px solid var(--line-soft); display:flex; align-items:center; gap:8px; font-size:11px; color:var(--muted);}
+  .st-foot .rhythm{font-weight:500;}
+  .st-foot .arrow{margin-left:auto; color:#cbd5e1; transition:color .15s, transform .15s;}
+  .st-card:hover .st-foot .arrow{color:var(--blue-600); transform:translateX(2px);}
+  .st-gap{display:flex; align-items:center; justify-content:center; padding:0 6px; flex-shrink:0; color:rgba(37,99,235,.4); font-size:14px;}
+
+  /* accent variants */
+  .a-blue .st-num{background:var(--blue-600);} .a-blue .st-ico{background:var(--blue-50); color:var(--blue-600);}
+  .a-green .st-num{background:#0ea5a0;} .a-green .st-ico{background:#e6faf8; color:#0d9488;}
+  .a-purple .st-num{background:#7c3aed;} .a-purple .st-ico{background:#f3edff; color:#7c3aed;}
+  .a-cyan .st-num{background:#0891b2;} .a-cyan .st-ico{background:#e0f7fb; color:#0891b2;}
+
+  .chip-blue{background:var(--blue-50); color:var(--blue-700);}
+  .chip-slate{background:#f1f5f9; color:#475569;}
+  .chip-green{background:#e6faf8; color:#0d9488;}
+  .chip-purple{background:#f3edff; color:#7c3aed;}
+  .chip-cyan{background:#e0f7fb; color:#0891b2;}
+
+  @media (max-width:1180px){
+    .st-row{flex-wrap:wrap; gap:12px;}
+    .st-card{flex:1 1 calc(33.333% - 8px);}
+    .st-gap{display:none;}
+    .hero-art{display:none;} .hero-main{max-width:100%;}
+  }
+  @media (max-width:720px){
+    .rail{display:none;}
+    .st-card{flex:1 1 100%;}
+  }
+</style>
+
+<div class="app-root">
+  <!-- titlebar -->
+  <header class="titlebar">
+    <div class="tb-left">
+      <button class="tb-collapse" title="收起侧栏"><span class="fa">&#xf100;</span><span style="font-family:'Font Awesome 6 Free'"></span>«</button>
+    </div>
+    <div class="tb-right">
+      <span class="tb-clock" id="clock">19:35:08</span>
+      <div class="tb-divider"></div>
+      <button class="win-btn" title="最小化"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+      <button class="win-btn" title="最大化"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="2" y="2" width="6" height="6" rx="1.2" stroke="currentColor" stroke-width="1.2" fill="none"/></svg></button>
+      <button class="win-btn close" title="关闭"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 2.5l5 5M7.5 2.5l-5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
+    </div>
+  </header>
+
+  <div class="app-body">
+    <!-- rail -->
+    <aside class="rail">
+      <div class="rail-brand">
+        <div class="rail-logo">☁</div>
+        <div class="rail-brand-text">
+          <span class="rail-brand-name">FDE 产品设计</span>
+          <span class="rail-brand-sub">让智能体走进工作台</span>
+        </div>
+      </div>
+      <nav class="rail-nav">
+        <div class="rail-group">
+          <div class="rail-group-label">工作台</div>
+          <a class="rail-link active"><span class="rail-ico">▦</span><span class="rail-label">FDE 工作台</span></a>
+          <a class="rail-link"><span class="rail-ico">▤</span><span class="rail-label">FDE 项目规范</span></a>
+          <a class="rail-link"><span class="rail-ico">🎓</span><span class="rail-label">FDE 培训教程</span></a>
+        </div>
+        <div class="rail-group">
+          <div class="rail-group-label">助手</div>
+          <a class="rail-link"><span class="rail-ico">💬</span><span class="rail-label">AI 智能对话</span></a>
+          <a class="rail-link"><span class="rail-ico">&lt;/&gt;</span><span class="rail-label">AI 代码模式</span></a>
+          <a class="rail-link"><span class="rail-ico">▥</span><span class="rail-label">AI 应用广场</span></a>
+        </div>
+        <div class="rail-group">
+          <div class="rail-group-label">资源</div>
+          <a class="rail-link"><span class="rail-ico">🗀</span><span class="rail-label">项目列表</span></a>
+          <a class="rail-link"><span class="rail-ico">📖</span><span class="rail-label">知识中心</span></a>
+          <a class="rail-link"><span class="rail-ico">🧠</span><span class="rail-label">技能中心</span></a>
+        </div>
+      </nav>
+      <div class="rail-footer">
+        <div class="rail-status"><span class="status-dot dot-blue"></span><span>AI 引擎环境</span></div>
+        <div class="rail-set"><span class="rail-ico">⚙</span><span class="rail-label">设置</span><span class="rail-version">3.0.0</span></div>
+      </div>
+    </aside>
+
+    <!-- content -->
+    <main class="app-content">
+      <div class="portal">
+
+        <!-- hero -->
+        <section class="hero card">
+          <div class="hero-grad"></div>
+          <div class="hero-bg"></div>
+          <div class="hero-bar"></div>
+          <div class="hero-inner">
+            <div class="hero-main">
+              <span class="hero-badge"><span class="dot"></span>FDE 五阶段工作台</span>
+              <h1 class="hero-title">把「客户要 AI」翻译成「能落地的行业工作台」</h1>
+              <p class="hero-desc">
+                FDE 项目经理的作战指挥台。把一次商业化 AI 交付拆成五个前后咬合的阶段——<b>调研备弹 → 需求原型 → 智能体设计 → 工作台上线 → 试用定稿</b>，每阶段的知识库、话术、交付物模板都在这里规范取用。
+              </p>
+            </div>
+            <button class="hero-cta">🎧 找 FDE 规练陪练聊需求 →</button>
+          </div>
+        </section>
+
+        <!-- parallel lines -->
+        <section class="card" style="padding:20px 22px;">
+          <div class="pl-head">
+            <div class="pl-title"><span class="fa">🔀</span>两条线并行推进</div>
+            <div class="pl-badges">
+              <div class="pl-badge">
+                <span class="num">2+1</span>
+                <span class="txt"><span class="t1">2 次对接 + 1 次签字</span><span class="t2">碰 2 次面即出原型</span></span>
+              </div>
+              <div class="pl-badge">
+                <span class="num wide">3/7/14</span>
+                <span class="txt"><span class="t1">4h 3 / 7 / 14 天</span><span class="t2">按需求定交付时限</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pl-row">
+            <span class="pl-lead demand"><span class="n">1</span>需求主线</span>
+            <div class="pl-node">客户/行业需求</div><span class="pl-arrow b">→</span>
+            <div class="pl-node">① 调研备弹</div><span class="pl-arrow b">→</span>
+            <div class="pl-node">② 需求沟通·原型</div><span class="pl-arrow b">→</span>
+            <div class="pl-node">③ 需求确认·智能体</div><span class="pl-arrow b">→</span>
+            <div class="pl-node">④ 工作台上线</div><span class="pl-arrow b">→</span>
+            <div class="pl-node">⑤ 试用定稿</div><span class="pl-arrow b">→</span>
+            <div class="pl-node">沉淀复制</div>
+          </div>
+
+          <div class="pl-row">
+            <span class="pl-lead env"><span class="n">2</span>实施链路线</span>
+            <div class="pl-node2"><span class="l">前期调研</span><span class="h">网络/服务器/VPN</span></div><span class="pl-arrow g">→</span>
+            <div class="pl-node2"><span class="l">系统与数据库确认</span><span class="h">HIS/LIS/EMR/账号</span></div><span class="pl-arrow g">→</span>
+            <div class="pl-node2"><span class="l">SDR表结构设计</span><span class="h">1→兼/主数据</span></div><span class="pl-arrow g">→</span>
+            <div class="pl-node2"><span class="l">建表SQL与部署</span><span class="h">执行SQL/安装SDR</span></div><span class="pl-arrow g">→</span>
+            <div class="pl-node2"><span class="l">SDR试点验证</span><span class="h">数据接入/指标验证</span></div><span class="pl-arrow g">→</span>
+            <div class="pl-node2"><span class="l">SAAS平台配置</span><span class="h">租户/账号/权限</span></div><span class="pl-arrow g">→</span>
+            <div class="pl-node2"><span class="l">智能体部署接入</span><span class="h">参数/知识库/测试</span></div><span class="pl-arrow g">→</span>
+            <div class="pl-node2 done"><span class="l">✔ 试用培训与验收</span><span class="h">反馈/修复/交付</span></div>
+          </div>
+
+          <div class="pl-foot">ⓘ 两线并行、互不等待；<b>两线齐备才能高效交付天数</b>。任一线超甲方卡住 = 加时费（先发邮件告知、暂停计时单独记）。</div>
+        </section>
+
+        <!-- stages -->
+        <section>
+          <div class="st-head">
+            <h2 class="st-h2"><span class="fa">🔷</span>FDE 五阶段工业化流水线</h2>
+            <span class="st-sub">上一阶段的输出 = 下一阶段的输入 · 五阶段一条链</span>
+          </div>
+          <div class="st-row" id="stageRow"></div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+  // 实时时钟
+  const clockEl = document.getElementById('clock');
+  const tick = () => {
+    const d = new Date(), p = n => String(n).padStart(2,'0');
+    clockEl.textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  };
+  tick(); setInterval(tick, 1000);
+
+  // FDE 五阶段真实数据：来自项目 src/renderer/data/fde-stages.js
+  const stages = [
+    { n:'1', accent:'a-blue', ico:'🧠', name:'调研准备 + 备弹知识',
+      chips:[['调研备弹','chip-blue'],['知识内化','chip-blue']],
+      goal:'进场前把行业政策、术语、痛点和对标案例装进脑子，调研框架与话术练到条件反射。',
+      label:'知识内化', dlv:['备弹知识库','调研框架 SOP（六项框架）','调研话术卡（破冰 / SPIN / 七维串）'], rhythm:'进场前准备' },
+    { n:'2', accent:'a-blue', ico:'📄', name:'需求沟通 + 原型设计',
+      chips:[['结构化沟通','chip-blue'],['原型收敛','chip-blue']],
+      goal:'结构化挖需求、当场确认，输出对接确认表和 AI 能力清单，用可交互原型收敛需求。',
+      label:'交付物', dlv:['需求与数据对接确认表（含组织关系）','AI 需求能力清单','PRD（三层：目标 / 功能 / 交互，收敛稿）','可交互原型（收敛稿）'], rhythm:'2+1 主场 · 2次对接 + 1次确认出原型' },
+    { n:'3', accent:'a-blue', ico:'🧩', name:'需求确认 + 智能体设计',
+      chips:[['需求签字','chip-blue'],['智能体矩阵','chip-blue']],
+      goal:'把需求签字定死，拆智能体矩阵并逐个设计过 Eval；PRD 与原型升级为定稿版。',
+      label:'交付物', dlv:['需求最终确认表','产品实施计划表','业务数据口径模板','智能体矩阵 + 各智能体设计表','定稿版 PRD','最终产品原型（定稿）'], rhythm:'2+1 的“1” · 签字定稿' },
+    { n:'4', accent:'a-green', ico:'🖥', name:'纳米Work 行业工作台',
+      chips:[['工作台上线','chip-green'],['真实数据接入','chip-green']],
+      goal:'建模、搭前后端、部署，做成客户能访问、能使用的行业工作台。',
+      label:'交付物', dlv:['ER 数据模型图','Demo 版系统','完整前后端工作台系统','项目进度表','部署文档'], rhythm:'3 / 7 / 14 天 · 两线齐备后起算' },
+    { n:'5', accent:'a-purple', ico:'🚀', name:'客户试用 + 智能体优化',
+      chips:[['客户试用','chip-purple'],['三轮定稿','chip-purple']],
+      goal:'代理商试跑、三轮定稿、客户交付签字，沉淀可复制的行业模板。',
+      label:'交付物', dlv:['客户反馈跟踪表','三轮迭代记录表','使用率盯防表（30 / 60 / 90 天）','项目交付签字表','定稿产品','可复制行业模板'], rhythm:'2–4 周 · 三轮迭代定稿' },
+  ];
+
+  const row = document.getElementById('stageRow');
+  stages.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = `st-card ${s.accent}`;
+    const numOrIco = s.n
+      ? `<span class="st-num">${s.n}</span><span class="st-ico">${s.ico}</span>`
+      : `<span class="st-ico">${s.ico}</span>`;
+    card.innerHTML = `
+      <div class="st-top">
+        <div class="st-badge-row">${numOrIco}</div>
+        <div class="st-name">${s.name}</div>
+        <div class="st-chips">${s.chips.map(c=>`<span class="st-chip ${c[1]}">${c[0]}</span>`).join('')}</div>
+        <div class="st-goal">${s.goal}</div>
+      </div>
+      <div class="st-mid">
+        <div class="st-dlabel"><span class="fa">📦</span>${s.label}</div>
+        <ul class="st-dlist">${s.dlv.map(d=>`<li><span class="st-dot"></span><span>${d}</span></li>`).join('')}</ul>
+      </div>
+      <div class="st-foot">
+        <span>🕐</span><span class="rhythm">${s.rhythm}</span>
+        <span class="arrow">→</span>
+      </div>`;
+    row.appendChild(card);
+    if (i < stages.length - 1) {
+      const gap = document.createElement('div');
+      gap.className = 'st-gap';
+      gap.textContent = '›';
+      row.appendChild(gap);
+    }
+  });
+</script>

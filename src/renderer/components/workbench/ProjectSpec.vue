@@ -11,39 +11,90 @@
           <h1 class="text-[15px] font-semibold text-slate-800 truncate">FDE 项目规范</h1>
           <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium shrink-0">极库云项目管理制度</span>
         </div>
-        <p class="text-[12px] text-slate-500 truncate">五阶段项目管理 · 需求管理 · 产品复制模式</p>
+        <p class="text-[12px] text-slate-500 truncate">五类规范 · 两类角色 · 项目/智能体两维交付 · 需求管理与复制</p>
       </div>
     </div>
 
-    <!-- 主体:左锚点目录 + 右内容(章节多,靠滚动找太费劲) -->
+    <!-- 主体:去掉左锚点目录,单栏内容直接滚动 -->
     <div class="flex-1 min-h-0 flex overflow-hidden">
-      <!-- 锚点目录 -->
-      <nav class="w-[180px] shrink-0 border-r border-blue-500/12 bg-blue-50/30 overflow-y-auto py-4 px-3 hidden lg:block" aria-label="章节导航">
-        <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 mb-2">目录</div>
-        <button
-          v-for="sec in sections"
-          :key="sec.id"
-          type="button"
-          @click="scrollTo(sec.id)"
-          class="w-full text-left px-2 py-1.5 rounded-lg mb-0.5 text-[12px] transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-          :class="activeSection === sec.id ? 'glass-card text-blue-600 font-semibold border border-blue-500/14' : 'text-slate-500 hover:bg-white/70 border border-transparent'"
-        >
-          <span class="w-4 text-center text-[11px] shrink-0" :class="activeSection === sec.id ? 'text-blue-600' : 'text-slate-300'">{{ sec.no }}</span>
-          <span class="truncate">{{ sec.label }}</span>
-        </button>
-      </nav>
-
       <!-- 内容区 -->
       <div ref="scrollRef" class="flex-1 min-h-0 overflow-y-auto spec-scroll">
         <div class="spec-inner w-full space-y-6">
 
-        <!-- 一、五阶段项目管理 -->
-        <section id="sec-stage" data-sec="sec-stage">
+        <!-- 一、五类规范 -->
+        <section id="sec-specs" data-sec="sec-specs">
           <h2 class="section-title">
             <span class="section-no">一</span>
-            <i class="fa-solid fa-layer-group text-blue-600"></i>
-            五阶段项目管理
+            <i class="fa-solid fa-scroll text-blue-600"></i>
+            五类规范(守什么规矩)
           </h2>
+          <p class="text-[12px] text-slate-500 mb-3">{{ fiveSpecs.intro }}</p>
+          <!-- 时间线 -->
+          <div class="glass-card rounded-xl border border-blue-500/14 p-4 mb-3 overflow-x-auto">
+            <div class="flex items-center gap-1 min-w-max">
+              <template v-for="(t, i) in fiveSpecs.timeline" :key="t.spec">
+                <div class="text-center px-1">
+                  <div class="text-[10px] text-slate-400 mb-1">{{ t.stage }}</div>
+                  <span class="text-[11px] px-2 py-1 rounded-md bg-blue-600 text-white font-medium whitespace-nowrap">{{ t.spec }}</span>
+                </div>
+                <i v-if="i < fiveSpecs.timeline.length - 1" class="fa-solid fa-arrow-right text-blue-600/40 text-[10px]"></i>
+              </template>
+            </div>
+          </div>
+          <!-- 五类规范表 -->
+          <div class="glass-card rounded-xl border border-blue-500/14 overflow-hidden mb-3">
+            <div v-for="(sp, i) in fiveSpecs.specs" :key="sp.name" class="flex items-start gap-3 px-4 py-3" :class="i > 0 ? 'border-t border-blue-500/10' : ''">
+              <span class="text-[12px] font-semibold text-blue-700 shrink-0 w-16">{{ sp.name }}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-slate-500 shrink-0 whitespace-nowrap">{{ sp.node }}</span>
+              <span class="text-[12px] text-slate-600 leading-relaxed min-w-0">{{ sp.req }}</span>
+            </div>
+          </div>
+          <!-- 三个闸口 -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div v-for="g in fiveSpecs.gates" :key="g.name" class="glass-card rounded-xl border border-blue-500/14 p-4">
+              <h3 class="text-[13px] font-semibold text-slate-800 mb-1 flex items-center gap-1.5 flex-wrap">
+                {{ g.name }}
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/12 text-blue-600 font-normal">{{ g.when }}</span>
+              </h3>
+              <p class="text-[12px] text-slate-500 leading-relaxed">{{ g.desc }}</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 二、两类角色 -->
+        <section id="sec-roles" data-sec="sec-roles">
+          <h2 class="section-title">
+            <span class="section-no">二</span>
+            <i class="fa-solid fa-users-gear text-blue-600"></i>
+            两类角色(谁干什么)
+          </h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+            <div v-for="r in roles" :key="r.name" class="glass-card rounded-xl border border-blue-500/14 p-4 flex items-start gap-3">
+              <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+                <i :class="r.icon"></i>
+              </span>
+              <div class="min-w-0">
+                <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5 flex items-center gap-2">
+                  {{ r.name }}
+                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/12 text-blue-600 font-normal">{{ r.tag }}</span>
+                </h3>
+                <p class="text-[12px] text-slate-500 leading-relaxed">{{ r.duty }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="rounded-lg bg-blue-50/50 border border-blue-100/70 px-4 py-2.5 text-[12px] text-slate-600">
+            <b class="text-slate-800">项目经理指挥、交付干活。</b>项目经理为项目结果负责,交付为"能不能真跑通、真上线"负责。分工混了,两头都乱。
+          </div>
+        </section>
+
+        <!-- 三、项目交付物管理(按阶段) -->
+        <section id="sec-stage" data-sec="sec-stage">
+          <h2 class="section-title">
+            <span class="section-no">三</span>
+            <i class="fa-solid fa-layer-group text-blue-600"></i>
+            项目交付物管理(按阶段,一批批产出)
+          </h2>
+          <p class="text-[12px] text-slate-500 mb-3">第一条线。项目的交付物跟着五阶段走,每个环节产出一批,前一批正好是后一批的输入;此外还有实施计划表、日报周报、材料归档要维护。</p>
           <div class="space-y-3">
             <div
               v-for="(group, gi) in stageGroups"
@@ -111,7 +162,7 @@
                 <span v-for="t in s.tags" :key="t" class="text-[11px] px-1.5 py-0.5 rounded bg-blue-50 text-slate-500 border border-blue-500/12">{{ t }}</span>
               </div>
 
-              <!-- HIS 标品交付 SOP 举例 -->
+              <!-- 三张表协同举例 -->
               <div v-if="s.example" class="mt-3 pt-3 border-t border-blue-500/10">
                 <div class="text-[11px] text-slate-400 mb-2">{{ s.example.title }}</div>
                 <div class="flex items-center gap-1 flex-wrap">
@@ -120,33 +171,89 @@
                     <i v-if="i < s.example.steps.length - 1" class="fa-solid fa-arrow-right text-blue-600/40 text-[9px]"></i>
                   </template>
                 </div>
+                <div v-if="s.firstStep" class="mt-2 text-[11px] text-blue-700 bg-blue-50/60 rounded-md px-2 py-1.5 leading-snug">
+                  <i class="fa-solid fa-circle-exclamation mr-1"></i>{{ s.firstStep }}
+                </div>
               </div>
               </component>
             </div>
           </div>
-        </section>
 
-        <!-- 二、项目需求管理 -->
-        <section id="sec-req" data-sec="sec-req">
-          <h2 class="section-title">
-            <span class="section-no">二</span>
-            <i class="fa-solid fa-list-check text-blue-600"></i>
-            项目需求管理
-          </h2>
-          <p class="text-[12px] text-slate-500 mb-3">{{ reqMgmt.intro }}</p>
-
-          <!-- 角色分工 -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-            <div v-for="r in reqMgmt.roles" :key="r.name" class="glass-card rounded-xl border border-blue-500/14 p-4 flex items-start gap-3">
-              <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <i :class="r.icon"></i>
-              </span>
-              <div class="min-w-0">
-                <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5">{{ r.name }}</h3>
-                <p class="text-[12px] text-slate-500 leading-relaxed">{{ r.duty }}</p>
+          <!-- 三(附):医院网络环境准备 -->
+          <div class="mt-4 glass-card rounded-xl border border-blue-500/14 p-4">
+            <h3 class="text-[13px] font-semibold text-slate-800 mb-1 flex items-center gap-1.5">
+              <i class="fa-solid fa-network-wired text-blue-600 text-[12px]"></i>实施计划表第一步:医院网络环境准备
+            </h3>
+            <p class="text-[12px] text-slate-500 leading-relaxed mb-3">{{ hospitalNet.intro }}</p>
+            <!-- 三网 -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-2 mb-3">
+              <div v-for="(n, i) in hospitalNet.nets" :key="n.name" class="rounded-lg border border-blue-500/12 bg-blue-50/30 p-3">
+                <div class="text-[12px] font-semibold text-blue-700 mb-1">{{ ['①','②','③'][i] }} {{ n.name }}</div>
+                <div class="text-[11px] text-slate-500 mb-1">{{ n.has }}</div>
+                <div class="text-[11px] text-slate-600 leading-snug"><i class="fa-solid fa-arrow-turn-up fa-rotate-90 text-blue-600/40 mr-1 text-[9px]"></i>{{ n.rel }}</div>
+              </div>
+            </div>
+            <!-- VPN + SDR 清单 -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div v-for="c in hospitalNet.checklist" :key="c.title" class="rounded-lg border border-blue-500/12 p-3">
+                <div class="text-[12px] font-semibold text-slate-800 mb-1.5 flex items-center gap-1.5"><i :class="c.icon" class="text-blue-600 text-[11px]"></i>{{ c.title }}</div>
+                <ul class="space-y-1">
+                  <li v-for="(it, ii) in c.items" :key="ii" class="text-[11px] text-slate-600 leading-snug flex items-start gap-1.5">
+                    <i class="fa-solid fa-circle text-blue-600/40 text-[4px] mt-1.5 shrink-0"></i><span>{{ it }}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+            <!-- 网络铁律 -->
+            <div class="rounded-lg bg-rose-50/50 border border-rose-100 px-4 py-2.5 space-y-1">
+              <div v-for="cr in hospitalNet.creed" :key="cr.lead" class="text-[11.5px] text-slate-600 leading-snug">
+                <b class="text-rose-700">{{ cr.lead }}</b> —— {{ cr.rest }}
               </div>
             </div>
           </div>
+        </section>
+
+        <!-- 四、智能体交付物管理 -->
+        <section id="sec-agent" data-sec="sec-agent">
+          <h2 class="section-title">
+            <span class="section-no">四</span>
+            <i class="fa-solid fa-robot text-blue-600"></i>
+            智能体交付物管理(标品资产库)
+          </h2>
+          <p class="text-[12px] text-slate-500 leading-relaxed mb-3">{{ agentAssets.intro }}</p>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+            <!-- 左:资产库结构 -->
+            <div class="glass-card rounded-xl border border-blue-500/14 p-4">
+              <h3 class="text-[13px] font-semibold text-slate-800 mb-2 flex items-center gap-1.5"><i class="fa-solid fa-folder-tree text-blue-600 text-[12px]"></i>一个智能体 = 一个目录</h3>
+              <div class="space-y-2">
+                <div v-for="e in agentAssets.examples" :key="e.name" class="flex items-center justify-between rounded-lg border border-blue-500/12 bg-blue-50/30 px-3 py-2">
+                  <span class="text-[12px] text-slate-700 flex items-center gap-1.5"><i class="fa-regular fa-folder text-blue-600/60 text-[11px]"></i>{{ e.name }}</span>
+                  <span class="text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap" :class="statusClass(e.color)">● {{ e.status }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- 右:目录下五类产物 -->
+            <div class="glass-card rounded-xl border border-blue-500/14 p-4">
+              <h3 class="text-[13px] font-semibold text-slate-800 mb-2 flex items-center gap-1.5"><i class="fa-solid fa-boxes-stacked text-blue-600 text-[12px]"></i>每个目录下统一挂五类产物</h3>
+              <div class="flex flex-wrap gap-2 mb-3">
+                <span v-for="a in agentAssets.artifacts" :key="a" class="text-[12px] px-2.5 py-1 rounded-md bg-blue-50 text-slate-700 border border-blue-500/12">{{ a }}</span>
+              </div>
+              <div class="text-[11px] text-slate-400 mb-1.5">首页标注实施状态:</div>
+              <div class="flex flex-wrap gap-1.5">
+                <span v-for="st in agentAssets.statuses" :key="st.label" class="text-[11px] px-1.5 py-0.5 rounded" :class="statusClass(st.color)">● {{ st.label }}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 五、需求管理 + 产品复制 -->
+        <section id="sec-req" data-sec="sec-req">
+          <h2 class="section-title">
+            <span class="section-no">五</span>
+            <i class="fa-solid fa-list-check text-blue-600"></i>
+            需求管理 + 产品复制
+          </h2>
+          <p class="text-[12px] text-slate-500 mb-3">{{ reqMgmt.intro }}</p>
 
           <!-- 迭代版本规划举例 -->
           <div class="glass-card rounded-xl border border-blue-500/14 p-4 mb-3">
@@ -168,7 +275,7 @@
           </div>
 
           <!-- 项目主动跟进 -->
-          <div class="glass-card rounded-xl border border-blue-500/14 p-4">
+          <div class="glass-card rounded-xl border border-blue-500/14 p-4 mb-3">
             <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5 flex items-center gap-1.5">
               <i class="fa-solid fa-bullseye text-blue-600 text-[12px]"></i>项目主动跟进
             </h3>
@@ -183,15 +290,9 @@
               </div>
             </div>
           </div>
-        </section>
 
-        <!-- 三、产品复制模式 -->
-        <section id="sec-copy" data-sec="sec-copy">
-          <h2 class="section-title">
-            <span class="section-no">三</span>
-            <i class="fa-solid fa-copy text-blue-600"></i>
-            产品复制模式
-          </h2>
+          <!-- 产品复制模式 -->
+          <h3 class="text-[13px] font-semibold text-slate-800 mb-2 flex items-center gap-1.5"><i class="fa-solid fa-copy text-blue-600 text-[12px]"></i>产品复制模式(标品 / 定制化)</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div
               v-for="m in modes"
@@ -200,10 +301,7 @@
               :class="m.accent === 'blue' ? 'border-blue-200' : 'border-blue-300'"
             >
               <div class="flex items-center gap-2.5 mb-3">
-                <span
-                  class="w-8 h-8 rounded-lg text-white flex items-center justify-center shrink-0"
-                  :class="m.accent === 'blue' ? 'bg-blue-600' : 'bg-blue-600'"
-                >
+                <span class="w-8 h-8 rounded-lg text-white flex items-center justify-center shrink-0 bg-blue-600">
                   <i :class="m.icon"></i>
                 </span>
                 <h3 class="text-[14px] font-semibold text-slate-800">{{ m.name }}</h3>
@@ -218,7 +316,7 @@
           </div>
         </section>
 
-        <!-- 四、极库云资源 -->
+        <!-- 极库云资源 -->
         <section id="sec-links" data-sec="sec-links">
           <h2 class="section-title">
             <i class="fa-solid fa-link text-blue-600"></i>
@@ -295,55 +393,34 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
 import { marked } from 'marked';
 import DrawerPanel from '@/components/common/DrawerPanel.vue';
-import { FIVE_STAGE_MGMT, REQUIREMENT_MGMT, REPLICATION_MODES, GEELIB_LINKS } from '@/data/fde-project-spec';
+import { FIVE_SPECS, ROLES, FIVE_STAGE_MGMT, HOSPITAL_NETWORK, AGENT_ASSETS, REQUIREMENT_MGMT, REPLICATION_MODES, GEELIB_LINKS } from '@/data/fde-project-spec';
 
+const fiveSpecs = FIVE_SPECS;
+const roles = ROLES;
 const fiveStage = FIVE_STAGE_MGMT;
 // 上面一行 3 个(内容多的环节 1/2/3),下面一行 4 个(环节 4/5/6/7),视觉更整齐
 const stageGroups = [
   { cols: 3, items: fiveStage.slice(0, 3) },
   { cols: 4, items: fiveStage.slice(3) },
 ];
+const hospitalNet = HOSPITAL_NETWORK;
+const agentAssets = AGENT_ASSETS;
 const reqMgmt = REQUIREMENT_MGMT;
 const modes = REPLICATION_MODES;
 const links = GEELIB_LINKS;
 
-/** 左侧锚点目录：章节多，纯滚动找太费劲 */
-const sections = [
-  { id: 'sec-stage', no: '一', label: '五阶段项目管理' },
-  { id: 'sec-req', no: '二', label: '项目需求管理' },
-  { id: 'sec-copy', no: '三', label: '产品复制模式' },
-  { id: 'sec-links', no: '四', label: '极库云资源' },
-];
 const scrollRef = ref(null);
-const activeSection = ref('sec-stage');
 
-function scrollTo(id) {
-  const el = scrollRef.value?.querySelector(`#${id}`);
-  if (!el) return;
-  // 尊重 prefers-reduced-motion：关了动效就直接跳
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-  activeSection.value = id;
-}
-
-// 滚动到哪一章就高亮哪一项
-let observer = null;
-onMounted(() => {
-  const root = scrollRef.value;
-  if (!root) return;
-  observer = new IntersectionObserver(
-    (entries) => {
-      const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-      if (hit) activeSection.value = hit.target.id;
-    },
-    { root, rootMargin: '-10% 0px -70% 0px', threshold: 0 },
-  );
-  root.querySelectorAll('section[data-sec]').forEach((el) => observer.observe(el));
-});
-onUnmounted(() => observer?.disconnect());
+/** 实施状态色点 → 配色类 */
+const STATUS_CLASS = {
+  emerald: 'bg-emerald-50 text-emerald-600',
+  amber: 'bg-amber-50 text-amber-600',
+  slate: 'bg-slate-100 text-slate-500',
+};
+const statusClass = (color) => STATUS_CLASS[color] || STATUS_CLASS.slate;
 
 /** 交付物文件形态 → 中文标签 */
 const FORM_LABELS = { docx: 'Word', md: 'Markdown', html: '原型', doc: '文档', system: '系统', template: '模板' };
