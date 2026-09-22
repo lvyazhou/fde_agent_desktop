@@ -1,7 +1,11 @@
 <template>
   <div class="flex-1 flex min-h-0 overflow-hidden">
     <!-- Left: file tree -->
-    <aside class="code-sidebar" :class="{ 'code-sidebar--collapsed': !showTree }">
+    <aside
+      class="code-sidebar"
+      :class="{ 'code-sidebar--collapsed': !showTree }"
+      :style="sidebarW ? { width: sidebarW + 'px' } : null"
+    >
       <div class="code-sidebar-head">
         <div class="flex items-center gap-2 min-w-0">
           <i class="fa-solid fa-folder-tree text-blue-600 text-xs"></i>
@@ -25,6 +29,15 @@
         <p v-if="treeTruncated" class="px-3 py-2 text-[11px] text-amber-500">文件较多，仅展示前若干项</p>
       </div>
     </aside>
+
+    <!-- 拖拽把手：文件树 / 主区之间 -->
+    <div
+      v-if="showTree"
+      class="code-resizer"
+      :class="{ 'code-resizer--on': draggingPanel === 'sidebar' }"
+      title="拖动调整文件树宽度"
+      @mousedown.prevent="startDrag($event, 'sidebar')"
+    ></div>
 
     <!-- Center: chat -->
     <section class="code-main">
@@ -214,8 +227,21 @@
       </div>
     </section>
 
+    <!-- 拖拽把手：主区 / 预览之间 -->
+    <div
+      v-if="showPreview && selectedFile"
+      class="code-resizer code-resizer--right"
+      :class="{ 'code-resizer--on': draggingPanel === 'preview' }"
+      title="拖动调整预览宽度"
+      @mousedown.prevent="startDrag($event, 'preview')"
+    ></div>
+
     <!-- Right: file preview（没选文件就整块不渲染，不占版面）-->
-    <aside v-if="showPreview && selectedFile" class="code-preview">
+    <aside
+      v-if="showPreview && selectedFile"
+      class="code-preview"
+      :style="previewW ? { width: previewW + 'px' } : null"
+    >
       <div class="code-preview-head">
         <span class="text-[12.5px] font-mono text-slate-500 truncate" :title="selectedFile">
           {{ selectedFile }}
@@ -293,6 +319,33 @@ const treeTruncated = ref(false);
 const collapsedDirs = ref(new Set());
 const showTree = ref(true);
 const showPreview = ref(true);
+// 三栏宽度：侧栏/预览支持拖拽调整，拖动后再固定为像素宽
+const sidebarW = ref(0);      // 0 = 用默认 260px
+const previewW = ref(0);      // 0 = 用默认 380px
+const draggingPanel = ref('');  // '' | 'sidebar' | 'preview'
+
+function startDrag(e, which) {
+  draggingPanel.value = which;
+  const startX = e.clientX;
+  const el = e.currentTarget?.previousElementSibling || e.currentTarget?.nextElementSibling;
+  const startW = (which === 'sidebar' ? sidebarW.value : previewW.value)
+    || el?.getBoundingClientRect().width
+    || (which === 'sidebar' ? 260 : 380);
+  const onMove = (ev) => {
+    // 侧栏在左，鼠标右移变宽；预览在右，鼠标左移变宽
+    const delta = which === 'sidebar' ? ev.clientX - startX : startX - ev.clientX;
+    const next = Math.min(720, Math.max(200, startW + delta));
+    if (which === 'sidebar') sidebarW.value = next;
+    else previewW.value = next;
+  };
+  const onUp = () => {
+    draggingPanel.value = '';
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  };
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
 
 const selectedFile = ref('');
 const fileContent = ref(null);
@@ -394,6 +447,8 @@ const selectConversation = async (convId) => {
 
 const newConversation = async () => {
   try {
+    // 不在主进程里同步等 session 建好（要一两秒，点「+」时界面僵住）。
+    // 先把空会话推上来让 tab 立刻出现；session 交给首次发送前的 ensureConvSession 懒建。
     const r = await window.api.code.newConversation(props.id);
     if (r && r.conversation) {
       conversations.value.push(r.conversation);
@@ -440,6 +495,44 @@ const saveConversation = (convId) => {
   window.api.code.saveConversation(props.id, convId, stripAttachmentsData(c.messages || [])).catch((e) =>
     console.error('[CodeWorkspace] saveConversation failed:', e)
   );
+};
+
+// AI 写文件时右侧实时跟着变：从工具事件的 diff 块里取 newText 直接推给预览，
+// 不等一轮结束再 loadFile 重读（原先整轮写完才刷新，看不到过程）。
+const captureLiveEdit = (update) => {
+  if (!update) return;
+  const blocks = Array.isArray(update.content) ? update.content
+    : (update.content ? [update.content] : []);
+  const diff = blocks.find((c) => c && (c.type === 'diff' || c.newText != null || c.new_text != null));
+  if (!diff) return;
+
+  const rawPath = diff.path || diff.file_path || '';
+  const newText = diff.newText ?? diff.new_text ?? '';
+  if (!rawPath || typeof newText !== 'string') return;
+
+  // 主进程给的是绝对路径，转成工作区相对路径才能跟文件树的 rel 对上
+  const norm = String(rawPath).replace(/\\/g, '/');
+  const root = String(workspace.value?.path || '').replace(/\\/g, '/');
+  const rel = root && norm.startsWith(root) ? norm.slice(root.length).replace(/^\//, '') : norm;
+
+  // 正在写的文件自动切到预览，省得用户自己去点
+  if (selectedFile.value !== rel) {
+    selectedFile.value = rel;
+    showPreview.value = true;
+  }
+  fileLoading.value = false;
+  fileError.value = '';
+  fileContent.value = newText;
+};
+
+// 流式途中节流落盘：一轮可能跑几分钟，中途关窗不该丢掉已输出的内容。
+const saveTimers = new Map();
+const saveConversationThrottled = (convId) => {
+  if (saveTimers.has(convId)) return;
+  saveTimers.set(convId, setTimeout(() => {
+    saveTimers.delete(convId);
+    saveConversation(convId);
+  }, 2000));
 };
 
 const refreshTree = async () => {
@@ -586,6 +679,7 @@ const handleSessionUpdate = (data) => {
     const t = textOf(content);
     if (t) msg.content += t;
     if (isActive) scrollToBottom();
+    saveConversationThrottled(conv.id);
     scheduleStreamEnd(conv.id);
   } else if (type === 'agent_thought_chunk' || type === 'agent_reasoning') {
     const msg = getOrCreateAssistant(targetMsgs);
@@ -602,11 +696,13 @@ const handleSessionUpdate = (data) => {
     const msg = getOrCreateAssistant(targetMsgs);
     const toolName = update.title || update.toolName || update.name || 'tool';
     msg.thinkingSteps.push({ text: `调用工具: ${toolName}`, icon: 'fa-solid fa-wrench', finalized: true });
+    if (isActive) captureLiveEdit(update);
     const t = streamEndTimers.get(conv.id);
     if (t) clearTimeout(t);
     if (isActive) scrollToBottom();
   } else if (type === 'tool_call_update' || type === 'tool_call_end') {
     const status = update.status || '';
+    if (isActive) captureLiveEdit(update);
     if (status === 'completed' || status === 'failed') {
       const msg = getOrCreateAssistant(targetMsgs);
       const toolName = update.title || update.toolName || update.name || 'tool';
@@ -685,6 +781,8 @@ const send = async () => {
   if (!sendConv) return;
   console.log('[mc] send → conv=', sendConv.title, 'sid=', String(sendConv.sessionId).slice(0,8), 'msgsRef===messages.value?', sendConv.messages === messages.value);
   sendConv.messages.push({ id: Date.now(), role: 'user', content: text, attachments: sentAtts });
+  // 立刻落盘：原先只在 finishStream 里存一次，流式途中切走/关窗这一轮就永久丢了
+  saveConversation(convId);
   streamingByConv[convId] = true;
   inflightByConv.add(convId);
   turnStartByConv.set(convId, performance.now());
@@ -753,6 +851,12 @@ onUnmounted(() => {
   if (unsubPerm) unsubPerm();
   for (const t of streamEndTimers.values()) clearTimeout(t);
   streamEndTimers.clear();
+  // 卸载正好落在节流窗口里时，待存的内容要立刻冲掉，否则这段又丢了
+  for (const [convId, t] of saveTimers) {
+    clearTimeout(t);
+    saveConversation(convId);
+  }
+  saveTimers.clear();
 });
 </script>
 
@@ -764,6 +868,15 @@ onUnmounted(() => {
   border-right: 1px solid #eef2f7;
 }
 .code-sidebar--collapsed { display: none; }
+/* 拖拽把手：视觉上只有 1px 分隔线，命中区域 5px 好抓 */
+.code-resizer {
+  width: 5px; flex-shrink: 0;
+  cursor: col-resize;
+  background: transparent;
+  transition: background .15s;
+}
+.code-resizer:hover,
+.code-resizer--on { background: hsl(var(--primary) / 35%); }
 .code-sidebar-head {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; padding: 10px 12px; border-bottom: 1px solid #eef2f7;

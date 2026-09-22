@@ -2497,15 +2497,20 @@ ipcMain.handle('code:new-conversation', async (_event, { id, title } = {}) => {
     if (!fs.existsSync(workspace.path)) throw new Error('工作区目录不存在');
     ensureConversations(workspace);
     const now = new Date().toISOString();
+    // 取已有标题里的最大编号 +1，而不是数当前条数：
+    // 关掉一条后数组变短，length+1 会算出跟现存对话相同的号，出现两个「对话 2」。
+    const maxNo = workspace.conversations.reduce((max, c) => {
+      const m = /^对话\s*(\d+)$/.exec(String(c.title || '').trim());
+      return m ? Math.max(max, Number(m[1])) : max;
+    }, 0);
     const conversation = {
       id: genConversationId(),
-      title: (title && String(title).trim()) || `对话 ${workspace.conversations.length + 1}`,
+      title: (title && String(title).trim()) || `对话 ${maxNo + 1}`,
       sessionId: null,
       messages: [],
       createdAt: now,
       lastActiveAt: now,
     };
-    await ensureConversationSession(workspace, conversation);
     workspace.conversations.push(conversation);
     writeCodeWorkspaces(list);
     return { conversation };
