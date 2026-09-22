@@ -13,6 +13,8 @@ export const FDE_STAGES = [
     key: 'research',
     name: '调研准备 + 备弹知识',
     short: '调研备弹',
+    label: '调研备弹', // 进度条上的单一阶段名(不带「+」,避免读成两个并列入口)
+    nextStep: '把行业知识、调研框架和话术练熟，带着六项框架进场做需求沟通',
     goal: '进场前把弹备足——行业政策/术语/痛点/对标案例装进脑子,调研框架和话术练到条件反射。',
     // 阶段一是纯知识内化,无交付物
     inputs: ['客户线索', '拓客经验', '客户方资料'],
@@ -28,6 +30,8 @@ export const FDE_STAGES = [
     key: 'requirement-prototype',
     name: '需求沟通 + 原型设计',
     short: '沟通·原型',
+    label: '需求原型',
+    nextStep: '确认需求与数据对接，出 AI 能力清单，再喂智能体出可交互原型',
     goal: '结构化挖需求、当场确认,出对接确认表 + AI能力清单,喂智能体出可交互原型收敛需求。',
     inputs: ['备弹知识', '调研 SOP'],
     deliverables: [
@@ -48,6 +52,8 @@ export const FDE_STAGES = [
     key: 'confirm-agent',
     name: '需求确认 + 智能体设计',
     short: '需求确认·智能体',
+    label: '智能体设计',
+    nextStep: '需求签字定死，拆智能体矩阵逐个过 Eval，PRD 与原型升级为定稿版',
     goal: '需求签字定死,拆智能体矩阵逐个设计过 Eval;PRD+原型升级为定稿版。',
     inputs: ['对接确认表', '原型功能清单(收敛稿)'],
     deliverables: [
@@ -70,6 +76,8 @@ export const FDE_STAGES = [
     key: 'nano-workbench',
     name: '纳米Work 行业工作台',
     short: '工作台上线',
+    label: '工作台上线',
+    nextStep: '建模、搭前后端并部署，先出 demo，再交付客户能访问能用的工作台',
     goal: '建模、搭前后端、部署,做成客户能访问、能用的行业工作台。',
     inputs: ['功能清单(六字段)', '智能体矩阵', '真实数据样本'],
     deliverables: [
@@ -90,6 +98,8 @@ export const FDE_STAGES = [
     key: 'trial-optimize',
     name: '客户试用 + 智能体优化',
     short: '试用·定稿',
+    label: '试用定稿',
+    nextStep: '代理商试跑、三轮迭代定稿，拿到客户交付签字',
     goal: '代理商试跑、三轮定稿、客户交付签字,沉淀可复制行业模板。',
     inputs: ['能跑的行业工作台系统', '客户试用渠道'],
     deliverables: [

@@ -1,49 +1,47 @@
 <template>
-  <div class="glass-card border-b border-slate-200/80 px-5 py-3 shrink-0">
-    <!-- 标题 -->
-    <div class="flex items-center gap-2 mb-2.5">
-      <span class="w-5 h-5 rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-sm">
-        <i class="fa-solid fa-industry text-white text-[10px]"></i>
-      </span>
-      <span class="text-[13px] font-bold text-slate-700 tracking-tight">FDE 工业化流水线</span>
-      <span class="text-[11px] text-slate-400 font-medium">五阶段一条链 · 上一阶段的输出＝下一阶段的输入</span>
-    </div>
-    <div class="flex items-center gap-1 overflow-x-auto">
-      <template v-for="(stage, idx) in stages" :key="stage.id">
-        <!-- 阶段节点 -->
-        <button
-          @click="$emit('select', stage.id)"
-          class="group flex items-center gap-2 px-3 py-2 rounded-lg transition-all shrink-0"
-          :class="nodeClass(stage.id)"
-          :title="stage.goal"
+  <div class="px-6 pt-1.5 pb-2.5">
+    <!-- 阶段节点：已完成蓝勾 / 当前蓝色高亮 / 未开始灰色；只做展示和快速跳阶段 -->
+    <div class="grid grid-cols-5">
+      <button
+        v-for="stage in stages"
+        :key="stage.id"
+        @click="$emit('select', stage.id)"
+        class="min-w-0 flex items-center justify-center gap-1.5 py-1 rounded-md transition-colors hover:bg-slate-50"
+        :title="`${stage.name}：${stage.goal}`"
+      >
+        <span
+          class="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0 transition-colors"
+          :class="dotClass(stage.id)"
         >
-          <!-- 状态圆点 -->
-          <span
-            class="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
-            :class="dotClass(stage.id)"
-          >
-            <i v-if="statusOf(stage.id) === 'done'" class="fa-solid fa-check text-[10px]"></i>
-            <span v-else>{{ stage.id }}</span>
-          </span>
-          <div class="text-left min-w-0">
-            <div class="text-[13px] font-medium leading-tight whitespace-nowrap">{{ stage.name }}</div>
-            <div class="text-[10px] text-slate-400 leading-tight whitespace-nowrap">
-              {{ stage.deliverables.length ? stage.deliverables.length + ' 项交付物' : '无交付物' }}
-            </div>
-          </div>
-        </button>
-        <!-- 连接线 -->
-        <div
-          v-if="idx < stages.length - 1"
-          class="h-px w-4 shrink-0"
-          :class="statusOf(stage.id) === 'done' ? 'bg-blue-400' : 'bg-slate-200'"
-        ></div>
-      </template>
+          <i v-if="stateOf(stage.id) === 'done'" class="fa-solid fa-check text-[9px]"></i>
+          <span v-else>{{ stage.id }}</span>
+        </span>
+        <span class="text-[12.5px] truncate" :class="labelClass(stage.id)">{{ stage.label }}</span>
+      </button>
+    </div>
+
+    <!-- 进度条：填到当前阶段节点的中点 -->
+    <div class="relative h-1 mt-1 rounded-full bg-slate-200/80 overflow-hidden">
+      <div
+        class="absolute inset-y-0 left-0 rounded-full bg-blue-600 transition-[width] duration-300"
+        :style="{ width: fillPct + '%' }"
+      ></div>
+    </div>
+
+    <!-- 当前阶段说明 -->
+    <div class="mt-2 text-[12px] leading-5 text-slate-500">
+      <div>
+        当前阶段：<span class="font-semibold text-slate-800">{{ flowText }}</span>
+      </div>
+      <div class="truncate">
+        下一步：<slot name="next"><span class="text-slate-700">{{ currentStage.nextStep }}</span></slot>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { FDE_STAGES } from '@/data/fde-stages';
 
 const props = defineProps({
@@ -53,27 +51,36 @@ const props = defineProps({
 defineEmits(['select']);
 
 const stages = FDE_STAGES;
+const CIRCLED = '①②③④⑤';
 
-function statusOf(id) {
-  // 优先用传入的 stageStatus;否则据 current 推导
-  if (props.stageStatus && props.stageStatus[id]) return props.stageStatus[id];
-  if (id < props.current) return 'done';
+const currentStage = computed(() => stages.find((s) => s.id === props.current) || stages[0]);
+
+// 阶段名里的「A + B」是同一阶段内的先后两步，写成 A → B，避免被读成两个并列入口
+const flowText = computed(() => {
+  const s = currentStage.value;
+  return `${CIRCLED[s.id - 1] || s.id} ${s.name.split(/\s*\+\s*/).join(' → ')}`;
+});
+
+const fillPct = computed(() => ((props.current - 0.5) / stages.length) * 100);
+
+function stateOf(id) {
   if (id === props.current) return 'active';
+  if (id < props.current || props.stageStatus?.[id] === 'done') return 'done';
   return 'todo';
 }
 
-function nodeClass(id) {
-  const s = statusOf(id);
-  if (id === props.current) return 'bg-blue-50 ring-1 ring-blue-200';
-  if (s === 'done') return 'hover:bg-slate-50';
-  return 'hover:bg-slate-50 opacity-70';
+function dotClass(id) {
+  const s = stateOf(id);
+  if (s === 'active') return 'bg-blue-600 text-white ring-[3px] ring-blue-100';
+  if (s === 'done') return 'bg-blue-100 text-blue-600';
+  return 'bg-slate-100 text-slate-400';
 }
 
-function dotClass(id) {
-  const s = statusOf(id);
-  if (id === props.current) return 'bg-blue-600 text-white';
-  if (s === 'done') return 'bg-blue-100 text-blue-700';
-  return 'bg-slate-100 text-slate-400';
+function labelClass(id) {
+  const s = stateOf(id);
+  if (s === 'active') return 'text-blue-700 font-semibold';
+  if (s === 'done') return 'text-slate-600 font-medium';
+  return 'text-slate-400 font-medium';
 }
 </script>
 

@@ -1,7 +1,7 @@
 <template>
-  <div class="flex h-full w-full">
-    <!-- 左侧：交付物列表 -->
-    <div class="w-[260px] shrink-0 glass-card border-r border-slate-200/60 flex flex-col overflow-hidden">
+  <div class="flex h-full w-full min-w-0">
+    <!-- 左侧：交付物列表（外层已有侧边导航时隐藏） -->
+    <div v-if="showList" class="w-[260px] shrink-0 glass-card border-r border-slate-200/60 flex flex-col overflow-hidden">
       <div class="px-4 py-3 border-b border-slate-100">
         <span class="text-[13px] font-bold text-slate-500 uppercase tracking-wider">
           <i class="fa-solid fa-box-open text-blue-500 mr-1.5"></i>{{ stageId === 3 ? '阶段③交付物' : '阶段②交付物' }}
@@ -139,6 +139,7 @@ const props = defineProps({
   deliverables: { type: Array, required: true },   // [{ key, name, short, icon, hint }]
   selected: { type: String, required: true },
   statusMap: { type: Object, default: () => ({}) }, // { key: 'ready' | 'empty' }
+  showList: { type: Boolean, default: true },       // 外层已有侧边导航时传 false
   content: { type: String, default: '' },           // 当前选中交付物的 markdown
   busy: { type: Boolean, default: false },
   editing: { type: Boolean, default: false },
