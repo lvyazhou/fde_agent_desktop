@@ -15,24 +15,8 @@
       </div>
     </div>
 
-    <!-- 主体:左锚点目录 + 右内容(章节多,靠滚动找太费劲) -->
+    <!-- 主体:内容区全宽 -->
     <div class="flex-1 min-h-0 flex overflow-hidden">
-      <!-- 锚点目录 -->
-      <nav class="w-[180px] shrink-0 border-r border-blue-500/12 bg-blue-50/30 overflow-y-auto py-4 px-3 hidden lg:block" aria-label="章节导航">
-        <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider px-2 mb-2">目录</div>
-        <button
-          v-for="sec in sections"
-          :key="sec.id"
-          type="button"
-          @click="scrollTo(sec.id)"
-          class="w-full text-left px-2 py-1.5 rounded-lg mb-0.5 text-[12px] transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-          :class="activeSection === sec.id ? 'glass-card text-blue-600 font-semibold border border-blue-500/14' : 'text-slate-500 hover:bg-white/70 border border-transparent'"
-        >
-          <span class="w-4 text-center text-[11px] shrink-0" :class="activeSection === sec.id ? 'text-blue-600' : 'text-slate-300'">{{ sec.no }}</span>
-          <span class="truncate">{{ sec.label }}</span>
-        </button>
-      </nav>
-
       <!-- 内容区 -->
       <div ref="scrollRef" class="flex-1 min-h-0 overflow-y-auto spec-scroll">
         <div class="spec-inner w-full space-y-6">
@@ -295,7 +279,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed } from 'vue';
 import { marked } from 'marked';
 import DrawerPanel from '@/components/common/DrawerPanel.vue';
 import { FIVE_STAGE_MGMT, REQUIREMENT_MGMT, REPLICATION_MODES, GEELIB_LINKS } from '@/data/fde-project-spec';
@@ -310,40 +294,7 @@ const reqMgmt = REQUIREMENT_MGMT;
 const modes = REPLICATION_MODES;
 const links = GEELIB_LINKS;
 
-/** 左侧锚点目录：章节多，纯滚动找太费劲 */
-const sections = [
-  { id: 'sec-stage', no: '一', label: '五阶段项目管理' },
-  { id: 'sec-req', no: '二', label: '项目需求管理' },
-  { id: 'sec-copy', no: '三', label: '产品复制模式' },
-  { id: 'sec-links', no: '四', label: '极库云资源' },
-];
 const scrollRef = ref(null);
-const activeSection = ref('sec-stage');
-
-function scrollTo(id) {
-  const el = scrollRef.value?.querySelector(`#${id}`);
-  if (!el) return;
-  // 尊重 prefers-reduced-motion：关了动效就直接跳
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-  activeSection.value = id;
-}
-
-// 滚动到哪一章就高亮哪一项
-let observer = null;
-onMounted(() => {
-  const root = scrollRef.value;
-  if (!root) return;
-  observer = new IntersectionObserver(
-    (entries) => {
-      const hit = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-      if (hit) activeSection.value = hit.target.id;
-    },
-    { root, rootMargin: '-10% 0px -70% 0px', threshold: 0 },
-  );
-  root.querySelectorAll('section[data-sec]').forEach((el) => observer.observe(el));
-});
-onUnmounted(() => observer?.disconnect());
 
 /** 交付物文件形态 → 中文标签 */
 const FORM_LABELS = { docx: 'Word', md: 'Markdown', html: '原型', doc: '文档', system: '系统', template: '模板' };
