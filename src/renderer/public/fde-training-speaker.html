@@ -7,38 +7,39 @@
 <meta name="description" content="配套 FDE 新任项目经理培训教程的讲师 speaker notes:红绿灯配速、转场话术、图表一句话、提问钩子,60 分钟照着讲。">
 <style>
   :root{
-    --ink:#0f1729;--paper:#f7f5f0;--paper-card:#fff;--brass:#c8862a;
-    --alert:#b5433a;--ok:#2f7d54;--amber:#e3a94a;
-    --neutral-line:#dfdbd1;--neutral-faint:#ece8de;--text:#232937;--text-dim:#5a6270;
-    --oninK:#eef1f7;--oninK-dim:#9aa6bd;--shadow:0 1px 2px rgba(15,23,41,.06),0 8px 24px rgba(15,23,41,.06);--radius:10px;
+    --ink:#1e293b;--paper:#f5f7fa;--paper-card:#fff;--brass:#2563eb;
+    --alert:#b5433a;--ok:#0284c7;--amber:#60a5fa;
+    --signal-y:#d97706;
+    --neutral-line:#dbe3f0;--neutral-faint:#eff4ff;--text:#1e293b;--text-dim:#64748b;
+    --oninK:#eef1f7;--oninK-dim:#9aa6bd;--shadow:0 1px 2px rgba(15,23,41,.06),0 8px 24px rgba(30,58,138,.08);--radius:10px;
   }
   :root:not([data-theme="light"]){@media (prefers-color-scheme:dark){
-    --paper:#10151f;--paper-card:#171e2b;--text:#e6e9f0;--text-dim:#97a1b4;
-    --neutral-line:#2a3448;--neutral-faint:#1b2333;--brass:#e0a94a;--alert:#e0736a;--ok:#5bb98a;
+    --paper:#0f172a;--paper-card:#1e293b;--text:#e2e8f0;--text-dim:#94a3b8;
+    --neutral-line:#334155;--neutral-faint:#1e293b;--brass:#3b82f6;--alert:#e0736a;--ok:#38bdf8;--signal-y:#f59e0b;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}}
   :root[data-theme="dark"]{
-    --paper:#10151f;--paper-card:#171e2b;--text:#e6e9f0;--text-dim:#97a1b4;
-    --neutral-line:#2a3448;--neutral-faint:#1b2333;--brass:#e0a94a;--alert:#e0736a;--ok:#5bb98a;
+    --paper:#0f172a;--paper-card:#1e293b;--text:#e2e8f0;--text-dim:#94a3b8;
+    --neutral-line:#334155;--neutral-faint:#1e293b;--brass:#3b82f6;--alert:#e0736a;--ok:#38bdf8;--signal-y:#f59e0b;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}
   *{box-sizing:border-box}
   body{margin:0;background:var(--paper);color:var(--text);font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7;-webkit-font-smoothing:antialiased}
-  h1,h2,h3{font-family:"Noto Serif SC",Georgia,"Songti SC",serif;text-wrap:balance}
+  h1,h2,h3{font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;text-wrap:balance}
   .wrap{max-width:960px;margin:0 auto;padding:0 24px}
 
   /* HERO */
   .hero{background:var(--ink);color:var(--oninK);position:relative;overflow:hidden}
-  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(800px 380px at 84% -10%,rgba(200,134,42,.18),transparent 60%);pointer-events:none}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(800px 380px at 84% -10%,rgba(37,99,235,.18),transparent 60%);pointer-events:none}
   .hero-inner{position:relative;padding:44px 0 40px}
   .eyebrow{font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--amber);font-weight:600;margin:0 0 14px;display:flex;align-items:center;gap:12px}
   .eyebrow::before{content:"";width:28px;height:1px;background:var(--amber)}
   .hero h1{font-size:clamp(24px,4vw,38px);line-height:1.15;margin:0 0 14px;font-weight:700}
   .hero h1 .amber{color:var(--amber)}
   .hero-lead{font-size:15px;color:var(--oninK-dim);max-width:64ch;margin:0 0 22px}
-  .legend{display:flex;flex-wrap:wrap;gap:10px 20px;padding:14px 18px;border:1px solid rgba(227,169,74,.32);border-radius:var(--radius);background:rgba(200,134,42,.06);font-size:13px}
+  .legend{display:flex;flex-wrap:wrap;gap:10px 20px;padding:14px 18px;border:1px solid rgba(96,165,250,.32);border-radius:var(--radius);background:rgba(37,99,235,.06);font-size:13px}
   .legend b{color:var(--amber)}
   .legend .lz{display:flex;align-items:center;gap:7px}
   .dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto}
-  .dot.r{background:var(--alert)}.dot.y{background:var(--brass)}.dot.g{background:#8a93a6}
+  .dot.r{background:var(--alert)}.dot.y{background:var(--signal-y)}.dot.g{background:#8a93a6}
 
   /* HOW-TO 条 */
   .howto{background:var(--neutral-faint);border-bottom:1px solid var(--neutral-line);padding:22px 0}
@@ -59,7 +60,7 @@
   .m-head .clock{margin-left:auto;font-family:ui-monospace,monospace;font-size:13px;color:var(--amber);font-weight:700;white-space:nowrap}
   .m-body{padding:16px 20px 18px}
 
-  .say{border-left:3px solid var(--brass);background:color-mix(in srgb,var(--brass) 6%,transparent);border-radius:0 8px 8px 0;padding:10px 15px;margin:0 0 14px;font-family:"Noto Serif SC",serif;font-size:15px}
+  .say{border-left:3px solid var(--brass);background:color-mix(in srgb,var(--brass) 6%,transparent);border-radius:0 8px 8px 0;padding:10px 15px;margin:0 0 14px;font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px}
   .say .lb{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--brass);font-weight:700;font-family:"Noto Sans SC",sans-serif;display:block;margin-bottom:3px}
 
   ul.beats{list-style:none;margin:0 0 14px;padding:0}
@@ -67,7 +68,7 @@
   ul.beats li:first-child{border-top:0}
   ul.beats li .tag{flex:0 0 auto;width:15px;height:15px;border-radius:50%;margin-top:4px}
   ul.beats li.r .tag{background:var(--alert)}
-  ul.beats li.y .tag{background:var(--brass)}
+  ul.beats li.y .tag{background:var(--signal-y)}
   ul.beats li.g .tag{background:#8a93a6}
   ul.beats li.g{color:var(--text-dim)}
   ul.beats li b{color:var(--text)}
@@ -89,7 +90,7 @@
   .divider::before{left:0}.divider::after{right:0}
 
   footer{background:var(--ink);color:var(--oninK-dim);padding:30px 0;font-size:13px;text-align:center}
-  footer b{color:var(--amber);font-family:"Noto Serif SC",serif}
+  footer b{color:var(--amber);font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
 
   /* 打印:一块一页边界友好 */
   @media print{

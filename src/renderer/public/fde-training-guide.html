@@ -7,24 +7,24 @@
 <meta name="description" content="纯新人 FDE 项目经理入职培训:五阶段、医疗架构、技术底座、工作台、极库云、项管规范、实战,一份读完。">
 <style>
   :root{
-    --ink:#0f1729;--ink-soft:#1c2740;--paper:#f7f5f0;--paper-card:#fff;--brass:#c8862a;
-    --alert:#b5433a;--alert-soft:#f3e2df;--ok:#2f7d54;--neutral:#5a6270;--neutral-line:#dfdbd1;
-    --neutral-faint:#ece8de;--text:#232937;--text-dim:#5a6270;--text-oninK:#eef1f7;--text-oninK-dim:#9aa6bd;
-    --accent-on-ink:#e3a94a;--shadow:0 1px 2px rgba(15,23,41,.06),0 8px 24px rgba(15,23,41,.06);--radius:10px;
+    --ink:#1e293b;--ink-soft:#334155;--paper:#f5f7fa;--paper-card:#fff;--brass:#2563eb;
+    --alert:#b5433a;--alert-soft:#f3e2df;--ok:#0284c7;--neutral:#64748b;--neutral-line:#dbe3f0;
+    --neutral-faint:#eff4ff;--text:#1e293b;--text-dim:#64748b;--text-oninK:#eef1f7;--text-oninK-dim:#9aa6bd;
+    --accent-on-ink:#60a5fa;--shadow:0 1px 2px rgba(15,23,41,.06),0 8px 24px rgba(30,58,138,.08);--radius:10px;
   }
   :root[data-theme="dark"],:root:not([data-theme="light"]){@media (prefers-color-scheme:dark){
-    --paper:#10151f;--paper-card:#171e2b;--text:#e6e9f0;--text-dim:#97a1b4;--neutral:#97a1b4;
-    --neutral-line:#2a3448;--neutral-faint:#1b2333;--brass:#e0a94a;--alert:#e0736a;--alert-soft:#2c1e1d;--ok:#5bb98a;
+    --paper:#0f172a;--paper-card:#1e293b;--text:#e2e8f0;--text-dim:#94a3b8;--neutral:#94a3b8;
+    --neutral-line:#334155;--neutral-faint:#1e293b;--brass:#3b82f6;--alert:#e0736a;--alert-soft:#2c1e1d;--ok:#38bdf8;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);}}
   *{box-sizing:border-box}
   body{margin:0;background:var(--paper);color:var(--text);font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.78;-webkit-font-smoothing:antialiased}
-  h1,h2,h3,.serif{font-family:"Noto Serif SC",Georgia,"Songti SC",serif;text-wrap:balance}
+  h1,h2,h3,.serif{font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;text-wrap:balance}
   .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
   .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
 
   /* HERO */
   .hero{background:var(--ink);color:var(--text-oninK);position:relative;overflow:hidden}
-  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(900px 420px at 82% -10%,rgba(200,134,42,.18),transparent 60%),linear-gradient(180deg,rgba(255,255,255,.03),transparent 40%);pointer-events:none}
+  .hero::before{content:"";position:absolute;inset:0;background:radial-gradient(900px 420px at 82% -10%,rgba(37,99,235,.18),transparent 60%),linear-gradient(180deg,rgba(255,255,255,.03),transparent 40%);pointer-events:none}
   .hero-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:44px 44px;mask-image:linear-gradient(180deg,black,transparent 78%);pointer-events:none}
   .hero-inner{position:relative;padding:74px 0 64px}
   .eyebrow{font-size:12.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--accent-on-ink);font-weight:600;margin:0 0 20px;display:flex;align-items:center;gap:12px}
@@ -32,8 +32,8 @@
   .hero h1{font-size:clamp(31px,5vw,52px);line-height:1.1;margin:0 0 18px;font-weight:700;letter-spacing:-.01em}
   .hero h1 .amber{color:var(--accent-on-ink)}
   .hero-lead{font-size:clamp(16px,1.9vw,19px);color:var(--text-oninK-dim);max-width:62ch;margin:0 0 32px}
-  .thesis{display:inline-flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:16px 20px;border:1px solid rgba(227,169,74,.35);border-radius:var(--radius);background:rgba(200,134,42,.07);font-family:"Noto Serif SC",serif;font-size:clamp(14px,1.6vw,16.5px)}
-  .thesis b{color:var(--accent-on-ink);font-weight:700}.thesis .arrow{color:rgba(227,169,74,.6)}
+  .thesis{display:inline-flex;flex-wrap:wrap;gap:10px 14px;align-items:center;padding:16px 20px;border:1px solid rgba(96,165,250,.35);border-radius:var(--radius);background:rgba(37,99,235,.07);font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:clamp(14px,1.6vw,16.5px)}
+  .thesis b{color:var(--accent-on-ink);font-weight:700}.thesis .arrow{color:rgba(96,165,250,.6)}
 
   /* LAYOUT + RAIL */
   .layout{display:grid;grid-template-columns:210px 1fr;gap:46px;align-items:start;padding:48px 0 90px}
@@ -53,12 +53,12 @@
   .mod-num{font-family:ui-monospace,monospace;font-size:15px;font-weight:700;color:var(--brass);border:1.5px solid var(--brass);border-radius:8px;width:48px;height:48px;display:grid;place-items:center;flex:0 0 auto;background:color-mix(in srgb,var(--brass) 8%,transparent)}
   .mod-head h2{font-size:clamp(21px,2.8vw,28px);margin:2px 0 3px;line-height:1.2}
   .mod-head .short{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-dim);font-weight:600}
-  .goal{margin:8px 0 20px;padding:12px 18px;border-left:3px solid var(--brass);background:var(--neutral-faint);border-radius:0 8px 8px 0;font-family:"Noto Serif SC",serif;font-size:15px}
+  .goal{margin:8px 0 20px;padding:12px 18px;border-left:3px solid var(--brass);background:var(--neutral-faint);border-radius:0 8px 8px 0;font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px}
   .goal b{color:var(--brass)}
   p.body{font-size:15px;max-width:76ch;margin:0 0 14px}
   h3.sub{font-size:16px;margin:24px 0 10px;color:var(--text);display:flex;align-items:center;gap:9px}
   h3.sub::before{content:"";width:14px;height:14px;border-radius:3px;background:var(--brass);flex:0 0 auto}
-  .metaphor{border-left:3px solid var(--brass);background:color-mix(in srgb,var(--brass) 6%,transparent);border-radius:0 8px 8px 0;padding:12px 18px;margin:14px 0;font-family:"Noto Serif SC",serif;font-size:14.5px}
+  .metaphor{border-left:3px solid var(--brass);background:color-mix(in srgb,var(--brass) 6%,transparent);border-radius:0 8px 8px 0;padding:12px 18px;margin:14px 0;font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:14.5px}
   .metaphor .mt{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);font-weight:700;margin:0 0 4px;font-family:"Noto Sans SC",sans-serif}
 
   .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:14px 0}
@@ -90,7 +90,7 @@
 
   .creed{margin:16px 0;border-left:3px solid var(--alert);background:var(--alert-soft);border-radius:0 8px 8px 0;padding:14px 18px}
   .creed .ct{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--alert);font-weight:700;margin:0 0 9px}
-  .creed p{margin:0 0 7px;font-family:"Noto Serif SC",serif;font-size:14.5px;color:var(--text)}
+  .creed p{margin:0 0 7px;font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:14.5px;color:var(--text)}
   .creed p:last-child{margin-bottom:0}.creed .lead{color:var(--alert);font-weight:700}
 
   .drill{border:1px dashed var(--brass);border-radius:var(--radius);padding:14px 18px;margin:14px 0;background:color-mix(in srgb,var(--brass) 5%,transparent)}
@@ -109,7 +109,7 @@
   .map-col{border:1px solid var(--neutral-line);border-radius:var(--radius);padding:15px 17px;background:var(--paper-card)}
   .map-col .mh{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);font-weight:700;margin:0 0 9px}
   .map-col ul{margin:0;padding-left:16px}.map-col li{font-size:13px;margin-bottom:6px;color:var(--text)}.map-col li::marker{color:var(--brass)}
-  .baseline{border-left:3px solid var(--brass);background:var(--paper-card);border-radius:0 8px 8px 0;padding:14px 18px;margin:0 0 20px;font-family:"Noto Serif SC",serif;font-size:15px;box-shadow:var(--shadow)}
+  .baseline{border-left:3px solid var(--brass);background:var(--paper-card);border-radius:0 8px 8px 0;padding:14px 18px;margin:0 0 20px;font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;font-size:15px;box-shadow:var(--shadow)}
   .baseline b{color:var(--brass)}
   .path{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
   @media (max-width:820px){.path{grid-template-columns:1fr 1fr}}
@@ -125,7 +125,7 @@
   .reading .wl-link:hover{border-bottom-style:solid}
   footer{background:var(--ink);color:var(--text-oninK-dim);padding:40px 0;font-size:13px}
   footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px;align-items:center}
-  footer b{color:var(--accent-on-ink);font-family:"Noto Serif SC",serif}
+  footer b{color:var(--accent-on-ink);font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -171,35 +171,35 @@
     <div class="diagram">
       <svg viewBox="0 0 960 340" role="img" aria-label="培训全景总图">
         <defs>
-          <marker id="pa" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker>
+          <marker id="pa" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker>
         </defs>
         <!-- 主干:五阶段 -->
-        <text x="30" y="40" fill="#c8862a" font-size="13" font-weight="700">主干骨架 · FDE 五阶段(01)</text>
+        <text x="30" y="40" fill="#2563eb" font-size="13" font-weight="700">主干骨架 · FDE 五阶段(01)</text>
         <g font-size="12" font-weight="700">
-          <rect x="30" y="54" width="160" height="58" rx="8" fill="#0f1729"/><text x="110" y="80" text-anchor="middle" fill="#eef1f7">① 调研备弹</text><text x="110" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段一</text>
-          <rect x="222" y="54" width="160" height="58" rx="8" fill="#0f1729"/><text x="302" y="80" text-anchor="middle" fill="#eef1f7">② 沟通出原型</text><text x="302" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段二</text>
-          <rect x="414" y="54" width="160" height="58" rx="8" fill="#0f1729"/><text x="494" y="80" text-anchor="middle" fill="#eef1f7">③ 智能体设计</text><text x="494" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段三</text>
-          <rect x="606" y="54" width="160" height="58" rx="8" fill="#0f1729"/><text x="686" y="80" text-anchor="middle" fill="#eef1f7">④ 行业工作台</text><text x="686" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段四</text>
-          <rect x="798" y="54" width="140" height="58" rx="8" fill="#0f1729"/><text x="868" y="80" text-anchor="middle" fill="#eef1f7">⑤ 试用定稿</text><text x="868" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段五</text>
+          <rect x="30" y="54" width="160" height="58" rx="8" fill="#1e293b"/><text x="110" y="80" text-anchor="middle" fill="#eef1f7">① 调研备弹</text><text x="110" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段一</text>
+          <rect x="222" y="54" width="160" height="58" rx="8" fill="#1e293b"/><text x="302" y="80" text-anchor="middle" fill="#eef1f7">② 沟通出原型</text><text x="302" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段二</text>
+          <rect x="414" y="54" width="160" height="58" rx="8" fill="#1e293b"/><text x="494" y="80" text-anchor="middle" fill="#eef1f7">③ 智能体设计</text><text x="494" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段三</text>
+          <rect x="606" y="54" width="160" height="58" rx="8" fill="#1e293b"/><text x="686" y="80" text-anchor="middle" fill="#eef1f7">④ 行业工作台</text><text x="686" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段四</text>
+          <rect x="798" y="54" width="140" height="58" rx="8" fill="#1e293b"/><text x="868" y="80" text-anchor="middle" fill="#eef1f7">⑤ 试用定稿</text><text x="868" y="98" text-anchor="middle" fill="#9aa6bd" font-size="10.5" font-weight="400">阶段五</text>
         </g>
-        <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#pa)">
+        <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#pa)">
           <line x1="190" y1="83" x2="218" y2="83"/><line x1="382" y1="83" x2="410" y2="83"/><line x1="574" y1="83" x2="602" y2="83"/><line x1="766" y1="83" x2="794" y2="83"/>
         </g>
         <!-- 对应模块标注 -->
-        <g font-size="10.5" fill="#5a6270">
+        <g font-size="10.5" fill="#64748b">
           <text x="302" y="130" text-anchor="middle">M4 需求与智能体设计(01/02/03)</text>
           <text x="686" y="130" text-anchor="middle">M5 工作台 · M6 极库云+容器云上线</text>
           <text x="868" y="130" text-anchor="middle">M7 试用优化</text>
         </g>
         <!-- 底座 -->
-        <text x="30" y="180" fill="#2f7d54" font-size="13" font-weight="700">底座与认知 · 支撑主干</text>
-        <rect x="30" y="194" width="290" height="50" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="175" y="215" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M2 医疗架构</text><text x="175" y="233" text-anchor="middle" fill="#5a6270" font-size="10.5">新人补底 · 系统/术语/智能体矩阵</text>
-        <rect x="345" y="194" width="290" height="50" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="490" y="215" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M3 技术底座 SEAF + SDR</text><text x="490" y="233" text-anchor="middle" fill="#5a6270" font-size="10.5">引擎底座 + 数据地基,藏背后供能</text>
-        <rect x="660" y="194" width="278" height="50" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="799" y="215" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M6 极库云 + 容器云</text><text x="799" y="233" text-anchor="middle" fill="#5a6270" font-size="10.5">阶段四上线用 · 代码/知识库/CI + 部署</text>
+        <text x="30" y="180" fill="#0284c7" font-size="13" font-weight="700">底座与认知 · 支撑主干</text>
+        <rect x="30" y="194" width="290" height="50" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/><text x="175" y="215" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">M2 医疗架构</text><text x="175" y="233" text-anchor="middle" fill="#64748b" font-size="10.5">新人补底 · 系统/术语/智能体矩阵</text>
+        <rect x="345" y="194" width="290" height="50" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/><text x="490" y="215" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">M3 技术底座 SEAF + SDR</text><text x="490" y="233" text-anchor="middle" fill="#64748b" font-size="10.5">引擎底座 + 数据地基,藏背后供能</text>
+        <rect x="660" y="194" width="278" height="50" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/><text x="799" y="215" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">M6 极库云 + 容器云</text><text x="799" y="233" text-anchor="middle" fill="#64748b" font-size="10.5">阶段四上线用 · 代码/知识库/CI + 部署</text>
         <!-- 规矩与收口 -->
         <text x="30" y="278" fill="#b5433a" font-size="13" font-weight="700">规矩与收口 · 贯穿全程</text>
-        <rect x="30" y="292" width="450" height="40" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="255" y="317" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M8 项目管理规范(五类规范 · 极库云项目管理 · 复制模式)</text>
-        <rect x="500" y="292" width="438" height="40" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="719" y="317" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">M9 项目实战演练(串一遍 · 答辩出师)</text>
+        <rect x="30" y="292" width="450" height="40" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="255" y="317" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">M8 项目管理规范(五类规范 · 极库云项目管理 · 复制模式)</text>
+        <rect x="500" y="292" width="438" height="40" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/><text x="719" y="317" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">M9 项目实战演练(串一遍 · 答辩出师)</text>
       </svg>
       <p class="cap">全景总图:五阶段是主干(横向一条链),底座(M2/M3/M6)在下面撑着,规矩(M8)和收口(M9)贯穿全程</p>
     </div>
@@ -286,19 +286,19 @@
       </div>
       <div class="diagram">
         <svg viewBox="0 0 760 220" role="img" aria-label="两条线并行图">
-          <defs><marker id="m1a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
-          <text x="20" y="30" fill="#2f7d54" font-size="12.5" font-weight="700">环境地基线(对信息科)</text>
-          <rect x="20" y="40" width="150" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="95" y="66" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">摸底踩点</text>
-          <rect x="210" y="40" width="120" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="270" y="66" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">开 VPN</text>
-          <rect x="370" y="40" width="150" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="445" y="66" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">部署基础服务</text>
-          <rect x="560" y="40" width="120" height="44" rx="8" fill="#2f7d54"/><text x="620" y="66" text-anchor="middle" fill="#fff" font-size="11.5" font-weight="700">底座就绪</text>
-          <g stroke="#2f7d54" stroke-width="1.5" marker-end="url(#m1a)"><line x1="170" y1="62" x2="206" y2="62"/><line x1="330" y1="62" x2="366" y2="62"/><line x1="520" y1="62" x2="556" y2="62"/></g>
-          <text x="360" y="118" text-anchor="middle" fill="#5a6270" font-size="11" font-style="italic">‖ 两条线并行,互不等 · 两线齐了才交付版本 ‖</text>
-          <text x="20" y="150" fill="#c8862a" font-size="12.5" font-weight="700">需求主线(对业务科室)</text>
-          <rect x="20" y="160" width="150" height="44" rx="8" fill="#0f1729"/><text x="95" y="182" text-anchor="middle" fill="#eef1f7" font-size="11" font-weight="700">①②③ 需求设计</text><text x="95" y="197" text-anchor="middle" fill="#9aa6bd" font-size="9.5">2+1 主场</text>
-          <rect x="370" y="160" width="150" height="44" rx="8" fill="#0f1729"/><text x="445" y="182" text-anchor="middle" fill="#eef1f7" font-size="11" font-weight="700">④ 工作台上线</text><text x="445" y="197" text-anchor="middle" fill="#9aa6bd" font-size="9.5">3/7/14 交付</text>
-          <rect x="560" y="160" width="120" height="44" rx="8" fill="#0f1729"/><text x="620" y="182" text-anchor="middle" fill="#eef1f7" font-size="11" font-weight="700">⑤ 试用定稿</text>
-          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m1a)"><line x1="170" y1="182" x2="366" y2="182"/><line x1="520" y1="182" x2="556" y2="182"/></g>
+          <defs><marker id="m1a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+          <text x="20" y="30" fill="#0284c7" font-size="12.5" font-weight="700">环境地基线(对信息科)</text>
+          <rect x="20" y="40" width="150" height="44" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/><text x="95" y="66" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">摸底踩点</text>
+          <rect x="210" y="40" width="120" height="44" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/><text x="270" y="66" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">开 VPN</text>
+          <rect x="370" y="40" width="150" height="44" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/><text x="445" y="66" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">部署基础服务</text>
+          <rect x="560" y="40" width="120" height="44" rx="8" fill="#0284c7"/><text x="620" y="66" text-anchor="middle" fill="#fff" font-size="11.5" font-weight="700">底座就绪</text>
+          <g stroke="#0284c7" stroke-width="1.5" marker-end="url(#m1a)"><line x1="170" y1="62" x2="206" y2="62"/><line x1="330" y1="62" x2="366" y2="62"/><line x1="520" y1="62" x2="556" y2="62"/></g>
+          <text x="360" y="118" text-anchor="middle" fill="#64748b" font-size="11" font-style="italic">‖ 两条线并行,互不等 · 两线齐了才交付版本 ‖</text>
+          <text x="20" y="150" fill="#2563eb" font-size="12.5" font-weight="700">需求主线(对业务科室)</text>
+          <rect x="20" y="160" width="150" height="44" rx="8" fill="#1e293b"/><text x="95" y="182" text-anchor="middle" fill="#eef1f7" font-size="11" font-weight="700">①②③ 需求设计</text><text x="95" y="197" text-anchor="middle" fill="#9aa6bd" font-size="9.5">2+1 主场</text>
+          <rect x="370" y="160" width="150" height="44" rx="8" fill="#1e293b"/><text x="445" y="182" text-anchor="middle" fill="#eef1f7" font-size="11" font-weight="700">④ 工作台上线</text><text x="445" y="197" text-anchor="middle" fill="#9aa6bd" font-size="9.5">3/7/14 交付</text>
+          <rect x="560" y="160" width="120" height="44" rx="8" fill="#1e293b"/><text x="620" y="182" text-anchor="middle" fill="#eef1f7" font-size="11" font-weight="700">⑤ 试用定稿</text>
+          <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#m1a)"><line x1="170" y1="182" x2="366" y2="182"/><line x1="520" y1="182" x2="556" y2="182"/></g>
         </svg>
         <p class="cap">两条线并行:环境地基线(绿,对信息科)和需求主线(墨蓝,对业务科室)各走各的,两线齐了才交付版本</p>
       </div>
@@ -317,36 +317,36 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
       </div>
       <div class="diagram">
         <svg viewBox="0 0 760 300" role="img" aria-label="五阶段与Sprint关系图">
-          <defs><marker id="s1a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
-          <text x="20" y="26" fill="#0f1729" font-size="12.5" font-weight="700">客户视角 · 五阶段(业务走到哪一步了)</text>
+          <defs><marker id="s1a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+          <text x="20" y="26" fill="#1e293b" font-size="12.5" font-weight="700">客户视角 · 五阶段(业务走到哪一步了)</text>
           <g font-size="11" font-weight="700">
-            <rect x="20" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="84" y="65" text-anchor="middle" fill="#eef1f7">① 调研备弹</text>
-            <rect x="168" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="232" y="65" text-anchor="middle" fill="#eef1f7">② 沟通出原型</text>
-            <rect x="316" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="380" y="65" text-anchor="middle" fill="#eef1f7">③ 智能体设计</text>
-            <rect x="464" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="528" y="65" text-anchor="middle" fill="#eef1f7">④ 工作台上线</text>
-            <rect x="612" y="38" width="128" height="44" rx="8" fill="#0f1729"/><text x="676" y="65" text-anchor="middle" fill="#eef1f7">⑤ 试用定稿</text>
+            <rect x="20" y="38" width="128" height="44" rx="8" fill="#1e293b"/><text x="84" y="65" text-anchor="middle" fill="#eef1f7">① 调研备弹</text>
+            <rect x="168" y="38" width="128" height="44" rx="8" fill="#1e293b"/><text x="232" y="65" text-anchor="middle" fill="#eef1f7">② 沟通出原型</text>
+            <rect x="316" y="38" width="128" height="44" rx="8" fill="#1e293b"/><text x="380" y="65" text-anchor="middle" fill="#eef1f7">③ 智能体设计</text>
+            <rect x="464" y="38" width="128" height="44" rx="8" fill="#1e293b"/><text x="528" y="65" text-anchor="middle" fill="#eef1f7">④ 工作台上线</text>
+            <rect x="612" y="38" width="128" height="44" rx="8" fill="#1e293b"/><text x="676" y="65" text-anchor="middle" fill="#eef1f7">⑤ 试用定稿</text>
           </g>
-          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#s1a)"><line x1="148" y1="60" x2="164" y2="60"/><line x1="296" y1="60" x2="312" y2="60"/><line x1="444" y1="60" x2="460" y2="60"/><line x1="592" y1="60" x2="608" y2="60"/></g>
+          <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#s1a)"><line x1="148" y1="60" x2="164" y2="60"/><line x1="296" y1="60" x2="312" y2="60"/><line x1="444" y1="60" x2="460" y2="60"/><line x1="592" y1="60" x2="608" y2="60"/></g>
           <!-- 对应连线 -->
-          <g stroke="#94a0a8" stroke-width="1.2" stroke-dasharray="4 3">
+          <g stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3">
             <line x1="380" y1="82" x2="140" y2="128"/>
             <line x1="500" y1="82" x2="420" y2="128"/>
             <line x1="560" y1="82" x2="620" y2="128"/>
           </g>
-          <text x="20" y="118" fill="#c8862a" font-size="12.5" font-weight="700">团队视角 · Sprint 制(这两周干什么活)</text>
+          <text x="20" y="118" fill="#2563eb" font-size="12.5" font-weight="700">团队视角 · Sprint 制(这两周干什么活)</text>
           <g font-size="11" font-weight="700">
-            <rect x="20" y="130" width="180" height="58" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="110" y="152" text-anchor="middle" fill="#232937">S1 发现</text><text x="110" y="168" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">装阶段一+二的活</text><text x="110" y="180" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">场景确认单·边界签字</text>
-            <rect x="220" y="130" width="180" height="58" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="310" y="152" text-anchor="middle" fill="#232937">S2 构建</text><text x="310" y="168" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">装阶段三+四的活</text><text x="310" y="180" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">数据治理最易超时</text>
-            <rect x="420" y="130" width="180" height="58" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="510" y="152" text-anchor="middle" fill="#232937">S3 调优</text><text x="510" y="168" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">A/B + Eval ≥90%</text><text x="510" y="180" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">调到指标达标</text>
-            <rect x="620" y="130" width="120" height="58" rx="8" fill="#2f7d54"/><text x="680" y="152" text-anchor="middle" fill="#fff">S4 上线</text><text x="680" y="168" text-anchor="middle" fill="#cfe8da" font-size="9.5" font-weight="400">部署·鉴权</text><text x="680" y="180" text-anchor="middle" fill="#cfe8da" font-size="9.5" font-weight="400">交 URL</text>
+            <rect x="20" y="130" width="180" height="58" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="110" y="152" text-anchor="middle" fill="#1e293b">S1 发现</text><text x="110" y="168" text-anchor="middle" fill="#64748b" font-size="9.5" font-weight="400">装阶段一+二的活</text><text x="110" y="180" text-anchor="middle" fill="#64748b" font-size="9.5" font-weight="400">场景确认单·边界签字</text>
+            <rect x="220" y="130" width="180" height="58" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="310" y="152" text-anchor="middle" fill="#1e293b">S2 构建</text><text x="310" y="168" text-anchor="middle" fill="#64748b" font-size="9.5" font-weight="400">装阶段三+四的活</text><text x="310" y="180" text-anchor="middle" fill="#64748b" font-size="9.5" font-weight="400">数据治理最易超时</text>
+            <rect x="420" y="130" width="180" height="58" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="510" y="152" text-anchor="middle" fill="#1e293b">S3 调优</text><text x="510" y="168" text-anchor="middle" fill="#64748b" font-size="9.5" font-weight="400">A/B + Eval ≥90%</text><text x="510" y="180" text-anchor="middle" fill="#64748b" font-size="9.5" font-weight="400">调到指标达标</text>
+            <rect x="620" y="130" width="120" height="58" rx="8" fill="#0284c7"/><text x="680" y="152" text-anchor="middle" fill="#fff">S4 上线</text><text x="680" y="168" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="400">部署·鉴权</text><text x="680" y="180" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="400">交 URL</text>
           </g>
-          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#s1a)"><line x1="200" y1="159" x2="216" y2="159"/><line x1="400" y1="159" x2="416" y2="159"/><line x1="600" y1="159" x2="616" y2="159"/></g>
+          <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#s1a)"><line x1="200" y1="159" x2="216" y2="159"/><line x1="400" y1="159" x2="416" y2="159"/><line x1="600" y1="159" x2="616" y2="159"/></g>
           <!-- 三处签字 -->
           <text x="20" y="220" fill="#b5433a" font-size="12.5" font-weight="700">三处签字(客户画押,一处都不能省)</text>
           <g font-size="10.5">
-            <rect x="20" y="232" width="230" height="48" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="135" y="252" text-anchor="middle" fill="#232937" font-weight="700">S1 末 · 阶段二对接确认表</text><text x="135" y="268" text-anchor="middle" fill="#5a6270">发客户群确认(群确认=签字)</text>
-            <rect x="265" y="232" width="230" height="48" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="380" y="252" text-anchor="middle" fill="#232937" font-weight="700">S2 初 · 阶段三需求最终确认表</text><text x="380" y="268" text-anchor="middle" fill="#5a6270">客户正式签字,不签不开工</text>
-            <rect x="510" y="232" width="230" height="48" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="625" y="252" text-anchor="middle" fill="#232937" font-weight="700">S4 末 · 阶段五交付签字表</text><text x="625" y="268" text-anchor="middle" fill="#5a6270">三轮定稿后画押,才算交付</text>
+            <rect x="20" y="232" width="230" height="48" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="135" y="252" text-anchor="middle" fill="#1e293b" font-weight="700">S1 末 · 阶段二对接确认表</text><text x="135" y="268" text-anchor="middle" fill="#64748b">发客户群确认(群确认=签字)</text>
+            <rect x="265" y="232" width="230" height="48" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="380" y="252" text-anchor="middle" fill="#1e293b" font-weight="700">S2 初 · 阶段三需求最终确认表</text><text x="380" y="268" text-anchor="middle" fill="#64748b">客户正式签字,不签不开工</text>
+            <rect x="510" y="232" width="230" height="48" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/><text x="625" y="252" text-anchor="middle" fill="#1e293b" font-weight="700">S4 末 · 阶段五交付签字表</text><text x="625" y="268" text-anchor="middle" fill="#64748b">三轮定稿后画押,才算交付</text>
           </g>
         </svg>
         <p class="cap">两套视角一条线:五阶段(客户视角)从上走,Sprint(团队视角)从下推——阶段四五的活装在 S2–S4 里;三处签字卡在 S1 末 / S2 初 / S4 末</p>
@@ -382,26 +382,26 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
       </div>
       <div class="diagram">
         <svg viewBox="0 0 840 250" role="img" aria-label="医院五大系统数据流图">
-          <defs><marker id="m2a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
-          <rect x="20" y="100" width="120" height="56" rx="8" fill="#0f1729"/><text x="80" y="124" text-anchor="middle" fill="#e3a94a" font-size="13" font-weight="700">HIS</text><text x="80" y="143" text-anchor="middle" fill="#9aa6bd" font-size="9.5">挂号收费 · 源头</text>
-          <rect x="200" y="20" width="120" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="260" y="40" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">EMR</text><text x="260" y="57" text-anchor="middle" fill="#5a6270" font-size="10">电子病历</text>
-          <rect x="200" y="104" width="120" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="260" y="124" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">LIS</text><text x="260" y="141" text-anchor="middle" fill="#5a6270" font-size="10">检验化验</text>
-          <rect x="200" y="188" width="120" height="48" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="260" y="208" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">PACS</text><text x="260" y="225" text-anchor="middle" fill="#5a6270" font-size="10">影像片子</text>
+          <defs><marker id="m2a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+          <rect x="20" y="100" width="120" height="56" rx="8" fill="#1e293b"/><text x="80" y="124" text-anchor="middle" fill="#3b73f0" font-size="13" font-weight="700">HIS</text><text x="80" y="143" text-anchor="middle" fill="#9aa6bd" font-size="9.5">挂号收费 · 源头</text>
+          <rect x="200" y="20" width="120" height="48" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="260" y="40" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">EMR</text><text x="260" y="57" text-anchor="middle" fill="#64748b" font-size="10">电子病历</text>
+          <rect x="200" y="104" width="120" height="48" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="260" y="124" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">LIS</text><text x="260" y="141" text-anchor="middle" fill="#64748b" font-size="10">检验化验</text>
+          <rect x="200" y="188" width="120" height="48" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="260" y="208" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">PACS</text><text x="260" y="225" text-anchor="middle" fill="#64748b" font-size="10">影像片子</text>
           <!-- CDR 可能有 -->
-          <rect x="390" y="100" width="120" height="56" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5" stroke-dasharray="5 3"/><text x="450" y="122" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">CDR</text><text x="450" y="139" text-anchor="middle" fill="#5a6270" font-size="9">汇总 · 可能没有</text>
+          <rect x="390" y="100" width="120" height="56" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5" stroke-dasharray="5 3"/><text x="450" y="122" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">CDR</text><text x="450" y="139" text-anchor="middle" fill="#64748b" font-size="9">汇总 · 可能没有</text>
           <!-- SDR 必经 -->
-          <rect x="560" y="100" width="120" height="56" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="620" y="122" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">SDR</text><text x="620" y="139" text-anchor="middle" fill="#5a6270" font-size="9">取数唯一入口</text>
+          <rect x="560" y="100" width="120" height="56" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="2"/><text x="620" y="122" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">SDR</text><text x="620" y="139" text-anchor="middle" fill="#64748b" font-size="9">取数唯一入口</text>
           <!-- 智能体 -->
-          <rect x="730" y="100" width="90" height="56" rx="8" fill="#0f1729"/><text x="775" y="128" text-anchor="middle" fill="#e3a94a" font-size="11.5" font-weight="700">智能体</text><text x="775" y="144" text-anchor="middle" fill="#9aa6bd" font-size="9">走 SDR 取数</text>
-          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m2a)">
+          <rect x="730" y="100" width="90" height="56" rx="8" fill="#1e293b"/><text x="775" y="128" text-anchor="middle" fill="#3b73f0" font-size="11.5" font-weight="700">智能体</text><text x="775" y="144" text-anchor="middle" fill="#9aa6bd" font-size="9">走 SDR 取数</text>
+          <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#m2a)">
             <line x1="140" y1="118" x2="196" y2="46"/><line x1="140" y1="128" x2="196" y2="128"/><line x1="140" y1="138" x2="196" y2="210"/>
             <line x1="320" y1="46" x2="386" y2="116"/><line x1="320" y1="128" x2="386" y2="128"/><line x1="320" y1="210" x2="386" y2="140"/>
             <line x1="510" y1="128" x2="556" y2="128"/>
             <line x1="680" y1="128" x2="726" y2="128"/>
           </g>
           <!-- 没CDR时SDR直连的虚线旁路 -->
-          <path d="M320 224 Q 540 250 618 158" fill="none" stroke="#94a0a8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#m2a)"/>
-          <text x="500" y="243" text-anchor="middle" fill="#94a0a8" font-size="9.5">没 CDR 时 SDR 直接接各系统</text>
+          <path d="M320 224 Q 540 250 618 158" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#m2a)"/>
+          <text x="500" y="243" text-anchor="middle" fill="#94a3b8" font-size="9.5">没 CDR 时 SDR 直接接各系统</text>
         </svg>
         <p class="cap">数据流向:HIS 源头 → EMR/LIS/PACS →(有则汇到 CDR)→ <b>SDR</b> → 智能体。智能体永远走 SDR:有 CDR 就抽 CDR,没 CDR(多数医院)SDR 就直接接各系统(灰色虚线)</p>
       </div>
@@ -449,31 +449,31 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
       <div class="diagram">
         <svg viewBox="0 0 720 300" role="img" aria-label="技术底座分层架构图">
           <!-- 客户 -->
-          <rect x="240" y="14" width="240" height="40" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
-          <text x="360" y="39" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">客户 · 只面对一个入口</text>
-          <line x1="360" y1="54" x2="360" y2="74" stroke="#c8862a" stroke-width="1.5"/>
+          <rect x="240" y="14" width="240" height="40" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+          <text x="360" y="39" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">客户 · 只面对一个入口</text>
+          <line x1="360" y1="54" x2="360" y2="74" stroke="#2563eb" stroke-width="1.5"/>
           <!-- 纳米Work 顶层 -->
-          <rect x="60" y="74" width="600" height="58" rx="8" fill="#0f1729"/>
-          <text x="360" y="98" text-anchor="middle" fill="#e3a94a" font-size="13.5" font-weight="700">纳米Work 行业工作台(唯一露面)</text>
+          <rect x="60" y="74" width="600" height="58" rx="8" fill="#1e293b"/>
+          <text x="360" y="98" text-anchor="middle" fill="#3b73f0" font-size="13.5" font-weight="700">纳米Work 行业工作台(唯一露面)</text>
           <text x="360" y="118" text-anchor="middle" fill="#9aa6bd" font-size="11">智能体 · Skill · 知识库 · MCP · 工作流(都是这里的入口/组件)</text>
           <!-- 分隔:封装 -->
-          <text x="360" y="150" text-anchor="middle" fill="#5a6270" font-size="10.5">↑ SEAF 的能力被封装成工作台组件 · 客户看不到下面 ↑</text>
+          <text x="360" y="150" text-anchor="middle" fill="#64748b" font-size="10.5">↑ SEAF 的能力被封装成工作台组件 · 客户看不到下面 ↑</text>
           <!-- SEAF 引擎层 -->
-          <rect x="60" y="160" width="440" height="58" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/>
-          <text x="280" y="184" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">SEAF 智能体引擎底座(藏底层供能)</text>
-          <text x="280" y="204" text-anchor="middle" fill="#5a6270" font-size="10.5">智能体引擎 · 工作流 · 长期记忆 · 分权 · 离线大模型</text>
+          <rect x="60" y="160" width="440" height="58" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="280" y="184" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">SEAF 智能体引擎底座(藏底层供能)</text>
+          <text x="280" y="204" text-anchor="middle" fill="#64748b" font-size="10.5">智能体引擎 · 工作流 · 长期记忆 · 分权 · 离线大模型</text>
           <!-- SDR 数据层 -->
-          <rect x="520" y="160" width="140" height="58" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/>
-          <text x="590" y="184" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">SDR</text>
-          <text x="590" y="203" text-anchor="middle" fill="#5a6270" font-size="10">数据地基</text>
+          <rect x="520" y="160" width="140" height="58" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/>
+          <text x="590" y="184" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">SDR</text>
+          <text x="590" y="203" text-anchor="middle" fill="#64748b" font-size="10">数据地基</text>
           <!-- 数据源 -->
-          <rect x="60" y="242" width="600" height="46" rx="8" fill="#ece8de"/>
-          <text x="360" y="262" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">客户业务系统(数据源)</text>
-          <text x="360" y="279" text-anchor="middle" fill="#5a6270" font-size="10.5">HIS · EMR · LIS · PACS · HR · 财务 …… SDR 零代码接入,统一成标准字段</text>
+          <rect x="60" y="242" width="600" height="46" rx="8" fill="#eff4ff"/>
+          <text x="360" y="262" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">客户业务系统(数据源)</text>
+          <text x="360" y="279" text-anchor="middle" fill="#64748b" font-size="10.5">HIS · EMR · LIS · PACS · HR · 财务 …… SDR 零代码接入,统一成标准字段</text>
           <!-- 连线 -->
-          <line x1="280" y1="132" x2="280" y2="158" stroke="#c8862a" stroke-width="1.5"/>
-          <line x1="590" y1="218" x2="590" y2="240" stroke="#2f7d54" stroke-width="1.5"/>
-          <line x1="520" y1="189" x2="502" y2="189" stroke="#2f7d54" stroke-width="1.5"/>
+          <line x1="280" y1="132" x2="280" y2="158" stroke="#2563eb" stroke-width="1.5"/>
+          <line x1="590" y1="218" x2="590" y2="240" stroke="#0284c7" stroke-width="1.5"/>
+          <line x1="520" y1="189" x2="502" y2="189" stroke="#0284c7" stroke-width="1.5"/>
         </svg>
         <p class="cap">分层架构:客户只看纳米Work(顶层)→ SEAF 引擎在下面供能 → SDR 把底层各业务系统的数据接上来喂进去</p>
       </div>
@@ -518,38 +518,38 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
       <div class="metaphor"><p class="mt">一句话记住</p><b>智能体从不直连医院数据库,一律走 SDR。</b>有 CDR 的医院,SDR 抽 CDR 就行(一个源);没 CDR 的(大多数),SDR 直接对接 HIS/EMR/LIS/PACS 各系统、清洗成标准字段。不管哪种,智能体面对的都只是 SDR。</div>
       <div class="diagram">
         <svg viewBox="0 0 720 320" role="img" aria-label="SDR 和 CDR 区别对照图">
-          <defs><marker id="cda" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2f7d54"/></marker>
-          <marker id="cdb" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
-          <line x1="360" y1="10" x2="360" y2="280" stroke="#dfdbd1" stroke-width="1" stroke-dasharray="4 4"/>
+          <defs><marker id="cda" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0284c7"/></marker>
+          <marker id="cdb" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+          <line x1="360" y1="10" x2="360" y2="280" stroke="#dbe3f0" stroke-width="1" stroke-dasharray="4 4"/>
           <!-- 左:有CDR -->
-          <text x="175" y="28" text-anchor="middle" fill="#2f7d54" font-size="13" font-weight="700">情况 A · 有 CDR 的医院(少数)</text>
-          <text x="175" y="46" text-anchor="middle" fill="#5a6270" font-size="10.5">SDR 抽 CDR 就行,一个源,省事</text>
-          <rect x="30" y="70" width="70" height="24" rx="5" fill="#ece8de"/><text x="65" y="87" text-anchor="middle" fill="#232937" font-size="9.5">HIS</text>
-          <rect x="30" y="100" width="70" height="24" rx="5" fill="#ece8de"/><text x="65" y="117" text-anchor="middle" fill="#232937" font-size="9.5">EMR</text>
-          <rect x="30" y="130" width="70" height="24" rx="5" fill="#ece8de"/><text x="65" y="147" text-anchor="middle" fill="#232937" font-size="9.5">LIS/PACS</text>
+          <text x="175" y="28" text-anchor="middle" fill="#0284c7" font-size="13" font-weight="700">情况 A · 有 CDR 的医院(少数)</text>
+          <text x="175" y="46" text-anchor="middle" fill="#64748b" font-size="10.5">SDR 抽 CDR 就行,一个源,省事</text>
+          <rect x="30" y="70" width="70" height="24" rx="5" fill="#eff4ff"/><text x="65" y="87" text-anchor="middle" fill="#1e293b" font-size="9.5">HIS</text>
+          <rect x="30" y="100" width="70" height="24" rx="5" fill="#eff4ff"/><text x="65" y="117" text-anchor="middle" fill="#1e293b" font-size="9.5">EMR</text>
+          <rect x="30" y="130" width="70" height="24" rx="5" fill="#eff4ff"/><text x="65" y="147" text-anchor="middle" fill="#1e293b" font-size="9.5">LIS/PACS</text>
           <!-- CDR -->
-          <rect x="130" y="96" width="70" height="60" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="165" y="120" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">CDR</text><text x="165" y="137" text-anchor="middle" fill="#5a6270" font-size="8.5">医院已汇好</text>
+          <rect x="130" y="96" width="70" height="60" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/><text x="165" y="120" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">CDR</text><text x="165" y="137" text-anchor="middle" fill="#64748b" font-size="8.5">医院已汇好</text>
           <!-- SDR -->
-          <rect x="228" y="96" width="66" height="60" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="261" y="120" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">SDR</text><text x="261" y="137" text-anchor="middle" fill="#5a6270" font-size="8.5">抽 CDR</text>
+          <rect x="228" y="96" width="66" height="60" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="2"/><text x="261" y="120" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">SDR</text><text x="261" y="137" text-anchor="middle" fill="#64748b" font-size="8.5">抽 CDR</text>
           <!-- 智能体 -->
-          <rect x="110" y="182" width="180" height="40" rx="8" fill="#0f1729"/><text x="200" y="207" text-anchor="middle" fill="#e3a94a" font-size="11" font-weight="700">智能体(走 SDR 取数)</text>
-          <g stroke="#94a0a8" stroke-width="1.2" marker-end="url(#cda)"><line x1="100" y1="82" x2="126" y2="112"/><line x1="100" y1="112" x2="126" y2="122"/><line x1="100" y1="142" x2="126" y2="134"/></g>
-          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#cdb)"><line x1="200" y1="126" x2="224" y2="126"/><line x1="261" y1="156" x2="230" y2="180"/></g>
-          <text x="175" y="248" text-anchor="middle" fill="#2f7d54" font-size="10.5" font-weight="700">✓ SDR 只抽 CDR 一个源,轻松</text>
+          <rect x="110" y="182" width="180" height="40" rx="8" fill="#1e293b"/><text x="200" y="207" text-anchor="middle" fill="#3b73f0" font-size="11" font-weight="700">智能体(走 SDR 取数)</text>
+          <g stroke="#94a3b8" stroke-width="1.2" marker-end="url(#cda)"><line x1="100" y1="82" x2="126" y2="112"/><line x1="100" y1="112" x2="126" y2="122"/><line x1="100" y1="142" x2="126" y2="134"/></g>
+          <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#cdb)"><line x1="200" y1="126" x2="224" y2="126"/><line x1="261" y1="156" x2="230" y2="180"/></g>
+          <text x="175" y="248" text-anchor="middle" fill="#0284c7" font-size="10.5" font-weight="700">✓ SDR 只抽 CDR 一个源,轻松</text>
           <!-- 右:没CDR -->
-          <text x="545" y="28" text-anchor="middle" fill="#c8862a" font-size="13" font-weight="700">情况 B · 没 CDR 的医院(多数)</text>
-          <text x="545" y="46" text-anchor="middle" fill="#5a6270" font-size="10.5">SDR 直接对接各系统,累但能兜住</text>
-          <rect x="410" y="70" width="70" height="24" rx="5" fill="#ece8de"/><text x="445" y="87" text-anchor="middle" fill="#232937" font-size="9.5">HIS</text>
-          <rect x="410" y="100" width="70" height="24" rx="5" fill="#ece8de"/><text x="445" y="117" text-anchor="middle" fill="#232937" font-size="9.5">EMR</text>
-          <rect x="410" y="130" width="70" height="24" rx="5" fill="#ece8de"/><text x="445" y="147" text-anchor="middle" fill="#232937" font-size="9.5">LIS/PACS</text>
+          <text x="545" y="28" text-anchor="middle" fill="#2563eb" font-size="13" font-weight="700">情况 B · 没 CDR 的医院(多数)</text>
+          <text x="545" y="46" text-anchor="middle" fill="#64748b" font-size="10.5">SDR 直接对接各系统,累但能兜住</text>
+          <rect x="410" y="70" width="70" height="24" rx="5" fill="#eff4ff"/><text x="445" y="87" text-anchor="middle" fill="#1e293b" font-size="9.5">HIS</text>
+          <rect x="410" y="100" width="70" height="24" rx="5" fill="#eff4ff"/><text x="445" y="117" text-anchor="middle" fill="#1e293b" font-size="9.5">EMR</text>
+          <rect x="410" y="130" width="70" height="24" rx="5" fill="#eff4ff"/><text x="445" y="147" text-anchor="middle" fill="#1e293b" font-size="9.5">LIS/PACS</text>
           <!-- SDR -->
-          <rect x="520" y="96" width="80" height="60" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="560" y="118" text-anchor="middle" fill="#232937" font-size="11.5" font-weight="700">SDR</text><text x="560" y="134" text-anchor="middle" fill="#5a6270" font-size="8.5">逐个接+清洗</text>
-          <rect x="500" y="182" width="120" height="40" rx="8" fill="#0f1729"/><text x="560" y="207" text-anchor="middle" fill="#e3a94a" font-size="11" font-weight="700">智能体(走 SDR)</text>
-          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#cdb)"><line x1="480" y1="82" x2="516" y2="112"/><line x1="480" y1="112" x2="516" y2="122"/><line x1="480" y1="142" x2="516" y2="134"/><line x1="560" y1="156" x2="560" y2="178"/></g>
-          <text x="545" y="248" text-anchor="middle" fill="#c8862a" font-size="10.5" font-weight="700">✓ SDR 对接多个系统,活多点</text>
+          <rect x="520" y="96" width="80" height="60" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="2"/><text x="560" y="118" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">SDR</text><text x="560" y="134" text-anchor="middle" fill="#64748b" font-size="8.5">逐个接+清洗</text>
+          <rect x="500" y="182" width="120" height="40" rx="8" fill="#1e293b"/><text x="560" y="207" text-anchor="middle" fill="#3b73f0" font-size="11" font-weight="700">智能体(走 SDR)</text>
+          <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#cdb)"><line x1="480" y1="82" x2="516" y2="112"/><line x1="480" y1="112" x2="516" y2="122"/><line x1="480" y1="142" x2="516" y2="134"/><line x1="560" y1="156" x2="560" y2="178"/></g>
+          <text x="545" y="248" text-anchor="middle" fill="#2563eb" font-size="10.5" font-weight="700">✓ SDR 对接多个系统,活多点</text>
           <!-- 底部小结 -->
-          <rect x="30" y="270" width="660" height="40" rx="8" fill="#0f1729"/>
-          <text x="360" y="288" text-anchor="middle" fill="#e3a94a" font-size="11.5" font-weight="700">关键:智能体永远走 SDR 取数,从不直连医院数据库</text>
+          <rect x="30" y="270" width="660" height="40" rx="8" fill="#1e293b"/>
+          <text x="360" y="288" text-anchor="middle" fill="#3b73f0" font-size="11.5" font-weight="700">关键:智能体永远走 SDR 取数,从不直连医院数据库</text>
           <text x="360" y="303" text-anchor="middle" fill="#9aa6bd" font-size="10">区别只在 SDR 抽哪:有 CDR 就抽 CDR(省事) · 没 CDR 就逐个接业务系统(费点劲)</text>
         </svg>
         <p class="cap">SDR 是智能体取数的唯一入口:有 CDR 时 SDR 抽 CDR(左),没 CDR 时 SDR 直接接各业务系统(右)。智能体从不直连医院数据库</p>
@@ -615,34 +615,34 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       </div>
       <div class="diagram">
         <svg viewBox="0 0 720 300" role="img" aria-label="五层拆解到上线流程图">
-          <defs><marker id="m4a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
-          <text x="20" y="26" fill="#c8862a" font-size="12.5" font-weight="700">第一层:五层拆解(把隐性经验拆成可执行结构)</text>
+          <defs><marker id="m4a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+          <text x="20" y="26" fill="#2563eb" font-size="12.5" font-weight="700">第一层:五层拆解(把隐性经验拆成可执行结构)</text>
           <g font-size="11" font-weight="700">
-            <rect x="20" y="38" width="120" height="44" rx="8" fill="#0f1729"/><text x="80" y="65" text-anchor="middle" fill="#eef1f7">Workflow</text>
-            <rect x="160" y="38" width="120" height="44" rx="8" fill="#0f1729"/><text x="220" y="65" text-anchor="middle" fill="#eef1f7">节点数据流</text>
-            <rect x="300" y="38" width="120" height="44" rx="8" fill="#0f1729"/><text x="360" y="65" text-anchor="middle" fill="#eef1f7">Playbook 规则</text>
-            <rect x="440" y="38" width="120" height="44" rx="8" fill="#0f1729"/><text x="500" y="65" text-anchor="middle" fill="#eef1f7">边界</text>
+            <rect x="20" y="38" width="120" height="44" rx="8" fill="#1e293b"/><text x="80" y="65" text-anchor="middle" fill="#eef1f7">Workflow</text>
+            <rect x="160" y="38" width="120" height="44" rx="8" fill="#1e293b"/><text x="220" y="65" text-anchor="middle" fill="#eef1f7">节点数据流</text>
+            <rect x="300" y="38" width="120" height="44" rx="8" fill="#1e293b"/><text x="360" y="65" text-anchor="middle" fill="#eef1f7">Playbook 规则</text>
+            <rect x="440" y="38" width="120" height="44" rx="8" fill="#1e293b"/><text x="500" y="65" text-anchor="middle" fill="#eef1f7">边界</text>
             <rect x="580" y="38" width="120" height="44" rx="8" fill="#b5433a"/><text x="640" y="65" text-anchor="middle" fill="#fff">异常</text>
           </g>
-          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m4a)"><line x1="140" y1="60" x2="156" y2="60"/><line x1="280" y1="60" x2="296" y2="60"/><line x1="420" y1="60" x2="436" y2="60"/><line x1="560" y1="60" x2="576" y2="60"/></g>
-          <text x="360" y="106" text-anchor="middle" fill="#5a6270" font-size="10.5">↓ 映射到 ↓</text>
-          <text x="20" y="130" fill="#c8862a" font-size="12.5" font-weight="700">第二层:Agent 六组件</text>
+          <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#m4a)"><line x1="140" y1="60" x2="156" y2="60"/><line x1="280" y1="60" x2="296" y2="60"/><line x1="420" y1="60" x2="436" y2="60"/><line x1="560" y1="60" x2="576" y2="60"/></g>
+          <text x="360" y="106" text-anchor="middle" fill="#64748b" font-size="10.5">↓ 映射到 ↓</text>
+          <text x="20" y="130" fill="#2563eb" font-size="12.5" font-weight="700">第二层:Agent 六组件</text>
           <g font-size="11" font-weight="700">
-            <rect x="20" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="74" y="167" text-anchor="middle" fill="#232937">角色</text>
-            <rect x="138" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="192" y="167" text-anchor="middle" fill="#232937">Prompt</text>
-            <rect x="256" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="310" y="167" text-anchor="middle" fill="#232937">知识库</text>
-            <rect x="374" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="428" y="167" text-anchor="middle" fill="#232937">技能</text>
-            <rect x="492" y="142" width="100" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="542" y="167" text-anchor="middle" fill="#232937">工具</text>
-            <rect x="602" y="142" width="98" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="651" y="167" text-anchor="middle" fill="#232937">记忆</text>
+            <rect x="20" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="74" y="167" text-anchor="middle" fill="#1e293b">角色</text>
+            <rect x="138" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="192" y="167" text-anchor="middle" fill="#1e293b">Prompt</text>
+            <rect x="256" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="310" y="167" text-anchor="middle" fill="#1e293b">知识库</text>
+            <rect x="374" y="142" width="108" height="40" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="428" y="167" text-anchor="middle" fill="#1e293b">技能</text>
+            <rect x="492" y="142" width="100" height="40" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="542" y="167" text-anchor="middle" fill="#1e293b">工具</text>
+            <rect x="602" y="142" width="98" height="40" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="651" y="167" text-anchor="middle" fill="#1e293b">记忆</text>
           </g>
-          <text x="360" y="206" text-anchor="middle" fill="#5a6270" font-size="10.5">↓ 落地上线 ↓</text>
-          <text x="20" y="230" fill="#2f7d54" font-size="12.5" font-weight="700">第三层:调优上线</text>
+          <text x="360" y="206" text-anchor="middle" fill="#64748b" font-size="10.5">↓ 落地上线 ↓</text>
+          <text x="20" y="230" fill="#0284c7" font-size="12.5" font-weight="700">第三层:调优上线</text>
           <g font-size="11" font-weight="700">
-            <rect x="20" y="242" width="150" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="95" y="269" text-anchor="middle" fill="#232937">写 Prompt / 编排 Skill</text>
-            <rect x="210" y="242" width="130" height="44" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/><text x="275" y="269" text-anchor="middle" fill="#232937">A/B 测试挑最优</text>
-            <rect x="380" y="242" width="320" height="44" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="540" y="264" text-anchor="middle" fill="#232937">Eval 门禁 · 准确率≥90%</text><text x="540" y="279" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">不达标不放行</text>
+            <rect x="20" y="242" width="150" height="44" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/><text x="95" y="269" text-anchor="middle" fill="#1e293b">写 Prompt / 编排 Skill</text>
+            <rect x="210" y="242" width="130" height="44" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/><text x="275" y="269" text-anchor="middle" fill="#1e293b">A/B 测试挑最优</text>
+            <rect x="380" y="242" width="320" height="44" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="2"/><text x="540" y="264" text-anchor="middle" fill="#1e293b">Eval 门禁 · 准确率≥90%</text><text x="540" y="279" text-anchor="middle" fill="#64748b" font-size="9.5" font-weight="400">不达标不放行</text>
           </g>
-          <g stroke="#2f7d54" stroke-width="1.5" marker-end="url(#m4a)"><line x1="170" y1="264" x2="206" y2="264"/><line x1="340" y1="264" x2="376" y2="264"/></g>
+          <g stroke="#0284c7" stroke-width="1.5" marker-end="url(#m4a)"><line x1="170" y1="264" x2="206" y2="264"/><line x1="340" y1="264" x2="376" y2="264"/></g>
         </svg>
         <p class="cap">从拆解到上线三层:五层拆解(红色"异常"最易漏)→ 映射进六组件 → 调优后过 Eval 门禁(≥90%)才放行</p>
       </div>
@@ -683,17 +683,17 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       </div>
       <div class="diagram">
         <svg viewBox="0 0 720 180" role="img" aria-label="工作台五步走流程">
-          <defs><marker id="m5a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <defs><marker id="m5a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
           <g font-size="11.5" font-weight="700">
-            <rect x="10" y="50" width="120" height="70" rx="8" fill="#0f1729"/><text x="70" y="76" text-anchor="middle" fill="#e3a94a">① 建模</text><text x="70" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">api-er-modeling</text><text x="70" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">ER模型+真实数据演练</text>
-            <rect x="150" y="50" width="120" height="70" rx="8" fill="#0f1729"/><text x="210" y="76" text-anchor="middle" fill="#e3a94a">② 后端</text><text x="210" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">api-guide</text><text x="210" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">FastAPI+SQLAlchemy</text>
-            <rect x="290" y="50" width="120" height="70" rx="8" fill="#0f1729"/><text x="350" y="76" text-anchor="middle" fill="#e3a94a">③ 前端</text><text x="350" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">vben-guide</text><text x="350" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">Vue3+TS+Vben</text>
-            <rect x="430" y="50" width="120" height="70" rx="8" fill="#0f1729"/><text x="490" y="76" text-anchor="middle" fill="#e3a94a">④ 联调</text><text x="490" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">跑真实数据</text><text x="490" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">非 mock</text>
-            <rect x="570" y="50" width="140" height="70" rx="8" fill="#2f7d54"/><text x="640" y="76" text-anchor="middle" fill="#fff">⑤ 上线</text><text x="640" y="94" text-anchor="middle" fill="#cfe8da" font-size="10" font-weight="400">极库云→容器云</text><text x="640" y="108" text-anchor="middle" fill="#cfe8da" font-size="9.5" font-weight="400">给可访问URL</text>
+            <rect x="10" y="50" width="120" height="70" rx="8" fill="#1e293b"/><text x="70" y="76" text-anchor="middle" fill="#3b73f0">① 建模</text><text x="70" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">api-er-modeling</text><text x="70" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">ER模型+真实数据演练</text>
+            <rect x="150" y="50" width="120" height="70" rx="8" fill="#1e293b"/><text x="210" y="76" text-anchor="middle" fill="#3b73f0">② 后端</text><text x="210" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">api-guide</text><text x="210" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">FastAPI+SQLAlchemy</text>
+            <rect x="290" y="50" width="120" height="70" rx="8" fill="#1e293b"/><text x="350" y="76" text-anchor="middle" fill="#3b73f0">③ 前端</text><text x="350" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">vben-guide</text><text x="350" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">Vue3+TS+Vben</text>
+            <rect x="430" y="50" width="120" height="70" rx="8" fill="#1e293b"/><text x="490" y="76" text-anchor="middle" fill="#3b73f0">④ 联调</text><text x="490" y="94" text-anchor="middle" fill="#9aa6bd" font-size="10" font-weight="400">跑真实数据</text><text x="490" y="108" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">非 mock</text>
+            <rect x="570" y="50" width="140" height="70" rx="8" fill="#0284c7"/><text x="640" y="76" text-anchor="middle" fill="#fff">⑤ 上线</text><text x="640" y="94" text-anchor="middle" fill="#e0f2fe" font-size="10" font-weight="400">极库云→容器云</text><text x="640" y="108" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="400">给可访问URL</text>
           </g>
-          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m5a)"><line x1="130" y1="85" x2="146" y2="85"/><line x1="270" y1="85" x2="286" y2="85"/><line x1="410" y1="85" x2="426" y2="85"/><line x1="550" y1="85" x2="566" y2="85"/></g>
-          <text x="360" y="26" text-anchor="middle" fill="#5a6270" font-size="11">上一步的输出 = 下一步的输入 · 建模不通不许往下走</text>
-          <text x="360" y="152" text-anchor="middle" fill="#5a6270" font-size="11">节奏 3/7/14 天版本 · 先 demo 后完整(别一口气憋大的)</text>
+          <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#m5a)"><line x1="130" y1="85" x2="146" y2="85"/><line x1="270" y1="85" x2="286" y2="85"/><line x1="410" y1="85" x2="426" y2="85"/><line x1="550" y1="85" x2="566" y2="85"/></g>
+          <text x="360" y="26" text-anchor="middle" fill="#64748b" font-size="11">上一步的输出 = 下一步的输入 · 建模不通不许往下走</text>
+          <text x="360" y="152" text-anchor="middle" fill="#64748b" font-size="11">节奏 3/7/14 天版本 · 先 demo 后完整(别一口气憋大的)</text>
         </svg>
         <p class="cap">工作台五步走:建模 → 后端 → 前端 → 联调(真实数据)→ 上线(极库云→容器云给 URL)</p>
       </div>
@@ -736,15 +736,15 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       </div>
       <div class="diagram">
         <svg viewBox="0 0 720 170" role="img" aria-label="上线链路图">
-          <defs><marker id="m6a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <defs><marker id="m6a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
           <g font-size="11.5" font-weight="700">
-            <rect x="10" y="50" width="110" height="60" rx="8" fill="#ece8de"/><text x="65" y="84" text-anchor="middle" fill="#232937">写代码</text>
-            <rect x="160" y="42" width="170" height="76" rx="8" fill="#fff" stroke="#c8862a" stroke-width="2"/><text x="245" y="66" text-anchor="middle" fill="#232937">极库云</text><text x="245" y="84" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">代码托管+版本管理</text><text x="245" y="98" text-anchor="middle" fill="#5a6270" font-size="9.5" font-weight="400">知识库中心 · CI 流水线</text>
-            <rect x="370" y="50" width="150" height="60" rx="8" fill="#0f1729"/><text x="445" y="78" text-anchor="middle" fill="#e3a94a">360智汇云容器云</text><text x="445" y="95" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">部署</text>
-            <rect x="560" y="50" width="150" height="60" rx="8" fill="#2f7d54"/><text x="635" y="78" text-anchor="middle" fill="#fff">可访问 URL</text><text x="635" y="95" text-anchor="middle" fill="#cfe8da" font-size="9.5" font-weight="400">交给客户</text>
+            <rect x="10" y="50" width="110" height="60" rx="8" fill="#eff4ff"/><text x="65" y="84" text-anchor="middle" fill="#1e293b">写代码</text>
+            <rect x="160" y="42" width="170" height="76" rx="8" fill="#fff" stroke="#2563eb" stroke-width="2"/><text x="245" y="66" text-anchor="middle" fill="#1e293b">极库云</text><text x="245" y="84" text-anchor="middle" fill="#64748b" font-size="9.5" font-weight="400">代码托管+版本管理</text><text x="245" y="98" text-anchor="middle" fill="#64748b" font-size="9.5" font-weight="400">知识库中心 · CI 流水线</text>
+            <rect x="370" y="50" width="150" height="60" rx="8" fill="#1e293b"/><text x="445" y="78" text-anchor="middle" fill="#3b73f0">360智汇云容器云</text><text x="445" y="95" text-anchor="middle" fill="#9aa6bd" font-size="9.5" font-weight="400">部署</text>
+            <rect x="560" y="50" width="150" height="60" rx="8" fill="#0284c7"/><text x="635" y="78" text-anchor="middle" fill="#fff">可访问 URL</text><text x="635" y="95" text-anchor="middle" fill="#e0f2fe" font-size="9.5" font-weight="400">交给客户</text>
           </g>
-          <g stroke="#c8862a" stroke-width="1.5" marker-end="url(#m6a)"><line x1="120" y1="80" x2="156" y2="80"/><line x1="330" y1="80" x2="366" y2="80"/><line x1="520" y1="80" x2="556" y2="80"/></g>
-          <text x="360" y="26" text-anchor="middle" fill="#5a6270" font-size="11">极库云的三重身份都在这一步:代码托管 + 知识库中心 + CI 流水线</text>
+          <g stroke="#2563eb" stroke-width="1.5" marker-end="url(#m6a)"><line x1="120" y1="80" x2="156" y2="80"/><line x1="330" y1="80" x2="366" y2="80"/><line x1="520" y1="80" x2="556" y2="80"/></g>
+          <text x="360" y="26" text-anchor="middle" fill="#64748b" font-size="11">极库云的三重身份都在这一步:代码托管 + 知识库中心 + CI 流水线</text>
           <text x="360" y="142" text-anchor="middle" fill="#b5433a" font-size="10.5" font-weight="700">全程守住:鉴权走通 · hospital_id 多租户隔离 · 无硬编码密钥</text>
         </svg>
         <p class="cap">上线链路:写代码 → 极库云(托管/知识库/CI 三重身份)→ 360 智汇云容器云部署 → 给客户可访问 URL</p>
@@ -774,17 +774,17 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       <p class="body"><b>上线后盯使用率:</b>30 天抓小问题、60 天看真实活跃率(掉了一线回访)、90 天收新需求评二期看留存。</p>
       <div class="diagram">
         <svg viewBox="0 0 720 180" role="img" aria-label="三轮定稿漏斗图">
-          <defs><marker id="m7a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
-          <text x="20" y="30" fill="#c8862a" font-size="12.5" font-weight="700">三轮递进定稿 · 问题从粗到细,标准从松到严</text>
-          <rect x="20" y="46" width="680" height="32" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
-          <text x="360" y="67" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">第一轮 · 看大方向(对不对)</text>
-          <rect x="120" y="88" width="480" height="32" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
-          <text x="360" y="109" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">第二轮 · 抠细节(逻辑 / 字段)</text>
-          <rect x="240" y="130" width="240" height="32" rx="8" fill="#0f1729"/>
-          <text x="360" y="151" text-anchor="middle" fill="#e3a94a" font-size="12" font-weight="700">第三轮 · 定死(体验 + 全量回归)</text>
-          <g stroke="#c8862a" stroke-width="1.2" marker-end="url(#m7a)"><line x1="360" y1="78" x2="360" y2="84"/><line x1="360" y1="120" x2="360" y2="126"/></g>
-          <text x="660" y="90" fill="#5a6270" font-size="10.5">← 收窄</text>
-          <text x="660" y="142" fill="#5a6270" font-size="10.5">→ 定死</text>
+          <defs><marker id="m7a" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+          <text x="20" y="30" fill="#2563eb" font-size="12.5" font-weight="700">三轮递进定稿 · 问题从粗到细,标准从松到严</text>
+          <rect x="20" y="46" width="680" height="32" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+          <text x="360" y="67" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">第一轮 · 看大方向(对不对)</text>
+          <rect x="120" y="88" width="480" height="32" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+          <text x="360" y="109" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">第二轮 · 抠细节(逻辑 / 字段)</text>
+          <rect x="240" y="130" width="240" height="32" rx="8" fill="#1e293b"/>
+          <text x="360" y="151" text-anchor="middle" fill="#3b73f0" font-size="12" font-weight="700">第三轮 · 定死(体验 + 全量回归)</text>
+          <g stroke="#2563eb" stroke-width="1.2" marker-end="url(#m7a)"><line x1="360" y1="78" x2="360" y2="84"/><line x1="360" y1="120" x2="360" y2="126"/></g>
+          <text x="660" y="90" fill="#64748b" font-size="10.5">← 收窄</text>
+          <text x="660" y="142" fill="#64748b" font-size="10.5">→ 定死</text>
         </svg>
         <p class="cap">三轮定稿像漏斗:第一轮看方向 → 第二轮抠细节 → 第三轮定死。验收标准一轮比一轮严</p>
       </div>
@@ -868,38 +868,38 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       </table></div>
       <div class="diagram">
         <svg viewBox="0 0 760 360" role="img" aria-label="医院三网与SDR部署拓扑图">
-          <defs><marker id="netarw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <defs><marker id="netarw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
           <!-- 内网区 -->
           <rect x="16" y="20" width="330" height="320" rx="10" fill="none" stroke="#b5433a" stroke-width="1.5" stroke-dasharray="6 4"/>
           <text x="30" y="42" fill="#b5433a" font-size="12.5" font-weight="700">① 内网 · 业务网(物理隔离,最严)</text>
           <!-- 业务系统 -->
-          <rect x="34" y="58" width="132" height="30" rx="6" fill="#ece8de"/><text x="100" y="78" text-anchor="middle" fill="#232937" font-size="10.5" font-weight="700">HIS 挂号收费</text>
-          <rect x="34" y="94" width="132" height="30" rx="6" fill="#ece8de"/><text x="100" y="114" text-anchor="middle" fill="#232937" font-size="10.5" font-weight="700">EMR / LIS / PACS</text>
-          <text x="100" y="140" text-anchor="middle" fill="#5a6270" font-size="9.5">业务数据源头</text>
+          <rect x="34" y="58" width="132" height="30" rx="6" fill="#eff4ff"/><text x="100" y="78" text-anchor="middle" fill="#1e293b" font-size="10.5" font-weight="700">HIS 挂号收费</text>
+          <rect x="34" y="94" width="132" height="30" rx="6" fill="#eff4ff"/><text x="100" y="114" text-anchor="middle" fill="#1e293b" font-size="10.5" font-weight="700">EMR / LIS / PACS</text>
+          <text x="100" y="140" text-anchor="middle" fill="#64748b" font-size="9.5">业务数据源头</text>
           <!-- SDR + 私有云智能体 -->
-          <rect x="196" y="58" width="132" height="66" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="2"/><text x="262" y="82" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">SDR</text><text x="262" y="99" text-anchor="middle" fill="#5a6270" font-size="9">部署进内网</text><text x="262" y="113" text-anchor="middle" fill="#5a6270" font-size="9">只读授权 View 取数</text>
-          <rect x="196" y="150" width="132" height="66" rx="8" fill="#0f1729"/><text x="262" y="174" text-anchor="middle" fill="#e3a94a" font-size="11" font-weight="700">360 私有云</text><text x="262" y="190" text-anchor="middle" fill="#9aa6bd" font-size="9">专属智能体实例</text><text x="262" y="204" text-anchor="middle" fill="#9aa6bd" font-size="9">离线模型·数据不出院</text>
-          <line x1="166" y1="88" x2="192" y2="88" stroke="#c8862a" stroke-width="1.5" marker-end="url(#netarw)"/>
-          <line x1="262" y1="124" x2="262" y2="146" stroke="#c8862a" stroke-width="1.5" marker-end="url(#netarw)"/>
-          <text x="181" y="252" text-anchor="middle" fill="#5a6270" font-size="9.5">SDR/智能体都在内网,数据不出这道墙</text>
+          <rect x="196" y="58" width="132" height="66" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="2"/><text x="262" y="82" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">SDR</text><text x="262" y="99" text-anchor="middle" fill="#64748b" font-size="9">部署进内网</text><text x="262" y="113" text-anchor="middle" fill="#64748b" font-size="9">只读授权 View 取数</text>
+          <rect x="196" y="150" width="132" height="66" rx="8" fill="#1e293b"/><text x="262" y="174" text-anchor="middle" fill="#3b73f0" font-size="11" font-weight="700">360 私有云</text><text x="262" y="190" text-anchor="middle" fill="#9aa6bd" font-size="9">专属智能体实例</text><text x="262" y="204" text-anchor="middle" fill="#9aa6bd" font-size="9">离线模型·数据不出院</text>
+          <line x1="166" y1="88" x2="192" y2="88" stroke="#2563eb" stroke-width="1.5" marker-end="url(#netarw)"/>
+          <line x1="262" y1="124" x2="262" y2="146" stroke="#2563eb" stroke-width="1.5" marker-end="url(#netarw)"/>
+          <text x="181" y="252" text-anchor="middle" fill="#64748b" font-size="9.5">SDR/智能体都在内网,数据不出这道墙</text>
           <!-- 办公网区 -->
-          <rect x="16" y="270" width="330" height="70" rx="10" fill="none" stroke="#2f7d54" stroke-width="1.5"/>
-          <text x="30" y="292" fill="#2f7d54" font-size="12.5" font-weight="700">② 办公网(用户在这用)</text>
-          <rect x="34" y="300" width="150" height="30" rx="6" fill="#fff" stroke="#2f7d54" stroke-width="1.2"/><text x="109" y="320" text-anchor="middle" fill="#232937" font-size="10.5" font-weight="700">医生办公终端 / 浏览器</text>
-          <line x1="262" y1="216" x2="262" y2="300" stroke="#2f7d54" stroke-width="1.3" marker-end="url(#netarw)"/><text x="300" y="262" fill="#2f7d54" font-size="9">打通访问</text>
+          <rect x="16" y="270" width="330" height="70" rx="10" fill="none" stroke="#0284c7" stroke-width="1.5"/>
+          <text x="30" y="292" fill="#0284c7" font-size="12.5" font-weight="700">② 办公网(用户在这用)</text>
+          <rect x="34" y="300" width="150" height="30" rx="6" fill="#fff" stroke="#0284c7" stroke-width="1.2"/><text x="109" y="320" text-anchor="middle" fill="#1e293b" font-size="10.5" font-weight="700">医生办公终端 / 浏览器</text>
+          <line x1="262" y1="216" x2="262" y2="300" stroke="#0284c7" stroke-width="1.3" marker-end="url(#netarw)"/><text x="300" y="262" fill="#0284c7" font-size="9">打通访问</text>
           <!-- 外网区 -->
-          <rect x="430" y="120" width="314" height="150" rx="10" fill="none" stroke="#c8862a" stroke-width="1.5"/>
-          <text x="444" y="142" fill="#c8862a" font-size="12.5" font-weight="700">③ 外网 · 互联网</text>
-          <rect x="470" y="156" width="240" height="40" rx="8" fill="#0f1729"/><text x="590" y="180" text-anchor="middle" fill="#e3a94a" font-size="11" font-weight="700">360 智汇云容器云(工作台上线)</text>
-          <rect x="470" y="208" width="240" height="40" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.2"/><text x="590" y="228" text-anchor="middle" fill="#232937" font-size="10.5">云端管控 / 版本 / 知识库中心</text>
+          <rect x="430" y="120" width="314" height="150" rx="10" fill="none" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="444" y="142" fill="#2563eb" font-size="12.5" font-weight="700">③ 外网 · 互联网</text>
+          <rect x="470" y="156" width="240" height="40" rx="8" fill="#1e293b"/><text x="590" y="180" text-anchor="middle" fill="#3b73f0" font-size="11" font-weight="700">360 智汇云容器云(工作台上线)</text>
+          <rect x="470" y="208" width="240" height="40" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.2"/><text x="590" y="228" text-anchor="middle" fill="#1e293b" font-size="10.5">云端管控 / 版本 / 知识库中心</text>
           <!-- VPN 通道:内网到外网 -->
           <path d="M328 175 C 390 175, 400 176, 466 176" fill="none" stroke="#b5433a" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#netarw)"/>
           <text x="398" y="166" text-anchor="middle" fill="#b5433a" font-size="9.5" font-weight="700">VPN 通道</text>
-          <text x="398" y="196" text-anchor="middle" fill="#5a6270" font-size="8.5">SDR 主动出站,客户不用开入站端口</text>
+          <text x="398" y="196" text-anchor="middle" fill="#64748b" font-size="8.5">SDR 主动出站,客户不用开入站端口</text>
           <!-- 底部铁律 -->
           <rect x="430" y="288" width="314" height="42" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/>
-          <text x="587" y="306" text-anchor="middle" fill="#232937" font-size="10" font-weight="700">数据只出结果、不出原始;方向永远内网→外网主动推</text>
-          <text x="587" y="322" text-anchor="middle" fill="#5a6270" font-size="9">外网进不了内网,合规硬约束</text>
+          <text x="587" y="306" text-anchor="middle" fill="#1e293b" font-size="10" font-weight="700">数据只出结果、不出原始;方向永远内网→外网主动推</text>
+          <text x="587" y="322" text-anchor="middle" fill="#64748b" font-size="9">外网进不了内网,合规硬约束</text>
         </svg>
         <p class="cap">医院三网拓扑:内网(业务数据+SDR+私有云智能体,数据不出这道墙)· 办公网(用户访问)· 外网(容器云/管控)。VPN 通道让 SDR <b>主动出站</b>连云端,方向永远是内网→外网推,外网进不了内网</p>
       </div>
@@ -921,24 +921,24 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       </div>
       <div class="diagram">
         <svg viewBox="0 0 720 250" role="img" aria-label="智能体标品资产库结构图">
-          <defs><marker id="astarw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <defs><marker id="astarw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker></defs>
           <!-- 资产库根 -->
-          <rect x="16" y="102" width="150" height="46" rx="8" fill="#0f1729"/><text x="91" y="123" text-anchor="middle" fill="#e3a94a" font-size="12" font-weight="700">标品资产库</text><text x="91" y="139" text-anchor="middle" fill="#9aa6bd" font-size="9.5">按智能体维度集中管</text>
+          <rect x="16" y="102" width="150" height="46" rx="8" fill="#1e293b"/><text x="91" y="123" text-anchor="middle" fill="#3b73f0" font-size="12" font-weight="700">标品资产库</text><text x="91" y="139" text-anchor="middle" fill="#9aa6bd" font-size="9.5">按智能体维度集中管</text>
           <!-- 三个智能体目录 -->
-          <rect x="230" y="20" width="180" height="46" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="245" y="40" fill="#232937" font-size="11" font-weight="700">人事基础库智能体</text><text x="245" y="56" fill="#2f7d54" font-size="9">● 已完成</text>
-          <rect x="230" y="102" width="180" height="46" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="245" y="122" fill="#232937" font-size="11" font-weight="700">医疗质量智能体</text><text x="245" y="138" fill="#c8862a" font-size="9">● 开发中</text>
-          <rect x="230" y="184" width="180" height="46" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="245" y="204" fill="#232937" font-size="11" font-weight="700">运营决策智能体</text><text x="245" y="220" fill="#5a6270" font-size="9">● Demo 阶段</text>
-          <g stroke="#c8862a" stroke-width="1.3" marker-end="url(#astarw)"><line x1="166" y1="118" x2="226" y2="46"/><line x1="166" y1="125" x2="226" y2="125"/><line x1="166" y1="132" x2="226" y2="204"/></g>
+          <rect x="230" y="20" width="180" height="46" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="245" y="40" fill="#1e293b" font-size="11" font-weight="700">人事基础库智能体</text><text x="245" y="56" fill="#0284c7" font-size="9">● 已完成</text>
+          <rect x="230" y="102" width="180" height="46" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="245" y="122" fill="#1e293b" font-size="11" font-weight="700">医疗质量智能体</text><text x="245" y="138" fill="#2563eb" font-size="9">● 开发中</text>
+          <rect x="230" y="184" width="180" height="46" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/><text x="245" y="204" fill="#1e293b" font-size="11" font-weight="700">运营决策智能体</text><text x="245" y="220" fill="#64748b" font-size="9">● Demo 阶段</text>
+          <g stroke="#2563eb" stroke-width="1.3" marker-end="url(#astarw)"><line x1="166" y1="118" x2="226" y2="46"/><line x1="166" y1="125" x2="226" y2="125"/><line x1="166" y1="132" x2="226" y2="204"/></g>
           <!-- 一个目录挂五类产物 -->
-          <text x="474" y="38" fill="#5a6270" font-size="10" font-style="italic">每个智能体目录下统一挂:</text>
+          <text x="474" y="38" fill="#64748b" font-size="10" font-style="italic">每个智能体目录下统一挂:</text>
           <g font-size="10.5" font-weight="700">
-            <rect x="474" y="52" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="69" text-anchor="middle" fill="#232937">PRD</text>
-            <rect x="474" y="84" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="101" text-anchor="middle" fill="#232937">原型</text>
-            <rect x="474" y="116" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="133" text-anchor="middle" fill="#232937">宣传材料</text>
-            <rect x="474" y="148" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="165" text-anchor="middle" fill="#232937">投招标文件</text>
-            <rect x="474" y="180" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="197" text-anchor="middle" fill="#232937">实施计划表</text>
+            <rect x="474" y="52" width="228" height="26" rx="5" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/><text x="588" y="69" text-anchor="middle" fill="#1e293b">PRD</text>
+            <rect x="474" y="84" width="228" height="26" rx="5" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/><text x="588" y="101" text-anchor="middle" fill="#1e293b">原型</text>
+            <rect x="474" y="116" width="228" height="26" rx="5" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/><text x="588" y="133" text-anchor="middle" fill="#1e293b">宣传材料</text>
+            <rect x="474" y="148" width="228" height="26" rx="5" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/><text x="588" y="165" text-anchor="middle" fill="#1e293b">投招标文件</text>
+            <rect x="474" y="180" width="228" height="26" rx="5" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/><text x="588" y="197" text-anchor="middle" fill="#1e293b">实施计划表</text>
           </g>
-          <path d="M410 118 C 440 118, 445 118, 470 100" fill="none" stroke="#94a0a8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#astarw)"/>
+          <path d="M410 118 C 440 118, 445 118, 470 100" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#astarw)"/>
         </svg>
         <p class="cap">智能体标品资产库:按智能体维度建目录,每个智能体一个文件夹,下挂 PRD/原型/宣传/投招标/实施计划表五类产物,首页标实施状态(Demo/开发中/已完成)</p>
       </div>
@@ -956,42 +956,42 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       <div class="diagram">
         <svg viewBox="0 0 760 240" role="img" aria-label="需求管理流程图">
           <defs>
-            <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker>
+            <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker>
           </defs>
           <!-- 用户10需求 -->
-          <rect x="8" y="90" width="120" height="60" rx="8" fill="#0f1729"/>
+          <rect x="8" y="90" width="120" height="60" rx="8" fill="#1e293b"/>
           <text x="68" y="114" text-anchor="middle" fill="#eef1f7" font-size="13" font-weight="700">用户 10 个需求</text>
           <text x="68" y="133" text-anchor="middle" fill="#9aa6bd" font-size="11">医疗质量风险管理</text>
           <!-- 极库云拆条 -->
-          <rect x="188" y="90" width="120" height="60" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/>
-          <text x="248" y="114" text-anchor="middle" fill="#232937" font-size="13" font-weight="700">极库云拆条</text>
-          <text x="248" y="133" text-anchor="middle" fill="#5a6270" font-size="11">逐条拆成 10 个</text>
+          <rect x="188" y="90" width="120" height="60" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="248" y="114" text-anchor="middle" fill="#1e293b" font-size="13" font-weight="700">极库云拆条</text>
+          <text x="248" y="133" text-anchor="middle" fill="#64748b" font-size="11">逐条拆成 10 个</text>
           <!-- 三个版本 -->
-          <rect x="368" y="18" width="150" height="52" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
-          <text x="443" y="40" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">v1.0.0 · P0</text>
-          <text x="443" y="57" text-anchor="middle" fill="#5a6270" font-size="10.5">最核心先上</text>
-          <rect x="368" y="94" width="150" height="52" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
-          <text x="443" y="116" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">v1.0.1 · P1</text>
-          <text x="443" y="133" text-anchor="middle" fill="#5a6270" font-size="10.5">第二批做</text>
-          <rect x="368" y="170" width="150" height="52" rx="8" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/>
-          <text x="443" y="192" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">v1.0.2 · P2</text>
-          <text x="443" y="209" text-anchor="middle" fill="#5a6270" font-size="10.5">往后放</text>
+          <rect x="368" y="18" width="150" height="52" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+          <text x="443" y="40" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">v1.0.0 · P0</text>
+          <text x="443" y="57" text-anchor="middle" fill="#64748b" font-size="10.5">最核心先上</text>
+          <rect x="368" y="94" width="150" height="52" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+          <text x="443" y="116" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">v1.0.1 · P1</text>
+          <text x="443" y="133" text-anchor="middle" fill="#64748b" font-size="10.5">第二批做</text>
+          <rect x="368" y="170" width="150" height="52" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
+          <text x="443" y="192" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">v1.0.2 · P2</text>
+          <text x="443" y="209" text-anchor="middle" fill="#64748b" font-size="10.5">往后放</text>
           <!-- 交付拆任务 -->
-          <rect x="578" y="64" width="120" height="52" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/>
-          <text x="638" y="86" text-anchor="middle" fill="#232937" font-size="12.5" font-weight="700">交付拆任务</text>
-          <text x="638" y="103" text-anchor="middle" fill="#5a6270" font-size="10.5">每天更新</text>
+          <rect x="578" y="64" width="120" height="52" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/>
+          <text x="638" y="86" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">交付拆任务</text>
+          <text x="638" y="103" text-anchor="middle" fill="#64748b" font-size="10.5">每天更新</text>
           <!-- 看成果 -->
-          <rect x="578" y="150" width="120" height="60" rx="8" fill="#0f1729"/>
-          <text x="638" y="172" text-anchor="middle" fill="#e3a94a" font-size="11.5" font-weight="700">盯进度看成果</text>
+          <rect x="578" y="150" width="120" height="60" rx="8" fill="#1e293b"/>
+          <text x="638" y="172" text-anchor="middle" fill="#3b73f0" font-size="11.5" font-weight="700">盯进度看成果</text>
           <text x="638" y="189" text-anchor="middle" fill="#9aa6bd" font-size="10">纳米Work 看需求</text>
           <text x="638" y="203" text-anchor="middle" fill="#9aa6bd" font-size="10">SEAF 看智能体</text>
           <!-- 箭头 -->
-          <line x1="128" y1="120" x2="184" y2="120" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
-          <line x1="308" y1="112" x2="364" y2="46" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
-          <line x1="308" y1="120" x2="364" y2="120" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
-          <line x1="308" y1="128" x2="364" y2="194" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
-          <line x1="518" y1="90" x2="574" y2="90" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw)"/>
-          <line x1="638" y1="116" x2="638" y2="146" stroke="#2f7d54" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="128" y1="120" x2="184" y2="120" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="308" y1="112" x2="364" y2="46" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="308" y1="120" x2="364" y2="120" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="308" y1="128" x2="364" y2="194" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="518" y1="90" x2="574" y2="90" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arw)"/>
+          <line x1="638" y1="116" x2="638" y2="146" stroke="#0284c7" stroke-width="1.5" marker-end="url(#arw)"/>
         </svg>
         <p class="cap">需求管理流程:用户需求 → 极库云拆条 → 排进迭代版本(P0/P1/P2)→ 交付拆任务日更 → 两个平台看成果</p>
       </div>
@@ -1010,33 +1010,33 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       <div class="diagram">
         <svg viewBox="0 0 720 250" role="img" aria-label="产品复制模式决策图">
           <defs>
-            <marker id="arw2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker>
+            <marker id="arw2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#2563eb"/></marker>
           </defs>
           <!-- 起点 -->
-          <rect x="8" y="98" width="120" height="54" rx="8" fill="#0f1729"/>
+          <rect x="8" y="98" width="120" height="54" rx="8" fill="#1e293b"/>
           <text x="68" y="122" text-anchor="middle" fill="#eef1f7" font-size="13" font-weight="700">复制到新客户</text>
           <text x="68" y="140" text-anchor="middle" fill="#9aa6bd" font-size="10.5">这单怎么走?</text>
           <!-- 判断菱形 -->
-          <path d="M255,125 L305,90 L355,125 L305,160 Z" fill="#faf3e6" stroke="#c8862a" stroke-width="1.5"/>
-          <text x="305" y="122" text-anchor="middle" fill="#232937" font-size="12" font-weight="700">是标品吗?</text>
-          <text x="305" y="138" text-anchor="middle" fill="#5a6270" font-size="10">有说明书?</text>
+          <path d="M255,125 L305,90 L355,125 L305,160 Z" fill="#eff4ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="305" y="122" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">是标品吗?</text>
+          <text x="305" y="138" text-anchor="middle" fill="#64748b" font-size="10">有说明书?</text>
           <!-- 标品 -->
-          <rect x="470" y="18" width="240" height="56" rx="8" fill="#fff" stroke="#2f7d54" stroke-width="1.5"/>
-          <text x="490" y="40" fill="#232937" font-size="12.5" font-weight="700">标品模式</text>
-          <text x="490" y="58" fill="#5a6270" font-size="10.5">照标品说明书 · 极库云建需求排 7 天版本</text>
+          <rect x="470" y="18" width="240" height="56" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/>
+          <text x="490" y="40" fill="#1e293b" font-size="12.5" font-weight="700">标品模式</text>
+          <text x="490" y="58" fill="#64748b" font-size="10.5">照标品说明书 · 极库云建需求排 7 天版本</text>
           <!-- 新增需求 -->
-          <rect x="470" y="97" width="240" height="56" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/>
-          <text x="490" y="119" fill="#232937" font-size="12.5" font-weight="700">定制 · 新增需求(通用)</text>
-          <text x="490" y="137" fill="#5a6270" font-size="10.5">共性/通用功能 —— 可做 · 重走五阶段</text>
+          <rect x="470" y="97" width="240" height="56" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="490" y="119" fill="#1e293b" font-size="12.5" font-weight="700">定制 · 新增需求(通用)</text>
+          <text x="490" y="137" fill="#64748b" font-size="10.5">共性/通用功能 —— 可做 · 重走五阶段</text>
           <!-- 完全定制 -->
           <rect x="470" y="176" width="240" height="56" rx="8" fill="#fff" stroke="#b5433a" stroke-width="1.5"/>
-          <text x="490" y="198" fill="#232937" font-size="12.5" font-weight="700">定制 · 完全定制</text>
-          <text x="490" y="216" fill="#5a6270" font-size="10.5">先评估工作量+预算 —— 再决定接不接</text>
+          <text x="490" y="198" fill="#1e293b" font-size="12.5" font-weight="700">定制 · 完全定制</text>
+          <text x="490" y="216" fill="#64748b" font-size="10.5">先评估工作量+预算 —— 再决定接不接</text>
           <!-- 箭头 -->
-          <line x1="128" y1="125" x2="251" y2="125" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw2)"/>
-          <line x1="355" y1="112" x2="466" y2="52" stroke="#2f7d54" stroke-width="1.5" marker-end="url(#arw2)"/>
-          <text x="400" y="76" fill="#2f7d54" font-size="10.5" font-weight="700">是</text>
-          <line x1="355" y1="125" x2="466" y2="125" stroke="#c8862a" stroke-width="1.5" marker-end="url(#arw2)"/>
+          <line x1="128" y1="125" x2="251" y2="125" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arw2)"/>
+          <line x1="355" y1="112" x2="466" y2="52" stroke="#0284c7" stroke-width="1.5" marker-end="url(#arw2)"/>
+          <text x="400" y="76" fill="#0284c7" font-size="10.5" font-weight="700">是</text>
+          <line x1="355" y1="125" x2="466" y2="125" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arw2)"/>
           <line x1="355" y1="138" x2="466" y2="200" stroke="#b5433a" stroke-width="1.5" marker-end="url(#arw2)"/>
           <text x="392" y="176" fill="#b5433a" font-size="10.5" font-weight="700">否 · 定制</text>
         </svg>

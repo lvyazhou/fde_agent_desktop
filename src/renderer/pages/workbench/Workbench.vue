@@ -39,8 +39,8 @@
         </div>
 
         <!-- 两条线并行推进(流程图) -->
-        <div class="card rounded-2xl p-5 xl:p-6 shrink-0">
-          <div class="flex items-center justify-between mb-4">
+        <div class="card rounded-2xl px-5 py-6 xl:px-6 xl:py-7 shrink-0">
+          <div class="flex items-center justify-between mb-5">
             <div class="text-[13px] font-semibold text-slate-700 flex items-center gap-2">
               <i class="fa-solid fa-route text-blue-600"></i>两条线并行推进
             </div>
@@ -68,13 +68,13 @@
             </div>
           </div>
           <!-- 需求主线 -->
-          <div class="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+          <div class="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
             <span class="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 w-24">
               <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px] font-bold shrink-0">1</span>
               需求主线
             </span>
             <template v-for="(node, i) in demandLine" :key="'d'+i">
-              <div class="shrink-0 px-3.5 py-2.5 rounded-lg bg-blue-50 text-[12px] text-slate-700 whitespace-nowrap">{{ node }}</div>
+              <div class="shrink-0 px-3.5 py-3 rounded-lg bg-blue-50 text-[12px] text-slate-700 whitespace-nowrap">{{ node }}</div>
               <i v-if="i < demandLine.length - 1" class="fa-solid fa-arrow-right text-blue-600/50 text-[10px] shrink-0"></i>
             </template>
           </div>
@@ -86,7 +86,7 @@
             </span>
             <template v-for="(node, i) in envLine" :key="'e'+i">
               <div
-                class="shrink-0 px-3.5 py-2 rounded-lg whitespace-nowrap flex flex-col items-start leading-tight"
+                class="shrink-0 px-3.5 py-2.5 rounded-lg whitespace-nowrap flex flex-col items-start leading-tight"
                 :class="i === envLine.length - 1 ? 'bg-emerald-50/70 border border-emerald-200/60' : 'bg-blue-50'"
               >
                 <span class="text-[12px] font-medium flex items-center gap-1" :class="i === envLine.length - 1 ? 'text-emerald-700' : 'text-slate-600'">
@@ -103,7 +103,7 @@
         </div>
 
         <!-- FDE 五阶段工业化流水线(流程图:输出=下一阶段输入) -->
-        <div class="stages-section flex flex-col flex-1 min-h-0 justify-end">
+        <div class="stages-section flex flex-col flex-1 min-h-0">
           <div class="flex items-center justify-between mb-3 shrink-0">
             <h2 class="text-[15px] font-semibold text-slate-800 flex items-center gap-2">
               <i class="fa-solid fa-diagram-project text-blue-600"></i>FDE 五阶段工业化流水线
@@ -134,13 +134,13 @@
                   <div class="flex flex-wrap gap-1.5 mb-2">
                     <span v-for="chip in (s.ui?.chips || [])" :key="chip" class="stage-chip">{{ chip }}</span>
                   </div>
-                  <div class="text-[11px] text-slate-500 leading-relaxed">{{ s.goal }}</div>
+                  <div class="stage-goal text-[11px] text-slate-500 leading-relaxed">{{ s.goal }}</div>
                 </div>
 
-                <!-- 交付物 / 知识内化 -->
-                <div class="px-3.5 pt-2.5 pb-2.5 mt-auto border-t border-blue-500/10">
+                <!-- 交付物 / 知识内化(标题因上方固定高度而对齐) -->
+                <div class="px-3.5 pt-2.5 pb-2.5 border-t border-blue-500/10">
                   <div class="text-[10.5px] text-slate-400 mb-1.5"><i class="fa-solid fa-box-open mr-1 stage-label-icon"></i>{{ s.ui?.listLabel || '交付物' }}</div>
-                  <div class="space-y-0.5">
+                  <div class="stage-dlv-list space-y-0.5">
                     <div v-for="(d, di) in displayItems(s)" :key="di" class="text-[10.5px] text-slate-600 flex items-start gap-1.5 leading-snug">
                       <i class="fa-solid fa-circle stage-dot text-[4px] mt-1.5 shrink-0"></i>
                       <span>{{ d }}</span>
@@ -148,8 +148,8 @@
                   </div>
                 </div>
 
-                <!-- 底部:节奏 + 进入箭头 -->
-                <div class="px-3.5 py-2 bg-blue-50/40 border-t border-blue-500/10 flex items-center gap-1.5 text-[10px] text-slate-400">
+                <!-- 底部:节奏 + 进入箭头(mt-auto 贴底,五卡节奏条同一水平线) -->
+                <div class="px-3.5 py-2 mt-auto bg-blue-50/40 border-t border-blue-500/10 flex items-center gap-1.5 text-[10px] text-slate-400">
                   <i class="fa-solid fa-clock w-3 text-slate-300"></i>
                   <span class="truncate">{{ s.ui?.rhythmShort || s.rhythm || s.duration }}</span>
                   <i class="fa-solid fa-arrow-right ml-auto text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all"></i>
@@ -283,9 +283,6 @@ onMounted(async () => {
 .stages-row > .flex.items-center {
   flex: 0 0 auto;
 }
-.stage-card {
-  min-height: 100%;
-}
 .stage-num {
   width: 30px;
   height: 30px;
@@ -316,6 +313,20 @@ onMounted(async () => {
   font-weight: 500;
   background: #eff4ff;
   color: #1d4ed8;
+}
+/* 目标文字固定 3 行高度：保证各卡「交付物」标题在同一水平线对齐 */
+.stage-goal {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  min-height: calc(1.6em * 3);
+}
+/* 交付物列表按最多条数(6 条)预留高度：条数少的卡片补白，
+   使底部「节奏」条在五卡间落到同一水平线 */
+.stage-dlv-list {
+  min-height: 104px;
 }
 .stage-label-icon,
 .stage-dot {

@@ -847,6 +847,26 @@ async function deleteSkill(sk) {
 .sk-bg {
   background: var(--color-content-bg);
 }
+.sk-bg :deep(.btn-sm),
+.sk-bg :deep(.btn-sm-pri) {
+  height: 32px;
+  padding: 0 13px;
+  border-radius: 9px;
+  font-size: 12.5px;
+  gap: 6px;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease, color 0.16s ease, background 0.16s ease;
+}
+.sk-bg :deep(.btn-sm:hover),
+.sk-bg :deep(.btn-sm-pri:hover) {
+  transform: translateY(-1px);
+}
+.sk-bg :deep(.btn-sm-pri) {
+  box-shadow: 0 8px 18px hsl(var(--primary) / 18%);
+}
+.sk-bg :deep(.btn-sm-pri:hover) {
+  box-shadow: 0 10px 24px hsl(var(--primary) / 24%);
+}
+
 .sk-tree { width: 240px; background: color-mix(in srgb, hsl(var(--background)) 92%, hsl(var(--primary)) 4%) !important; border-color: var(--color-sidebar-border) !important; }
 
 /* 自适应卡片网格:列数随宽度自动增减(最小 280px),窄屏 2 列宽屏可到 4-5 列 */
