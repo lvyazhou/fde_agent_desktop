@@ -72,7 +72,7 @@
             <i class="fa-solid fa-circle-info text-slate-300"></i>
             <span>由 Office 文档转换预览,排版略有差异。需精确格式或编辑请「打开」或「下载」原件。</span>
           </div>
-          <div class="prose prose-sm prose-slate max-w-none handbook-md" v-html="rendered"></div>
+          <div class="prose prose-sm prose-slate max-w-none handbook-md" v-html="rendered" @click="onContentClick"></div>
         </template>
       </div>
 
@@ -131,6 +131,31 @@ const props = defineProps({
   projectSlug: { type: String, default: '' },
 });
 
+// 点击 [[wikilink]] 时向上抛,由 Knowledge.vue 在全库按标题查找并打开
+const emit = defineEmits(['navigate']);
+
+// 把 Obsidian 风格 [[标题]] / [[标题|别名]] 预处理成可点击锚点(marked 不认这套语法)。
+// 生成 <a data-wikilink="标题">别名</a>,点击由 onContentClick 统一处理。
+function renderMarkdown(src) {
+  const withLinks = (src || '').replace(/\[\[([^\]]+)\]\]/g, (_m, inner) => {
+    const [target, alias] = inner.split('|');
+    const t = (target || '').trim();
+    const label = (alias || target || '').trim();
+    const safeT = t.replace(/"/g, '&quot;');
+    return `<a href="#" class="wikilink" data-wikilink="${safeT}">${label}</a>`;
+  });
+  return marked.parse(withLinks);
+}
+
+// 点击内容区:拦截 wikilink,阻止默认跳转,抛给父组件
+function onContentClick(e) {
+  const a = e.target.closest?.('a[data-wikilink]');
+  if (!a) return;
+  e.preventDefault();
+  const title = a.getAttribute('data-wikilink');
+  if (title) emit('navigate', title);
+}
+
 const loading = ref(false);
 const error = ref('');
 const rendered = ref('');
@@ -188,7 +213,7 @@ const loadContent = async () => {
       } else if (props.item.type === 'md') {
         const res = await window.api.hermes.readFile(props.projectSlug, projectRel.value);
         const content = typeof res === 'string' ? res : res?.content;
-        if (typeof content === 'string') rendered.value = marked.parse(content);
+        if (typeof content === 'string') rendered.value = renderMarkdown(content);
         else error.value = res?.error || '读取失败';
       } else {
         // 源码类文本:直接展示
@@ -208,7 +233,7 @@ const loadContent = async () => {
       } else {
         // md:读取后用 marked 渲染
         const res = await window.api.handbook.readMd(props.stage, props.item.file);
-        if (res && res.success) rendered.value = marked.parse(res.content || '');
+        if (res && res.success) rendered.value = renderMarkdown(res.content || '');
         else error.value = res?.error || '读取失败';
       }
     }
@@ -268,6 +293,16 @@ onMounted(loadContent);
 .handbook-md :deep(pre code) { background: transparent; padding: 0; color: inherit; }
 .handbook-md :deep(hr) { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
 .handbook-md :deep(a) { color: #2563eb; text-decoration: none; }
+.handbook-md :deep(a.wikilink) {
+  color: #2563eb;
+  text-decoration: none;
+  border-bottom: 1px dashed #93b4f5;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.handbook-md :deep(a.wikilink::before) { content: '\1F517'; font-size: 0.82em; margin-right: 2px; opacity: 0.7; }
+.handbook-md :deep(a.wikilink:hover) { background: #eff6ff; border-bottom-color: #2563eb; }
 .handbook-md :deep(img) { max-width: 100%; height: auto; display: block; margin: 0.8em auto; border: 1px solid #e2e8f0; border-radius: 8px; }
 
 /* 项目产物里的源码类文件:深色只读视图 */
