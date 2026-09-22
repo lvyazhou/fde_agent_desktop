@@ -3676,6 +3676,43 @@ async function markdownToDocxBuffer(mdContent, baseDir) {
   return Packer.toBuffer(doc);
 }
 
+function getMdExportScriptPath() {
+  const candidates = [
+    path.join(SKILLS_DIR, 'md-export', 'export.py'),
+    app.isPackaged
+      ? path.join(process.resourcesPath, 'skills', 'md-export', 'export.py')
+      : path.join(app.getAppPath(), 'skills', 'md-export', 'export.py'),
+  ];
+  return candidates.find((p) => fs.existsSync(p));
+}
+
+function runPythonScript(scriptPath, args, options = {}) {
+  const candidates = process.platform === 'win32' ? ['python', 'py'] : ['python3', 'python'];
+  let lastError = null;
+  const run = (cmd) => new Promise((resolve, reject) => {
+    const proc = spawn(cmd, [scriptPath, ...args], {
+      cwd: options.cwd || path.dirname(scriptPath),
+      env: options.env || process.env,
+      windowsHide: true,
+    });
+    let stdout = '';
+    let stderr = '';
+    proc.stdout?.on('data', (d) => { stdout += d.toString(); });
+    proc.stderr?.on('data', (d) => { stderr += d.toString(); });
+    proc.on('error', reject);
+    proc.on('close', (code) => {
+      if (code === 0) resolve({ stdout, stderr });
+      else reject(new Error((stderr || stdout || `python exited with code ${code}`).trim()));
+    });
+  });
+  return candidates.reduce((promise, cmd) => promise.catch(async (err) => {
+    lastError = err;
+    return run(cmd);
+  }), Promise.reject(new Error('start'))).catch((err) => {
+    throw lastError && lastError.message !== 'start' ? lastError : err;
+  });
+}
+
 // 交付物 md 自动转存同名 .docx（阶段②③工作台：md 是可编辑源，docx 是交付成品）。
 // relativePath 传 md 的项目内相对路径，产出同目录同名 .docx。
 ipcMain.handle('hermes:md-to-docx', async (_event, { slug, relativePath }) => {
@@ -3685,11 +3722,18 @@ ipcMain.handle('hermes:md-to-docx', async (_event, { slug, relativePath }) => {
     const mdContent = fs.readFileSync(mdPath, 'utf-8');
     if (!mdContent.trim()) return { success: false, error: 'empty markdown' };
 
-    const buffer = await markdownToDocxBuffer(mdContent, path.dirname(mdPath));
+    // 统一使用内置技能 md-export 生成 Word，保证交付物 Word 样式与技能库一致。
     const docxPath = mdPath.replace(/\.md$/i, '') + '.docx';
-    fs.writeFileSync(docxPath, buffer);
+    const scriptPath = getMdExportScriptPath();
+    if (!scriptPath) return { success: false, error: 'md-export skill not found' };
+
+    await runPythonScript(scriptPath, [mdPath, '--to', 'word', '--out', docxPath], {
+      cwd: path.dirname(mdPath),
+      env: { ...process.env, PYTHONUTF8: '1' },
+    });
+
     const docxRel = relativePath.replace(/\.md$/i, '') + '.docx';
-    return { success: true, path: docxPath, relativePath: docxRel };
+    return { success: true, path: docxPath, relativePath: docxRel, exporter: 'md-export' };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -3715,6 +3759,7 @@ ipcMain.handle('hermes:export-word', async (_event, { slug }) => {
       return { success: false, error: 'spec.md not found' };
     }
     const mdContent = fs.readFileSync(specPath, 'utf-8');
+    if (!mdContent.trim()) return { success: false, error: 'empty markdown' };
 
     const meta = readProjectMeta(slug);
     const defaultName = meta?.name ? `${meta.name} - 产品功能清单.docx` : '功能清单.docx';
@@ -3727,9 +3772,13 @@ ipcMain.handle('hermes:export-word', async (_event, { slug }) => {
 
     if (canceled || !filePath) return { success: false, canceled: true };
 
-    const buffer = await markdownToDocxBuffer(mdContent, path.dirname(specPath));
-    fs.writeFileSync(filePath, buffer);
-    return { success: true, path: filePath };
+    const scriptPath = getMdExportScriptPath();
+    if (!scriptPath) return { success: false, error: 'md-export skill not found' };
+    await runPythonScript(scriptPath, [specPath, '--to', 'word', '--out', filePath], {
+      cwd: path.dirname(specPath),
+      env: { ...process.env, PYTHONUTF8: '1' },
+    });
+    return { success: true, path: filePath, exporter: 'md-export' };
   } catch (err) {
     return { success: false, error: err.message };
   }

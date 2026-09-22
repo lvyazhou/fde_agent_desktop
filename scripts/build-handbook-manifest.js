@@ -32,10 +32,16 @@ const STAGE_META = {
 };
 
 function classify(fileName) {
-  if (fileName.includes('【知识】')) return 'knowledge';
-  if (fileName.includes('【交付】')) return 'deliverable';
+  if (fileName.includes('【知识')) return 'knowledge';        // 【知识】/【知识·调研】等
+  if (/【[^】]*交付】/.test(fileName)) return 'deliverable';  // 【交付】/【研发交付】等
   if (/^0{1,2}-/.test(fileName)) return 'spec';
   return 'other';
+}
+
+// 知识子类型(调研/技术/产品),从【知识·X】提取;非知识或无后缀返回 ''
+function knowledgeType(fileName) {
+  const m = fileName.match(/【知识·([^】]+)】/);
+  return m ? m[1] : '';
 }
 
 // 去掉「N-」序号前缀和【标签】,得到干净展示名
@@ -43,7 +49,7 @@ function displayName(fileName) {
   const base = fileName.replace(/\.(md|docx)$/i, '');
   return base
     .replace(/^[\d.]+-/, '')             // 去序号前缀(支持 0- / 00- / 2.5- 等)
-    .replace(/【知识】|【交付】/g, '')     // 去分类标签
+    .replace(/【知识[^】]*】|【[^】]*交付】/g, '') // 去分类标签(含【知识·调研】【研发交付】)
     .replace(/（含组织关系）/g, ' (含组织关系)')
     .trim();
 }
@@ -80,6 +86,8 @@ async function buildStage(stageDir) {
       category: classify(f),        // spec | knowledge | deliverable | other
       previewable: ext === 'md',
     };
+    const kt = knowledgeType(f);
+    if (kt) item.knowledgeType = kt; // 知识子类型:调研|技术|产品(仅命中时带)
     if (ext === 'docx') {
       const htmlFile = await convertDocxToHtml(dir, f);
       if (htmlFile) {

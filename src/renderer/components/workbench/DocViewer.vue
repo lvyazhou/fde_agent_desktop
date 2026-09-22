@@ -67,10 +67,10 @@
           <span class="text-[12px]">{{ error }}</span>
         </div>
         <template v-else>
-          <!-- docx 预览是由原文档转换而来的快照,给个轻提示 -->
-          <div v-if="item.type === 'docx'" class="mb-4 flex items-center gap-2 text-[11px] text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
+          <!-- Office 预览是由原文档转换而来的快照,给个轻提示 -->
+          <div v-if="item.previewHtml && ['docx','xlsx'].includes(item.type)" class="mb-4 flex items-center gap-2 text-[11px] text-slate-400 bg-slate-50 rounded-lg px-3 py-2">
             <i class="fa-solid fa-circle-info text-slate-300"></i>
-            <span>由 Word 文档转换预览,排版略有差异。需精确格式或编辑请「打开」或「下载」原件。</span>
+            <span>由 Office 文档转换预览,排版略有差异。需精确格式或编辑请「打开」或「下载」原件。</span>
           </div>
           <div class="prose prose-sm prose-slate max-w-none handbook-md" v-html="rendered"></div>
         </template>
@@ -200,8 +200,8 @@ const loadContent = async () => {
     } else {
       // ── handbook 模式 ──
       if (!canPreview.value) return;
-      if (props.item.type === 'docx' && props.item.previewHtml) {
-        // docx:渲染构建时生成的 html 快照
+      if (props.item.previewHtml) {
+        // docx/xlsx 等二进制文档:渲染构建时生成的 html 快照
         const res = await window.api.handbook.readHtml(props.stage, props.item.previewHtml);
         if (res && res.success) rendered.value = res.content || '';
         else error.value = res?.error || '读取失败';

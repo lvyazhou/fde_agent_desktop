@@ -803,8 +803,8 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
     <!-- 08 项目管理规范 -->
     <section class="mod" id="m8">
       <div class="mod-head"><div class="mod-num">08</div><div><div class="short">贯穿五阶段的规矩 · 落在极库云上</div><h2>项目管理规范</h2></div></div>
-      <div class="goal"><b>学完能:</b> 记住五类规范和验收硬标准,能梳理医院三网+VPN+SDR 部署做实施计划,并在极库云上把五阶段项目管起来——分工、拆需求排版本、盯进度、走产品复制。</div>
-      <p class="body">这一块是 FDE 的<b>项目管理规范</b>——既是"守什么规矩"(五类规范),也是"平时在哪、怎么干"。日常项目都落在<b>极库云(Geelib)</b>上,项目管理、需求管理、进度把控都在这。两个常用入口先收藏好:</p>
+      <div class="goal"><b>学完能:</b> 记住五类规范和验收硬标准,分清项目交付物(按阶段)和智能体交付物(标品资产库)两条线,能梳理医院三网+VPN+SDR 做实施计划,并在极库云上拆需求、排版本、盯进度、走复制。</div>
+      <p class="body">这一块是 FDE 的<b>项目管理规范</b>——既是"守什么规矩"(五类规范),也是"平时在哪、怎么管"。日常都落在<b>极库云(Geelib)</b>上。先记住一条主线:<b>项目管理 = 项目交付物管理 + 智能体交付物管理</b>——<b>项目交付物</b>按五阶段走(环节1、2 各出一批 + 实施计划表);<b>智能体交付物</b>是最终成果,每个智能体一个目录,统一进标品资产库。这两维是这一整块的骨架。两个常用入口先收藏好:</p>
       <div class="cards">
         <div class="card"><div class="ch">知识库文档</div><p><a href="https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=4632&docId=442814" target="_blank" style="color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass)">geelib.qihoo.net · 工作模式文档</a><br>完整项目管理规范,进场必读。</p></div>
         <div class="card"><div class="ch">需求管理入口</div><p><a href="https://geelib.qihoo.net/geelib/project/projectOverview?subId=7175" target="_blank" style="color:var(--brass);text-decoration:none;border-bottom:1px dotted var(--brass)">geelib.qihoo.net · 需求管理</a><br>日常看需求进度、建迭代版本的地方。</p></div>
@@ -814,7 +814,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       <p class="body">这五类规范别当五个名词背——它们是<b>按项目推进顺序卡在不同节点上的</b>。从签字前到交付后,一条线走下来,每个节点该守哪条规矩,看下面这张时间线就清楚了。</p>
       <div class="flow">
 项目推进时间线 · 每个节点卡一道规矩
-签字前 <span class="amber">交付规范</span>(边界阶段一定死·72h签字制) → 设计时 <span class="amber">设计规范</span>(五层拆解→六组件→Eval)
+签字前 <span class="amber">交付规范</span>(边界阶段一定死·签字制) → 设计时 <span class="amber">设计规范</span>(五层拆解→六组件→Eval)
 → 开发中 <span class="amber">质量规范</span>(每节点检查·卡住不许往下) → 要交付 <span class="amber">验收规范</span>(三条硬标准)
 → 交付后 <span class="amber">复制规范</span>(沉淀模板) + <span class="hl">P0–P3 SLA</span>(出问题分级响应)
       </div>
@@ -830,33 +830,33 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
       </table></div>
       <p class="body">时间线上有三个"闸口"要特别记住——它们是最容易踩坑、也最能防返工的地方:</p>
       <div class="cards c3">
-        <div class="card"><div class="ch">72h 签字制 <span class="tag">签字前</span></div><p>产品原型阶段用 72 小时签字制卡返工:<b>不签字不开工</b>。需求没定死就动手,后面全返工。</p></div>
+        <div class="card"><div class="ch">签字制 <span class="tag">签字前</span></div><p>产品原型阶段用签字制卡返工:<b>不签字不开工</b>。按对接次数走(2+1),不按天卡;需求没定死就动手,后面全返工。</p></div>
         <div class="card"><div class="ch">三个人工确认节点 <span class="tag">全程</span></div><p>原型签字 / 建模评审 / 合并审核。其余交给 AI 自主运行,只在这三处人工把关。</p></div>
         <div class="card"><div class="ch">P0–P3 响应 SLA <span class="tag">交付后</span></div><p>P0 30 分钟响应/当天修,往下按级递减到 P3 一周评估。每条 P0/P1 做<b>响应三件套</b>:复现定位(Trace)+ 最小改动(改完跑评测集)+ 客户回执。</p></div>
       </div>
 
-      <h3 class="sub">二、角色分工 + 五阶段在极库云怎么落</h3>
+      <h3 class="sub">二、两类角色(谁干什么)</h3>
       <div class="cards">
         <div class="card"><div class="ch">FDE 项目经理 <span class="tag">大脑</span><span class="tag">规划</span></div><p>项目的中枢——指挥干活、盯进度、为整个项目结果负责,<b>不下场干活</b>。负责迭代版本的规划、需求和任务的创建,把用户需求拆条、排优先级、规划进哪个版本;需求变更、边界扯皮就地拍板。</p></div>
         <div class="card"><div class="ch">FDE 交付 <span class="tag">手脚</span><span class="tag">执行</span></div><p>真正下场干的人,把客户一句话干成线上真能用的系统。根据产品需求做任务拆解,在迭代版本的时间范围内完成。<b>每天定期更新需求任务。</b></p></div>
       </div>
       <div class="metaphor"><p class="mt">一句话记住</p><b>项目经理指挥、交付干活。</b>项目经理为项目结果负责,交付为"能不能真跑通、真上线"负责。分工混了,两头都乱。</div>
-      <p class="body">五阶段项目管理落到极库云,一共六项要管起来。前两项照五阶段走(需求沟通+原型、需求确认+智能体设计),后面四项是极库云上要额外产出/维护的:</p>
-      <div class="flow">
-五阶段项目管理 · 极库云上要管的六项
-① <span class="amber">需求沟通 + 原型设计</span>   ② <span class="amber">需求确认 + 智能体设计</span>
-③ <span class="amber">产品实施计划说明书</span>(定位产品复制模式)   ④ <span class="amber">工作日报</span>(按月建文件·按天竖排)
-⑤ <span class="amber">工作周报</span>(按季度建文件·按周竖排)   ⑥ <span class="amber">相关材料</span>(录音/客户资料/竞品调研)
-      </div>
-      <div class="cards">
-        <div class="card"><div class="ch"><span class="tag">①②</span> 前两阶段</div><p>照五阶段照旧走:需求沟通+原型设计、需求确认+智能体设计。产出对接确认表、原型、需求最终确认表、智能体设计表。</p></div>
-        <div class="card"><div class="ch"><span class="tag">③</span> 产品实施计划说明书</div><p>定位到产品复制模式,由项目经理和交付共同完成。举例 HIS 厂商的<b>标品交付 SOP</b>:①账号开通 → ②数据治理 → ③智能体调试 → ④平台调试 → ⑤客户试用。<b>实施计划的第一步永远是摸清医院网络环境</b>(见下)——网络不通,后面全是空谈。</p></div>
-        <div class="card"><div class="ch"><span class="tag">④</span> 工作日报</div><p><b>按月新建文件,按天竖排。</b>一个月一个文件,每天一条往下排。</p></div>
-        <div class="card"><div class="ch"><span class="tag">⑤</span> 工作周报</div><p><b>按季度新建文件,按周竖排。</b>一个季度一个文件,每周一条往下排。</p></div>
-        <div class="card"><div class="ch"><span class="tag">⑥</span> 相关材料归档</div><p>录音、客户资料、我们调研的竞品材料,统一归档到项目下。</p></div>
-      </div>
 
-      <h3 class="sub">实施计划第一步:医院网络环境准备</h3>
+      <h3 class="sub">三、项目交付物管理(按阶段,一批批产出)</h3>
+      <p class="body">这是<b>第一条线</b>。项目的交付物跟着五阶段走,极库云上一个项目分阶段建目录,每个环节产出一批交付物,前一批正好是后一批的输入。此外还有实施计划表和日报周报要维护。</p>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th style="width:150px">环节 / 项</th><th>产出的交付物</th></tr></thead>
+        <tbody>
+          <tr><td><span class="k">环节1 需求沟通+原型</span></td><td>需求与数据对接确认表(含组织关系)· AI需求能力清单 · PRD · 可交互原型</td></tr>
+          <tr><td><span class="k">环节2 需求确认+智能体设计</span></td><td>需求最终确认表(签字定死)· 产品实施计划表 · 业务数据口径模板 · 智能体矩阵+设计表 · 定稿 PRD · 最终原型</td></tr>
+          <tr><td><span class="k">产品实施计划表</span></td><td>新版 <b>产品实施计划表.xlsx</b> 为准,三张表协同:①前期调研清单 → ②实施计划总表 → ③里程碑节点。<b>第一步永远是摸清医院网络环境</b>(见下)</td></tr>
+          <tr><td><span class="k">工作日报</span></td><td>按月建文件、按天竖排——一个月一个文件,每天一条往下排</td></tr>
+          <tr><td><span class="k">工作周报</span></td><td>按季度建文件、按周竖排——一个季度一个文件,每周一条往下排</td></tr>
+          <tr><td><span class="k">相关材料归档</span></td><td>录音、客户资料、竞品调研,统一归档到项目下</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3 class="sub">实施计划表第一步:医院网络环境准备</h3>
       <p class="body">进院第一件事不是装系统,是<b>把网络摸清楚</b>。医院网络是三张物理隔离的网,数据在哪张网、我们的服务往哪放、走哪条通道出内网,这几件事没梳理清楚,SDR 接不上数据、工作台连不上云,实施计划就是一纸空文。这也是<b>环境地基线(对信息科)</b>要跟信息科逐条对齐的核心。</p>
       <div class="tbl-wrap"><table>
         <thead><tr><th style="width:90px">网络</th><th style="width:160px">是什么 / 上面有什么</th><th>跟我们的关系</th></tr></thead>
@@ -913,7 +913,37 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <p><span class="lead">数据不出内网、只出结果</span> —— SDR 主动出站、方向永远内网→外网推;要开的端口/域名提前给信息科走审批,别现场干等。</p>
       </div>
 
-      <h3 class="sub">三、项目需求管理(拆需求 → 排版本 → 盯进度)</h3>
+      <h3 class="sub">四、智能体交付物管理(标品资产库)</h3>
+      <p class="body">这是<b>第二条线</b>,也是新人最容易漏的。上面的项目交付物是"过程产物",而<b>智能体本身才是最终交付物</b>。所有做过的智能体,在极库云上按<b>智能体维度</b>集中管理,建成一个<b>标准化产品资产库</b>(如"FDE 医疗智能体标品")——对外宣讲一键取用、一目了然展示全部智能体能力,新项目有异化需求就在此基础上改。</p>
+      <div class="cards">
+        <div class="card"><div class="ch">一个智能体 = 一个目录</div><p>每个智能体单独一个目录(如"人事基础库智能体(demo阶段) 郑佳文"),目录下统一挂五类产物:<b>PRD · 原型 · 宣传材料 · 投招标文件 · 实施计划表</b>。</p></div>
+        <div class="card"><div class="ch">首页标实施状态</div><p>资产库首页同步标注各智能体状态:<b>Demo 阶段 / 未开发 / 开发中 / 已完成</b>。谁在做、做到哪一步,一眼看清。</p></div>
+      </div>
+      <div class="diagram">
+        <svg viewBox="0 0 720 250" role="img" aria-label="智能体标品资产库结构图">
+          <defs><marker id="astarw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#c8862a"/></marker></defs>
+          <!-- 资产库根 -->
+          <rect x="16" y="102" width="150" height="46" rx="8" fill="#0f1729"/><text x="91" y="123" text-anchor="middle" fill="#e3a94a" font-size="12" font-weight="700">标品资产库</text><text x="91" y="139" text-anchor="middle" fill="#9aa6bd" font-size="9.5">按智能体维度集中管</text>
+          <!-- 三个智能体目录 -->
+          <rect x="230" y="20" width="180" height="46" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="245" y="40" fill="#232937" font-size="11" font-weight="700">人事基础库智能体</text><text x="245" y="56" fill="#2f7d54" font-size="9">● 已完成</text>
+          <rect x="230" y="102" width="180" height="46" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="245" y="122" fill="#232937" font-size="11" font-weight="700">医疗质量智能体</text><text x="245" y="138" fill="#c8862a" font-size="9">● 开发中</text>
+          <rect x="230" y="184" width="180" height="46" rx="8" fill="#fff" stroke="#c8862a" stroke-width="1.5"/><text x="245" y="204" fill="#232937" font-size="11" font-weight="700">运营决策智能体</text><text x="245" y="220" fill="#5a6270" font-size="9">● Demo 阶段</text>
+          <g stroke="#c8862a" stroke-width="1.3" marker-end="url(#astarw)"><line x1="166" y1="118" x2="226" y2="46"/><line x1="166" y1="125" x2="226" y2="125"/><line x1="166" y1="132" x2="226" y2="204"/></g>
+          <!-- 一个目录挂五类产物 -->
+          <text x="474" y="38" fill="#5a6270" font-size="10" font-style="italic">每个智能体目录下统一挂:</text>
+          <g font-size="10.5" font-weight="700">
+            <rect x="474" y="52" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="69" text-anchor="middle" fill="#232937">PRD</text>
+            <rect x="474" y="84" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="101" text-anchor="middle" fill="#232937">原型</text>
+            <rect x="474" y="116" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="133" text-anchor="middle" fill="#232937">宣传材料</text>
+            <rect x="474" y="148" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="165" text-anchor="middle" fill="#232937">投招标文件</text>
+            <rect x="474" y="180" width="228" height="26" rx="5" fill="#faf3e6" stroke="#c8862a" stroke-width="1"/><text x="588" y="197" text-anchor="middle" fill="#232937">实施计划表</text>
+          </g>
+          <path d="M410 118 C 440 118, 445 118, 470 100" fill="none" stroke="#94a0a8" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#astarw)"/>
+        </svg>
+        <p class="cap">智能体标品资产库:按智能体维度建目录,每个智能体一个文件夹,下挂 PRD/原型/宣传/投招标/实施计划表五类产物,首页标实施状态(Demo/开发中/已完成)</p>
+      </div>
+
+      <h3 class="sub">五、需求管理(拆需求 → 排版本 → 盯进度)</h3>
       <p class="body">核心是<b>把需求拆条、规划进迭代版本、盯着交付每天更新</b>。以"医疗质量风险管理"为例,把用户最终的 10 个需求,在极库云需求管理里逐条拆成 10 个,再规划到 3 个版本里,按优先级分:</p>
       <div class="tbl-wrap"><table>
         <thead><tr><th style="width:230px">迭代版本</th><th style="width:90px">优先级</th><th>装什么需求</th></tr></thead>
@@ -971,7 +1001,7 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <div class="card"><div class="ch">看智能体成果</div><p>从 SEAF 智能体平台里看智能体编排成果(项目经理和交付一起完成的)。</p></div>
       </div>
 
-      <h3 class="sub">四、产品复制模式(标品 / 定制化)</h3>
+      <h3 class="sub">六、产品复制模式(标品 / 定制化)</h3>
       <p class="body">同一套产品复制到新客户,分两种模式走,别混。</p>
       <div class="cards">
         <div class="card"><div class="ch">① 标品模式</div><p>有一份<b>标品实施部署说明书</b>(项目经理和交付共同完成)。在极库云创建需求、规划进迭代版本(比如 7 天),照 SOP 走并跟进项目。走得快、能复制。</p></div>
@@ -1020,8 +1050,8 @@ Agent 六组件:<span class="hl">角色 / Prompt / 知识库 / 技能 / 工具 /
         <p><span class="lead">完全定制先评估再接</span> —— 通用功能可做,完全定制先算清工作量和预算,值不值得再决定。</p>
       </div>
       <div class="drill"><p class="dt">当堂练习 + 检查点</p>
-        <ol><li>背出五类规范和验收的三条硬标准,说清三个人工确认节点卡在什么时候。</li><li>白板画医院三网拓扑,标出 SDR 部署在哪、VPN 走哪条向、数据为什么不出内网。</li><li>给一个假项目("某院要 8 个需求"),拆条并规划进 2–3 个版本、标 P0/P1/P2。</li><li>判断三个新客户场景各该走标品、新增需求、还是完全定制。</li></ol>
-        <p class="chk"><b>过关:</b> 五类规范说全、验收三条不漏;需求拆条清晰、优先级合理;三个复制场景判断对。</p>
+        <ol><li>背出五类规范和验收的三条硬标准,说清三个人工确认节点卡在什么时候。</li><li>说清项目交付物和智能体交付物两条线各是什么,智能体资产库一个目录下挂哪五类产物。</li><li>白板画医院三网拓扑,标出 SDR 部署在哪、VPN 走哪条向、数据为什么不出内网。</li><li>给一个假项目("某院要 8 个需求"),拆条并规划进 2–3 个版本、标 P0/P1/P2。</li><li>判断三个新客户场景各该走标品、新增需求、还是完全定制。</li></ol>
+        <p class="chk"><b>过关:</b> 五类规范说全;两条交付线分得清;三网拓扑画对;需求拆条清晰;三个复制场景判断对。</p>
       </div>
       <p class="reading">延伸:<a href="https://geelib.qihoo.net/geelib/knowledge/doc?spaceId=4632&docId=442814" target="_blank" style="color:var(--brass)">极库云工作模式文档</a>(项管/需求管理完整规范)</p>
     </section>

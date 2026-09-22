@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T10:40:18.802Z",
+  "generatedAt": "2026-09-21T10:32:19.270Z",
   "source": "100 FDE作战手册(核心文档快照)",
   "stages": [
     {
@@ -24,71 +24,63 @@
           "previewable": true
         },
         {
-          "file": "1-备弹知识库【知识·调研】.docx",
+          "file": "1-备弹知识库【知识】.docx",
           "title": "备弹知识库",
           "type": "docx",
           "category": "knowledge",
           "previewable": true,
-          "knowledgeType": "调研",
-          "previewHtml": "1-备弹知识库【知识·调研】.html"
+          "previewHtml": "1-备弹知识库【知识】.html"
         },
         {
-          "file": "2-调研框架SOP【知识·调研】.docx",
+          "file": "2-调研框架SOP【知识】.docx",
           "title": "调研框架SOP",
           "type": "docx",
           "category": "knowledge",
           "previewable": true,
-          "knowledgeType": "调研",
-          "previewHtml": "2-调研框架SOP【知识·调研】.html"
+          "previewHtml": "2-调研框架SOP【知识】.html"
         },
         {
-          "file": "3-调研话术卡【知识·调研】.md",
+          "file": "3-调研话术卡【知识】.md",
           "title": "调研话术卡",
           "type": "md",
           "category": "knowledge",
-          "previewable": true,
-          "knowledgeType": "调研"
+          "previewable": true
         },
         {
-          "file": "4-FDE技术基础【知识·技术】.md",
+          "file": "4-FDE技术基础【知识】.md",
           "title": "FDE技术基础",
           "type": "md",
           "category": "knowledge",
-          "previewable": true,
-          "knowledgeType": "技术"
+          "previewable": true
         },
         {
-          "file": "5-SDR数据基座【知识·技术】.md",
+          "file": "5-SDR数据基座【知识】.md",
           "title": "SDR数据基座",
           "type": "md",
           "category": "knowledge",
-          "previewable": true,
-          "knowledgeType": "技术"
+          "previewable": true
         },
         {
-          "file": "6-大数据能力与医疗数据中台【知识·技术】.md",
+          "file": "6-大数据能力与医疗数据中台【知识】.md",
           "title": "大数据能力与医疗数据中台",
           "type": "md",
           "category": "knowledge",
-          "previewable": true,
-          "knowledgeType": "技术"
+          "previewable": true
         },
         {
-          "file": "7-纳米Work企业智能体平台【知识·产品】.md",
+          "file": "7-纳米Work企业智能体平台【知识】.md",
           "title": "纳米Work企业智能体平台",
           "type": "md",
           "category": "knowledge",
-          "previewable": true,
-          "knowledgeType": "产品"
+          "previewable": true
         },
         {
-          "file": "8-SDR功能及相关工作规范【知识·技术】.docx",
+          "file": "8-SDR功能及相关工作规范【知识】.docx",
           "title": "SDR功能及相关工作规范",
           "type": "docx",
           "category": "knowledge",
           "previewable": true,
-          "knowledgeType": "技术",
-          "previewHtml": "8-SDR功能及相关工作规范【知识·技术】.html"
+          "previewHtml": "8-SDR功能及相关工作规范【知识】.html"
         }
       ],
       "counts": {
@@ -162,12 +154,18 @@
           "previewable": true
         },
         {
-          "file": "1-智能体设计表【交付】.docx",
+          "file": "1-智能体设计表【交付】.md",
           "title": "智能体设计表",
-          "type": "docx",
+          "type": "md",
           "category": "deliverable",
-          "previewable": true,
-          "previewHtml": "1-智能体设计表【交付】.html"
+          "previewable": true
+        },
+        {
+          "file": "10-Eval评测标准模板【知识】.md",
+          "title": "Eval评测标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
         },
         {
           "file": "2-需求最终确认表【交付】.docx",
@@ -178,84 +176,67 @@
           "previewHtml": "2-需求最终确认表【交付】.html"
         },
         {
-          "file": "3-产品实施计划表【交付】.xlsx",
-          "title": "产品实施计划表",
-          "type": "xlsx",
+          "file": "2.4-产品需求文档PRD(模板)【交付】.md",
+          "title": "产品需求文档PRD(模板)",
+          "type": "md",
           "category": "deliverable",
-          "previewable": true,
-          "previewHtml": "3-产品实施计划表【交付】.html"
+          "previewable": true
         },
         {
-          "file": "4-业务数据口径模板【研发交付】.docx",
-          "title": "业务数据口径模板",
-          "type": "docx",
-          "category": "deliverable",
-          "previewable": true,
-          "previewHtml": "4-业务数据口径模板【研发交付】.html"
-        },
-        {
-          "file": "5-PRD【交付】.docx",
+          "file": "2.5-产品需求文档PRD(范例)【交付】.md",
           "title": "产品需求文档PRD(范例)",
-          "type": "docx",
+          "type": "md",
           "category": "deliverable",
-          "previewable": true,
-          "previewHtml": "5-PRD【交付】.html"
+          "previewable": true
         },
         {
-          "file": "6-产品原型Demo【交付】.docx",
-          "title": "产品原型Demo",
-          "type": "docx",
+          "file": "3-产品实施计划表【交付】.md",
+          "title": "产品实施计划表",
+          "type": "md",
           "category": "deliverable",
-          "previewable": true,
-          "previewHtml": "6-产品原型Demo【交付】.html"
+          "previewable": true
         },
         {
-          "file": "7-技能Skill标准模板【知识】.docx",
-          "title": "技能Skill标准模板",
-          "type": "docx",
-          "category": "knowledge",
-          "previewable": true,
-          "previewHtml": "7-技能Skill标准模板【知识】.html"
+          "file": "4-业务数据口径模板【研发交付】.md",
+          "title": "业务数据口径模板",
+          "type": "md",
+          "category": "deliverable",
+          "previewable": true
         },
         {
-          "file": "8-提示词工程标准模板【知识】.docx",
-          "title": "提示词工程标准模板",
-          "type": "docx",
-          "category": "knowledge",
-          "previewable": true,
-          "previewHtml": "8-提示词工程标准模板【知识】.html"
-        },
-        {
-          "file": "9-AB测试标准模板【知识】.docx",
-          "title": "AB测试标准模板",
-          "type": "docx",
-          "category": "knowledge",
-          "previewable": true,
-          "previewHtml": "9-AB测试标准模板【知识】.html"
-        },
-        {
-          "file": "9-连接器标准模板【知识】.docx",
-          "title": "连接器标准模板",
-          "type": "docx",
-          "category": "knowledge",
-          "previewable": true,
-          "previewHtml": "9-连接器标准模板【知识】.html"
-        },
-        {
-          "file": "10-知识库配置标准模板【知识】.docx",
+          "file": "5-知识库配置标准模板【知识】.md",
           "title": "知识库配置标准模板",
-          "type": "docx",
+          "type": "md",
           "category": "knowledge",
-          "previewable": true,
-          "previewHtml": "10-知识库配置标准模板【知识】.html"
+          "previewable": true
         },
         {
-          "file": "11-Eval评测标准模板【知识】.docx",
-          "title": "Eval评测标准模板",
-          "type": "docx",
+          "file": "6-提示词工程标准模板【知识】.md",
+          "title": "提示词工程标准模板",
+          "type": "md",
           "category": "knowledge",
-          "previewable": true,
-          "previewHtml": "11-Eval评测标准模板【知识】.html"
+          "previewable": true
+        },
+        {
+          "file": "7-技能Skill标准模板【知识】.md",
+          "title": "技能Skill标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "8-连接器标准模板【知识】.md",
+          "title": "连接器标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
+        },
+        {
+          "file": "9-AB测试标准模板【知识】.md",
+          "title": "AB测试标准模板",
+          "type": "md",
+          "category": "knowledge",
+          "previewable": true
         }
       ],
       "counts": {
