@@ -59,6 +59,7 @@
                 class="group/badge relative flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-xl bg-blue-50 border border-blue-500/14 cursor-help transition-colors hover:bg-blue-100/60 shrink-0"
                 title="交付时限：按项目大小定死交付天数——小项目 3 天 / 中 7 天 / 大 14 天，两线齐备才起算"
               >
+                <!-- 固定宽装不下 6 个字符：min-w 保下限 + px 自适应 + nowrap -->
                 <span class="min-w-[58px] h-7 px-2 flex items-center justify-center rounded-lg bg-blue-600 text-white font-mono font-bold text-[12px] shrink-0 whitespace-nowrap">3/7/14</span>
                 <span class="flex flex-col leading-tight min-w-0">
                   <span class="text-slate-700 font-semibold text-[11px] whitespace-nowrap">小 3 / 中 7 / 大 14 天</span>

@@ -76,7 +76,7 @@
       :has-workspace="false"
     />
 
-    <!-- 阶段②工作区:现有 tab 内容(需求对话/功能清单/原型/迭代/导出) -->
+    <!-- 阶段②③工作区：二级侧边导航（工作台/交付物/原型）+ 内容区 -->
     <div v-show="isWorkspaceStage" class="flex-1 flex min-h-0 overflow-hidden">
 
       <!-- 阶段②③ 工作台 Tab：三栏 — 交付物导航 + 对话 + 文档预览 -->
@@ -973,6 +973,7 @@
         :deliverables="activeDeliverables"
         :selected="deliverableSelected"
         :status-map="deliverableStatus"
+        :show-list="false"
         :content="activeDeliverableContent"
         :preview-content="activeDeliverablePreview"
         :busy="deliverableBusy"
@@ -1213,6 +1214,8 @@ async function selectStage(id) {
   // 交付物：选中该阶段第一件，并加载该阶段已生成的交付物
   const firstDeliv = deliverablesForStage(id)[0];
   if (firstDeliv) deliverableSelected.value = firstDeliv.key;
+  // 分组树只默认展开当前阶段，其余阶段折叠
+  openDelivGroups.value = new Set([id]);
   // 清掉上一阶段的预览内容，再读新阶段（loadDeliverablesForStage 会刷新右侧）
   livePreviewContent.value = '';
   livePreviewDocxHtml.value = '';
@@ -1288,10 +1291,59 @@ const STAGE3_TABS = [
   { key: 'prototype', label: '定稿原型', icon: 'fa-solid fa-window-maximize' },
 ];
 function tabsForStage(id) {
-  if (id === 3) return STAGE3_TABS;
-  return STAGE2_TABS;
+  return id === 3 ? STAGE3_TABS : STAGE2_TABS;
 }
+// 顶部不再有横向 Tab：这三个入口作为「当前阶段」下的二级侧边导航
 const tabs = computed(() => tabsForStage(currentStage.value));
+const navItems = tabs;
+
+// 侧边导航切换：进交付物时确保分组树和当前阶段组是展开的
+function switchNav(key) {
+  activeTab.value = key;
+  if (key === 'deliverables') {
+    delivTreeOpen.value = true;
+    openDelivGroup(currentStage.value, true);
+  }
+}
+
+// —— 交付物按阶段分组：只默认展开当前阶段，其余折叠置灰 ——
+const delivTreeOpen = ref(true);
+const openDelivGroups = ref(new Set());
+const groupOpen = (stageId) => openDelivGroups.value.has(stageId);
+function openDelivGroup(stageId, open) {
+  const next = new Set(openDelivGroups.value);
+  if (open) next.add(stageId); else next.delete(stageId);
+  openDelivGroups.value = next;
+}
+function toggleDelivGroup(stageId) {
+  const g = deliverableGroups.value.find((x) => x.stage.id === stageId);
+  if (g && !g.enabled) return;
+  const opening = !groupOpen(stageId);
+  openDelivGroup(stageId, opening);
+  // 非当前阶段的交付物内容尚未读盘，展开时补读一次，状态点才准确
+  if (opening && stageId !== currentStage.value) loadDeliverablesForStage(stageId);
+}
+// ①④⑤ 无真实交付物定义，置灰不可展开
+const deliverableGroups = computed(() => DELIVERABLE_STAGES.map((stage) => ({
+  stage,
+  isCurrent: stage.id === currentStage.value,
+  enabled: WORKSPACE_STAGES.includes(stage.id),
+})));
+
+// 跨阶段点交付物：先切阶段（selectStage 会选中该阶段第一件并读盘），再定位到目标件
+async function selectGroupDeliverable(stageId, key) {
+  const stay = activeTab.value === 'deliverables';
+  if (stageId !== currentStage.value) {
+    await selectStage(stageId);
+  }
+  activeTab.value = stay ? 'deliverables' : 'workspace';
+  selectDeliverable(key);
+}
+
+// 分组树里的生成状态：只对已读过的阶段显示，没读过的显示未生成灰点
+function deliverableState(stageId, key) {
+  return deliverableContents.value[dkey(stageId, key)] ? 'ready' : 'empty';
+}
 
 // 当前阶段活动的对话消息数组（workspace tab 按 currentStage 区分）
 const currentMessages = computed(() => {
@@ -1485,6 +1537,15 @@ const STAGE3_DELIVERABLES = [
 // 当前阶段的交付物清单
 const deliverablesForStage = (id) => (id === 3 ? STAGE3_DELIVERABLES : STAGE2_DELIVERABLES);
 
+// 侧边栏「交付物」分组用：阶段①④⑤ 目前无真实交付物定义，只置灰占位
+const DELIVERABLE_STAGES = [
+  { id: 1, deliverables: [] },
+  { id: 2, deliverables: STAGE2_DELIVERABLES },
+  { id: 3, deliverables: STAGE3_DELIVERABLES },
+  { id: 4, deliverables: [] },
+  { id: 5, deliverables: [] },
+];
+
 // Chat state - enhanced message structure
 const messages = ref([]);
 const chatInput = ref('');
@@ -1609,7 +1670,6 @@ const stage3Composer = useChatComposer({
 });
 
 // —— 通用交付物状态（阶段②③共用，按 currentStage 键控）——
-const deliverableStage = ref(3);              // 当前打开交付物的阶段
 const deliverableSelected = ref('');          // 当前选中的交付物 key
 const deliverableContents = ref({});          // { 'stage:key': markdown } —— 原文，供编辑/导出/保存
 const deliverablePreviews = ref({});           // { 'stage:key': markdown } —— 相对图片已内联为 data URI，供预览
@@ -2385,7 +2445,7 @@ const livePreviewStreaming = ref(false); // 正在实时接收写入（面板顶
 const rightPanelWidth = ref(480);        // 兼容旧引用
 const rightPanelUserWidth = ref(0);     // 0 = 未拖拽，走 flex 2:4:4；>0 = 用户拖过，固定像素
 const rightPanelCollapsed = ref(false);
-const leftPanelCollapsed = ref(false);   // 隐藏左侧交付物导航
+const navCollapsed = ref(false);        // 二级侧边导航收起为图标轨
 const rightPanelDragging = ref(false);
 let _dragStartX = 0, _dragStartW = 0;
 
@@ -2436,20 +2496,26 @@ function startRightDrag(e) {
   window.addEventListener('mouseup', onUp);
 }
 
-// 生成结束后自动把 md 转存为 docx
+// 生成结束后把 md 转成 docx。走 md-export 技能而不是主进程的即时转换：
+// 技能带 360 品牌排版(深蓝标题 / 蓝底白字表格 / 中文字体 / 图片嵌入)，
+// 主进程那套只做最朴素的结构映射，给甲方的版面撑不住。
+// 代价是要等一轮模型往返，所以只在生成/保存结束后跑，不放在交互路径上。
 async function autoSaveDocx(stageId, key) {
   const d = deliverablesForStage(stageId).find((x) => x.key === key);
   if (!d) return;
+  const docxRel = d.file.replace(/\.md$/i, '.docx');
   try {
-    const r = await window.api.hermes.mdToDocx(props.slug, d.file);
-    if (r && r.success) {
-      // 刷新 docx 预览
-      const rv = await window.api.hermes.docxPreview(props.slug, r.relativePath);
-      if (rv && rv.success && rv.html) {
-        livePreviewDocxHtml.value = rv.html;
-      }
+    const p = window.api.hermes.prompt(
+      props.slug,
+      `/md-export 把当前项目目录下的 \`${d.file}\` 导出为 Word，输出到同目录的 \`${docxRel}\`（覆盖已有文件）。只做格式转换，不要改动 md 原文内容。`,
+    );
+    trackPrompt(props.slug, { tab: `docx:${key}` }, p);
+    await p;
+    const rv = await window.api.hermes.docxPreview(props.slug, docxRel);
+    if (rv && rv.success && rv.html) {
+      livePreviewDocxHtml.value = rv.html;
     }
-  } catch (_) { /* 转存失败不中断流程 */ }
+  } catch (_) { /* 转存失败不中断流程，md 原文已经落盘了 */ }
 }
 
 // —— 工作台：每件交付物的独立消息状态 ——
@@ -3123,6 +3189,7 @@ onMounted(async () => {
   // 交付物：初始化当前阶段选中项 + 读回已生成的交付物
   const firstDeliv = deliverablesForStage(currentStage.value)[0];
   if (firstDeliv && !deliverableSelected.value) deliverableSelected.value = firstDeliv.key;
+  openDelivGroups.value = new Set([currentStage.value]);
   loadDeliverablesForStage(currentStage.value);
   // 加载每件交付物的独立对话记录
   loadAllDeliverableMsgs(currentStage.value);
