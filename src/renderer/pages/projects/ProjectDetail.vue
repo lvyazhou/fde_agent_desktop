@@ -40,8 +40,8 @@
                 <span v-else class="text-[13px] font-bold">{{ stage.id }}</span>
               </span>
               <div class="text-left leading-tight">
-                <div class="text-[13px] font-semibold whitespace-nowrap" :class="statusOf(stage.id) === 'todo' ? 'text-slate-400' : (stage.id === currentStage ? 'text-blue-700' : 'text-slate-700')">{{ stepTitle(stage) }}</div>
-                <div class="text-[10.5px] text-slate-400 whitespace-nowrap mt-0.5">{{ stepHint(stage) }}</div>
+                <div class="ws-label font-semibold whitespace-nowrap" :class="statusOf(stage.id) === 'todo' ? 'text-slate-400' : (stage.id === currentStage ? 'text-blue-700' : 'text-slate-700')">{{ stepTitle(stage) }}</div>
+                <div class="ws-meta text-slate-400 whitespace-nowrap mt-0.5">{{ stepHint(stage) }}</div>
               </div>
             </button>
             <i v-if="idx < FDE_STAGES.length - 1" class="fa-solid fa-chevron-right text-slate-300 text-[11px] mx-1 shrink-0"></i>
@@ -50,15 +50,15 @@
       </div>
 
       <!-- Tabs(仅工作区阶段显示) -->
-      <div v-if="isWorkspaceStage" class="glass-card border-b border-slate-200/70 flex items-center gap-5 px-6 pt-1.5">
+      <div v-if="isWorkspaceStage" class="glass-card border-b border-slate-200/70 flex items-center gap-6 px-6 pt-2">
         <button
           v-for="tab in tabs"
           :key="tab.key"
           @click="activeTab = tab.key"
-          class="group relative inline-flex items-center gap-1.5 pb-2 text-[12.5px] transition-colors duration-200"
+          class="group relative inline-flex items-center gap-1.5 pb-2.5 ws-label transition-colors duration-200"
           :class="activeTab === tab.key ? 'text-blue-600 font-semibold' : 'text-slate-400 hover:text-slate-700 font-medium'"
         >
-          <i :class="tab.icon" class="text-[10.5px]"></i>
+          <i :class="tab.icon" class="text-[11px]"></i>
           {{ tab.label }}
           <span
             class="absolute -bottom-px left-0 right-0 h-0.5 rounded-full transition-all duration-200"
@@ -88,38 +88,38 @@
           class="shrink-0 flex flex-col glass-panel border-r border-slate-200/70 overflow-hidden"
           :style="'flex: 1 1 0; min-width: 210px; max-width: 280px'"
         >
-          <!-- 顶部：项目文档 / 目录 tab + 折叠 + 新建 -->
-          <div class="px-4 pt-3 pb-2 border-b border-slate-100">
-            <div class="flex items-center justify-between mb-2">
+          <!-- 顶部：项目文档标题 + 折叠 -->
+          <div class="px-4 pt-3.5 pb-2.5 border-b border-slate-100">
+            <div class="flex items-center justify-between mb-2.5">
               <div class="flex items-center gap-3">
-                <span class="text-[14px] font-bold text-slate-800">项目文档</span>
+                <span class="ws-title font-bold text-slate-800">项目文档</span>
               </div>
               <button
                 @click="leftPanelCollapsed = true"
-                class="w-5 h-5 rounded flex items-center justify-center text-slate-300 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+                class="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
                 title="隐藏项目文档"
               >
-                <i class="fa-solid fa-angles-left text-[9px]"></i>
+                <i class="fa-solid fa-angles-left text-[10px]"></i>
               </button>
             </div>
             <!-- 搜索框 + 新建 -->
             <div class="flex items-center gap-2">
-              <div class="flex-1 flex items-center gap-2 h-8 px-2.5 rounded-lg bg-white/80 border border-slate-200/80 focus-within:border-blue-400/70 transition-colors">
-                <i class="fa-solid fa-magnifying-glass text-slate-300 text-[11px]"></i>
+              <div class="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-white/80 border border-slate-200/80 focus-within:border-blue-400/70 focus-within:bg-white transition-colors">
+                <i class="fa-solid fa-magnifying-glass text-slate-300 text-[12px]"></i>
                 <input
                   v-model="docSearch"
                   type="text"
-                  placeholder="搜索文档、文件夹…"
-                  class="flex-1 min-w-0 bg-transparent text-[12px] text-slate-700 placeholder-slate-300 focus:outline-none"
+                  placeholder="搜索文档"
+                  class="flex-1 min-w-0 bg-transparent ws-body text-slate-700 placeholder-slate-300 focus:outline-none"
                 />
               </div>
               <button
                 @click="generateDeliverable(deliverableSelected)"
                 :disabled="isStreaming || deliverableBusy || !deliverableSelected"
-                class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 :title="deliverableBusy ? '生成中…' : (selectedDeliverable ? `生成 · ${selectedDeliverable.short}` : '生成交付物')"
               >
-                <i class="fa-solid text-[12px]" :class="deliverableBusy ? 'fa-circle-notch fa-spin' : 'fa-plus'"></i>
+                <i class="fa-solid text-[13px]" :class="deliverableBusy ? 'fa-circle-notch fa-spin' : 'fa-plus'"></i>
               </button>
             </div>
           </div>
@@ -156,16 +156,16 @@
                   <i :class="[d.icon, deliverableSelected === d.key ? 'text-blue-600' : 'text-slate-400']" class="text-[12px]"></i>
                 </div>
                 <div class="flex-1 min-w-0 pr-4">
-                  <span class="block text-[12.5px] font-semibold leading-snug truncate"
+                  <span class="block ws-body font-semibold leading-snug truncate"
                     :class="deliverableSelected === d.key ? 'text-blue-700' : 'text-slate-700'">
                     {{ d.name }}
                   </span>
-                  <div class="flex items-center gap-1 mt-1">
+                  <div class="flex items-center gap-1 mt-1.5">
                     <span v-if="deliverableStatus[d.key] === 'ready'"
-                      class="inline-flex items-center gap-1 text-[10.5px] text-blue-600 font-medium">
+                      class="inline-flex items-center gap-1 ws-meta text-blue-600 font-medium">
                       <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>已生成
                     </span>
-                    <span v-else class="inline-flex items-center gap-1 text-[10.5px] text-slate-400">
+                    <span v-else class="inline-flex items-center gap-1 ws-meta text-slate-400">
                       <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>未生成
                     </span>
                   </div>
@@ -185,16 +185,16 @@
 
             <!-- 相关资料（静态占位）-->
             <div class="mt-4 pt-3 border-t border-slate-100">
-              <div class="px-1 mb-1.5 text-[11px] font-semibold text-slate-400 tracking-wide">相关资料</div>
+              <div class="px-1 mb-2 ws-meta font-semibold text-slate-400 tracking-wide">相关资料</div>
               <div
                 v-for="r in relatedResources"
                 :key="r.name"
-                class="group flex items-center gap-2 px-2 py-1.5 rounded-lg text-slate-500 hover:bg-white/70 transition-colors"
+                class="group flex items-center gap-2 px-2 py-2 rounded-lg text-slate-500 hover:bg-white/70 transition-colors"
               >
-                <i class="fa-solid fa-folder text-amber-400 text-[12px] shrink-0"></i>
-                <span class="flex-1 min-w-0 text-[12px] truncate">{{ r.name }}</span>
+                <i class="fa-solid fa-folder text-amber-400 text-[13px] shrink-0"></i>
+                <span class="flex-1 min-w-0 ws-label truncate">{{ r.name }}</span>
                 <button class="w-5 h-5 rounded flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 hover:text-slate-600 transition-all" title="更多">
-                  <i class="fa-solid fa-ellipsis text-[11px]"></i>
+                  <i class="fa-solid fa-ellipsis text-[12px]"></i>
                 </button>
               </div>
             </div>
@@ -218,14 +218,14 @@
             </div>
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2">
-                <span class="text-[14px] font-bold text-slate-800">FDE 智能助手</span>
-                <span v-if="livePreviewStreaming" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-medium">
-                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>生成中
+                <span class="ws-title font-bold text-slate-800">FDE 智能助手</span>
+                <span v-if="livePreviewStreaming" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 ws-meta font-medium">
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500 thinking-breathe"></span>生成中
                 </span>
               </div>
-              <p class="text-[11.5px] text-slate-400 mt-0.5 truncate">基于项目文档 · 直接生成专业内容</p>
+              <p class="ws-meta text-slate-400 mt-0.5 truncate">基于项目文档 · 直接生成专业内容</p>
             </div>
-            <span class="text-[11px] text-slate-300 shrink-0 tabular-nums">{{ nowClock }}</span>
+            <span class="ws-meta text-slate-300 shrink-0 tabular-nums">{{ nowClock }}</span>
           </div>
 
           <!-- 消息区 -->
@@ -240,28 +240,28 @@
                 <div class="absolute inset-0 rounded-full border-2 border-blue-100"></div>
                 <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-blue-500 animate-spin"></div>
               </div>
-              <p class="text-sm text-slate-400">加载对话记录…</p>
+              <p class="ws-body text-slate-400">加载对话记录…</p>
             </div>
 
             <!-- Empty: no deliverable selected -->
             <div v-else-if="!deliverableSelected" class="flex flex-col items-center justify-center h-full text-center px-6">
               <i class="fa-solid fa-hand-pointer text-3xl text-slate-200 mb-3"></i>
-              <p class="text-[13px] text-slate-400">从左侧选择一件交付物开始</p>
+              <p class="ws-body text-slate-400">从左侧选择一件交付物开始</p>
             </div>
 
             <!-- Empty: deliverable selected, no messages yet -->
             <div v-else-if="activeDlvMsgs.length === 0" class="flex flex-col items-center justify-center h-full text-center px-6">
-              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/20">
-                <i :class="selectedDeliverable ? selectedDeliverable.icon : 'fa-solid fa-comments'" class="text-lg text-white"></i>
+              <div class="w-14 h-14 rounded-2xl overflow-hidden bg-blue-50 flex items-center justify-center mb-4 shadow-lg shadow-blue-500/15">
+                <img :src="botAvatar" alt="FDE 智能助手" class="w-full h-full object-cover" />
               </div>
-              <h3 class="text-[15px] font-semibold text-slate-800 mb-2">{{ selectedDeliverable ? selectedDeliverable.name : '' }}</h3>
-              <p class="text-[12.5px] text-slate-400 max-w-sm leading-relaxed mb-6">{{ selectedDeliverable ? selectedDeliverable.hint : '' }}</p>
+              <h3 class="ws-title font-semibold text-slate-800 mb-2">{{ selectedDeliverable ? selectedDeliverable.name : '' }}</h3>
+              <p class="ws-label text-slate-400 max-w-sm leading-relaxed mb-6">{{ selectedDeliverable ? selectedDeliverable.hint : '' }}</p>
               <div class="flex flex-wrap gap-2 justify-center max-w-sm">
                 <button
                   v-for="q in (currentStage === 3 ? stage3Quick : stage2Quick)"
                   :key="q"
                   @click="dlvInput = q; dlvSend()"
-                  class="px-3 py-1.5 rounded-full bg-slate-50 hover:bg-blue-50 border border-slate-200/70 hover:border-blue-200 text-[12.5px] text-slate-600 hover:text-blue-700 transition-all"
+                  class="px-3 py-1.5 rounded-full bg-slate-50 hover:bg-blue-50 border border-slate-200/70 hover:border-blue-200 ws-label text-slate-600 hover:text-blue-700 transition-all"
                 >
                   {{ q }}
                 </button>
@@ -285,7 +285,7 @@
                       <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
                     </template>
                   </div>
-                  <div v-if="msg.content" class="rounded-[16px] px-3.5 py-2 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                  <div v-if="msg.content" class="user-bubble rounded-[16px] px-3.5 py-2 leading-relaxed ws-body text-slate-800 whitespace-pre-wrap break-words text-left">
                     {{ msg.content }}
                   </div>
                 </div>
@@ -296,20 +296,20 @@
                     <div class="w-7 h-7 rounded-lg overflow-hidden bg-blue-50 flex items-center justify-center shrink-0">
                       <img :src="botAvatar" alt="FDE 智能助手" class="w-full h-full object-cover" />
                     </div>
-                    <span class="text-[13px] font-semibold text-slate-700">FDE 智能助手</span>
-                    <span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full"
+                    <span class="ws-body font-semibold text-slate-700">FDE 智能助手</span>
+                    <span class="inline-flex items-center gap-1 ws-meta px-1.5 py-0.5 rounded-full"
                       :class="(isStreaming && idx === activeDlvMsgs.length - 1) ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-400'">
-                      <span class="w-1.5 h-1.5 rounded-full" :class="(isStreaming && idx === activeDlvMsgs.length - 1) ? 'bg-blue-500 animate-pulse' : 'bg-slate-300'"></span>
+                      <span class="w-1.5 h-1.5 rounded-full" :class="(isStreaming && idx === activeDlvMsgs.length - 1) ? 'bg-blue-500 thinking-breathe' : 'bg-slate-300'"></span>
                       {{ (isStreaming && idx === activeDlvMsgs.length - 1) ? '工作中' : '已完成' }}
                     </span>
                   </div>
                   <!-- Thinking steps -->
                   <div v-if="msg.thinkingSteps && msg.thinkingSteps.length > 0" class="mb-2.5 w-full">
                     <button type="button" class="flex items-center gap-2 text-left" @click="msg.expanded = !msg.expanded">
-                      <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-gradient-to-br from-blue-100 to-indigo-50'">
+                      <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" :class="msg.thinkingDone ? 'bg-slate-100' : 'bg-blue-50'">
                         <i class="fa-solid fa-brain text-xs" :class="msg.thinkingDone ? 'text-slate-400' : 'text-blue-500 thinking-breathe'"></i>
                       </div>
-                      <span class="text-[12px] font-semibold" :class="msg.thinkingDone ? 'text-slate-500' : 'text-blue-700'">
+                      <span class="ws-label font-semibold" :class="msg.thinkingDone ? 'text-slate-500' : 'text-blue-700'">
                         {{ !msg.thinkingDone ? '深度推理中' : (msg.expanded ? '收起推理过程' : `推理完成 · ${msg.thinkingSteps.length} 步`) }}
                       </span>
                     </button>
@@ -318,7 +318,7 @@
                         <div class="w-4 h-4 rounded flex items-center justify-center shrink-0 mt-0.5 glass-card border border-slate-200/60 text-slate-400">
                           <i :class="step.icon || 'fa-solid fa-circle'" class="text-[7px]"></i>
                         </div>
-                        <span class="text-[11.5px] leading-relaxed text-slate-500 compact-markdown" v-html="renderMarkdown(step.text)"></span>
+                        <span class="ws-meta leading-relaxed text-slate-500 compact-markdown" v-html="renderMarkdown(step.text)"></span>
                       </div>
                     </div>
                   </div>
@@ -330,16 +330,16 @@
                       <div class="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center shrink-0">
                         <i :class="selectedDeliverable.icon" class="text-blue-600 text-[11px]"></i>
                       </div>
-                      <span class="text-[13px] font-semibold text-slate-800 truncate">{{ selectedDeliverable.name }}</span>
-                      <span class="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-100/70 text-blue-600 font-medium shrink-0">{{ currentStage === 3 ? '阶段③' : '阶段②' }} · {{ projectName }}</span>
+                      <span class="ws-body font-semibold text-slate-800 truncate">{{ selectedDeliverable.name }}</span>
+                      <span class="ws-meta px-1.5 py-0.5 rounded-md bg-blue-100/70 text-blue-600 font-medium shrink-0">{{ currentStage === 3 ? '阶段③' : '阶段②' }}</span>
                       <span class="flex-1"></span>
-                      <span v-if="deliverableStatus[selectedDeliverable.key] === 'ready'" class="inline-flex items-center gap-1 text-[10.5px] text-blue-600 font-medium shrink-0">
+                      <span v-if="deliverableStatus[selectedDeliverable.key] === 'ready'" class="inline-flex items-center gap-1 ws-meta text-blue-600 font-medium shrink-0">
                         <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>已生成
                       </span>
                     </div>
                     <!-- 正文 -->
                     <div class="px-5 py-4">
-                      <div class="w-full max-w-full leading-[1.8] text-[14px] text-slate-800 markdown-body"
+                      <div class="w-full max-w-full leading-[1.8] text-[13.5px] text-slate-800 markdown-body"
                         v-html="renderAssistantContent(msg, idx, { noFileCards: true })" @click="handleContentImgClick"></div>
                     </div>
                     <!-- 动作条：仅在回复完成后显示 -->
@@ -359,7 +359,7 @@
                       </button>
                     </div>
                   </div>
-                  <span v-if="msg.timestamp" class="text-[11px] text-slate-400 mt-1.5 ml-0.5">{{ msg.timestamp }}</span>
+                  <span v-if="msg.timestamp" class="ws-meta text-slate-400 mt-1.5 ml-0.5">{{ msg.timestamp }}</span>
                 </div>
               </div>
             </div>
@@ -374,7 +374,7 @@
                     <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-12 h-12 object-cover rounded-lg border border-slate-200" />
                     <div v-else class="flex items-center gap-2 h-12 px-2.5 rounded-lg border border-slate-200 glass-card max-w-[180px]">
                       <i class="fa-solid fa-file-lines text-blue-500 text-sm shrink-0"></i>
-                      <span class="text-[11.5px] text-slate-700 truncate">{{ att.name }}</span>
+                      <span class="ws-meta text-slate-700 truncate">{{ att.name }}</span>
                     </div>
                     <button @click="dlvComposer.removeAttachment(ai)" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-700/90 hover:bg-danger text-white text-[8px] flex items-center justify-center">
                       <i class="fa-solid fa-xmark"></i>
@@ -386,37 +386,37 @@
                   rows="1"
                   :placeholder="isStreaming ? 'AI 正在响应中…' : `关于《${selectedDeliverable ? selectedDeliverable.name : '交付物'}》的问题，Ctrl+Enter 发送`"
                   :disabled="isStreaming"
-                  class="w-full resize-none text-[13.5px] text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-6 px-4 pt-3 pb-1 max-h-[150px] scrollbar-hide disabled:opacity-60"
+                  class="w-full resize-none ws-body text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none leading-6 px-4 pt-3 pb-1 max-h-[150px] scrollbar-hide disabled:opacity-60"
                   @keydown.ctrl.enter.prevent="dlvSend"
                   @keydown.meta.enter.prevent="dlvSend"
                 ></textarea>
                 <div class="flex items-center justify-between px-3 pb-2.5 pt-1 gap-2">
-                  <div class="flex items-center gap-1">
+                  <div class="flex items-center gap-0.5">
                     <ModelSelector
-                      class="mr-1"
+                      class="mr-1.5"
                       :models="availableModels"
                       :current="currentModel"
                       @change="handleChangeModel"
                     />
-                    <button @click="dlvComposer.pickImage" :disabled="isStreaming" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40">
-                      <i class="fa-solid fa-image text-xs"></i>
+                    <button @click="dlvComposer.pickImage" :disabled="isStreaming" class="ws-icon-btn" title="上传图片">
+                      <i class="fa-solid fa-image"></i>
                     </button>
-                    <button @click="dlvComposer.pickFile" :disabled="isStreaming" class="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors disabled:opacity-40">
-                      <i class="fa-solid fa-paperclip text-xs"></i>
+                    <button @click="dlvComposer.pickFile" :disabled="isStreaming" class="ws-icon-btn" title="上传文件">
+                      <i class="fa-solid fa-paperclip"></i>
                     </button>
-                    <button @click="dlvComposer.toggleRecording" :disabled="isStreaming || !dlvComposer.recordingSupported" class="w-8 h-8 rounded-full flex items-center justify-center transition-colors disabled:opacity-40" :class="dlvComposer.isRecording.value ? 'text-white bg-danger' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'">
-                      <i class="fa-solid text-xs" :class="dlvComposer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
+                    <button @click="dlvComposer.toggleRecording" :disabled="isStreaming || !dlvComposer.recordingSupported" class="ws-icon-btn" :class="dlvComposer.isRecording.value ? 'text-white bg-danger hover:bg-danger-deep' : ''" :title="dlvComposer.isRecording.value ? '停止录音' : '语音输入'">
+                      <i class="fa-solid" :class="dlvComposer.isRecording.value ? 'fa-stop' : 'fa-microphone'"></i>
                     </button>
                   </div>
                   <div class="flex items-center gap-2">
-                    <span class="text-[10.5px] text-slate-300 select-none">Ctrl+Enter</span>
-                    <button v-if="isStreaming" @click="cancelStream" class="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center">
-                      <span class="w-2.5 h-2.5 rounded-[2px] glass-card"></span>
+                    <span class="ws-meta text-slate-300 select-none">Ctrl+Enter</span>
+                    <button v-if="isStreaming" @click="cancelStream" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-900 text-white flex items-center justify-center transition-colors" title="停止生成">
+                      <span class="w-2.5 h-2.5 rounded-[2px] bg-white"></span>
                     </button>
                     <button v-else @click="dlvSend" :disabled="!dlvInput.trim() && dlvComposer.attachments.value.length === 0"
-                      class="w-8 h-8 rounded-full flex items-center justify-center transition-all"
-                      :class="(dlvInput.trim() || dlvComposer.attachments.value.length) ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md shadow-blue-500/30 active:scale-95' : 'bg-slate-100 text-slate-300'"
-                    ><i class="fa-solid fa-arrow-up text-xs"></i></button>
+                      class="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                      :class="(dlvInput.trim() || dlvComposer.attachments.value.length) ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-500/25 active:scale-95' : 'bg-slate-100 text-slate-300'"
+                    ><i class="fa-solid fa-arrow-up text-[13px]"></i></button>
                   </div>
                 </div>
               </div>
@@ -438,35 +438,35 @@
           :style="rightPanelCollapsed ? 'flex: 0 0 40px' : (rightPanelUserWidth ? 'flex: 0 0 ' + rightPanelUserWidth + 'px' : 'flex: 4.5 1 0; min-width: 320px')"
         >
           <!-- 顶栏 -->
-          <div class="shrink-0 flex items-center gap-2 px-3 py-2.5 border-b border-slate-100 glass-card">
+          <div class="shrink-0 flex items-center gap-1.5 px-3 py-2.5 border-b border-slate-100 glass-card">
             <button
-              class="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors"
+              class="shrink-0 w-7 h-7 rounded-md flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-slate-100 transition-colors"
               :title="rightPanelCollapsed ? '展开文档面板' : '折叠'"
               @click="rightPanelCollapsed = !rightPanelCollapsed"
             >
-              <i class="fa-solid text-[10px]" :class="rightPanelCollapsed ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
+              <i class="fa-solid text-[11px]" :class="rightPanelCollapsed ? 'fa-chevron-left' : 'fa-chevron-right'"></i>
             </button>
             <template v-if="!rightPanelCollapsed">
               <div class="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center shrink-0">
                 <i class="fa-solid fa-file-lines text-blue-600 text-[11px]"></i>
               </div>
-              <span class="flex-1 text-[13px] font-bold text-slate-800 truncate">
+              <span class="flex-1 ws-title font-bold text-slate-800 truncate">
                 {{ livePreviewTitle || (selectedDeliverable ? selectedDeliverable.name : '文档') }}
               </span>
-              <span v-if="livePreviewStreaming" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-medium shrink-0">
-                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></span>写入中
+              <span v-if="livePreviewStreaming" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 ws-meta font-medium shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 thinking-breathe"></span>写入中
               </span>
-              <!-- MD / Word 药丸 -->
-              <div class="flex items-center gap-0.5 rounded-lg bg-slate-100 p-0.5 ml-1 shrink-0">
-                <button @click="livePreviewMode = 'md'" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors" :class="livePreviewMode === 'md' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"><i class="fa-solid fa-arrow-pointer text-[8px]"></i>MD</button>
-                <button @click="switchToDocxView" :disabled="!livePreviewDocxHtml" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium disabled:opacity-40 transition-colors" :class="livePreviewMode === 'docx' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'"><i class="fa-solid fa-file-word text-[9px]"></i>Word</button>
+              <!-- MD / Word 段控 -->
+              <div class="ws-seg ml-1 shrink-0">
+                <button @click="livePreviewMode = 'md'" class="ws-seg-btn" :class="livePreviewMode === 'md' ? 'is-on' : ''"><i class="fa-solid fa-arrow-pointer"></i>MD</button>
+                <button @click="switchToDocxView" :disabled="!livePreviewDocxHtml" class="ws-seg-btn" :class="livePreviewMode === 'docx' ? 'is-on' : ''"><i class="fa-solid fa-file-word"></i>Word</button>
               </div>
               <!-- 编辑 / 下载 -->
-              <button @click="togglePreviewEdit" :disabled="!livePreviewContent || livePreviewStreaming" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors disabled:opacity-40 shrink-0" :class="previewEditing ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:text-blue-600 hover:bg-slate-100'" title="编辑文档">
-                <i class="fa-solid text-[10px]" :class="previewEditing ? 'fa-eye' : 'fa-pen'"></i>{{ previewEditing ? '预览' : '编辑' }}
+              <button @click="togglePreviewEdit" :disabled="!livePreviewContent || livePreviewStreaming" class="ws-tool-btn shrink-0" :class="previewEditing ? 'is-on' : ''" title="编辑文档">
+                <i class="fa-solid" :class="previewEditing ? 'fa-eye' : 'fa-pen'"></i>{{ previewEditing ? '预览' : '编辑' }}
               </button>
-              <button @click="openDeliverableDocx" :disabled="!livePreviewDocxHtml" class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium text-slate-500 hover:text-blue-600 hover:bg-slate-100 disabled:opacity-40 transition-colors shrink-0" title="用 Word 打开 / 下载">
-                <i class="fa-solid fa-download text-[10px]"></i>下载
+              <button @click="openDeliverableDocx" :disabled="!livePreviewDocxHtml" class="ws-tool-btn shrink-0" title="用 Word 打开 / 下载">
+                <i class="fa-solid fa-download"></i>下载
               </button>
             </template>
           </div>
@@ -476,11 +476,11 @@
             <!-- 空态 -->
             <div v-if="!livePreviewContent && !livePreviewDocxHtml" class="h-full flex flex-col px-4 py-5">
               <div class="mb-3 px-1">
-                <div class="flex items-center gap-2 mb-1">
-                  <i :class="selectedDeliverable ? selectedDeliverable.icon : 'fa-solid fa-file-lines'" class="text-blue-500 text-sm"></i>
-                  <span class="text-[13px] font-semibold text-slate-700">{{ selectedDeliverable ? selectedDeliverable.name : '选择交付物' }}</span>
+                <div class="flex items-center gap-2 mb-1.5">
+                  <i :class="selectedDeliverable ? selectedDeliverable.icon : 'fa-solid fa-file-lines'" class="text-blue-500 text-[13px]"></i>
+                  <span class="ws-body font-semibold text-slate-700">{{ selectedDeliverable ? selectedDeliverable.name : '选择交付物' }}</span>
                 </div>
-                <p class="text-[12px] text-slate-400 leading-relaxed pl-5">{{ selectedDeliverable ? selectedDeliverable.hint : '从左侧选一件交付物' }}</p>
+                <p class="ws-label text-slate-400 leading-relaxed pl-5">{{ selectedDeliverable ? selectedDeliverable.hint : '从左侧选一件交付物' }}</p>
               </div>
               <div class="flex-1 glass-card rounded-xl border border-slate-200/70 shadow-sm overflow-hidden">
                 <div class="px-3.5 py-2 border-b border-slate-100 bg-transparent/60 flex items-center gap-2">
@@ -499,8 +499,8 @@
               </div>
               <div class="mt-3 flex justify-center">
                 <button @click="generateDeliverable(deliverableSelected)" :disabled="isStreaming || deliverableBusy || !deliverableSelected"
-                  class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12.5px] font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm disabled:opacity-50">
-                  <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i>
+                  class="inline-flex items-center gap-1.5 h-9 px-4 rounded-lg ws-body font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-sm shadow-blue-500/20 disabled:opacity-50">
+                  <i class="fa-solid fa-wand-magic-sparkles text-[11px]"></i>
                   {{ deliverableBusy ? '生成中…' : 'AI 生成' }}
                 </button>
               </div>
@@ -511,7 +511,7 @@
               class="glass-card mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
               <div class="px-4 py-2 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
                 <i class="fa-solid fa-file-word text-blue-500 text-[12px]"></i>
-                <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }} · Word</span>
+                <span class="ws-label text-slate-500 truncate">{{ livePreviewTitle || '文档' }} · Word</span>
               </div>
               <div class="px-7 py-6 markdown-body docx-preview" v-html="livePreviewDocxHtml"></div>
             </div>
@@ -521,17 +521,17 @@
               class="glass-card mx-3 mt-3 mb-4 rounded-xl border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.10)]">
               <div class="px-4 py-2 border-b border-slate-100 bg-transparent/50 rounded-t-xl flex items-center gap-2">
                 <i class="fa-solid fa-file-lines text-slate-400 text-[12px]"></i>
-                <span class="text-[12.5px] text-slate-500 truncate">{{ livePreviewTitle || '文档' }}</span>
-                <span v-if="livePreviewStreaming" class="ml-auto text-[11.5px] text-emerald-600">正在写入…</span>
+                <span class="ws-label text-slate-500 truncate">{{ livePreviewTitle || '文档' }}</span>
+                <span v-if="livePreviewStreaming" class="ml-auto ws-meta text-blue-600">正在写入…</span>
                 <!-- 生成完成后可就地编辑 -->
                 <button
                   v-else-if="livePreviewContent"
                   @click="togglePreviewEdit"
-                  class="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors"
-                  :class="previewEditing ? 'bg-blue-50 text-blue-700' : 'text-slate-400 hover:text-blue-600 hover:bg-slate-100'"
+                  class="ml-auto ws-tool-btn"
+                  :class="previewEditing ? 'is-on' : ''"
                   :title="previewEditing ? '回到预览' : '编辑文档'"
                 >
-                  <i class="fa-solid text-[10px]" :class="previewEditing ? 'fa-eye' : 'fa-pen'"></i>
+                  <i class="fa-solid" :class="previewEditing ? 'fa-eye' : 'fa-pen'"></i>
                   {{ previewEditing ? '预览' : '编辑' }}
                 </button>
               </div>
@@ -539,12 +539,12 @@
               <div v-if="previewEditing" class="p-4">
                 <textarea
                   v-model="previewDraft"
-                  class="w-full h-[calc(100vh-340px)] min-h-[320px] px-4 py-3 border border-slate-200 rounded-lg text-[13.5px] font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
+                  class="w-full h-[calc(100vh-340px)] min-h-[320px] px-4 py-3 border border-slate-200 rounded-lg ws-body font-mono leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300"
                 ></textarea>
                 <div class="mt-3 flex items-center justify-end gap-2">
-                  <button @click="previewEditing = false" class="px-3 py-1.5 text-[12.5px] rounded-lg text-slate-500 hover:bg-slate-100 transition-colors">取消</button>
-                  <button @click="savePreviewEdit" class="px-4 py-1.5 text-[12.5px] font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
-                    <i class="fa-solid fa-check mr-1 text-[10px]"></i>保存并更新 Word
+                  <button @click="previewEditing = false" class="ws-tool-btn">取消</button>
+                  <button @click="savePreviewEdit" class="inline-flex items-center gap-1.5 h-8 px-3.5 ws-label font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors">
+                    <i class="fa-solid fa-check text-[10px]"></i>保存并更新 Word
                   </button>
                 </div>
               </div>
@@ -3199,6 +3199,66 @@ textarea {
 }
 
 /* ===== 截图版工作台样式（全部走 token / 品牌蓝）===== */
+
+/* --- 统一字号台阶（收敛原先 10.5~14px 七八档到 4 档）---
+   ws-title 面板/卡片主标题 · ws-body 正文/文档名 · ws-label 次要 · ws-meta 状态/提示 */
+.ws-title { font-size: 14px; line-height: 1.3; }
+.ws-body  { font-size: 13px; line-height: 1.45; }
+.ws-label { font-size: 12px; line-height: 1.4; }
+.ws-meta  { font-size: 11px; line-height: 1.4; }
+
+/* --- 顶栏工具按钮：MD/Word/编辑/下载/折叠 统一同一档 ---
+   28px 高、10px 字、6px 圆角、图标 10px，hover 蓝 */
+.ws-tool-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.ws-tool-btn i { font-size: 11px; }
+.ws-tool-btn:hover:not(:disabled) { background: hsl(var(--primary) / 8%); color: hsl(var(--primary)); }
+.ws-tool-btn.is-on { background: hsl(var(--primary) / 10%); color: hsl(var(--primary)); }
+.ws-tool-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* --- 段控药丸（MD | Word 容器）--- */
+.ws-seg { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 9px; background: hsl(var(--primary) / 6%); }
+.ws-seg-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 24px; padding: 0 9px; border-radius: 7px;
+  font-size: 12px; font-weight: 500; border: none; cursor: pointer;
+  color: hsl(var(--muted-foreground)); background: transparent;
+  transition: background .15s, color .15s, box-shadow .15s;
+}
+.ws-seg-btn i { font-size: 9px; }
+.ws-seg-btn.is-on { background: hsl(var(--background)); color: hsl(var(--primary)); box-shadow: 0 1px 3px hsl(var(--foreground) / 8%); }
+.ws-seg-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* --- composer 圆形图标按钮：统一 32px --- */
+.ws-icon-btn {
+  width: 32px; height: 32px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: hsl(var(--muted-foreground)); background: transparent; border: none; cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.ws-icon-btn i { font-size: 13px; }
+.ws-icon-btn:hover:not(:disabled) { background: hsl(var(--primary) / 8%); color: hsl(var(--primary)); }
+.ws-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* 用户气泡：淡蓝底（token），替代硬编码 #e7edf7 */
+.user-bubble {
+  background: hsl(var(--primary) / 9%);
+}
+
 
 /* 顶部浅色 Hero 带 + 右侧 top.png 背景图 */
 .hero-band {
