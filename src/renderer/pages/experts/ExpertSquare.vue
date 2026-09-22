@@ -44,35 +44,18 @@
     <!-- ── 右侧:应用卡片 ────────────────────────── -->
     <div class="flex-1 min-w-0 overflow-y-auto">
       <div class="px-6 py-6 lg:px-8">
-        <div class="mb-4 flex items-center justify-between gap-4">
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <h1 class="text-[17px] font-bold text-slate-800 truncate">{{ activeName }}</h1>
-              <span class="text-[12px] text-slate-400 shrink-0">共 {{ filtered.length }} 个</span>
-            </div>
-            <p class="text-[12px] text-slate-400 mt-0.5 truncate">
-              发现、开发、发布和启动 AI 应用
-            </p>
-          </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <button
-              @click="toggleDevMode"
-              class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-medium border active:scale-95 transition-all"
-              :class="devMode
-                ? 'bg-blue-600 border-blue-600 text-white'
-                : 'glass-card border-slate-200 text-slate-500 hover:border-blue-300 hover:text-blue-600'"
-            >
-              <i class="fa-solid fa-code text-[9px]"></i>开发者
-            </button>
-            <button
-              v-if="devMode"
-              @click="openEditor(null)"
-              class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10.5px] font-medium bg-blue-600 hover:bg-blue-700 active:scale-95 text-white transition-all"
-            >
-              <i class="fa-solid fa-plus text-[9px]"></i>创建
-            </button>
-          </div>
-        </div>
+        <PageHero
+          :title="activeName"
+          :count="filtered.length"
+          description="发现、开发、发布和启动 AI 应用"
+          icon="fa-solid fa-store"
+          image="../../assets/top.png"
+        >
+          <template #actions>
+            <button @click="toggleDevMode" class="btn-sm" :aria-pressed="devMode"><i class="fa-solid fa-code"></i>开发者</button>
+            <button v-if="devMode" @click="openEditor(null)" class="btn-sm-pri"><i class="fa-solid fa-plus"></i>创建</button>
+          </template>
+        </PageHero>
 
         <div class="grid gap-3 mb-4" :class="devMode ? 'grid-cols-4' : 'grid-cols-3'">
           <div v-for="s in statCards" :key="s.label" class="stat-card">
@@ -714,6 +697,7 @@
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import PageHero from '@/components/common/PageHero.vue';
 import {
   aiAppCategories,
   builtinAiApps,

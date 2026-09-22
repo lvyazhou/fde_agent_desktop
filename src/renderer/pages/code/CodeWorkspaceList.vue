@@ -1,22 +1,18 @@
 <template>
   <div class="flex-1 overflow-y-auto p-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-800">代码工作区</h1>
-        <p class="text-sm text-slate-500 mt-1">打开任意本地文件夹，让 AI 直接在里面读写代码 —— 改动前给你看 diff、由你确认</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <button @click="createWorkspace" class="btn-sm">
-          <i class="fa-solid fa-folder-plus"></i>
-          <span>新建项目</span>
-        </button>
-        <button @click="openFolder" class="btn-sm-pri">
-          <i class="fa-solid fa-folder-open"></i>
-          <span>打开文件夹</span>
-        </button>
-      </div>
-    </div>
+    <PageHero
+      title="代码工作区"
+      description="打开任意本地文件夹，让 AI 直接读写代码；改动前先展示 diff，由你确认"
+      icon="fa-solid fa-code"
+      image="../../assets/top.png"
+      image-class="page-hero__image--center"
+    >
+      <template #actions>
+        <button @click="createWorkspace" class="btn-sm"><i class="fa-solid fa-folder-plus"></i>新建项目</button>
+        <button @click="openFolder" class="btn-sm-pri"><i class="fa-solid fa-folder-open"></i>打开文件夹</button>
+      </template>
+    </PageHero>
+
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -125,6 +121,7 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
+import PageHero from '@/components/common/PageHero.vue';
 
 const router = useRouter();
 const workspaces = ref([]);

@@ -65,36 +65,20 @@
     <!-- ── 右侧:卡片区 ────────────────────────── -->
     <div class="flex-1 min-w-0 overflow-y-auto">
       <div class="px-6 py-6 lg:px-8">
-        <!-- 标题 -->
-        <div class="mb-4 flex items-center justify-between gap-4">
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <h1 class="text-[17px] font-bold text-slate-800 truncate">{{ activeName }}</h1>
-              <span class="text-[12px] text-slate-400 shrink-0">共 {{ active !== 'projects' ? filtered.length : projectItemCount }} 份</span>
-            </div>
-            <p v-if="active !== 'projects'" class="text-[12px] text-slate-400 mt-0.5 truncate">
-              按 FDE 五阶段作战链沉淀的真实交付物与知识模板
-            </p>
-            <p v-else class="text-[12px] text-slate-400 mt-0.5 truncate">
-              各项目里 AI 生成的交付物与文档 · 可一键归档到作战阶段知识库
-            </p>
-          </div>
-          <button
-            v-if="active !== 'projects'"
-            @click="openUpload"
-            class="btn-sm-pri shrink-0"
-          >
-            <i class="fa-solid fa-cloud-arrow-up text-[11px]"></i>上传归档
-          </button>
-          <button
-            v-else
-            @click="loadProjects"
-            :disabled="scanningProjects"
-            class="btn-sm shrink-0"
-          >
-            <i class="fa-solid fa-rotate text-[11px]" :class="scanningProjects ? 'fa-spin' : ''"></i>重新扫描
-          </button>
-        </div>
+        <!-- 统一产品页 Hero：知识库场景 + 页面专属插图 -->
+        <PageHero
+          :title="activeName"
+          :count="active !== 'projects' ? filtered.length : projectItemCount"
+          description="按 FDE 五阶段作战链沉淀真实交付物与知识模板"
+          icon="fa-solid fa-book-open"
+          image="../../assets/top.png"
+          image-class="page-hero__image--center"
+        >
+          <template #actions>
+            <button v-if="active !== 'projects'" @click="openUpload" class="btn-sm-pri shrink-0"><i class="fa-solid fa-cloud-arrow-up"></i>上传归档</button>
+            <button v-else @click="loadProjects" :disabled="scanningProjects" class="btn-sm shrink-0"><i class="fa-solid fa-rotate" :class="scanningProjects ? 'fa-spin' : ''"></i>重新扫描</button>
+          </template>
+        </PageHero>
 
         <!-- 统计条(仅阶段视图) -->
         <div v-if="active !== 'projects'" class="grid grid-cols-4 gap-4 mb-5">
@@ -165,7 +149,7 @@
                       </div>
                     </div>
                   </button>
-                  <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                  <div class="kb-card__footer mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                     <button @click.stop="openProjectDoc(pj, item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>预览</button>
                     <button
                       @click.stop="openArchive(pj, item)"
@@ -209,7 +193,7 @@
                   </div>
                 </div>
               </button>
-              <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <div class="kb-card__footer mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                 <span class="truncate">{{ stageShort(item.stageIndex) }}</span>
                 <div class="flex items-center gap-2 shrink-0">
                   <button @click.stop="openDoc(item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>预览</button>
@@ -241,7 +225,7 @@
                 </div>
               </div>
             </button>
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+            <div class="kb-card__footer mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
               <span class="truncate">{{ stageShort(item.stageIndex) }}</span>
               <div class="flex items-center gap-2 shrink-0">
                 <button @click.stop="openDoc(item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>预览</button>
@@ -278,7 +262,7 @@
       <div v-if="selected" class="fixed inset-0 z-50" @keydown.esc="selected = null">
         <div class="absolute inset-0 bg-slate-900/40" @click="selected = null"></div>
         <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
-          <DocViewer :stage="selected.stageDir || ''" :item="selected" :project-slug="selectedProjectSlug" />
+          <DocViewer :stage="selected.stageDir || ''" :item="selected" :project-slug="selectedProjectSlug" @close="selected = null" />
         </aside>
       </div>
     </transition>
@@ -372,6 +356,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import DocViewer from '@/components/workbench/DocViewer.vue';
+import PageHero from '@/components/common/PageHero.vue';
 
 const CN_NUM = ['一', '二', '三', '四', '五'];
 const STAGE_COLORS = ['#2563eb', '#1d4ed8', '#3b82f6', '#0ea5e9', '#1e40af'];
@@ -854,8 +839,10 @@ function openProjectDoc(pj, item) {
 
 .kb-card {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  min-height: 146px;
   background: #fff;
   border: 1px solid #e8ecf0;
   border-radius: 14px;
@@ -879,6 +866,7 @@ function openProjectDoc(pj, item) {
   border-color: #c7d7f5;
 }
 .kb-card:hover .kb-card__accent { opacity: 1; }
+.kb-card__footer { margin-top: auto; }
 
 .fmt-badge {
   width: 40px;

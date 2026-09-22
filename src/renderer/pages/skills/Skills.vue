@@ -54,41 +54,20 @@
     <!-- ── 右侧:技能卡片 ────────────────────────── -->
     <div class="flex-1 min-w-0 overflow-y-auto">
       <div class="px-6 py-6 lg:px-8">
-        <div class="mb-4 flex items-center justify-between gap-4">
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <h1 class="text-[17px] font-bold text-slate-800 truncate">{{ activeName }}</h1>
-              <span class="text-[12px] text-slate-400 shrink-0">共 {{ filtered.length }} 项</span>
-            </div>
-            <p class="text-[12px] text-slate-400 mt-0.5 truncate">
-              AI 内置的真实技能包 · 覆盖产品文档 / 原型 / 出图 / 陪练全链路
-            </p>
-          </div>
-          <div class="shrink-0 flex items-center gap-2">
-          <button
-            @click="refresh"
-            :disabled="importing"
-            class="btn-sm shrink-0"
-            title="重新扫描技能库"
-          >
-            <i class="fa-solid fa-rotate text-[11px]" :class="refreshing ? 'fa-spin' : ''"></i>刷新
-          </button>
-          <button
-            @click="openHub"
-            class="btn-sm shrink-0"
-            title="从 360 SkillHub 搜索并安装技能"
-          >
-            <i class="fa-solid fa-cloud-arrow-down text-[11px]"></i>技能中心
-          </button>
-          <button
-            @click="startImport"
-            :disabled="importing"
-            class="btn-sm-pri shrink-0"
-          >
-            <i class="fa-solid fa-file-zipper text-[11px]"></i>导入技能包
-          </button>
-          </div>
-        </div>
+        <PageHero
+          :title="activeName"
+          :count="filtered.length"
+          description="AI 内置的真实技能包 · 覆盖产品文档 / 原型 / 出图 / 陪练全链路"
+          icon="fa-solid fa-brain"
+          image="../../assets/top.png"
+          image-class="page-hero__image--center"
+        >
+          <template #actions>
+            <button @click="refresh" :disabled="importing" class="btn-sm"><i class="fa-solid fa-rotate"></i>刷新</button>
+            <button @click="openHub" class="btn-sm"><i class="fa-solid fa-cloud-arrow-down"></i>技能中心</button>
+            <button @click="startImport" :disabled="importing" class="btn-sm-pri"><i class="fa-solid fa-file-zipper"></i>导入技能包</button>
+          </template>
+        </PageHero>
 
         <div class="grid grid-cols-4 gap-4 mb-5">
           <div v-for="s in statCards" :key="s.label" class="stat-card">
@@ -124,9 +103,9 @@
               </div>
             </div>
             <p class="text-[12px] text-slate-500 mt-3 leading-relaxed line-clamp-2">{{ sk.summary || '——' }}</p>
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+            <div class="sk-card__footer mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
               <span class="font-mono truncate">{{ sk.id }}</span>
-              <span class="text-blue-500 font-medium shrink-0"><i class="fa-solid fa-book-open mr-1"></i>查看说明</span>
+              <span class="sk-card__action"><i class="fa-solid fa-book-open"></i>查看说明</span>
             </div>
           </button>
         </div>
@@ -426,6 +405,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { marked } from 'marked';
+import PageHero from '@/components/common/PageHero.vue';
 
 const groups = ref([]);
 const skills = ref([]);
@@ -965,8 +945,10 @@ async function deleteSkill(sk) {
 
 .sk-card {
   position: relative;
-  display: block;
+  display: flex;
+  flex-direction: column;
   width: 100%;
+  min-height: 170px;
   background: #fff;
   border: 1px solid #e8ecf0;
   border-radius: 14px;
@@ -990,6 +972,29 @@ async function deleteSkill(sk) {
   border-color: #c7d7f5;
 }
 .sk-card:hover .sk-card__accent { opacity: 1; }
+.sk-card__footer { margin-top: auto; }
+.sk-card__action {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.sk-card__action i { font-size: 10.5px; }
+.sk-card:hover .sk-card__action, .sk-card:focus-visible .sk-card__action {
+  background: #eff6ff;
+  border-color: #dbeafe;
+  color: #1d4ed8;
+}
 
 .sk-icon {
   width: 44px;
