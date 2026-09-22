@@ -148,15 +148,7 @@
                 title="清空该交付物的对话记录"
                 aria-label="清空该交付物的对话记录"
               >
-                <i :class="item.icon" class="text-[11px] w-3.5 text-center shrink-0"
-                  :style="activeTab === item.key ? 'color:#2563eb' : 'color:#94a3b8'"></i>
-                <span class="flex-1 text-[12.5px] font-semibold"
-                  :class="activeTab === item.key ? 'text-blue-700' : 'text-slate-700'">{{ item.label }}</span>
-                <i v-if="item.key === 'deliverables'"
-                  @click.stop="delivTreeOpen = !delivTreeOpen"
-                  class="fa-solid fa-chevron-down text-[9px] text-slate-400 hover:text-slate-600 transition-transform px-1"
-                  :class="delivTreeOpen ? '' : '-rotate-90'"
-                  :title="delivTreeOpen ? '收起交付物' : '展开交付物'"></i>
+                <i class="fa-solid fa-trash-can text-[9px]"></i>
               </button>
               <div class="flex items-start gap-2.5">
                 <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors"
