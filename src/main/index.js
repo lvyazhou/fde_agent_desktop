@@ -6,7 +6,24 @@ const fs = require('fs');
 const os = require('os');
 const http = require('http');
 const { spawn } = require('child_process');
-const pty = require('node-pty');
+// node-pty 是原生模块，其 .node 二进制按 Electron 具体版本/ABI 编译。别人在自己机器
+// 上 npm install 后，如果平台/架构没有匹配的 prebuild、或 Electron 版本没对齐，顶层
+// require 会直接抛异常——而这一行原先在文件最开头无条件执行，会在主进程启动的第一
+// 时间就把整个应用带崩（不只是终端功能，AI coding 对话/hermes 连接全部起不来，且没
+// 有任何界面提示）。改成懒加载：只在真正要开终端时才 require，加载失败只让终端功能
+// 不可用，不影响应用其余部分。
+let pty = null;
+let ptyLoadError = null;
+function getPty() {
+  if (pty || ptyLoadError) return pty;
+  try {
+    pty = require('node-pty');
+  } catch (err) {
+    ptyLoadError = err;
+    console.error('[main] node-pty load failed, terminal feature disabled:', err.message);
+  }
+  return pty;
+}
 const AcpClient = require('./acp-client.js');
 const licenseVerifier = require('./license/verifier.js');
 const licenseStore = require('./license/store.js');
@@ -1121,6 +1138,9 @@ function createWindow() {
     minHeight: 768,
     show: false,
     frame: false,
+    // 不设的话 Chromium 给纯白，首帧就是刺眼白屏；对齐 :root 的 --background(白)，
+    // 让「窗口底 → 页面底」无缝，看不出加载过程。
+    backgroundColor: '#ffffff',
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
@@ -1137,7 +1157,9 @@ function createWindow() {
     return { action: 'allow' };
   });
 
-  loadRenderer(mainWindow).catch((error) => {
+  // 页面加载 promise 挂到窗口上：启动流程要等它 resolve 才 show，
+  // 否则窗口会赶在渲染层出首帧之前显示出来，那段空白就是白屏。
+  mainWindow.__rendererReady = loadRenderer(mainWindow).catch((error) => {
     console.error('[main] Failed to load renderer:', error);
   });
 
@@ -2646,6 +2668,8 @@ async function loadOrCreateCodeSession(workspace, conversation) {
 ipcMain.handle('code:terminal-create', async (event, { id, shellId } = {}) => {
   const workspace = findCodeWorkspace(id);
   if (!workspace || !fs.existsSync(workspace.path)) return { success: false, error: '工作区不存在' };
+  const ptyLib = getPty();
+  if (!ptyLib) return { success: false, error: `终端功能不可用（node-pty 原生模块加载失败：${ptyLoadError?.message || '未知原因'}，通常是 Electron ABI 与原生模块不匹配，需要重新安装依赖）` };
   const shellSpec = codeShellOptions().find((s) => s.id === shellId) || codeShellOptions()[0];
   const terminalId = `term_${Date.now()}_${nextCodeTerminalId++}`;
   try {
@@ -2656,7 +2680,7 @@ ipcMain.handle('code:terminal-create', async (event, { id, shellId } = {}) => {
         try { fs.chmodSync(helper, 0o755); } catch (_) { /* 只影响 PTY 启动，下面会返回具体错误 */ }
       }
     }
-    const proc = pty.spawn(shellSpec.command, shellSpec.args, {
+    const proc = ptyLib.spawn(shellSpec.command, shellSpec.args, {
       name: 'xterm-256color', cols: 100, rows: 30, cwd: workspace.path,
       env: { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor' },
       ...(process.platform === 'win32' ? { useConpty: true } : {}),
@@ -4283,6 +4307,20 @@ app.on('child-process-gone', (_e, details) => {
   logCrash('child-process-gone', JSON.stringify(details));
 });
 
+// 等窗口真的有内容可画。ready-to-show 可能在挂监听之前就已经触发，
+// 所以用 isLoading() 兜一层；再加超时，保证任何异常下窗口都不会永远不出来。
+function whenReadyToShow(win, timeoutMs = 8000) {
+  return new Promise((resolve) => {
+    if (win.isDestroyed()) return resolve();
+    let done = false;
+    const finish = () => { if (!done) { done = true; clearTimeout(timer); resolve(); } };
+    const timer = setTimeout(finish, timeoutMs);
+    win.once('ready-to-show', finish);
+    // 已经加载完了就别干等 ready-to-show
+    if (!win.webContents.isLoading()) finish();
+  });
+}
+
 app.whenReady().then(async () => {
   ensureDirs();
   buildAppMenu();
@@ -4308,12 +4346,14 @@ app.whenReady().then(async () => {
     updateSplash(100, '引擎启动超时，尝试强制进入...');
   }
 
-  setTimeout(() => {
-    if (splashWindow && !splashWindow.isDestroyed()) {
-      splashWindow.close();
-    }
-    win.show();
-  }, 600);
+  // 原先是「引擎就绪 + 固定 600ms」就 show，跟页面加载没关系：
+  // 引擎先好、渲染层还在编译时，显示出来的就是一片白。改成等首帧可画。
+  updateSplash(100, '正在打开工作台...');
+  await Promise.all([win.__rendererReady, whenReadyToShow(win)]);
+
+  if (!win.isDestroyed()) win.show();
+  // 先 show 再关启动页，避免中间露出桌面闪一下
+  if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

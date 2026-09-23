@@ -424,6 +424,7 @@ const terminalFits = new Map();
 const terminalUnsubs = new Map();
 let terminalCounter = 1;
 let unsubTerminalExit = null;
+let unsubTerminalData = null;
 
 const entryAction = ref(null);
 const entryNameInput = ref(null);
@@ -1163,7 +1164,7 @@ onMounted(async () => {
   await refreshTree();
   if (window.api?.code?.terminal) {
     unsubTerminalExit = window.api.code.terminal.onExit(handleTerminalExit);
-    window.api.code.terminal.onData(handleTerminalData);
+    unsubTerminalData = window.api.code.terminal.onData(handleTerminalData);
   }
   window.addEventListener('resize', fitTerminal);
   if (window.api?.hermes?.onSessionUpdate) unsubUpdate = window.api.hermes.onSessionUpdate(handleSessionUpdate);
