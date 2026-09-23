@@ -19,7 +19,7 @@
             </p>
           </div>
           <div class="shrink-0 text-right relative z-[1] hidden md:block">
-            <div class="text-[19px] font-bold text-blue-700 leading-tight">AI 助力医院运营</div>
+            <div class="text-[19px] font-bold text-blue-700 leading-tight">AI 助力业务运营</div>
             <div class="text-[12px] text-slate-500 mt-1 tracking-wide">数据驱动 · 精准决策</div>
           </div>
         </div>

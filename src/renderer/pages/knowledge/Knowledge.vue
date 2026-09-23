@@ -262,7 +262,7 @@
       <div v-if="selected" class="fixed inset-0 z-50" @keydown.esc="selected = null">
         <div class="absolute inset-0 bg-slate-900/40" @click="selected = null"></div>
         <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
-          <DocViewer :stage="selected.stageDir || ''" :item="selected" :project-slug="selectedProjectSlug" @close="selected = null" />
+          <DocViewer :stage="selected.stageDir || ''" :item="selected" :project-slug="selectedProjectSlug" @close="selected = null" @navigate="navigateToDoc" />
         </aside>
       </div>
     </transition>
@@ -613,6 +613,27 @@ function fmtColor(t) {
 function openDoc(item) {
   selectedProjectSlug.value = '';   // handbook 模式
   selected.value = item;
+}
+
+// [[wikilink]] 跳转:按标题在全库(handbook)查找目标文档并在抽屉里打开。
+// 兼容带扩展名/文件名前缀数字的写法,匹配不到给出提示。
+function navigateToDoc(title) {
+  const norm = (s) => (s || '')
+    .replace(/\.(md|docx?|html?|pdf|pptx|xlsx)$/i, '')   // 去扩展名
+    .replace(/^\d+[-.\s]*/, '')                           // 去文件名前缀序号
+    .replace(/【[^】]*】/g, '')                            // 去【知识·技术】类标注
+    .replace(/\s+/g, '')
+    .trim();
+  const key = norm(title);
+  // 先精确匹配标题,再退化为文件名匹配
+  let hit = allItems.value.find((it) => norm(it.title) === key);
+  if (!hit) hit = allItems.value.find((it) => norm(it.file) === key);
+  if (!hit) hit = allItems.value.find((it) => norm(it.title).includes(key) || norm(it.file).includes(key));
+  if (hit) {
+    openDoc(hit);
+  } else {
+    showToast(`未找到「${title}」对应的知识文档`);
+  }
 }
 // 「本项目产物」预览:复用同一抽屉,但走项目目录读取(relPath 相对项目根)
 function openProjectDoc(pj, item) {

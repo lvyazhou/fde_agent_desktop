@@ -20,7 +20,7 @@
   body{margin:0;background:var(--paper);color:var(--text);font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.78;-webkit-font-smoothing:antialiased}
   h1,h2,h3,.serif{font-family:"Noto Sans SC",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;text-wrap:balance}
   .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
-  .wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 28px}
 
   /* HERO */
   .hero{background:var(--ink);color:var(--text-oninK);position:relative;overflow:hidden}
@@ -446,36 +446,65 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
       <h3 class="sub">SEAF = 智能体引擎底座</h3>
       <p class="body">记住一句话:<b>对外只有一个产品——纳米Work 行业工作台;SEAF 只在底层供能力,不单独露面</b>。工作台里的智能体、Skill、知识库、MCP、工作流,都是工作台的入口/组件;它们底层的能力(智能体引擎、工作流、长期记忆、离线大模型)由 SEAF 提供。相当于把 SEAF 封装成工作台的组件,客户从头到尾只用一个工作台。</p>
       <div class="metaphor"><p class="mt">打个比方</p>SEAF 像发电厂,纳米Work 工作台像你家墙上的插座和电器。客户只跟插座和电器打交道,不用知道电从哪个发电厂来。</div>
+      <p class="body">整套架构<b>自上而下五层贯通</b>——从客户用的到数据存的,一层供一层;右边还有<b>三根安全支柱</b>贯穿全程,是跟医院讲合规的三张王牌。这张图记牢,信息科一问"数据怎么不出院、模型放哪、智能体怎么分科室",你脑子里立刻能浮现它。</p>
       <div class="diagram">
-        <svg viewBox="0 0 720 300" role="img" aria-label="技术底座分层架构图">
-          <!-- 客户 -->
-          <rect x="240" y="14" width="240" height="40" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="1"/>
-          <text x="360" y="39" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">客户 · 只面对一个入口</text>
-          <line x1="360" y1="54" x2="360" y2="74" stroke="#2563eb" stroke-width="1.5"/>
-          <!-- 纳米Work 顶层 -->
-          <rect x="60" y="74" width="600" height="58" rx="8" fill="#1e293b"/>
-          <text x="360" y="98" text-anchor="middle" fill="#3b73f0" font-size="13.5" font-weight="700">纳米Work 行业工作台(唯一露面)</text>
-          <text x="360" y="118" text-anchor="middle" fill="#9aa6bd" font-size="11">智能体 · Skill · 知识库 · MCP · 工作流(都是这里的入口/组件)</text>
-          <!-- 分隔:封装 -->
-          <text x="360" y="150" text-anchor="middle" fill="#64748b" font-size="10.5">↑ SEAF 的能力被封装成工作台组件 · 客户看不到下面 ↑</text>
-          <!-- SEAF 引擎层 -->
-          <rect x="60" y="160" width="440" height="58" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
-          <text x="280" y="184" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">SEAF 智能体引擎底座(藏底层供能)</text>
-          <text x="280" y="204" text-anchor="middle" fill="#64748b" font-size="10.5">智能体引擎 · 工作流 · 长期记忆 · 分权 · 离线大模型</text>
-          <!-- SDR 数据层 -->
-          <rect x="520" y="160" width="140" height="58" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/>
-          <text x="590" y="184" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">SDR</text>
-          <text x="590" y="203" text-anchor="middle" fill="#64748b" font-size="10">数据地基</text>
-          <!-- 数据源 -->
-          <rect x="60" y="242" width="600" height="46" rx="8" fill="#eff4ff"/>
-          <text x="360" y="262" text-anchor="middle" fill="#1e293b" font-size="11.5" font-weight="700">客户业务系统(数据源)</text>
-          <text x="360" y="279" text-anchor="middle" fill="#64748b" font-size="10.5">HIS · EMR · LIS · PACS · HR · 财务 …… SDR 零代码接入,统一成标准字段</text>
-          <!-- 连线 -->
-          <line x1="280" y1="132" x2="280" y2="158" stroke="#2563eb" stroke-width="1.5"/>
-          <line x1="590" y1="218" x2="590" y2="240" stroke="#0284c7" stroke-width="1.5"/>
-          <line x1="520" y1="189" x2="502" y2="189" stroke="#0284c7" stroke-width="1.5"/>
+        <svg viewBox="0 0 720 452" role="img" aria-label="医疗智能体五层贯通架构图">
+          <defs><marker id="seafarw" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2563eb"/></marker></defs>
+          <!-- 主轴五层(左侧宽列) -->
+          <!-- ① 用户层 -->
+          <rect x="20" y="16" width="500" height="56" rx="8" fill="#eff4ff" stroke="#2563eb" stroke-width="1.2"/>
+          <text x="34" y="38" fill="#2563eb" font-size="12.5" font-weight="700">① 用户层 · 按科室开放</text>
+          <text x="34" y="58" fill="#64748b" font-size="10">临床/护理/医技/财务/医保/行政…… 各科室只看跟自己业务对得上的智能体</text>
+          <line x1="270" y1="72" x2="270" y2="84" stroke="#2563eb" stroke-width="1.3" marker-end="url(#seafarw)"/>
+          <!-- ② 纳米Work 工作台 -->
+          <rect x="20" y="86" width="500" height="62" rx="8" fill="#1e293b"/>
+          <text x="270" y="108" text-anchor="middle" fill="#60a5fa" font-size="13" font-weight="700">② 纳米Work 行业工作台(客户唯一入口)</text>
+          <text x="270" y="128" text-anchor="middle" fill="#9aa6bd" font-size="10.5">智能体 · Skill · 知识库 · MCP · 工作流(五个组件入口)</text>
+          <text x="270" y="142" text-anchor="middle" fill="#e0f2fe" font-size="9.5">⚡ 业务数据阅后即焚,用完不留底</text>
+          <text x="270" y="163" text-anchor="middle" fill="#64748b" font-size="9.5">↑ 客户只看到这层 · 下面 SEAF 封装成组件不露面 ↑</text>
+          <line x1="270" y1="148" x2="270" y2="172" stroke="#2563eb" stroke-width="1.3" marker-end="url(#seafarw)"/>
+          <!-- ③ SEAF -->
+          <rect x="20" y="174" width="500" height="58" rx="8" fill="#fff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="270" y="196" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">③ SEAF 智能体平台(藏底层供能,不露面)</text>
+          <text x="270" y="216" text-anchor="middle" fill="#64748b" font-size="10">智能体引擎 · 工作流引擎 · 自我迭代 · 长期记忆 · 离线大模型(私有化不联网)</text>
+          <line x1="270" y1="232" x2="270" y2="244" stroke="#2563eb" stroke-width="1.3" marker-end="url(#seafarw)"/>
+          <!-- ④ SDR 三段 -->
+          <rect x="20" y="246" width="500" height="70" rx="8" fill="#fff" stroke="#0284c7" stroke-width="1.5"/>
+          <text x="270" y="266" text-anchor="middle" fill="#1e293b" font-size="12.5" font-weight="700">④ SDR 安全数据基座(数据不出院的关口)</text>
+          <text x="34" y="286" fill="#64748b" font-size="9.5">· 服务网关层:MCP/HTTP/WebSocket · TLS 加密</text>
+          <text x="34" y="300" fill="#64748b" font-size="9.5">· 服务平台层:数据脱敏(L1–L4)· 安全审计 · 配置下发</text>
+          <text x="34" y="311" fill="#64748b" font-size="9.5">· 数据治理层:SeaTunnel 同步 + Doris 分析存储</text>
+          <line x1="270" y1="316" x2="270" y2="328" stroke="#2563eb" stroke-width="1.3" marker-end="url(#seafarw)"/>
+          <!-- ⑤ 数据源 -->
+          <rect x="20" y="330" width="500" height="56" rx="8" fill="#eff4ff"/>
+          <text x="270" y="352" text-anchor="middle" fill="#1e293b" font-size="12" font-weight="700">⑤ 数据源层 · 院内原始系统</text>
+          <text x="270" y="371" text-anchor="middle" fill="#64748b" font-size="9.5">HIS/LIS/PACS/EMR(Oracle,一律只读 View)· HR 人事库(MySQL 单独通道)</text>
+          <!-- 右侧三根安全支柱 -->
+          <text x="640" y="32" text-anchor="middle" fill="#b5433a" font-size="11" font-weight="700">三根安全支柱</text>
+          <text x="640" y="46" text-anchor="middle" fill="#64748b" font-size="9">(贯穿全层)</text>
+          <rect x="548" y="86" width="152" height="96" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/>
+          <text x="624" y="106" text-anchor="middle" fill="#b5433a" font-size="10.5" font-weight="700">数据安全</text>
+          <text x="624" y="124" text-anchor="middle" fill="#64748b" font-size="8.5">数据不出院</text>
+          <text x="624" y="138" text-anchor="middle" fill="#64748b" font-size="8.5">不出 360 安全域</text>
+          <text x="624" y="152" text-anchor="middle" fill="#64748b" font-size="8.5">只读 View 边界</text>
+          <text x="624" y="166" text-anchor="middle" fill="#64748b" font-size="8.5">L1–L4 分级脱敏</text>
+          <rect x="548" y="188" width="152" height="80" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/>
+          <text x="624" y="208" text-anchor="middle" fill="#b5433a" font-size="10.5" font-weight="700">大模型安全</text>
+          <text x="624" y="226" text-anchor="middle" fill="#64748b" font-size="8.5">离线私有化模型</text>
+          <text x="624" y="240" text-anchor="middle" fill="#64748b" font-size="8.5">不存储/不联网/不训练</text>
+          <text x="624" y="254" text-anchor="middle" fill="#64748b" font-size="8.5">模型权重不出域</text>
+          <rect x="548" y="274" width="152" height="96" rx="8" fill="#f3e2df" stroke="#b5433a" stroke-width="1"/>
+          <text x="624" y="294" text-anchor="middle" fill="#b5433a" font-size="10.5" font-weight="700">智能体安全</text>
+          <text x="624" y="312" text-anchor="middle" fill="#64748b" font-size="8.5">业务数据阅后即焚</text>
+          <text x="624" y="326" text-anchor="middle" fill="#64748b" font-size="8.5">180 天审计(可配)</text>
+          <text x="624" y="340" text-anchor="middle" fill="#64748b" font-size="8.5">工具调用全审计</text>
+          <text x="624" y="354" text-anchor="middle" fill="#64748b" font-size="8.5">分科室权限管控</text>
+          <!-- 底部合规话术 -->
+          <rect x="20" y="400" width="680" height="40" rx="8" fill="#1e293b"/>
+          <text x="360" y="418" text-anchor="middle" fill="#60a5fa" font-size="11" font-weight="700">路线:360 私有云内部署专属医疗智能体实例</text>
+          <text x="360" y="433" text-anchor="middle" fill="#9aa6bd" font-size="9.5">省硬件 · 数据不出安全域 · 模型私有化兜底 · 全链路可审计</text>
         </svg>
-        <p class="cap">分层架构:客户只看纳米Work(顶层)→ SEAF 引擎在下面供能 → SDR 把底层各业务系统的数据接上来喂进去</p>
+        <p class="cap">五层贯通架构:①用户层(按科室)→②纳米Work工作台(唯一入口)→③SEAF引擎(藏底层)→④SDR安全基座(三段)→⑤数据源(只读View)。右侧三根安全支柱贯穿全层,是跟医院讲合规的三张王牌</p>
       </div>
       <div class="cards">
         <div class="card"><div class="ch">SEAF 供什么能力</div><ul><li>智能体引擎、工作流编排</li><li>长期记忆(让智能体"越用越聪明")</li><li>分科室/分角色权限</li><li>离线大模型(数据不出院)</li><li>L2/L3/L4 分层调用能力</li></ul></div>
@@ -563,7 +592,7 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
         <ol><li>用发电厂的比喻,给同伴讲清 SEAF 和纳米Work 的关系。</li><li>说出 SDR 解决的四个卡点各对应哪个解法。</li><li>同伴扮信息科问三个数据安全问题,你按口径接住。</li></ol>
         <p class="chk"><b>过关:</b> 能讲清"客户只面对一个产品";四个卡点对应无错;安全三问答不卡壳。</p>
       </div>
-      <p class="reading">延伸:<a href="#" class="wl wl-link" data-nav="/">SDR 数据基座 + 纳米Work 企业智能体平台 + 大数据能力与医疗数据中台</a>(应用内:FDE 工作台 · 阶段一「平台技术库」,含架构图与安全底线)</p>
+      <p class="reading">延伸:<a href="#" class="wl wl-link" data-nav="/">医疗智能体一体化架构(重点)</a>——五层贯通 + 三根安全支柱的底稿,进场跟信息科讲合规全靠它;另有 SDR 数据基座、纳米Work 企业智能体平台、大数据与医疗数据中台(应用内:FDE 工作台 · 阶段一技术库)</p>
     </section>
     <hr class="div">
 
@@ -577,7 +606,7 @@ Sprint 一圈(预估全程 2–4 周,以实际排期为准)
       <div class="cards c3">
         <div class="card"><div class="ch"><span class="tag">行业库</span> 医疗行业知识</div><p>行业政策、术语(国考/DRG/CMI/药占比…)、痛点、对标案例。做到客户说术语你能接上话。<b>对应手册:备弹知识库 + 调研框架 SOP + 话术卡。</b></p></div>
         <div class="card"><div class="ch"><span class="tag">技术库</span> 技术底座材料</div><p>FDE 技术基础(前端/后端/API/数据库/服务器)、SDR 数据基座(架构/概念/安全底线)、大数据能力与医疗数据中台(ETL/数仓分层/数据治理)、纳米Work 企业智能体平台(L2/L3/L4 形态/MCP+Skill/私有化)。<b>客户问"数据怎么接""系统怎么部署"你能接住。</b></p></div>
-        <div class="card"><div class="ch"><span class="tag">产品库</span> 产品认知</div><p>SEAF 智能体引擎底座、纳米Work 行业工作台(客户唯一露面的产品)、SDR 数据地基。<b>本教程模块 03 已讲,手册平台技术库里有详细学员材料。</b></p></div>
+        <div class="card"><div class="ch"><span class="tag">产品库</span> 产品认知</div><p>SEAF 智能体引擎底座、纳米Work 行业工作台(客户唯一露面的产品)、SDR 数据地基。<b>本教程模块 03 已讲,手册阶段一技术库里有详细学员材料。</b></p></div>
       </div>
       <div class="flow">
 72 小时作战地图(前三天怎么打)

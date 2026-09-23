@@ -79,7 +79,7 @@
           "type": "md",
           "category": "knowledge",
           "previewable": true,
-          "knowledgeType": "技术"
+          "knowledgeType": "产品"
         },
         {
           "file": "8-SDR功能及相关工作规范【知识·技术】.docx",
@@ -89,22 +89,6 @@
           "previewable": true,
           "knowledgeType": "技术",
           "previewHtml": "8-SDR功能及相关工作规范【知识·技术】.html"
-        },
-        {
-          "file": "9-医疗智能体一体化架构【知识·技术】.md",
-          "title": "医疗智能体一体化架构",
-          "type": "md",
-          "category": "knowledge",
-          "previewable": true,
-          "knowledgeType": "技术"
-        },
-        {
-          "file": "10-医疗智能体产品矩阵【知识·产品】.md",
-          "title": "医疗智能体产品矩阵",
-          "type": "md",
-          "category": "knowledge",
-          "previewable": true,
-          "knowledgeType": "产品"
         }
       ],
       "counts": {
