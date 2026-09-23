@@ -192,7 +192,7 @@
             type="button"
             @click="setTheme(t.key)"
             class="text-left rounded-xl border p-3.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-            :class="theme === t.key ? 'border-blue-400 bg-blue-50/60' : 'border-slate-200 hover:border-slate-300'"
+            :class="theme === t.key ? 'border-primary bg-primary-soft' : 'border-slate-200 hover:border-primary'"
           >
             <div class="flex items-center gap-2.5 mb-2">
               <!-- 色卡预览：直接用写死的色值，避免受当前主题影响 -->
@@ -200,7 +200,7 @@
                 <span v-for="c in t.swatch" :key="c" class="w-4 h-4 rounded" :style="{ background: c }"></span>
               </span>
               <span class="text-[13px] font-semibold text-slate-800">{{ t.name }}</span>
-              <i v-if="theme === t.key" class="fa-solid fa-circle-check text-blue-600 text-[12px] ml-auto"></i>
+              <i v-if="theme === t.key" class="fa-solid fa-circle-check text-primary text-[12px] ml-auto"></i>
             </div>
             <p class="text-[11.5px] text-slate-500 leading-relaxed">{{ t.desc }}</p>
           </button>

@@ -1,5 +1,7 @@
 ﻿<template>
-  <div class="flex-1 flex flex-col min-w-0 relative glass-card">
+  <!-- min-h-0：本身也是 flex 子项，不加会被消息列表撑高超出视口，
+       导致内部 overflow-y-auto 失效、absolute bottom-0 的输入框被顶到屏幕外。 -->
+  <div class="flex-1 flex flex-col min-w-0 min-h-0 relative glass-card">
     <!-- Messages area -->
     <div ref="chatContainerRef" class="flex-1 overflow-y-auto px-4 pt-5" :class="messages.length > 0 ? 'pb-[160px]' : ''">
       <!-- Loading state -->
@@ -38,11 +40,21 @@
           class="flex flex-col w-full group transition-all duration-300 relative"
           :class="msg.role === 'user' ? 'items-end' : 'items-start'"
         >
-          <!-- 来源标签：这条记录来自工作台哪条对话线（本页自己聊的没有标签） -->
+          <!-- 来源分隔：对话线发生切换时插一条。
+               切回本页主线(sourceLabel 为空)也要插，否则后面的消息看着像还归属上一条交付物。 -->
           <div
-            v-if="msg.sourceLabel && msg.sourceLabel !== messages[idx - 1]?.sourceLabel"
+            v-if="idx > 0 && (msg.sourceLabel || '') !== (messages[idx - 1]?.sourceLabel || '')"
             class="w-full flex items-center gap-2 my-3 select-none"
           >
+            <span class="h-px flex-1 bg-slate-200/70"></span>
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-[11px] font-medium text-slate-500">
+              <i class="fa-solid text-[9px] text-slate-400" :class="msg.sourceLabel ? 'fa-diagram-project' : 'fa-comments'"></i>
+              {{ msg.sourceLabel || '智能对话' }}
+            </span>
+            <span class="h-px flex-1 bg-slate-200/70"></span>
+          </div>
+          <!-- 首条就来自其他对话线：也要标出来源 -->
+          <div v-else-if="idx === 0 && msg.sourceLabel" class="w-full flex items-center gap-2 mb-3 select-none">
             <span class="h-px flex-1 bg-slate-200/70"></span>
             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-[11px] font-medium text-slate-500">
               <i class="fa-solid fa-diagram-project text-[9px] text-slate-400"></i>

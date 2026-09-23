@@ -1,40 +1,37 @@
 <template>
   <div class="flex flex-col h-full min-h-0 bg-transparent">
-    <!-- 顶部:标题 + 外部打开 -->
-    <div class="flex items-center gap-3 px-6 py-4 glass-card border-b border-slate-200/80 shrink-0">
-      <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center shrink-0">
-        <i class="fa-solid fa-graduation-cap text-[13px]"></i>
-      </span>
-      <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-2">
-          <h2 class="text-[15px] font-semibold text-slate-800 truncate">FDE 培训教程</h2>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium shrink-0">新任项目经理 · 从0到上手</span>
+    <PageHero
+      title="FDE 培训教程"
+      description="新任项目经理 · 从0到上手 · 五阶段 / 医疗架构 / 技术底座 / 项管规范"
+      icon="fa-solid fa-graduation-cap"
+      :image="heroImage"
+      image-class="page-hero__image--center"
+      compact
+    >
+      <template #actions>
+        <div class="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-100 shrink-0">
+          <button
+            v-for="t in tabs"
+            :key="t.key"
+            @click="switchTab(t.key)"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors cursor-pointer"
+            :class="active === t.key ? 'glass-card text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
+            :title="t.hint"
+          >
+            <i :class="t.icon" class="text-[11px]"></i>
+            <span>{{ t.label }}</span>
+          </button>
         </div>
-        <p class="text-[12px] text-slate-500 truncate">五阶段 · 医疗架构 · 技术底座 · 工作台 · 极库云 · 项管规范 · 实战</p>
-      </div>
-      <!-- 教程 / 讲师版 切换 -->
-      <div class="flex items-center gap-0.5 p-0.5 rounded-lg bg-slate-100 shrink-0">
         <button
-          v-for="t in tabs"
-          :key="t.key"
-          @click="switchTab(t.key)"
-          class="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors cursor-pointer"
-          :class="active === t.key ? 'glass-card text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'"
-          :title="t.hint"
+          @click="openExternal"
+          class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer shrink-0"
+          title="在浏览器中打开"
         >
-          <i :class="t.icon" class="text-[11px]"></i>
-          <span>{{ t.label }}</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
+          <span class="hidden sm:inline">浏览器打开</span>
         </button>
-      </div>
-      <button
-        @click="openExternal"
-        class="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors cursor-pointer shrink-0"
-        title="在浏览器中打开"
-      >
-        <i class="fa-solid fa-arrow-up-right-from-square text-[11px]"></i>
-        <span class="hidden sm:inline">浏览器打开</span>
-      </button>
-    </div>
+      </template>
+    </PageHero>
 
     <!-- 主体:iframe 承载完整教程页(保留原页样式与侧栏导航) -->
     <div class="flex-1 min-h-0 relative">
@@ -56,6 +53,8 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
+import PageHero from '@/components/common/PageHero.vue';
+import heroImage from '@/assets/hero-training.jpg';
 
 // 两个页面:学员教程 / 讲师版讲稿(都在 public 目录,dev 由 vite 提供、打包后与 index.html 同级)
 const tabs = [

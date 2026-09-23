@@ -33,6 +33,14 @@
           <i class="fa-solid fa-download text-[11px]"></i>
           <span>下载</span>
         </button>
+        <button
+          @click="$emit('close')"
+          class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+          title="关闭预览"
+        >
+          <i class="fa-solid fa-xmark text-[12px]"></i>
+          <span>关闭</span>
+        </button>
       </div>
     </div>
 
@@ -130,6 +138,8 @@ const props = defineProps({
   // 此时 item 需带 relPath(相对项目根,如 'stage2/prd.md' 或 'prototype/index.html')。
   projectSlug: { type: String, default: '' },
 });
+
+defineEmits(['close']);
 
 const loading = ref(false);
 const error = ref('');
@@ -236,8 +246,7 @@ const openFile = async () => {
 const downloadFile = async () => {
   try {
     if (isProject.value) {
-      // 项目产物暂无独立另存对话框:退化为系统打开(用户可从系统里另存)
-      await window.api.hermes.openInBrowser(props.projectSlug, projectRel.value);
+      await window.api.hermes.saveFile(props.projectSlug, projectRel.value);
       return;
     }
     await window.api.handbook.saveAs(props.stage, props.item.file);

@@ -4,7 +4,7 @@
       title="代码工作区"
       description="打开任意本地文件夹，让 AI 直接读写代码；改动前先展示 diff，由你确认"
       icon="fa-solid fa-code"
-      image="../../assets/top.png"
+      :image="heroImage"
       image-class="page-hero__image--center"
     >
       <template #actions>
@@ -71,10 +71,6 @@
             <div class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
               <i class="fa-solid fa-folder-tree text-blue-700"></i>
             </div>
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-medium">
-              <i class="fa-solid fa-code text-[10px]"></i>
-              代码工作区
-            </span>
           </div>
           <h3 class="text-base font-semibold text-slate-800 mb-1 truncate">{{ ws.name }}</h3>
           <p class="text-xs text-slate-400 mb-1 truncate" :title="ws.path">
@@ -122,6 +118,7 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHero from '@/components/common/PageHero.vue';
+import heroImage from '@/assets/hero-code.jpg';
 
 const router = useRouter();
 const workspaces = ref([]);

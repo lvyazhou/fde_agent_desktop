@@ -49,7 +49,7 @@
           :count="filtered.length"
           description="发现、开发、发布和启动 AI 应用"
           icon="fa-solid fa-store"
-          image="../../assets/top.png"
+          :image="heroImage"
         >
           <template #actions>
             <button @click="toggleDevMode" class="btn-sm" :aria-pressed="devMode"><i class="fa-solid fa-code"></i>开发者</button>
@@ -698,6 +698,7 @@
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHero from '@/components/common/PageHero.vue';
+import heroImage from '@/assets/hero-apps.jpg';
 import {
   aiAppCategories,
   builtinAiApps,

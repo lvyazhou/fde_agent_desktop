@@ -7,6 +7,7 @@
         class="tree-row"
         :style="{ paddingLeft: depth * 12 + 8 + 'px' }"
         @click="toggle(node.relPath)"
+        @contextmenu.prevent="$emit('contextmenu', { event: $event, node })"
       >
         <i
           class="fa-solid text-[9px] w-3 text-slate-400 transition-transform"
@@ -24,6 +25,7 @@
         :collapsed="collapsed"
         @select="$emit('select', $event)"
         @toggle="$emit('toggle', $event)"
+        @contextmenu="$emit('contextmenu', $event)"
       />
       <!-- 文件行 -->
       <div
@@ -32,6 +34,7 @@
         :class="{ 'tree-row--active': selected === node.relPath }"
         :style="{ paddingLeft: depth * 12 + 22 + 'px' }"
         @click="$emit('select', node.relPath)"
+        @contextmenu.prevent="$emit('contextmenu', { event: $event, node })"
       >
         <i class="fa-solid text-[11px]" :class="fileIcon(node.name)"></i>
         <span class="tree-label">{{ node.name }}</span>
@@ -48,7 +51,7 @@ const props = defineProps({
   selected: { type: String, default: '' },
   collapsed: { type: Object, default: () => new Set() }, // Set<relPath>
 });
-const emit = defineEmits(['select', 'toggle']);
+const emit = defineEmits(['select', 'toggle', 'contextmenu']);
 
 const isCollapsed = (rel) => props.collapsed.has(rel);
 const toggle = (rel) => emit('toggle', rel);

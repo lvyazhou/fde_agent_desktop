@@ -191,6 +191,7 @@ const api = {
     updateProjectMeta(slug, updates) { return invoke('hermes:update-project-meta', { slug, updates }); },
     uploadKnowledge(slug) { return invoke('hermes:upload-knowledge', { slug }); },
     openInBrowser(slug, file) { return invoke('hermes:open-in-browser', { slug, file }); },
+    saveFile(slug, file) { return invoke('hermes:save-file', { slug, file }); },
     readEnv() { return invoke('hermes:read-env'); },
     writeEnv(content) { return invoke('hermes:write-env', { content }); },
     // model 可为字符串或字符串数组(非360网关多选)。

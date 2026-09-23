@@ -31,6 +31,10 @@
           <span class="tree-count">{{ skills.length }}</span>
         </button>
 
+        <button class="tree-node tree-node--create" @click="openCreateGroup">
+          <span class="tree-badge"><i class="fa-solid fa-plus text-[10px]"></i></span>
+          <span class="flex-1 text-left truncate">新建分组</span>
+        </button>
         <button
           v-for="g in groups"
           :key="g.id"
@@ -39,7 +43,7 @@
           @click="active = g.id"
         >
           <span class="tree-badge" :style="{ background: g.color || groupColor(g.id) }">
-            <i :class="faIcon(g.icon, 'toolbox') + ' text-[10px]'"></i>
+            <i :class="faIcon(g.icon, 'toolbox') + ' text-[10px]'" />
           </span>
           <span class="flex-1 text-left truncate">{{ g.name }}</span>
           <span class="tree-count">{{ g.count }}</span>
@@ -59,7 +63,7 @@
           :count="filtered.length"
           description="AI 内置的真实技能包 · 覆盖产品文档 / 原型 / 出图 / 陪练全链路"
           icon="fa-solid fa-brain"
-          image="../../assets/top.png"
+          :image="heroImage"
           image-class="page-hero__image--center"
         >
           <template #actions>
@@ -69,7 +73,7 @@
           </template>
         </PageHero>
 
-        <div class="grid grid-cols-4 gap-4 mb-5">
+        <div v-if="active === 'all'" class="grid grid-cols-4 gap-4 mb-5">
           <div v-for="s in statCards" :key="s.label" class="stat-card">
             <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px ${s.bg}55` }">
               <i :class="'fa-solid ' + s.icon"></i>
@@ -82,11 +86,15 @@
         </div>
 
         <div v-if="filtered.length" class="sk-grid">
-          <button
+          <div
             v-for="sk in pagedItems"
             :key="sk.id"
             class="sk-card text-left group"
+            role="button"
+            tabindex="0"
             @click="openSkill(sk)"
+            @keydown.enter.self="openSkill(sk)"
+            @keydown.space.prevent.self="openSkill(sk)"
           >
             <div class="sk-card__accent" :style="{ background: sk.color }"></div>
             <div class="flex items-start gap-3">
@@ -103,11 +111,14 @@
               </div>
             </div>
             <p class="text-[12px] text-slate-500 mt-3 leading-relaxed line-clamp-2">{{ sk.summary || '——' }}</p>
-            <div class="sk-card__footer mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-              <span class="font-mono truncate">{{ sk.id }}</span>
-              <span class="sk-card__action"><i class="fa-solid fa-book-open"></i>查看说明</span>
+            <div class="sk-card__footer pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+              <span class="font-mono min-w-0 truncate">{{ sk.id }}</span>
+              <div class="sk-card__actions flex items-center gap-2 shrink-0">
+                <button type="button" @click.stop="openSkill(sk)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>查看</button>
+                <button type="button" @click.stop="deleteSkill(sk)" :disabled="deleting" class="card-action card-action--danger"><i class="fa-solid fa-trash"></i>删除</button>
+              </div>
             </div>
-          </button>
+          </div>
         </div>
         <div v-else class="text-center py-20 text-slate-300">
           <i class="fa-solid fa-inbox text-5xl mb-3"></i>
@@ -395,6 +406,22 @@
 
     <!-- Toast -->
     <transition name="fade">
+      <div v-if="createGroupOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+        <div class="absolute inset-0 bg-slate-900/40" @click="createGroupOpen = false"></div>
+        <div class="relative w-[380px] max-w-[92vw] glass-card rounded-2xl shadow-2xl p-6">
+          <div class="flex items-center gap-2 mb-4"><i class="fa-solid fa-folder-plus text-primary"></i><b>新建技能分组</b></div>
+          <label class="block text-[12px] text-slate-600 mb-1.5">分组名称</label>
+          <input v-model="newGroup.name" autofocus class="w-full px-3 py-2 rounded-lg border border-slate-200 text-[13px] mb-4" placeholder="例如：客户交付" @keyup.enter="createGroup" />
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <div><label class="block text-[12px] text-slate-600 mb-1.5">图标</label><input v-model="newGroup.icon" class="w-full px-3 py-2 rounded-lg border border-slate-200 text-[13px]" placeholder="folder" /></div>
+            <div><label class="block text-[12px] text-slate-600 mb-1.5">颜色</label><input v-model="newGroup.color" type="color" class="w-full h-9 rounded-lg border border-slate-200" /></div>
+          </div>
+          <div class="flex justify-end gap-2"><button class="btn-sm" @click="createGroupOpen = false">取消</button><button class="btn-sm-pri" @click="createGroup">创建分组</button></div>
+        </div>
+      </div>
+    </transition>
+
+    <transition name="fade">
       <div v-if="toast" class="fixed top-4 right-4 z-[60] bg-slate-800 text-white text-[13px] px-3.5 py-2 rounded-lg shadow-lg flex items-center gap-2">
         <i class="fa-solid fa-circle-check text-blue-400"></i>{{ toast }}
       </div>
@@ -406,6 +433,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { marked } from 'marked';
 import PageHero from '@/components/common/PageHero.vue';
+import heroImage from '@/assets/hero-skills.jpg';
 
 const groups = ref([]);
 const skills = ref([]);
@@ -426,6 +454,18 @@ const form = ref({ name: '', description: '', body: '', category: 'general', ico
 
 // 编辑时的分类下拉选项 —— 与主进程 SKILLS_GROUPS 同 id/中文名(不可复用 hubCategories
 // 那是 SkillHub 的 API tag;也不可用 groups ref 它只含 count>0 的组)。
+const createGroupOpen = ref(false);
+const newGroup = ref({ name: '', icon: 'folder', color: '#64748b' });
+
+function openCreateGroup() { newGroup.value = { name: '', icon: 'folder', color: '#64748b' }; createGroupOpen.value = true; }
+async function createGroup() {
+  const name = newGroup.value.name.trim();
+  if (!name) return showToast('请输入分组名称');
+  if (groups.value.some((g) => g.name === name)) return showToast('分组名称已存在');
+  const res = await window.api.skills.createGroup(newGroup.value);
+  if (res?.success) { createGroupOpen.value = false; await loadManifest(); active.value = res.group.id; showToast('分组已创建'); }
+  else showToast('创建失败：' + (res?.error || '未知错误'));
+}
 const SKILL_GROUP_OPTIONS = [
   { id: 'product-doc',  name: '产品文档' },
   { id: 'prototype',    name: '原型设计' },
@@ -972,29 +1012,34 @@ async function deleteSkill(sk) {
   border-color: #c7d7f5;
 }
 .sk-card:hover .sk-card__accent { opacity: 1; }
-.sk-card__footer { margin-top: auto; }
-.sk-card__action {
-  display: inline-flex;
-  align-items: center;
-  flex-shrink: 0;
-  gap: 5px;
+.sk-card__footer {
+  min-height: 41px;
+  margin-top: auto;
+}
+.sk-card__actions { width: 118px; justify-content: flex-end; }
+.sk-card__actions .card-action { width: 55px; justify-content: center; }
+.card-action {
   height: 28px;
   padding: 0 9px;
-  border: 1px solid #dbeafe;
   border-radius: 8px;
-  background: #eff6ff;
-  color: #2563eb;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid transparent;
   font-size: 11.5px;
   font-weight: 600;
+  line-height: 1;
   white-space: nowrap;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
-.sk-card__action i { font-size: 10.5px; }
-.sk-card:hover .sk-card__action, .sk-card:focus-visible .sk-card__action {
-  background: #eff6ff;
-  border-color: #dbeafe;
-  color: #1d4ed8;
-}
+.card-action:hover:not(:disabled) { transform: translateY(-1px); }
+.card-action:disabled { opacity: 0.5; cursor: not-allowed; }
+.card-action i { font-size: 10.5px; }
+.card-action--primary { color: #2563eb; }
+.card-action--primary:hover:not(:disabled) { background: #eff6ff; border-color: #dbeafe; color: #1d4ed8; }
+.card-action--danger { color: #dc2626; }
+.card-action--danger:hover:not(:disabled) { background: #fef2f2; border-color: #fee2e2; color: #b91c1c; }
 
 .sk-icon {
   width: 44px;

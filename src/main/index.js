@@ -6,6 +6,7 @@ const fs = require('fs');
 const os = require('os');
 const http = require('http');
 const { spawn } = require('child_process');
+const pty = require('node-pty');
 const AcpClient = require('./acp-client.js');
 const licenseVerifier = require('./license/verifier.js');
 const licenseStore = require('./license/store.js');
@@ -35,6 +36,36 @@ const pendingPermissions = new Map();
 const replayingSessions = new Set();
 // 正在跑 session/prompt 的会话：此时重进项目页不再 session/load，免得打乱进行中的这一轮
 const promptingSessions = new Set();
+// 当前 Hermes 进程里已经 load/new 成功的代码会话。应用重启后集合为空，
+// 首次使用会先 session/load，避免拿磁盘里的旧 sessionId 直接 prompt 导致无响应。
+const loadedCodeSessions = new Set();
+const ensuringCodeSessions = new Map();
+
+// 代码工作区终端：每个 PTY 固定在对应工作区 cwd，避免跨工作区串台。
+const codeTerminals = new Map();
+let nextCodeTerminalId = 1;
+
+function codeShellOptions() {
+  if (process.platform === 'win32') {
+    const powershell = process.env.ProgramFiles
+      ? path.join(process.env.ProgramFiles, 'PowerShell', '7', 'pwsh.exe')
+      : '';
+    return [
+      { id: 'cmd', label: '命令提示符', command: process.env.ComSpec || 'cmd.exe', args: [] },
+      { id: 'powershell', label: 'PowerShell', command: fs.existsSync(powershell) ? powershell : 'powershell.exe', args: ['-NoLogo'] },
+    ];
+  }
+  const preferred = process.env.SHELL && fs.existsSync(process.env.SHELL) ? process.env.SHELL : '/bin/zsh';
+  return [
+    { id: 'zsh', label: 'zsh', command: preferred, args: [] },
+    { id: 'bash', label: 'bash', command: '/bin/bash', args: [] },
+  ];
+}
+
+function findCodeTerminal(id) {
+  return codeTerminals.get(String(id || '')) || null;
+}
+
 
 // ---------------------------------------------------------------------------
 // Data directories
@@ -44,6 +75,7 @@ const PRODUCT_LOBSTER_HOME = path.join(os.homedir(), '.product-lobster');
 const PROJECTS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'projects');
 const HANDBOOK_DIR = path.join(PRODUCT_LOBSTER_HOME, 'fde-handbook');
 const SKILLS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'skills');
+const SKILLS_GROUPS_FILE = path.join(SKILLS_DIR, 'groups.json');
 const CONFIG_YAML_PATH = path.join(PRODUCT_LOBSTER_HOME, 'config.yaml');
 const AI_APPS_DIR = path.join(PRODUCT_LOBSTER_HOME, 'ai-apps');
 const AI_APPS_FILE = path.join(AI_APPS_DIR, 'apps.json');
@@ -57,6 +89,12 @@ const AI_APPS_BUILTIN_OVERRIDES_FILE = path.join(AI_APPS_DIR, 'builtin-overrides
 // 不进 PROJECTS_DIR。登记表只存指针，不拷贝文件。
 // 结构：[{ id, name, path(绝对路径), sessionId, lastOpenedAt, createdAt }]
 const CODE_WORKSPACES_JSON = path.join(PRODUCT_LOBSTER_HOME, 'code-workspaces.json');
+// 排障用：主进程 console.log 只进用户自己开的终端，我这边读不到；
+// 关键动作额外落一份到这个文件，方便直接读日志定位，不用让用户贴终端输出。
+const CODE_DEBUG_LOG = path.join(PRODUCT_LOBSTER_HOME, 'code-debug.log');
+function codeDebugLog(line) {
+  try { fs.appendFileSync(CODE_DEBUG_LOG, `[${new Date().toISOString()}] ${line}\n`); } catch (_) {}
+}
 
 // --- config.yaml model persistence -----------------------------------------
 // config.yaml 是 hermes 选择模型的唯一事实来源（cli.py 明确不读 LLM_MODEL/OPENAI_MODEL 环境变量）。
@@ -493,6 +531,7 @@ function startHermes() {
     if (mainWindow && !mainWindow.isDestroyed()) {
       const params = notification.params || {};
       const sessionId = params.sessionId || params.session_id || '';
+      codeDebugLog(`notification method=${notification.method} sid=${sessionId} replaying=${sessionId && replayingSessions.has(sessionId)} keys=${Object.keys(params).join(',')}`);
       // session/load 会把整段历史当成 message chunk 重放一遍。放行会让前端把历史
       // 当成新回复追加进当前对话（重进项目页就「乱套」的根因），这里直接丢掉。
       if (sessionId && replayingSessions.has(sessionId)) return;
@@ -511,6 +550,9 @@ function startHermes() {
   // 由 diff 确认弹窗裁决。ACP 期望的返回体是 { outcome:{ outcome:'selected', optionId } }
   // (批准) 或 { outcome:{ outcome:'cancelled' } }(拒绝，引擎据此不写文件)。
   acp.onRequest('request_permission', async (params) => {
+    const sessionId = params.sessionId || params.session_id || '';
+    const codeWorkspace = sessionId && readCodeWorkspaces().find((w) =>
+      (w.conversations || []).some((c) => c.sessionId === sessionId));
     // 判断是不是「编辑确认」——带 diff 内容块，或 toolCall.kind === 'edit'。
     const tc = (params && (params.toolCall || params.tool_call)) || {};
     const content = Array.isArray(tc.content) ? tc.content : [];
@@ -521,6 +563,21 @@ function startHermes() {
     const allowId = (allowOpt && (allowOpt.optionId || allowOpt.option_id)) || 'allow_once';
     const selected = (optionId) => ({ outcome: { outcome: 'selected', optionId } });
     const cancelled = () => ({ outcome: { outcome: 'cancelled' } });
+    if (codeWorkspace) {
+      const root = path.resolve(codeWorkspace.path);
+      const insideRoot = (target) => {
+        const resolved = path.resolve(path.isAbsolute(target) ? target : path.join(root, target));
+        const normalizedRoot = process.platform === 'win32' ? root.toLowerCase() : root;
+        const normalizedTarget = process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+        return normalizedTarget === normalizedRoot || normalizedTarget.startsWith(normalizedRoot + path.sep);
+      };
+      const diffPaths = content.filter((item) => item && item.type === 'diff').map((item) => item.path || item.file_path);
+      // 只允许当前工作区内有明确路径的编辑；无路径的编辑无法验证，也拒绝。
+      if (isEdit && (!diffPaths.length || diffPaths.some((target) => typeof target !== 'string' || !insideRoot(target)))) {
+        console.warn(`[main] Blocked code edit outside workspace: ${tc.title || 'unknown'}`);
+        return cancelled();
+      }
+    }
 
     if (mainWindow && !mainWindow.isDestroyed()) {
       return new Promise((resolve) => {
@@ -755,6 +812,25 @@ function findCodeConversation(workspaceId, conversationId) {
     : null;
   if (!conversation) conversation = workspace.conversations[0];
   return { list, workspace, conversation };
+}
+
+function validateEntryName(name) {
+  const value = String(name || '').trim();
+  if (!value || value === '.' || value === '..' || value.includes('/') || value.includes('\\') || value.includes('\0')) {
+    throw new Error('名称无效');
+  }
+  return value;
+}
+
+function uniqueCopyPath(targetDir, name) {
+  const parsed = path.parse(name);
+  let candidate = path.join(targetDir, name);
+  let index = 1;
+  while (fs.existsSync(candidate)) {
+    candidate = path.join(targetDir, `${parsed.name} 副本${index > 1 ? ` ${index}` : ''}${parsed.ext}`);
+    index++;
+  }
+  return candidate;
 }
 
 // 解析工作区内的相对路径为绝对路径，并做路径逃逸守卫(照抄 resolveProjectPath 的做法)。
@@ -1578,6 +1654,20 @@ function skillGroupOf(id) {
   for (const g of SKILLS_GROUPS) if (g.members.includes(id)) return g.id;
   return 'general';
 }
+function loadCustomSkillGroups() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(SKILLS_GROUPS_FILE, 'utf-8'));
+    return Array.isArray(raw) ? raw.filter((g) => g && g.id && g.name) : [];
+  } catch { return []; }
+}
+function allSkillGroups() { return [...SKILLS_GROUPS, ...loadCustomSkillGroups()]; }
+function writeCustomSkillGroups(groups) {
+  fs.mkdirSync(SKILLS_DIR, { recursive: true });
+  const tmp = `${SKILLS_GROUPS_FILE}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(groups, null, 2) + '\n', 'utf-8');
+  fs.renameSync(tmp, SKILLS_GROUPS_FILE);
+}
+
 
 // 内置技能 id 集合:用于区分"内置(重启会恢复)"与"生成/导入"
 function bundledSkillIds() {
@@ -1614,9 +1704,9 @@ function scanSkillsManifest(dir) {
     const description = fm.description || '';
     // group/icon 优先读 frontmatter(用户在桌面端编辑可改)，缺失回退硬编码:
     // fm.category 合法才用，否则回退 skillGroupOf(id) 的成员映射。
-    const fmCat = fm.category && SKILLS_GROUPS.some((g) => g.id === fm.category) ? fm.category : null;
+    const fmCat = fm.category && allSkillGroups().some((g) => g.id === fm.category) ? fm.category : null;
     const group = fmCat || skillGroupOf(id);
-    const meta = SKILLS_GROUPS.find((g) => g.id === group) || SKILLS_GROUPS[SKILLS_GROUPS.length - 1];
+    const meta = allSkillGroups().find((g) => g.id === group) || SKILLS_GROUPS[SKILLS_GROUPS.length - 1];
     const generated = !builtin.has(id) && group === 'general';
     skills.push({
       id,
@@ -1635,8 +1725,8 @@ function scanSkillsManifest(dir) {
 
   skills.sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name));
 
-  const groups = SKILLS_GROUPS
-    .map((g) => ({ id: g.id, name: g.name, icon: g.icon, color: g.color,
+  const groups = allSkillGroups()
+    .map((g) => ({ id: g.id, name: g.name, icon: g.icon, color: g.color, custom: !!g.custom,
       count: skills.filter((s) => s.group === g.id).length }))
     .filter((g) => g.count > 0);
 
@@ -1684,7 +1774,31 @@ ipcMain.handle('skills:open', async (_event, { skill }) => {
   }
 });
 
-// 删除技能:移除 SKILLS_DIR/<id> 整个目录,并刷新 manifest。
+ipcMain.handle('skills:create-group', async (_event, payload = {}) => {
+  try {
+    const name = String(payload.name || '').trim();
+    if (!name) return { success: false, error: '分组名称不能为空' };
+    const id = String(payload.id || `custom-${Date.now()}`).toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '');
+    const groups = loadCustomSkillGroups();
+    if (!id || allSkillGroups().some((g) => g.id === id)) return { success: false, error: '分组标识已存在或无效' };
+    const group = { id, name, icon: String(payload.icon || 'folder'), color: String(payload.color || '#64748b'), custom: true, members: [] };
+    writeCustomSkillGroups([...groups, group]);
+    return { success: true, group };
+  } catch (err) { return { success: false, error: err.message }; }
+});
+
+ipcMain.handle('skills:delete-group', async (_event, { id } = {}) => {
+  try {
+    const groupId = String(id || '');
+    if (!groupId || SKILLS_GROUPS.some((g) => g.id === groupId)) return { success: false, error: '内置分组不可删除' };
+    const data = scanSkillsManifest(SKILLS_DIR);
+    if (data.skills.some((s) => s.group === groupId)) return { success: false, error: '请先将分组内技能移出后再删除' };
+    writeCustomSkillGroups(loadCustomSkillGroups().filter((g) => g.id !== groupId));
+    return { success: true };
+  } catch (err) { return { success: false, error: err.message }; }
+});
+
+
 // 内置技能(bundledSkillIds)删除后会在下次启动被 ensureDirs 从内置目录恢复,
 // 前端会对内置技能给出"重启恢复"提示——这里不阻断,由前端把关。
 ipcMain.handle('skills:delete', async (_event, { skill }) => {
@@ -2409,15 +2523,117 @@ ipcMain.handle('code:write-file', async (_event, { id, relPath, content } = {}) 
   }
 });
 
-// 为某个 conversation 建一条独立的 ACP session(cwd=工作区目录, mode:'default')。
+ipcMain.handle('code:create-entry', async (_event, { id, parentPath, name, isDirectory } = {}) => {
+  const workspace = findCodeWorkspace(id);
+  if (!workspace) return { success: false, error: '工作区不存在' };
+  try {
+    const safeName = validateEntryName(name);
+    const parent = resolveWorkspacePath(workspace, parentPath || '.');
+    if (!fs.existsSync(parent) || !fs.statSync(parent).isDirectory()) throw new Error('父目录不存在');
+    const target = resolveWorkspacePath(workspace, path.join(parentPath || '.', safeName));
+    if (fs.existsSync(target)) throw new Error('同名文件或文件夹已存在');
+    if (isDirectory) fs.mkdirSync(target);
+    else fs.writeFileSync(target, '', { encoding: 'utf-8', flag: 'wx' });
+    return { success: true, relPath: path.relative(workspace.path, target).split(path.sep).join('/') };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('code:rename-entry', async (_event, { id, relPath, name } = {}) => {
+  const workspace = findCodeWorkspace(id);
+  if (!workspace) return { success: false, error: '工作区不存在' };
+  try {
+    const safeName = validateEntryName(name);
+    const source = resolveWorkspacePath(workspace, relPath);
+    if (!fs.existsSync(source)) throw new Error('文件或文件夹不存在');
+    const target = path.join(path.dirname(source), safeName);
+    const targetRel = path.relative(workspace.path, target);
+    const checkedTarget = resolveWorkspacePath(workspace, targetRel);
+    if (fs.existsSync(checkedTarget)) throw new Error('同名文件或文件夹已存在');
+    fs.renameSync(source, checkedTarget);
+    return { success: true, relPath: targetRel.split(path.sep).join('/') };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('code:delete-entry', async (_event, { id, relPath } = {}) => {
+  const workspace = findCodeWorkspace(id);
+  if (!workspace) return { success: false, error: '工作区不存在' };
+  try {
+    const target = resolveWorkspacePath(workspace, relPath);
+    if (target === path.resolve(workspace.path)) throw new Error('不能删除工作区根目录');
+    if (!fs.existsSync(target)) throw new Error('文件或文件夹不存在');
+    fs.rmSync(target, { recursive: true, force: false });
+    return { success: true };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('code:copy-entry', async (_event, { id, sourcePath, targetDir } = {}) => {
+  const workspace = findCodeWorkspace(id);
+  if (!workspace) return { success: false, error: '工作区不存在' };
+  try {
+    const source = resolveWorkspacePath(workspace, sourcePath);
+    const destDir = resolveWorkspacePath(workspace, targetDir || '.');
+    if (!fs.existsSync(source) || !fs.existsSync(destDir) || !fs.statSync(destDir).isDirectory()) throw new Error('源文件或目标文件夹不存在');
+    const dest = uniqueCopyPath(destDir, path.basename(source));
+    fs.cpSync(source, dest, { recursive: true, errorOnExist: true });
+    return { success: true, relPath: path.relative(workspace.path, dest).split(path.sep).join('/') };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('code:reveal-entry', async (_event, { id, relPath } = {}) => {
+  const workspace = findCodeWorkspace(id);
+  if (!workspace) return { success: false, error: '工作区不存在' };
+  try {
+    const target = resolveWorkspacePath(workspace, relPath || '.');
+    if (!fs.existsSync(target)) throw new Error('文件或文件夹不存在');
+    shell.showItemInFolder(target);
+    return { success: true };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+
 // 每会话独立 session 是并行多会话的基础——不同 session 在引擎侧并发跑、上下文互不干扰。
 async function ensureConversationSession(workspace, conversation) {
-  if (conversation.sessionId) return conversation.sessionId;
+  const key = `${workspace.id}:${conversation.id}`;
+  if (ensuringCodeSessions.has(key)) return ensuringCodeSessions.get(key);
+  const pending = loadOrCreateCodeSession(workspace, conversation);
+  ensuringCodeSessions.set(key, pending);
+  try { return await pending; }
+  finally { ensuringCodeSessions.delete(key); }
+}
+
+async function loadOrCreateCodeSession(workspace, conversation) {
+  if (conversation.sessionId && loadedCodeSessions.has(conversation.sessionId)) return conversation.sessionId;
+  if (conversation.sessionId && acp) {
+    const oldSessionId = conversation.sessionId;
+    replayingSessions.add(oldSessionId);
+    try {
+      const loaded = await acp.request('session/load', { sessionId: oldSessionId, cwd: workspace.path, mcpServers: [] });
+      if (loaded) {
+        loadedCodeSessions.add(oldSessionId);
+        await acp.request('session/set_mode', { sessionId: oldSessionId, modeId: 'default' }).catch(() => {});
+        return oldSessionId;
+      }
+    } catch (err) {
+      console.log(`[main] Code session ${oldSessionId} unavailable, rebuilding context`);
+    } finally {
+      replayingSessions.delete(oldSessionId);
+    }
+  }
+  const previousMessages = Array.isArray(conversation.messages) ? conversation.messages.slice(-30) : [];
   const newSession = await acp.request('session/new', { cwd: workspace.path, mcpServers: [] });
   captureModelsFromSession(newSession);
   conversation.sessionId = newSession && newSession.sessionId ? newSession.sessionId : null;
   if (conversation.sessionId) {
+    loadedCodeSessions.add(conversation.sessionId);
     await acp.request('session/set_mode', { sessionId: conversation.sessionId, modeId: 'default' }).catch(() => {});
+    // 历史上下文不再单独跑一轮 prompt（那会让用户的首条消息排在它后面等，
+    // 看起来像「不回复」）。挂到 pendingContext 上，随下一条用户消息一起发。
+    if (previousMessages.length) {
+      const context = previousMessages
+        .map((m) => `${m.role === 'user' ? '用户' : 'AI'}: ${String(m.content || '').slice(0, 1200)}`)
+        .join('\n\n');
+      conversation.pendingContext = `（以下是本会话此前的历史，仅作为上下文参考，不要复述）\n${context}`;
+    }
   }
   conversation.lastActiveAt = new Date().toISOString();
   return conversation.sessionId;
@@ -2427,6 +2643,88 @@ async function ensureConversationSession(workspace, conversation) {
 // conversationId 指定发往哪条会话；缺省时 findCodeConversation 取最近一条。
 // 取消某条会话正在跑的这一轮。之前前端「停止」只在本地收尾，引擎照跑、
 // 继续往这条会话推 chunk，会追加到已收尾的消息上。
+ipcMain.handle('code:terminal-create', async (event, { id, shellId } = {}) => {
+  const workspace = findCodeWorkspace(id);
+  if (!workspace || !fs.existsSync(workspace.path)) return { success: false, error: '工作区不存在' };
+  const shellSpec = codeShellOptions().find((s) => s.id === shellId) || codeShellOptions()[0];
+  const terminalId = `term_${Date.now()}_${nextCodeTerminalId++}`;
+  try {
+    // npm 的受限脚本模式可能漏掉 node-pty helper 的可执行位；启动前自愈。
+    if (process.platform !== 'win32') {
+      const helper = path.join(path.dirname(require.resolve('node-pty')), '..', 'prebuilds', `${process.platform}-${process.arch}`, 'spawn-helper');
+      if (fs.existsSync(helper)) {
+        try { fs.chmodSync(helper, 0o755); } catch (_) { /* 只影响 PTY 启动，下面会返回具体错误 */ }
+      }
+    }
+    const proc = pty.spawn(shellSpec.command, shellSpec.args, {
+      name: 'xterm-256color', cols: 100, rows: 30, cwd: workspace.path,
+      env: { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor' },
+      ...(process.platform === 'win32' ? { useConpty: true } : {}),
+    });
+    const terminal = { id: terminalId, workspaceId: id, pty: proc };
+    codeTerminals.set(terminalId, terminal);
+    // 这两个回调跑在 node-pty 的 ThreadSafeFunction 里，不在任何 JS 调用栈上：
+    // 抛出的异常会被 N-API 转成没人接管的 C++ 异常 → std::terminate → 主进程 SIGABRT。
+    // 且窗口关闭途中 isDestroyed() 还是 false，send 却已经会抛 "Render frame was disposed"。
+    const sender = event.sender;
+    proc.onData((data) => {
+      try {
+        if (!sender.isDestroyed()) sender.send('code:terminal-data', { terminalId, data });
+      } catch (_) { /* 窗口销毁中，丢掉这一帧 */ }
+    });
+    proc.onExit((info) => {
+      try {
+        codeTerminals.delete(terminalId);
+        if (!sender.isDestroyed()) sender.send('code:terminal-exit', { terminalId, ...info });
+      } catch (_) { /* 同上 */ }
+    });
+    return { success: true, terminalId, shell: shellSpec, platform: process.platform };
+  } catch (err) {
+    return { success: false, error: `终端启动失败：${err.message}` };
+  }
+});
+
+ipcMain.handle('code:terminal-input', (_event, { terminalId, data } = {}) => {
+  const terminal = findCodeTerminal(terminalId);
+  if (!terminal) return { success: false, error: '终端不存在' };
+  terminal.pty.write(String(data || ''));
+  return { success: true };
+});
+
+ipcMain.handle('code:terminal-resize', (_event, { terminalId, cols, rows } = {}) => {
+  const terminal = findCodeTerminal(terminalId);
+  if (!terminal) return { success: false, error: '终端不存在' };
+  const width = Math.max(20, Math.min(500, Number(cols) || 100));
+  const height = Math.max(5, Math.min(200, Number(rows) || 30));
+  terminal.pty.resize(width, height);
+  return { success: true };
+});
+
+ipcMain.handle('code:terminal-cd', (_event, { terminalId, relPath = '.' } = {}) => {
+  const terminal = findCodeTerminal(terminalId);
+  if (!terminal) return { success: false, error: '终端不存在' };
+  const workspace = findCodeWorkspace(terminal.workspaceId);
+  if (!workspace) return { success: false, error: '工作区不存在' };
+  try {
+    const target = resolveWorkspacePath(workspace, relPath || '.');
+    if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) throw new Error('目录不存在');
+    const rel = path.relative(workspace.path, target);
+    const command = process.platform === 'win32'
+      ? `cd /d "${target.replace(/"/g, '\\"')}"\r`
+      : `cd -- ${JSON.stringify(target)}\r`;
+    terminal.pty.write(command);
+    return { success: true, relPath: rel.split(path.sep).join('/') || '.' };
+  } catch (e) { return { success: false, error: e.message }; }
+});
+
+ipcMain.handle('code:terminal-kill', (_event, { terminalId } = {}) => {
+  const terminal = findCodeTerminal(terminalId);
+  if (!terminal) return { success: true };
+  try { terminal.pty.kill(); } catch (_) { /* 已结束 */ }
+  codeTerminals.delete(terminalId);
+  return { success: true };
+});
+
 ipcMain.handle('code:cancel', async (_event, { id, conversationId } = {}) => {
   try {
     const { conversation } = findCodeConversation(id, conversationId);
@@ -2440,32 +2738,45 @@ ipcMain.handle('code:cancel', async (_event, { id, conversationId } = {}) => {
 });
 
 ipcMain.handle('code:prompt', async (_event, { id, conversationId, text, attachments } = {}) => {
+  codeDebugLog(`code:prompt CALLED id=${id} conversationId=${conversationId} textLen=${(text||'').length}`);
   try {
     if (!acp || !hermesReady) {
+      codeDebugLog(`acp not ready (acp=${!!acp} hermesReady=${hermesReady}), calling ensureHermesReady`);
       if (!(await ensureHermesReady())) throw new Error('Hermes ACP not connected');
     }
     const { list, workspace, conversation } = findCodeConversation(id, conversationId);
     if (!workspace) throw new Error('workspace not found');
     if (!conversation) throw new Error('conversation not found');
     if (!fs.existsSync(workspace.path)) throw new Error('工作区目录不存在');
+    codeDebugLog(`resolved workspace=${workspace.path} conversation=${conversation.id} sessionIdBefore=${conversation.sessionId}`);
 
-    // 会话缺失/失效 → 用工作区目录为 cwd 重建，并设 default 模式启用逐次编辑确认。
-    if (!conversation.sessionId) {
-      await ensureConversationSession(workspace, conversation);
-      writeCodeWorkspaces(list);
-    }
+    // 首次 prompt 前确保磁盘 session 已在当前 Hermes 进程 load；旧会话失效时
+    // 会新建 session 并注入最近消息，保证历史上下文不中断。
+    await ensureConversationSession(workspace, conversation);
+    writeCodeWorkspaces(list);
+    if (!conversation.sessionId) throw new Error('无法创建代码会话');
+    codeDebugLog(`sessionIdAfter=${conversation.sessionId}`);
 
     // 二进制附件落到工作区的 .uploads/ 目录(与代码分开，方便忽略)。
     const uploadsDir = path.join(workspace.path, '.uploads');
     const promptBlocks = buildPromptBlocks(text, attachments, uploadsDir);
 
+    // 会话是重建出来的 → 把历史上下文并进这一轮，一次请求搞定，不额外占一轮。
+    if (conversation.pendingContext) {
+      promptBlocks.unshift({ type: 'text', text: conversation.pendingContext });
+      delete conversation.pendingContext;
+      writeCodeWorkspaces(list);
+    }
+
+    codeDebugLog(`calling acp.request session/prompt sessionId=${conversation.sessionId}`);
     const result = await acp.request('session/prompt', {
       sessionId: conversation.sessionId,
       prompt: promptBlocks,
     }, 3_600_000); // 60 min timeout
+    codeDebugLog(`code:prompt OK sessionId=${conversation.sessionId} stopReason=${result && result.stopReason} result=${JSON.stringify(result).slice(0,300)}`);
     return result;
   } catch (err) {
-    console.error(`[main] code:prompt FAILED: ${err && err.message}`);
+    codeDebugLog(`code:prompt FAILED: ${err && err.stack || err}`);
     throw new Error(`Prompt failed: ${err.message}`);
   }
 });
@@ -2528,7 +2839,6 @@ ipcMain.handle('code:ensure-session', async (_event, { id, conversationId } = {}
     }
     const { list, workspace, conversation } = findCodeConversation(id, conversationId);
     if (!workspace || !conversation) throw new Error('conversation not found');
-    if (conversation.sessionId) return { sessionId: conversation.sessionId };
     await ensureConversationSession(workspace, conversation);
     writeCodeWorkspaces(list);
     return { sessionId: conversation.sessionId };
@@ -3413,6 +3723,29 @@ ipcMain.handle('hermes:write-file', async (_event, { slug, relativePath, content
   }
 });
 
+// 删除项目内的文件或目录（交付物 / 原型清理用）。
+// 路径经 resolveProjectPath 校验，越界会抛错；删目录必须显式传 recursive，
+// 避免调用方手滑把整棵树删掉。不存在视为成功（幂等）。
+ipcMain.handle('hermes:delete-file', async (_event, { slug, relativePath, recursive }) => {
+  try {
+    const filePath = resolveProjectPath(slug, relativePath);
+    // 不允许删项目根目录本身
+    if (path.resolve(filePath) === path.resolve(resolveProjectPath(slug))) {
+      return { success: false, error: '不能删除项目根目录' };
+    }
+    if (!fs.existsSync(filePath)) return { success: true, missing: true };
+    if (fs.statSync(filePath).isDirectory()) {
+      if (!recursive) return { success: false, error: '目标是目录，需要 recursive' };
+      fs.rmSync(filePath, { recursive: true, force: true });
+      return { success: true, removedDir: true };
+    }
+    fs.unlinkSync(filePath);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 ipcMain.handle('hermes:list-files', async (_event, { slug, dir, recursive }) => {
   try {
     const baseDir = dir || '.';
@@ -3522,6 +3855,22 @@ ipcMain.handle('hermes:export-zip', async (_event, slug) => {
     const buffer = await zip.generateAsync({ type: 'nodebuffer' });
     fs.writeFileSync(filePath, buffer);
     return { success: true, path: filePath };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('hermes:save-file', async (_event, { slug, file }) => {
+  try {
+    const srcPath = resolveProjectPath(slug, file);
+    if (!fs.existsSync(srcPath) || !fs.statSync(srcPath).isFile()) return { success: false, error: '文件不存在' };
+    const { canceled, filePath: dest } = await dialog.showSaveDialog(mainWindow, {
+      title: '另存为',
+      defaultPath: path.basename(srcPath),
+    });
+    if (canceled || !dest) return { success: false, canceled: true };
+    fs.copyFileSync(srcPath, dest);
+    return { success: true, path: dest };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -3901,6 +4250,38 @@ function parseSkillFrontMatter(content) {
 // ---------------------------------------------------------------------------
 // App lifecycle
 // ---------------------------------------------------------------------------
+
+// 崩溃留痕。原生模块（node-pty 等）的回调不在 JS 调用栈上，异常逃出去就是
+// std::terminate，进程直接消失、终端里什么都看不到；这里至少把现场落到磁盘。
+const CRASH_LOG = path.join(PRODUCT_LOBSTER_HOME, 'crash.log');
+function logCrash(kind, detail) {
+  const line = `[${new Date().toISOString()}] ${kind}\n${detail}\n\n`;
+  try {
+    // 超过 2MB 就重置，别让它无限长
+    if (fs.existsSync(CRASH_LOG) && fs.statSync(CRASH_LOG).size > 2 * 1024 * 1024) {
+      fs.writeFileSync(CRASH_LOG, '');
+    }
+    fs.appendFileSync(CRASH_LOG, line);
+  } catch (_) { /* 磁盘写不进去也不能再抛 */ }
+  console.error('[crash]', kind, detail);
+}
+
+process.on('uncaughtException', (err) => {
+  logCrash('uncaughtException', err?.stack || String(err));
+});
+process.on('unhandledRejection', (reason) => {
+  logCrash('unhandledRejection', reason?.stack || String(reason));
+});
+app.on('render-process-gone', (_e, contents, details) => {
+  logCrash('render-process-gone', JSON.stringify(details));
+  // 渲染进程 OOM / crash 后页面是白屏，自己拉回来
+  if (details?.reason !== 'clean-exit' && !contents.isDestroyed()) {
+    try { contents.reload(); } catch (_) { /* 窗口已经没了 */ }
+  }
+});
+app.on('child-process-gone', (_e, details) => {
+  logCrash('child-process-gone', JSON.stringify(details));
+});
 
 app.whenReady().then(async () => {
   ensureDirs();
@@ -4564,5 +4945,5 @@ ipcMain.handle('ai-apps:knowledge-open', async (_event, { id } = {}) => {
   }
 });
 
-app.on('will-quit', () => { stopHermes(); });
+app.on('will-quit', () => { stopHermes(); for (const terminal of codeTerminals.values()) { try { terminal.pty.kill(); } catch (_) {} } codeTerminals.clear(); });
 app.on('before-quit', () => { stopHermes(); });

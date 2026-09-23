@@ -25,46 +25,9 @@
         </div>
       </div>
 
-      <!-- 五阶段大号步骤条 -->
-      <div class="glass-card border-b border-slate-200/70 px-5 py-3 overflow-x-auto">
-        <div class="flex items-center gap-0 min-w-max">
-          <template v-for="(stage, idx) in FDE_STAGES" :key="stage.id">
-            <button
-              @click="selectStage(stage.id)"
-              class="step-node group flex items-center gap-2.5 pl-2 pr-3.5 py-1.5 rounded-xl transition-all shrink-0"
-              :class="stepNodeClass(stage.id)"
-              :title="stage.goal"
-            >
-              <span class="step-dot" :class="stepDotClass(stage.id)">
-                <i v-if="statusOf(stage.id) === 'done'" class="fa-solid fa-check text-[12px]"></i>
-                <span v-else class="text-[13px] font-bold">{{ stage.id }}</span>
-              </span>
-              <div class="text-left leading-tight">
-                <div class="ws-label font-semibold whitespace-nowrap" :class="statusOf(stage.id) === 'todo' ? 'text-slate-400' : (stage.id === currentStage ? 'text-blue-700' : 'text-slate-700')">{{ stepTitle(stage) }}</div>
-                <div class="ws-meta text-slate-400 whitespace-nowrap mt-0.5">{{ stepHint(stage) }}</div>
-              </div>
-            </button>
-            <i v-if="idx < FDE_STAGES.length - 1" class="fa-solid fa-chevron-right text-slate-300 text-[11px] mx-1 shrink-0"></i>
-          </template>
-        </div>
-      </div>
-
-      <!-- Tabs(仅工作区阶段显示) -->
-      <div v-if="isWorkspaceStage" class="glass-card border-b border-slate-200/70 flex items-center gap-6 px-6 pt-2">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          @click="activeTab = tab.key"
-          class="group relative inline-flex items-center gap-1.5 pb-2.5 ws-label transition-colors duration-200"
-          :class="activeTab === tab.key ? 'text-blue-600 font-semibold' : 'text-slate-400 hover:text-slate-700 font-medium'"
-        >
-          <i :class="tab.icon" class="text-[11px]"></i>
-          {{ tab.label }}
-          <span
-            class="absolute -bottom-px left-0 right-0 h-0.5 rounded-full transition-all duration-200"
-            :class="activeTab === tab.key ? 'bg-blue-600' : 'bg-transparent'"
-          ></span>
-        </button>
+      <!-- 五阶段进度条：只做阶段展示 + 快速跳阶段，不承载内容切换 -->
+      <div class="glass-card border-b border-slate-200/70">
+        <StageTimeline :current="currentStage" :stage-status="stageStatus" @select="selectStage" />
       </div>
     </div>
 
@@ -76,143 +39,163 @@
       :has-workspace="false"
     />
 
-    <!-- 阶段②③工作区：二级侧边导航（工作台/交付物/原型）+ 内容区 -->
+    <!-- 阶段②③工作区：二级侧边导航 + 内容区 -->
     <div v-show="isWorkspaceStage" class="flex-1 flex min-h-0 overflow-hidden">
-
-      <!-- 阶段②③ 工作台 Tab：三栏 — 交付物导航 + 对话 + 文档预览 -->
-      <div v-if="activeTab === 'workspace'" class="flex h-full w-full overflow-hidden">
-
-        <!-- 左栏：项目文档（可隐藏） -->
-        <div
-          v-if="!leftPanelCollapsed"
-          class="shrink-0 flex flex-col glass-panel border-r border-slate-200/70 overflow-hidden"
-          :style="'flex: 1 1 0; min-width: 210px; max-width: 280px'"
+      <!-- 收起态：留一条窄轨，任何分类下都能重新展开 -->
+      <div
+        v-if="leftPanelCollapsed"
+        class="shrink-0 w-9 flex flex-col items-center pt-2.5 glass-panel border-r border-slate-200/70"
+      >
+        <button
+          @click="leftPanelCollapsed = false"
+          class="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white transition-colors"
+          title="显示侧边栏"
+          aria-label="显示侧边栏"
         >
-          <!-- 顶部：项目文档标题 + 折叠 -->
-          <div class="px-4 pt-3.5 pb-2.5 border-b border-slate-100">
-            <div class="flex items-center justify-between mb-2.5">
-              <div class="flex items-center gap-3">
-                <span class="ws-title font-bold text-slate-800">项目文档</span>
-              </div>
-              <button
-                @click="leftPanelCollapsed = true"
-                class="w-6 h-6 rounded-md flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-                title="隐藏项目文档"
-              >
-                <i class="fa-solid fa-angles-left text-[10px]"></i>
-              </button>
-            </div>
-            <!-- 搜索框 + 新建 -->
-            <div class="flex items-center gap-2">
-              <div class="flex-1 flex items-center gap-2 h-9 px-3 rounded-lg bg-white/80 border border-slate-200/80 focus-within:border-blue-400/70 focus-within:bg-white transition-colors">
-                <i class="fa-solid fa-magnifying-glass text-slate-300 text-[12px]"></i>
-                <input
-                  v-model="docSearch"
-                  type="text"
-                  placeholder="搜索文档"
-                  class="flex-1 min-w-0 bg-transparent ws-body text-slate-700 placeholder-slate-300 focus:outline-none"
-                />
-              </div>
-              <button
-                @click="generateDeliverable(deliverableSelected)"
-                :disabled="isStreaming || deliverableBusy || !deliverableSelected"
-                class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                :title="deliverableBusy ? '生成中…' : (selectedDeliverable ? `生成 · ${selectedDeliverable.short}` : '生成交付物')"
-              >
-                <i class="fa-solid text-[13px]" :class="deliverableBusy ? 'fa-circle-notch fa-spin' : 'fa-plus'"></i>
-              </button>
-            </div>
-          </div>
+          <i class="fa-solid fa-angles-right text-[10px]"></i>
+        </button>
+      </div>
 
-          <div class="flex-1 overflow-y-auto scrollbar-thin py-2.5 px-2">
-            <!-- 交付物文档卡片（真实数据）-->
+      <!-- 二级侧边栏：顶部分类入口（工作台/交付物/原型）+ 下方当前分类的内容 -->
+      <aside
+        v-if="!leftPanelCollapsed"
+        class="shrink-0 flex flex-col glass-panel border-r border-slate-200/70 overflow-hidden"
+        :style="`flex: 0 0 ${leftPanelWidth || 210}px; width: ${leftPanelWidth || 210}px`"
+      >
+        <!-- 分类入口 -->
+        <div class="shrink-0 px-2 pt-2 pb-1.5 border-b border-slate-100">
+          <div class="flex items-center gap-1 mb-1.5 pl-1.5">
+            <span class="flex-1 min-w-0 truncate ws-micro font-semibold text-slate-400">阶段{{ currentStage }} · 内容</span>
             <button
-              v-for="d in filteredDeliverables"
-              :key="d.key"
-              @click="selectDeliverable(d.key)"
-              type="button"
-              :aria-pressed="deliverableSelected === d.key"
-              class="doc-card w-full text-left px-2.5 py-2.5 mb-1.5 rounded-xl transition-all group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
-              :class="deliverableSelected === d.key
-                ? 'bg-blue-50 border border-blue-200'
-                : 'bg-white/70 hover:bg-white border border-transparent hover:border-slate-200/80'"
+              @click="leftPanelCollapsed = true"
+              class="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors shrink-0"
+              title="隐藏侧边栏"
+              aria-label="隐藏侧边栏"
             >
-              <!-- 选中态左侧强调条 -->
-              <span v-if="deliverableSelected === d.key" class="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-blue-600"></span>
-              <!-- 清空该交付物的对话 -->
-              <button
-                v-if="(deliverableMsgs[dkey(currentStage, d.key)] || []).length > 0"
-                @click.stop="clearDeliverableChat(d.key)"
-                type="button"
-                class="absolute top-2 right-2 w-5 h-5 rounded-md flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-danger hover:bg-danger-soft transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger/60"
-                title="清空该交付物的对话记录"
-                aria-label="清空该交付物的对话记录"
-              >
-                <i class="fa-solid fa-trash-can text-[9px]"></i>
-              </button>
-              <div class="flex items-start gap-2.5">
-                <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition-colors"
-                  :class="deliverableSelected === d.key ? 'bg-blue-100' : 'bg-slate-100 group-hover:bg-blue-50'">
-                  <i :class="[d.icon, deliverableSelected === d.key ? 'text-blue-600' : 'text-slate-400']" class="text-[12px]"></i>
-                </div>
-                <div class="flex-1 min-w-0 pr-4">
-                  <span class="block ws-body font-semibold leading-snug truncate"
-                    :class="deliverableSelected === d.key ? 'text-blue-700' : 'text-slate-700'">
-                    {{ d.name }}
-                  </span>
-                  <div class="flex items-center gap-1 mt-1.5">
-                    <span v-if="deliverableStatus[d.key] === 'ready'"
-                      class="inline-flex items-center gap-1 ws-meta text-blue-600 font-medium">
-                      <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>已生成
-                    </span>
-                    <span v-else class="inline-flex items-center gap-1 ws-meta text-slate-400">
-                      <span class="w-1.5 h-1.5 rounded-full bg-slate-300"></span>未生成
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <!-- 收藏星标 -->
-              <span
-                @click.stop="toggleFav(d.key)"
-                class="absolute bottom-2 right-2 text-[11px] transition-colors cursor-pointer"
-                :class="favDocs.has(d.key) ? 'text-amber-400' : 'text-slate-300 hover:text-amber-300'"
-                :title="favDocs.has(d.key) ? '取消收藏' : '收藏'"
-              >
-                <i class="fa-solid fa-star" v-if="favDocs.has(d.key)"></i>
-                <i class="fa-regular fa-star" v-else></i>
-              </span>
+              <i class="fa-solid fa-angles-left text-[9px]"></i>
             </button>
-
-            <!-- 相关资料（静态占位）-->
-            <div class="mt-4 pt-3 border-t border-slate-100">
-              <div class="px-1 mb-2 ws-meta font-semibold text-slate-400 tracking-wide">相关资料</div>
-              <div
-                v-for="r in relatedResources"
-                :key="r.name"
-                class="group flex items-center gap-2 px-2 py-2 rounded-lg text-slate-500 hover:bg-white/70 transition-colors"
-              >
-                <i class="fa-solid fa-folder text-amber-400 text-[13px] shrink-0"></i>
-                <span class="flex-1 min-w-0 ws-label truncate">{{ r.name }}</span>
-                <button class="w-5 h-5 rounded flex items-center justify-center text-slate-300 opacity-0 group-hover:opacity-100 hover:text-slate-600 transition-all" title="更多">
-                  <i class="fa-solid fa-ellipsis text-[12px]"></i>
-                </button>
-              </div>
-            </div>
           </div>
+          <nav class="flex flex-col gap-0.5" aria-label="当前阶段内容分类">
+            <button
+              v-for="item in navItems"
+              :key="item.key"
+              class="relative flex items-center gap-2 h-7 px-2 rounded-md transition-colors ws-meta"
+              :class="activeTab === item.key
+                ? 'bg-blue-100/80 text-blue-700 font-semibold'
+                : 'text-slate-500 hover:bg-white/70 hover:text-slate-700 font-medium'"
+              :aria-current="activeTab === item.key ? 'page' : undefined"
+              @click="switchNav(item.key)"
+            >
+              <span v-if="activeTab === item.key" class="absolute left-0 top-1 bottom-1 w-[2px] rounded-r bg-blue-600"></span>
+              <i :class="item.icon" class="text-[10px] w-3 text-center shrink-0" />
+              <span class="truncate">{{ item.label }}</span>
+            </button>
+          </nav>
         </div>
 
+        <!-- 交付物清单：工作台 / 交付物 共用同一棵紧凑树，切分类时不用重新找文档 -->
+        <template v-if="activeTab === 'workspace' || activeTab === 'deliverables'">
+          <div class="shrink-0 flex items-center gap-1.5 px-2 py-1.5 border-b border-slate-100">
+            <div class="flex-1 flex items-center gap-1.5 h-7 px-2 rounded-md bg-white/80 border border-slate-200/80 focus-within:border-blue-400/70 focus-within:bg-white transition-colors">
+              <i class="fa-solid fa-magnifying-glass text-slate-300 text-[10px]"></i>
+              <input
+                v-model="docSearch"
+                type="text"
+                placeholder="搜索交付物"
+                class="flex-1 min-w-0 bg-transparent ws-micro text-slate-700 placeholder-slate-300 focus:outline-none"
+              />
+            </div>
+            <button
+              @click="generateDeliverable(deliverableSelected)"
+              :disabled="isStreaming || deliverableBusy || !deliverableSelected"
+              class="w-7 h-7 rounded-md flex items-center justify-center shrink-0 bg-blue-600 hover:bg-blue-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              :title="deliverableBusy ? '生成中…' : (selectedDeliverable ? `生成 · ${selectedDeliverable.short}` : '生成交付物')"
+            >
+              <i class="fa-solid text-[11px]" :class="deliverableBusy ? 'fa-circle-notch fa-spin' : 'fa-plus'"></i>
+            </button>
+            <button
+              @click="deleteStageDeliverables"
+              :disabled="isStreaming || deliverableBusy || !stageHasAnyDeliverable"
+              class="w-7 h-7 rounded-md flex items-center justify-center shrink-0 text-slate-400 hover:text-danger hover:bg-danger-soft transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              :title="`清空阶段${currentStage}已生成的交付物`"
+              aria-label="清空本阶段交付物"
+            >
+              <i class="fa-solid fa-trash-can text-[11px]"></i>
+            </button>
+          </div>
+
+          <div class="flex-1 min-h-0 overflow-y-auto scrollbar-thin px-2 py-1.5">
+            <div v-for="group in deliverableGroups" :key="group.stage.id" class="mb-0.5">
+              <button
+                class="w-full flex items-center gap-1.5 px-1.5 py-1.5 rounded ws-label transition-colors"
+                :class="[
+                  group.isCurrent ? 'text-blue-700 font-semibold' : 'text-slate-600 font-medium',
+                  group.enabled ? 'hover:bg-white/70' : 'opacity-50 cursor-not-allowed',
+                ]"
+                :disabled="!group.enabled"
+                @click="toggleDelivGroup(group.stage.id)"
+              >
+                <i
+                  class="fa-solid text-[8px] w-2.5 shrink-0 text-slate-400"
+                  :class="group.enabled && groupOpen(group.stage.id) ? 'fa-chevron-down' : 'fa-chevron-right'"
+                ></i>
+                <span class="truncate">阶段{{ group.stage.id }}</span>
+                <span v-if="group.isCurrent" class="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+              </button>
+              <div v-if="group.enabled && groupOpen(group.stage.id)" class="pl-3.5">
+                <div
+                  v-for="d in groupDeliverables(group)"
+                  :key="d.key"
+                  class="group/row relative"
+                >
+                  <button
+                    class="w-full flex items-center gap-2 pl-1.5 pr-6 py-1 rounded ws-meta text-left transition-colors"
+                    :class="currentStage === group.stage.id && deliverableSelected === d.key
+                      ? 'bg-blue-50 text-blue-700 font-semibold'
+                      : 'text-slate-500 hover:bg-white/70'"
+                    :aria-pressed="currentStage === group.stage.id && deliverableSelected === d.key"
+                    @click="selectGroupDeliverable(group.stage.id, d.key)"
+                  >
+                    <span
+                      class="w-1.5 h-1.5 rounded-full shrink-0"
+                      :class="deliverableState(group.stage.id, d.key) === 'ready' ? 'bg-blue-500' : 'bg-slate-300'"
+                      :title="deliverableState(group.stage.id, d.key) === 'ready' ? '已生成' : '未生成'"
+                    ></span>
+                    <span class="truncate">{{ d.short || d.name }}</span>
+                  </button>
+                  <button
+                    v-if="hasDeliverableData(group.stage.id, d.key)"
+                    @click.stop="clearDeliverableChat(d.key, group.stage.id)"
+                    type="button"
+                    class="absolute top-0.5 right-1 w-4 h-4 rounded flex items-center justify-center text-slate-300 opacity-0 group-hover/row:opacity-100 focus:opacity-100 hover:text-danger hover:bg-danger-soft transition-all"
+                    title="删除该交付物（文档 + 对话记录）"
+                    aria-label="删除该交付物（文档 + 对话记录）"
+                  >
+                    <i class="fa-solid fa-trash-can text-[8px]"></i>
+                  </button>
+                </div>
+                <p v-if="!groupDeliverables(group).length" class="px-1.5 py-1 ws-meta text-slate-300">无匹配文档</p>
+              </div>
+            </div>
+          </div>
+        </template>
+      </aside>
+
+      <!-- 侧边栏拖拽把手：视觉 1px，命中区 5px -->
+      <div
+        v-if="!leftPanelCollapsed"
+        class="w-[5px] shrink-0 cursor-col-resize bg-slate-100 hover:bg-blue-300 transition-colors"
+        :class="leftPanelDragging ? 'bg-blue-400' : ''"
+        title="拖动调整侧边栏宽度"
+        @mousedown.prevent="startLeftDrag"
+      ></div>
+
+      <!-- 阶段②③ 工作台：对话 + 文档预览 -->
+      <div v-if="activeTab === 'workspace'" class="flex h-full min-w-0 flex-1 overflow-hidden">
         <!-- 中栏：对话区 (flex-1) -->
         <div class="flex flex-col min-w-0 relative glass-card" style="flex: 4.5 1 0">
           <!-- 顶部：FDE 智能助手标题栏 -->
           <div class="shrink-0 flex items-center gap-3 px-5 py-3 border-b border-slate-100 bg-white/95">
-            <button
-              v-if="leftPanelCollapsed"
-              @click="leftPanelCollapsed = false"
-              class="w-5 h-5 rounded flex items-center justify-center text-slate-300 hover:text-blue-600 hover:bg-slate-100 transition-colors shrink-0"
-              title="显示项目文档"
-            >
-              <i class="fa-solid fa-angles-right text-[9px]"></i>
-            </button>
             <div class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center shrink-0 bg-blue-50 shadow-sm shadow-blue-500/10">
               <img :src="botAvatar" alt="FDE 智能助手" class="w-full h-full object-cover" />
             </div>
@@ -350,7 +333,7 @@
                       <button @click="exportDeliverableMd(deliverableSelected)" :disabled="deliverableStatus[selectedDeliverable?.key] !== 'ready'" class="result-act">
                         <i class="fa-solid fa-download"></i>下载文档
                       </button>
-                      <button @click="activeTab = 'prototype'" class="result-act">
+                      <button @click="switchNav('prototype')" class="result-act">
                         <i class="fa-solid fa-window-maximize"></i>查看原型
                       </button>
                       <span class="flex-1"></span>
@@ -456,17 +439,30 @@
               <span v-if="livePreviewStreaming" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 ws-meta font-medium shrink-0">
                 <span class="w-1.5 h-1.5 rounded-full bg-blue-500 thinking-breathe"></span>写入中
               </span>
-              <!-- MD / Word 段控 -->
+              <!-- MD / Word 段控：没有 docx 时点 Word 先去生成，而不是禁用到底 -->
               <div class="ws-seg ml-1 shrink-0">
                 <button @click="livePreviewMode = 'md'" class="ws-seg-btn" :class="livePreviewMode === 'md' ? 'is-on' : ''"><i class="fa-solid fa-arrow-pointer"></i>MD</button>
-                <button @click="switchToDocxView" :disabled="!livePreviewDocxHtml" class="ws-seg-btn" :class="livePreviewMode === 'docx' ? 'is-on' : ''"><i class="fa-solid fa-file-word"></i>Word</button>
+                <button
+                  @click="switchToDocxView"
+                  :disabled="!livePreviewContent || docxBusy || livePreviewStreaming"
+                  class="ws-seg-btn"
+                  :class="livePreviewMode === 'docx' ? 'is-on' : ''"
+                  :title="livePreviewDocxHtml ? '查看 Word 版式' : '生成 Word 版式'"
+                >
+                  <i class="fa-solid" :class="docxBusy ? 'fa-circle-notch fa-spin' : 'fa-file-word'"></i>Word
+                </button>
               </div>
               <!-- 编辑 / 下载 -->
               <button @click="togglePreviewEdit" :disabled="!livePreviewContent || livePreviewStreaming" class="ws-tool-btn shrink-0" :class="previewEditing ? 'is-on' : ''" title="编辑文档">
                 <i class="fa-solid" :class="previewEditing ? 'fa-eye' : 'fa-pen'"></i>{{ previewEditing ? '预览' : '编辑' }}
               </button>
-              <button @click="openDeliverableDocx" :disabled="!livePreviewDocxHtml" class="ws-tool-btn shrink-0" title="用 Word 打开 / 下载">
-                <i class="fa-solid fa-download"></i>下载
+              <button
+                @click="openDeliverableDocx"
+                :disabled="!livePreviewContent || docxBusy || livePreviewStreaming"
+                class="ws-tool-btn shrink-0"
+                :title="livePreviewDocxHtml ? '用 Word 打开 / 下载' : '生成 Word 后打开'"
+              >
+                <i class="fa-solid" :class="docxBusy ? 'fa-circle-notch fa-spin' : 'fa-download'"></i>下载
               </button>
             </template>
           </div>
@@ -556,54 +552,74 @@
       </div><!-- end workspace tab -->
 
       <!-- Prototype Tab — full width -->
-      <div v-if="activeTab === 'prototype'" class="flex h-full w-full">
+      <div v-if="activeTab === 'prototype'" class="flex h-full min-w-0 flex-1">
         <!-- File tree -->
-        <div class="w-[212px] shrink-0 bg-transparent/60 border-r border-slate-100 flex flex-col overflow-hidden">
-          <div class="px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
-            <span class="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">文件列表</span>
-            <button @click="refreshPrototypeFiles" class="text-slate-400 hover:text-blue-600 transition-colors" title="刷新">
-              <i class="fa-solid fa-arrows-rotate text-[11px]"></i>
+        <div class="w-[172px] shrink-0 bg-transparent/60 border-r border-slate-100 flex flex-col overflow-hidden">
+          <div class="px-2 py-1.5 border-b border-slate-100 flex items-center justify-between">
+            <span class="ws-micro font-semibold text-slate-400">文件列表</span>
+            <button @click="refreshPrototypeFiles" class="w-5 h-5 rounded flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-white transition-colors" title="刷新">
+              <i class="fa-solid fa-arrows-rotate text-[9px]"></i>
             </button>
           </div>
-          <div class="flex-1 overflow-y-auto py-1.5 px-1.5">
-            <div v-if="prototypeFiles.length === 0" class="px-3 py-4 text-[11px] text-slate-400 text-center">
+          <div class="flex-1 overflow-y-auto scrollbar-thin py-1 px-1.5">
+            <div v-if="prototypeFiles.length === 0" class="px-2 py-3 ws-micro text-slate-400 text-center">
               暂无文件
             </div>
             <template v-for="row in fileTreeRows" :key="row.type + ':' + (row.path || row.rel)">
               <!-- 文件夹行：可折叠 -->
-              <button
-                v-if="row.type === 'dir'"
-                @click="toggleDir(row.path)"
-                class="w-full text-left pr-2 py-1.5 rounded-md text-[12px] leading-tight text-slate-600 hover:bg-slate-100 transition-colors flex items-center gap-1"
-                :style="{ paddingLeft: (8 + row.depth * 14) + 'px' }"
-              >
-                <i class="fa-solid text-[9px] text-slate-400 w-2.5 shrink-0" :class="row.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
-                <i class="fa-solid text-[11px] shrink-0" :class="row.collapsed ? 'fa-folder text-amber-400' : 'fa-folder-open text-amber-400'"></i>
-                <span class="truncate font-medium">{{ row.name }}</span>
-              </button>
+              <div v-if="row.type === 'dir'" class="group/row relative">
+                <button
+                  @click="toggleDir(row.path)"
+                  class="w-full text-left pr-6 py-1 rounded ws-micro text-slate-600 hover:bg-white/70 transition-colors flex items-center gap-1"
+                  :style="{ paddingLeft: (6 + row.depth * 11) + 'px' }"
+                >
+                  <i class="fa-solid text-[7px] text-slate-400 w-2 shrink-0" :class="row.collapsed ? 'fa-chevron-right' : 'fa-chevron-down'"></i>
+                  <i class="fa-solid text-[9px] shrink-0 text-amber-400" :class="row.collapsed ? 'fa-folder' : 'fa-folder-open'"></i>
+                  <span class="truncate font-medium">{{ row.name }}</span>
+                </button>
+                <button
+                  @click.stop="deletePrototypeEntry(row)"
+                  type="button"
+                  class="absolute top-0.5 right-1 w-4 h-4 rounded flex items-center justify-center text-slate-300 opacity-0 group-hover/row:opacity-100 focus:opacity-100 hover:text-danger hover:bg-danger-soft transition-all"
+                  :title="`删除文件夹 ${row.name}`"
+                  :aria-label="`删除文件夹 ${row.name}`"
+                >
+                  <i class="fa-solid fa-trash-can text-[8px]"></i>
+                </button>
+              </div>
               <!-- 文件行 -->
-              <button
-                v-else
-                @click="selectPrototypeFile(row.rel)"
-                class="w-full text-left pr-2 py-1.5 rounded-md text-[12px] leading-tight transition-colors flex items-center gap-1.5"
-                :style="{ paddingLeft: (8 + row.depth * 14 + 15) + 'px' }"
-                :class="selectedFile === row.rel ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-600 hover:bg-slate-100'"
-              >
-                <i
-                  class="text-[11px] shrink-0"
-                  :class="[fileIcon(row.rel).icon, selectedFile === row.rel ? 'text-blue-500' : fileIcon(row.rel).color]"
-                ></i>
-                <span class="truncate">{{ row.base }}</span>
-              </button>
+              <div v-else class="group/row relative">
+                <button
+                  @click="selectPrototypeFile(row.rel)"
+                  class="w-full text-left pr-6 py-1 rounded ws-micro transition-colors flex items-center gap-1.5"
+                  :style="{ paddingLeft: (6 + row.depth * 11 + 12) + 'px' }"
+                  :class="selectedFile === row.rel ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-600 hover:bg-white/70'"
+                >
+                  <i
+                    class="text-[9px] shrink-0"
+                    :class="[fileIcon(row.rel).icon, selectedFile === row.rel ? 'text-blue-500' : fileIcon(row.rel).color]"
+                  ></i>
+                  <span class="truncate">{{ row.base }}</span>
+                </button>
+                <button
+                  @click.stop="deletePrototypeEntry(row)"
+                  type="button"
+                  class="absolute top-0.5 right-1 w-4 h-4 rounded flex items-center justify-center text-slate-300 opacity-0 group-hover/row:opacity-100 focus:opacity-100 hover:text-danger hover:bg-danger-soft transition-all"
+                  :title="`删除 ${row.base}`"
+                  :aria-label="`删除 ${row.base}`"
+                >
+                  <i class="fa-solid fa-trash-can text-[8px]"></i>
+                </button>
+              </div>
             </template>
           </div>
         </div>
         <!-- Preview pane -->
         <div class="flex-1 flex flex-col min-w-0">
-          <div class="shrink-0 flex items-center gap-3 px-3.5 py-2 border-b border-slate-100 glass-card">
+          <div class="shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 border-b border-slate-100 glass-card">
             <button
               @click="openInBrowser"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              class="inline-flex items-center gap-1.5 h-7 px-2.5 ws-meta rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
               :disabled="!selectedFile"
             >
               <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
@@ -611,7 +627,7 @@
             </button>
             <button
               @click="regeneratePrototype"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-blue-700 hover:bg-blue-800 text-white transition-colors"
+              class="inline-flex items-center gap-1.5 h-7 px-2.5 ws-meta rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
               :disabled="isStreaming"
             >
               <i class="fa-solid fa-rotate text-[10px]"></i>
@@ -619,7 +635,7 @@
             </button>
             <button
               @click="publishLocal"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              class="inline-flex items-center gap-1.5 h-7 px-2.5 ws-meta rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
               :disabled="prototypeFiles.length === 0"
               title="启动本地服务并在浏览器打开（数据可正常加载）"
             >
@@ -628,12 +644,21 @@
             </button>
             <button
               @click="exportZip"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              class="inline-flex items-center gap-1.5 h-7 px-2.5 ws-meta rounded-md bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
               :disabled="prototypeFiles.length === 0"
               title="把原型打包为 ZIP 下载"
             >
               <i class="fa-solid fa-file-zipper text-[10px]"></i>
               导出 ZIP
+            </button>
+            <button
+              @click="deleteAllPrototype"
+              class="inline-flex items-center gap-1.5 h-7 px-2.5 ws-meta rounded-md text-slate-500 hover:text-danger hover:bg-danger-soft transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="prototypeFiles.length === 0 || isStreaming"
+              title="删除全部原型文件"
+            >
+              <i class="fa-solid fa-trash-can text-[10px]"></i>
+              清空原型
             </button>
             <!-- 预览缩放：仅缩放 iframe 视觉，不改原型文件 -->
             <div v-if="selectedFile && isHtmlSelected" class="ml-auto flex items-center gap-1 rounded-lg bg-slate-100 px-1 py-0.5">
@@ -733,12 +758,12 @@
             </div>
             <!-- 非 HTML 文件：源码预览 -->
             <div v-else class="h-full flex flex-col bg-[#0f1b2d] min-h-0">
-              <div class="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-white/10">
-                <i class="text-[11px]" :class="[fileIcon(selectedFile).icon, fileIcon(selectedFile).color]"></i>
-                <span class="text-[12px] text-slate-300 font-mono">{{ selectedFile }}</span>
-                <span class="ml-auto text-[10px] text-slate-500">只读预览</span>
+              <div class="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-white/10">
+                <i class="text-[9px]" :class="[fileIcon(selectedFile).icon, fileIcon(selectedFile).color]"></i>
+                <span class="ws-micro text-slate-300 font-mono truncate">{{ selectedFile }}</span>
+                <span class="ml-auto ws-micro text-slate-500 shrink-0">只读预览</span>
               </div>
-              <pre class="flex-1 overflow-auto p-4 text-[12px] leading-relaxed text-slate-200 font-mono whitespace-pre"><code>{{ fileSource || '（空文件）' }}</code></pre>
+              <pre class="flex-1 overflow-auto p-3 text-[11px] leading-[1.6] text-slate-200 font-mono whitespace-pre"><code>{{ fileSource || '（空文件）' }}</code></pre>
             </div>
           </div>
 
@@ -802,7 +827,7 @@
 
 
       <!-- 阶段③ 对话 Tab (chat3) — 豆包风格,与「智能对话」一致 -->
-      <div v-else-if="activeTab === 'chat3'" class="flex h-full w-full">
+      <div v-else-if="activeTab === 'chat3'" class="flex h-full min-w-0 flex-1">
         <!-- Center: Chat area -->
         <div class="flex-1 flex flex-col min-w-0 relative glass-card">
           <div ref="stage3ChatRef" class="flex-1 overflow-y-auto px-4 pt-6" :class="stage3Messages.length > 0 ? 'pb-[150px]' : ''">
@@ -989,7 +1014,7 @@
       />
 
 
-    </div><!-- end tab content body -->
+    </div><!-- end workbench shell -->
   </div>
 
   <!-- 轻量提示 -->
@@ -1016,13 +1041,14 @@ import { trackPrompt, getInflightPrompt } from '../../composables/promptInflight
 import { useRoute } from 'vue-router';
 import { marked } from 'marked';
 import StagePanel from '@/components/workbench/StagePanel.vue';
+import StageTimeline from '@/components/workbench/StageTimeline.vue';
 import Stage3Deliverables from '@/components/workbench/StageDeliverables.vue';
 import ImageLightbox from '@/components/common/ImageLightbox.vue';
 import AttachmentChip from '@/components/common/AttachmentChip.vue';
 import ModelSelector from '@/components/agent/ModelSelector.vue';
 import topBg from '@/assets/top.png';
 import botAvatar from '@/assets/bot.png';
-import { FDE_STAGES, getStage, DEFAULT_STAGE } from '@/data/fde-stages';
+import { getStage, DEFAULT_STAGE } from '@/data/fde-stages';
 import { useChatComposer } from '@/composables/useChatComposer';
 
 const props = defineProps({
@@ -1093,64 +1119,18 @@ const tickClock = () => {
   nowClock.value = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 };
 
-// 步骤条状态判定（复刻自 StageTimeline：stageStatus 优先，否则据 currentStage 推导）
-function statusOf(id) {
-  if (stageStatus.value && stageStatus.value[id]) return stageStatus.value[id];
-  if (id < currentStage.value) return 'done';
-  if (id === currentStage.value) return 'active';
-  return 'todo';
-}
-function stepNodeClass(id) {
-  if (id === currentStage.value) return 'bg-blue-50 ring-1 ring-blue-200';
-  if (statusOf(id) === 'done') return 'hover:bg-slate-50';
-  return 'hover:bg-slate-50 opacity-80';
-}
-function stepDotClass(id) {
-  if (id === currentStage.value) return 'is-active';
-  if (statusOf(id) === 'done') return 'is-done';
-  return 'is-todo';
-}
-// 步骤标题：手册里 name 含「+」，截图分两行，这里取主标题；hint 取「+」后半段
-function stepTitle(stage) {
-  return String(stage.name).split(/\s*\+\s*/)[0] || stage.name;
-}
-function stepHint(stage) {
-  const parts = String(stage.name).split(/\s*\+\s*/);
-  return parts.length > 1 ? parts.slice(1).join(' · ') : (stage.short || '');
-}
-
-// 左栏搜索 + 过滤（仅前端按名称过滤当前阶段交付物）
+// 左栏搜索：按名称过滤（仅前端过滤，不改数据）
 const docSearch = ref('');
-const filteredDeliverables = computed(() => {
+// 侧边栏分组树用：把搜索词作用到每个阶段分组上，
+// 工作台 / 交付物 两个分类共用这棵树，所以过滤要按组算，不能只看当前阶段。
+function groupDeliverables(group) {
+  const list = group?.stage?.deliverables || [];
   const q = docSearch.value.trim().toLowerCase();
-  if (!q) return activeDeliverables.value;
-  return activeDeliverables.value.filter((d) =>
-    d.name.toLowerCase().includes(q) || (d.short || '').toLowerCase().includes(q)
+  if (!q) return list;
+  return list.filter((d) =>
+    String(d.name || '').toLowerCase().includes(q) || String(d.short || '').toLowerCase().includes(q)
   );
-});
-
-// 收藏星标（localStorage 持久化，per project）
-const favDocs = ref(new Set());
-const favKey = () => `fde:favDocs:${props.slug}`;
-function loadFavDocs() {
-  try {
-    const raw = localStorage.getItem(favKey());
-    favDocs.value = new Set(raw ? JSON.parse(raw) : []);
-  } catch (_) { favDocs.value = new Set(); }
 }
-function toggleFav(key) {
-  const s = new Set(favDocs.value);
-  if (s.has(key)) s.delete(key); else s.add(key);
-  favDocs.value = s;
-  try { localStorage.setItem(favKey(), JSON.stringify([...s])); } catch (_) { /* 忽略 */ }
-}
-
-// 相关资料（静态占位，仅展示）
-const relatedResources = [
-  { name: '医院数据字典' },
-  { name: 'HIS系统对接文档' },
-  { name: '同类案例参考' },
-];
 
 // composer 模型选择器：与「AI 智能对话」同源（hermes.listModels / setModel）
 const availableModels = ref([]);
@@ -1222,7 +1202,12 @@ async function selectStage(id) {
   livePreviewTitle.value = '';
   livePreviewFile.value = '';
   previewEditing.value = false;
-  await loadDeliverablesForStage(id);
+  // 读盘失败不能挡住切阶段：否则高亮和持久化都停在旧阶段，界面看着像「点了没反应」
+  try {
+    await loadDeliverablesForStage(id);
+  } catch (e) {
+    console.error('[ProjectDetail] loadDeliverablesForStage failed:', e);
+  }
   // 更新阶段状态:比 id 小的算 done、id 为 active、比 id 大的保持 todo
   const next = {};
   for (let i = 1; i <= 5; i++) {
@@ -2442,10 +2427,13 @@ const livePreviewMode = ref('md');       // 'md' | 'docx'
 const livePreviewTitle = ref('');        // 面板顶部标题（交付物名）
 const livePreviewFile = ref('');         // 正在预览的项目内相对路径（用于 docx 转存判断）
 const livePreviewStreaming = ref(false); // 正在实时接收写入（面板顶部显示「生成中」）
+const docxBusy = ref(false);             // 正在生成 / 转存 Word
 const rightPanelWidth = ref(480);        // 兼容旧引用
 const rightPanelUserWidth = ref(0);     // 0 = 未拖拽，走 flex 2:4:4；>0 = 用户拖过，固定像素
 const rightPanelCollapsed = ref(false);
-const navCollapsed = ref(false);        // 二级侧边导航收起为图标轨
+const leftPanelCollapsed = ref(false);  // 二级侧边栏收起为窄轨
+const leftPanelWidth = ref(0);          // 0 = 用默认 210px；>0 = 用户拖过，固定像素
+const leftPanelDragging = ref(false);
 const rightPanelDragging = ref(false);
 let _dragStartX = 0, _dragStartW = 0;
 
@@ -2477,6 +2465,25 @@ async function loadDocxPreview(stageId, d) {
 
 // 拖拽调整右侧预览宽度。
 // 未拖过时右栏走 flex 比例（2:4:4 随窗口自适应）；一旦用户拖过就固定为像素宽度。
+// 侧边栏宽度拖拽：把手在侧栏右侧，鼠标右移变宽（与右栏把手方向相反）
+function startLeftDrag(e) {
+  leftPanelDragging.value = true;
+  const startX = e.clientX;
+  // 首次拖拽以当前实际渲染宽度为起点，避免从默认值跳一下
+  const panelEl = e.currentTarget?.previousElementSibling;
+  const startW = leftPanelWidth.value || panelEl?.getBoundingClientRect().width || 210;
+  const onMove = (ev) => {
+    leftPanelWidth.value = Math.min(380, Math.max(150, startW + (ev.clientX - startX)));
+  };
+  const onUp = () => {
+    leftPanelDragging.value = false;
+    window.removeEventListener('mousemove', onMove);
+    window.removeEventListener('mouseup', onUp);
+  };
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onUp);
+}
+
 function startRightDrag(e) {
   rightPanelDragging.value = true;
   _dragStartX = e.clientX;
@@ -2503,19 +2510,20 @@ function startRightDrag(e) {
 async function autoSaveDocx(stageId, key) {
   const d = deliverablesForStage(stageId).find((x) => x.key === key);
   if (!d) return;
-  const docxRel = d.file.replace(/\.md$/i, '.docx');
+  const docxRel = d.file.replace(/\.md$/i, '') + '.docx';
   try {
-    const p = window.api.hermes.prompt(
-      props.slug,
-      `/md-export 把当前项目目录下的 \`${d.file}\` 导出为 Word，输出到同目录的 \`${docxRel}\`（覆盖已有文件）。只做格式转换，不要改动 md 原文内容。`,
-    );
-    trackPrompt(props.slug, { tab: `docx:${key}` }, p);
-    await p;
-    const rv = await window.api.hermes.docxPreview(props.slug, docxRel);
-    if (rv && rv.success && rv.html) {
-      livePreviewDocxHtml.value = rv.html;
+    // 直接跑本地 md-export 脚本，不占用 AI 对话轮次（原先走 /md-export prompt，
+    // 慢、会把转存消息混进时间线，失败还静默，Word 按钮因此永远点不动）。
+    const conv = await window.api.hermes.mdToDocx(props.slug, d.file);
+    if (!conv || !conv.success) {
+      console.warn('[ProjectDetail] mdToDocx failed:', conv && conv.error);
+      return;
     }
-  } catch (_) { /* 转存失败不中断流程，md 原文已经落盘了 */ }
+    const rv = await window.api.hermes.docxPreview(props.slug, docxRel);
+    if (rv && rv.success && rv.html) livePreviewDocxHtml.value = rv.html;
+  } catch (e) {
+    console.warn('[ProjectDetail] autoSaveDocx failed:', e);
+  }
 }
 
 // —— 工作台：每件交付物的独立消息状态 ——
@@ -2635,34 +2643,157 @@ async function savePreviewEdit() {
   }
 }
 
-// 清空某件交付物的对话记录（磁盘 + 内存）。交付物文档本身不动。
-async function clearDeliverableChat(key) {
+// 本阶段是否有可清理的东西（文档或对话），决定工具栏清空按钮是否可用
+const stageHasAnyDeliverable = computed(() =>
+  deliverablesForStage(currentStage.value).some((d) => hasDeliverableData(currentStage.value, d.key))
+);
+
+// 清空当前阶段全部交付物：逐件复用单件删除的同一套清理逻辑（文档 + 对话 + 内存态）
+async function deleteStageDeliverables() {
   const stageId = currentStage.value;
+  const targets = deliverablesForStage(stageId).filter((d) => hasDeliverableData(stageId, d.key));
+  if (!targets.length) return;
+
+  const docCount = targets.filter((d) => deliverableState(stageId, d.key) === 'ready').length;
+  const parts = [`${targets.length} 件交付物的对话记录`];
+  if (docCount) parts.push(`${docCount} 份已生成文档（md / Word）`);
+  if (!window.confirm(`清空阶段${stageId}的全部交付物？\n将删除 ${parts.join(' 和 ')}。\n此操作不可恢复。`)) return;
+
+  const failed = [];
+  for (const d of targets) {
+    const ok = await removeDeliverable(stageId, d.key);
+    if (!ok) failed.push(d.short || d.name);
+  }
+  if (failed.length) showToast(`部分未删除：${failed.join('、')}`, 'error');
+  else showToast(`已清空阶段${stageId}的交付物`, 'success');
+}
+
+// 侧栏是否给这件交付物显示删除按钮：有对话记录或已生成文档就给。
+// 只看对话记录会漏掉「文档已生成但记录被清过」的情况，那时用户就没有清理入口了。
+function hasDeliverableData(stageId, key) {
+  return (deliverableMsgs.value[dkey(stageId, key)] || []).length > 0
+    || deliverableState(stageId, key) === 'ready';
+}
+
+// 真正执行删除：对话记录 + 生成的文档（md / docx）+ 内存态。
+// 单件删除和「清空本阶段」共用这一份，避免两处逻辑各写各的而走岔。
+// 返回是否全部成功（调用方决定怎么提示）。
+async function removeDeliverable(stageId, key) {
   const d = deliverablesForStage(stageId).find((x) => x.key === key);
-  if (!d) return;
+  if (!d) return false;
   const k = dkey(stageId, key);
-  const count = (deliverableMsgs.value[k] || []).filter((m) => m.role === 'user').length;
-  if (!window.confirm(`清空《${d.name}》的 ${count} 轮对话记录？\n（已生成的文档不会被删除）`)) return;
+  const hasDoc = deliverableState(stageId, key) === 'ready';
+  let ok = true;
+
   try {
     await window.api.hermes.deleteMessages(props.slug, `deliverable:${key}`);
     deliverableMsgs.value = { ...deliverableMsgs.value, [k]: [] };
-    showToast(`已清空《${d.name}》的对话记录`, 'success');
   } catch (e) {
-    showToast(`清空失败：${e.message || e}`, 'error');
+    console.warn('[ProjectDetail] deleteMessages failed:', e);
+    ok = false;
   }
+
+  if (hasDoc) {
+    // md 和同名 docx 一起删；docx 可能不存在，主进程按幂等处理
+    for (const rel of [d.file, d.file.replace(/\.md$/i, '') + '.docx']) {
+      try {
+        const r = await window.api.hermes.deleteFile(props.slug, rel);
+        if (r && !r.success) { console.warn('[ProjectDetail] deleteFile failed:', rel, r.error); ok = false; }
+      } catch (e) {
+        console.warn('[ProjectDetail] deleteFile threw:', rel, e);
+        ok = false;
+      }
+    }
+    // 内存态同步清掉，状态点才会回到「未生成」
+    const nextContents = { ...deliverableContents.value };
+    const nextPreviews = { ...deliverablePreviews.value };
+    delete nextContents[k];
+    delete nextPreviews[k];
+    deliverableContents.value = nextContents;
+    deliverablePreviews.value = nextPreviews;
+    // 删的正是当前预览的那份 → 清空右侧面板
+    if (stageId === currentStage.value && deliverableSelected.value === key) {
+      livePreviewContent.value = '';
+      livePreviewDocxHtml.value = '';
+      livePreviewMode.value = 'md';
+      previewEditing.value = false;
+    }
+  }
+  return ok;
+}
+
+// 删除单件交付物（侧栏行内垃圾桶）：确认 → 复用 removeDeliverable
+async function clearDeliverableChat(key, stageId = currentStage.value) {
+  const d = deliverablesForStage(stageId).find((x) => x.key === key);
+  if (!d) return;
+  const k = dkey(stageId, key);
+  const rounds = (deliverableMsgs.value[k] || []).filter((m) => m.role === 'user').length;
+  const hasDoc = deliverableState(stageId, key) === 'ready';
+  const parts = [];
+  if (rounds) parts.push(`${rounds} 轮对话记录`);
+  if (hasDoc) parts.push('已生成的文档（md / Word）');
+  if (!parts.length) return;
+  if (!window.confirm(`删除《${d.name}》的${parts.join(' 和 ')}？\n此操作不可恢复。`)) return;
+
+  if (await removeDeliverable(stageId, key)) showToast(`已删除《${d.name}》`, 'success');
+  else showToast(`《${d.name}》部分内容删除失败`, 'error');
 }
 
 // 切到 Word 成品视图（只读 HTML 快照，无快照时按钮禁用）
-function switchToDocxView() {
-  if (livePreviewDocxHtml.value) livePreviewMode.value = 'docx';
+// 确保当前交付物的 .docx 已生成：没有就现场转一份。
+// 走 hermes:md-to-docx（本地直接跑 md-export 脚本），不再绕 AI 对话——
+// 之前依赖 /md-export prompt，慢且失败后静默，按钮就永久点不动。
+async function ensureDocx() {
+  if (livePreviewDocxHtml.value) return true;
+  const stageId = currentStage.value;
+  const key = deliverableSelected.value;
+  const d = deliverablesForStage(stageId).find((x) => x.key === key);
+  if (!d) return false;
+  const docxRel = d.file.replace(/\.md$/i, '') + '.docx';
+  docxBusy.value = true;
+  try {
+    // 1) 磁盘上可能已经有（之前生成过，只是本次没读到）
+    let rv = await window.api.hermes.docxPreview(props.slug, docxRel);
+    if (rv && rv.success && rv.html) {
+      livePreviewDocxHtml.value = rv.html;
+      return true;
+    }
+    // 2) 没有就现场转换
+    showToast('正在生成 Word…', 'info');
+    const conv = await window.api.hermes.mdToDocx(props.slug, d.file);
+    if (!conv || !conv.success) {
+      showToast(`Word 生成失败：${(conv && conv.error) || '未知错误'}`, 'error');
+      return false;
+    }
+    rv = await window.api.hermes.docxPreview(props.slug, docxRel);
+    if (rv && rv.success && rv.html) {
+      livePreviewDocxHtml.value = rv.html;
+      showToast('Word 已生成', 'success');
+      return true;
+    }
+    showToast(`Word 预览失败：${(rv && rv.error) || '未知错误'}`, 'error');
+    return false;
+  } catch (e) {
+    showToast(`Word 生成失败：${e.message || e}`, 'error');
+    return false;
+  } finally {
+    docxBusy.value = false;
+  }
 }
 
-// 用系统默认程序打开该交付物的 .docx
+async function switchToDocxView() {
+  if (await ensureDocx()) livePreviewMode.value = 'docx';
+}
+
+// 用系统默认程序打开该交付物的 .docx（没有就先生成）
 async function openDeliverableDocx() {
   if (!livePreviewFile.value) return;
+  if (!(await ensureDocx())) return;
   try {
     await window.api.hermes.openInBrowser(props.slug, docxRelPath.value);
-  } catch (_) { /* 文件不存在时静默 */ }
+  } catch (e) {
+    showToast(`打开失败：${e.message || e}`, 'error');
+  }
 }
 
 // 一轮生成结束：读回全部交付物 → 刷新当前预览 → 自动转存 docx
@@ -3031,18 +3162,83 @@ const selectPrototypeFile = async (fileName) => {
       if (result && result.success) {
         iframeSrc.value = result.url;
       } else {
-        const content = await window.api.hermes.readFile(props.slug, `prototype/${fileName}`);
-        const blob = new Blob([content], { type: 'text/html' });
+        const res = await window.api.hermes.readFile(props.slug, `prototype/${fileName}`);
+        const blob = new Blob([res?.content ?? ''], { type: 'text/html' });
         iframeSrc.value = URL.createObjectURL(blob);
       }
       iframeKey.value++;
     } else {
-      // 非 HTML（js / json / css / 数据文件）直接展示源码
-      const content = await window.api.hermes.readFile(props.slug, `prototype/${fileName}`);
-      fileSource.value = typeof content === 'string' ? content : String(content ?? '');
+      // 非 HTML（js / json / css / 数据文件）直接展示源码。
+      // read-file 返回 { success, content }，直接 String(res) 会渲染成 [object Object]
+      const res = await window.api.hermes.readFile(props.slug, `prototype/${fileName}`);
+      if (res && res.success) fileSource.value = String(res.content ?? '');
+      else fileSource.value = `读取失败：${(res && res.error) || '未知错误'}`;
     }
   } catch (e) {
     console.error('Failed to load prototype file:', e);
+    fileSource.value = `读取失败：${e.message || e}`;
+  }
+};
+
+// 删除原型里的文件 / 文件夹。fileTreeRows 的路径都相对 prototype 目录，
+// 落到磁盘要补 prototype/ 前缀（与 selectPrototypeFile 的读取路径保持一致）。
+const deletePrototypeEntry = async (row) => {
+  if (!row) return;
+  const isDir = row.type === 'dir';
+  const rel = isDir ? row.path : row.rel;
+  if (!rel) return;
+
+  let tip;
+  if (isDir) {
+    const inside = prototypeFiles.value.filter((f) => String(f.rel || f.name).startsWith(`${rel}/`)).length;
+    tip = `删除文件夹《${row.name}》及其中 ${inside} 个文件？`;
+  } else {
+    tip = `删除《${row.base}》？`;
+  }
+  if (!window.confirm(`${tip}\n此操作不可恢复。`)) return;
+
+  try {
+    const r = await window.api.hermes.deleteFile(props.slug, `prototype/${rel}`, isDir);
+    if (!r || !r.success) {
+      showToast(`删除失败：${(r && r.error) || '未知错误'}`, 'error');
+      return;
+    }
+    // 删掉的正是当前预览的文件（或它所在的目录）→ 清空预览
+    const selected = selectedFile.value;
+    if (selected && (selected === rel || (isDir && selected.startsWith(`${rel}/`)))) {
+      selectedFile.value = '';
+      fileSource.value = '';
+      iframeSrc.value = '';
+      isHtmlSelected.value = false;
+    }
+    await refreshPrototypeFiles();
+    showToast(isDir ? `已删除文件夹《${row.name}》` : `已删除《${row.base}》`, 'success');
+  } catch (e) {
+    showToast(`删除失败：${e.message || e}`, 'error');
+  }
+};
+
+// 清空整个原型：删掉 prototype 目录下所有内容。
+// 走目录递归删除，比逐个文件删可靠（子目录、空目录都能清掉）。
+const deleteAllPrototype = async () => {
+  const count = prototypeFiles.value.length;
+  if (!count) return;
+  if (!window.confirm(`删除全部原型文件？\n共 ${count} 个文件，包含所有页面、脚本和数据。\n此操作不可恢复，之后可用「重新生成」重建。`)) return;
+
+  try {
+    const r = await window.api.hermes.deleteFile(props.slug, 'prototype', true);
+    if (!r || !r.success) {
+      showToast(`清空失败：${(r && r.error) || '未知错误'}`, 'error');
+      return;
+    }
+    selectedFile.value = '';
+    fileSource.value = '';
+    iframeSrc.value = '';
+    isHtmlSelected.value = false;
+    await refreshPrototypeFiles();
+    showToast(`已清空原型（${count} 个文件）`, 'success');
+  } catch (e) {
+    showToast(`清空失败：${e.message || e}`, 'error');
   }
 };
 
@@ -3162,7 +3358,6 @@ const exportZip = async () => {
 onMounted(async () => {
   tickClock();
   clockTimer = setInterval(tickClock, 1000);
-  loadFavDocs();
   loadModels();
   await loadProject();
 
@@ -3265,14 +3460,14 @@ textarea {
   cursor: text;
 }
 
-/* ===== 截图版工作台样式（全部走 token / 品牌蓝）===== */
-
 /* --- 统一字号台阶（收敛原先 10.5~14px 七八档到 4 档）---
    ws-title 面板/卡片主标题 · ws-body 正文/文档名 · ws-label 次要 · ws-meta 状态/提示 */
 .ws-title { font-size: 14px; line-height: 1.3; }
 .ws-body  { font-size: 13px; line-height: 1.45; }
 .ws-label { font-size: 12px; line-height: 1.4; }
 .ws-meta  { font-size: 11px; line-height: 1.4; }
+/* 侧边导航专用：比 ws-meta 再小半档，密度优先 */
+.ws-micro { font-size: 10.5px; line-height: 1.35; }
 
 /* --- 顶栏工具按钮：MD/Word/编辑/下载/折叠 统一同一档 ---
    28px 高、10px 字、6px 圆角、图标 10px，hover 蓝 */
@@ -3348,31 +3543,6 @@ textarea {
   opacity: 0.95;
   -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 28%);
   mask-image: linear-gradient(to right, transparent 0%, #000 28%);
-}
-
-/* 五阶段步骤条编号圈 */
-.step-dot {
-  width: 28px;
-  height: 28px;
-  border-radius: 999px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  transition: background .15s, color .15s, box-shadow .15s;
-}
-.step-dot.is-active {
-  background: hsl(var(--primary));
-  color: #fff;
-  box-shadow: 0 4px 10px hsl(var(--primary) / 30%);
-}
-.step-dot.is-done {
-  background: color-mix(in srgb, hsl(var(--primary)) 16%, white);
-  color: hsl(var(--primary));
-}
-.step-dot.is-todo {
-  background: hsl(var(--border) / 55%);
-  color: hsl(var(--muted-foreground));
 }
 
 /* AI 结果卡：白底 + 淡蓝描边，动作条按钮 */

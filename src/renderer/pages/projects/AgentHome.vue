@@ -10,28 +10,40 @@
       @new-chat="startNewChat"
     />
 
-    <!-- Center: Chat area -->
-    <ChatPanel
-      ref="chatPanelRef"
-      :slug="currentSlug"
-      :project-name="currentProjectName"
-      :project-meta="currentMeta"
-      :messages="messages"
-      :is-streaming="isStreaming"
-      :elapsed-sec="elapsedSec"
-      :is-loading="messagesLoading"
-      :available-commands="availableCommands"
-      :available-models="availableModels"
-      :current-model="currentModel"
-      @send="handleSend"
-      @send-quick="handleQuickSend"
-      @send-with-attachments="handleSendWithAttachments"
-      @cancel="handleCancel"
-      @navigate="handleNavigate"
-      @fork="handleFork"
-      @change-model="handleChangeModel"
-      @preview-file="handlePreviewFile"
-    />
+    <!-- Center: Chat area
+         min-h-0 必须有：flex 子项默认 min-height:auto 会被消息列表撑高，
+         ChatPanel 内的 overflow-y-auto 就算不出可滚区域，对话滑不动。 -->
+    <div class="flex-1 min-w-0 min-h-0 flex flex-col">
+      <PageHero
+        title="AI 智能对话"
+        description="调用技能与知识，围绕需求、方案和交付物持续协作"
+        icon="fa-solid fa-comments"
+        :image="heroImage"
+        image-class="page-hero__image--center"
+        compact
+      />
+      <ChatPanel
+        ref="chatPanelRef"
+        :slug="currentSlug"
+        :project-name="currentProjectName"
+        :project-meta="currentMeta"
+        :messages="messages"
+        :is-streaming="isStreaming"
+        :elapsed-sec="elapsedSec"
+        :is-loading="messagesLoading"
+        :available-commands="availableCommands"
+        :available-models="availableModels"
+        :current-model="currentModel"
+        @send="handleSend"
+        @send-quick="handleQuickSend"
+        @send-with-attachments="handleSendWithAttachments"
+        @cancel="handleCancel"
+        @navigate="handleNavigate"
+        @fork="handleFork"
+        @change-model="handleChangeModel"
+        @preview-file="handlePreviewFile"
+      />
+    </div>
 
     <!-- Right: Preview panel or Info sidebar -->
     <DeliverablePreviewPanel
@@ -89,6 +101,8 @@ import SessionList from '@/components/agent/SessionList.vue';
 import ChatPanel from '@/components/agent/ChatPanel.vue';
 import InfoSidebar from '@/components/agent/InfoSidebar.vue';
 import DeliverablePreviewPanel from '@/components/common/DeliverablePreviewPanel.vue';
+import PageHero from '@/components/common/PageHero.vue';
+import heroImage from '@/assets/hero-chat.jpg';
 import { isMultimodalModel } from '@/composables/useChatComposer';
 import { findBuiltinAiAppById, buildAiAppOpeningPrompt } from '@/data/ai-apps';
 
@@ -167,6 +181,10 @@ function sourceLabelOf(tab) {
   if (t.startsWith('deliverable:')) {
     const key = t.slice('deliverable:'.length);
     return `交付物：${(DELIVERABLE_META[key] || {}).name || key}`;
+  }
+  if (t.startsWith('docx:')) {
+    const key = t.slice('docx:'.length);
+    return `导出 Word：${(DELIVERABLE_META[key] || {}).name || key}`;
   }
   if (t === 'iterate') return '原型迭代';
   if (t === 'prototype-gen') return '原型生成';

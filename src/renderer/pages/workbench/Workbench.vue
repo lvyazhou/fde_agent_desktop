@@ -13,7 +13,7 @@
       <div class="portal-inner relative z-[1] w-full h-full flex flex-col">
         <!-- Hero:平台是什么 / 为什么做 -->
         <div class="hero rounded-2xl card border border-blue-500/14 relative overflow-hidden shrink-0" style="box-shadow: var(--shadow-card-token)">
-          <div class="hero-bg" :style="{ backgroundImage: `url(${topHero})` }"></div>
+          <div class="hero-bg" :style="{ backgroundImage: `url(${topHeroImage})` }"></div>
           <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-blue-600 z-[2]"></div>
           <div class="relative z-[1] flex items-start justify-between gap-6 flex-wrap">
             <div class="hero-copy min-w-0 flex-1">
@@ -125,14 +125,14 @@
                 :class="s.ui?.accent || 'stage-blue'"
                 style="box-shadow: var(--shadow-card-token)"
               >
-                <!-- 头部:序号 + 图标 + 名称 + 目标 -->
-                <div class="px-3.5 pt-3.5 pb-2.5">
-                  <div class="flex items-center gap-2 mb-2.5">
+                <!-- 头部轨道：编号/图标、标题、标签、目标均固定高度，五卡内容对齐 -->
+                <div class="stage-head px-3.5 pt-3.5 pb-2.5">
+                  <div class="stage-head__marks flex items-center gap-2 mb-2.5">
                     <span class="stage-num shrink-0">{{ s.id }}</span>
                     <span class="stage-icon shrink-0"><i :class="s.ui?.icon || 'fa-solid fa-circle-nodes'"></i></span>
                   </div>
-                  <div class="text-[13px] font-bold text-slate-800 leading-snug mb-1.5">{{ s.name }}</div>
-                  <div class="flex flex-wrap gap-1.5 mb-2">
+                  <div class="stage-head__title text-[13px] font-bold text-slate-800 leading-snug mb-1.5">{{ s.name }}</div>
+                  <div class="stage-head__chips flex flex-wrap gap-1.5 mb-2">
                     <span v-for="chip in (s.ui?.chips || [])" :key="chip" class="stage-chip">{{ chip }}</span>
                   </div>
                   <div class="stage-goal text-[11px] text-slate-500 leading-relaxed">{{ s.goal }}</div>
@@ -169,15 +169,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { FDE_STAGES } from '@/data/fde-stages';
 import StageDetail from '@/components/workbench/StageDetail.vue';
-import topHero from '@/assets/top.png';
+import topHero from '@/assets/hero-workbench-brown.jpg';
+import blueHero from '@/assets/top.png';
+import { useTheme } from '@/composables/useTheme.js';
 
 const router = useRouter();
+const { theme } = useTheme();
 const stages = ref([]);
 const activeStage = ref(null);
+const topHeroImage = computed(() => theme.value === 'brown' ? topHero : blueHero);
 const loading = ref(true);
 
 // 两条并行推进线(流程图节点)——取自手册"全流程一张图"
@@ -195,8 +199,8 @@ const envLine = [
 
 const stageUi = {
   1: { icon: 'fa-solid fa-brain', accent: 'stage-blue', chips: ['调研备弹', '知识内化'], listLabel: '知识内化', rhythmShort: '进场前准备' },
-  2: { icon: 'fa-solid fa-file-lines', accent: 'stage-blue', chips: ['结构化沟通', '原型收敛'], listLabel: '交付物', rhythmShort: '2+1 · 需求收敛' },
-  3: { icon: 'fa-solid fa-diagram-project', accent: 'stage-blue', chips: ['需求签字', '智能体矩阵'], listLabel: '交付物', rhythmShort: '2+1 的 1 · 签字定稿' },
+  2: { icon: 'fa-solid fa-file-lines', accent: 'stage-indigo', chips: ['结构化沟通', '原型收敛'], listLabel: '交付物', rhythmShort: '2+1 · 需求收敛' },
+  3: { icon: 'fa-solid fa-diagram-project', accent: 'stage-violet', chips: ['需求签字', '智能体矩阵'], listLabel: '交付物', rhythmShort: '2+1 的 1 · 签字定稿' },
   4: { icon: 'fa-solid fa-desktop', accent: 'stage-green', chips: ['工作台上线', '真实数据接入'], listLabel: '交付物', rhythmShort: '3/7/14 · 两线齐备后起算' },
   5: { icon: 'fa-solid fa-rocket', accent: 'stage-purple', chips: ['客户试用', '三轮定稿'], listLabel: '交付物', rhythmShort: '2–4 周 · 三轮定稿' },
 };
@@ -239,6 +243,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+
 /* 门户一屏自适应:内边距与块间距随视口收缩,整体不滚动 */
 .portal-inner {
   padding: clamp(12px, 2.2vh, 24px) clamp(16px, 3vw, 40px);
@@ -333,6 +338,16 @@ onMounted(async () => {
 .stage-dot {
   color: rgba(37, 99, 235, .7);
 }
+.stage-blue .stage-num { background: #2563eb; }
+.stage-blue .stage-icon { background: #eff4ff; color: #2563eb; }
+.stage-blue .stage-chip { background: #eff4ff; color: #1d4ed8; }
+.stage-indigo .stage-num { background: #3348d8; }
+.stage-indigo .stage-icon { background: #eef0ff; color: #3348d8; }
+.stage-indigo .stage-chip { background: #eef0ff; color: #3048c7; }
+.stage-violet .stage-num { background: #5546d9; }
+.stage-violet .stage-icon { background: #f0efff; color: #5546d9; }
+.stage-violet .stage-chip { background: #f0efff; color: #5144c9; }
+
 .stage-green .stage-num { background: #0ea5a0; }
 .stage-green .stage-icon { background: #e6faf8; color: #0d9488; }
 .stage-green .stage-chip { background: #e6faf8; color: #0d9488; }
@@ -343,6 +358,13 @@ onMounted(async () => {
 .stage-purple .stage-chip { background: #f3edff; color: #7c3aed; }
 .stage-purple .stage-label-icon,
 .stage-purple .stage-dot { color: #7c3aed; }
+
+/* 五张卡保持统一基线：标题区、交付物区、节奏条不随文案漂移 */
+.stage-card .stage-head { min-height: 190px; }
+.stage-card .stage-head__marks { height: 30px; }
+.stage-card .stage-head__title { min-height: 36px; }
+.stage-card .stage-head__chips { min-height: 18px; }
+.stage-card .stage-dlv-list { min-height: 104px; }
 
 @media (max-width: 1180px) {
   .hero-bg { display: none; }

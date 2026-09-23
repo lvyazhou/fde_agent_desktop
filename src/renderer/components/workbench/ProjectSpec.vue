@@ -1,18 +1,14 @@
 <template>
   <div class="flex flex-col h-full min-h-0 bg-transparent">
-    <!-- 顶部:标题(去渐变,改暖棕竖条 — Swiss 风格避免装饰性渐变) -->
-    <div class="flex items-center gap-3 px-6 py-4 glass-card border-b border-blue-500/14 shrink-0 relative">
-      <div class="absolute left-0 top-0 bottom-0 w-[3px] bg-blue-600"></div>
-      <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-        <i class="fa-solid fa-clipboard-list text-[13px]"></i>
-      </span>
-      <div class="min-w-0 flex-1">
-        <div class="flex items-center gap-2">
-          <h1 class="text-[15px] font-semibold text-slate-800 truncate">FDE 项目规范</h1>
-          <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-600 font-medium shrink-0">极库云项目管理制度</span>
-        </div>
-        <p class="text-[12px] text-slate-500 truncate">五类规范 · 两类角色 · 项目/智能体两维交付 · 需求管理与复制</p>
-      </div>
+    <div class="spec-hero-wrap">
+      <PageHero
+        title="FDE 项目规范"
+        description="极库云项目管理制度 · 五类规范 · 两类角色 · 项目/智能体两维交付 · 需求管理与复制"
+        icon="fa-solid fa-clipboard-list"
+        :image="heroImage"
+        image-class="page-hero__image--center"
+        hero-class="page-hero--spec"
+      />
     </div>
 
     <!-- 主体:去掉左锚点目录,单栏内容直接滚动 -->
@@ -41,17 +37,23 @@
               </template>
             </div>
           </div>
-          <!-- 五类规范表 -->
-          <div class="glass-card rounded-xl border border-blue-500/14 overflow-hidden mb-3">
-            <div v-for="(sp, i) in fiveSpecs.specs" :key="sp.name" class="flex items-start gap-3 px-4 py-3" :class="i > 0 ? 'border-t border-blue-500/10' : ''">
-              <span class="text-[12px] font-semibold text-blue-700 shrink-0 w-16">{{ sp.name }}</span>
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-slate-500 shrink-0 whitespace-nowrap">{{ sp.node }}</span>
-              <span class="text-[12px] text-slate-600 leading-relaxed min-w-0">{{ sp.req }}</span>
+          <!-- 五类规范：先展示总览，细则按需展开 -->
+          <details class="spec-detail glass-card rounded-xl border border-blue-500/14 overflow-hidden mb-3" open>
+            <summary class="spec-detail__summary">
+              <span><i class="fa-solid fa-list-check text-blue-600 mr-2"></i>五类规范总览</span>
+              <span class="spec-detail__hint">点击收起细则 <i class="fa-solid fa-chevron-down"></i></span>
+            </summary>
+            <div class="spec-rules">
+              <div v-for="(sp, i) in fiveSpecs.specs" :key="sp.name" class="spec-rule" :class="i > 0 ? 'border-t border-blue-500/10' : ''">
+                <span class="text-[12px] font-semibold text-blue-700 shrink-0 w-16">{{ sp.name }}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-slate-500 shrink-0 whitespace-nowrap">{{ sp.node }}</span>
+                <span class="text-[12px] text-slate-600 leading-relaxed min-w-0 line-clamp-2">{{ sp.req }}</span>
+              </div>
             </div>
-          </div>
+          </details>
           <!-- 三个闸口 -->
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div v-for="g in fiveSpecs.gates" :key="g.name" class="glass-card rounded-xl border border-blue-500/14 p-4">
+            <div v-for="g in fiveSpecs.gates" :key="g.name" class="spec-gate glass-card rounded-xl border p-4">
               <h3 class="text-[13px] font-semibold text-slate-800 mb-1 flex items-center gap-1.5 flex-wrap">
                 {{ g.name }}
                 <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/12 text-blue-600 font-normal">{{ g.when }}</span>
@@ -62,23 +64,18 @@
         </section>
 
         <!-- 二、两类角色 -->
-        <section id="sec-roles" data-sec="sec-roles">
+        <section id="sec-roles" data-sec="sec-roles" class="spec-section spec-section--roles">
           <h2 class="section-title">
             <span class="section-no">二</span>
             <i class="fa-solid fa-users-gear text-blue-600"></i>
             两类角色(谁干什么)
           </h2>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <div v-for="r in roles" :key="r.name" class="glass-card rounded-xl border border-blue-500/14 p-4 flex items-start gap-3">
-              <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-                <i :class="r.icon"></i>
-              </span>
+              <span class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0"><i :class="r.icon"></i></span>
               <div class="min-w-0">
-                <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5 flex items-center gap-2">
-                  {{ r.name }}
-                  <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/12 text-blue-600 font-normal">{{ r.tag }}</span>
-                </h3>
-                <p class="text-[12px] text-slate-500 leading-relaxed">{{ r.duty }}</p>
+                <h3 class="text-[13px] font-semibold text-slate-800 mb-0.5 flex items-center gap-2">{{ r.name }} <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-600/12 text-blue-600 font-normal">{{ r.tag }}</span></h3>
+                <p class="text-[12px] text-slate-500 leading-relaxed line-clamp-2">{{ r.duty }}</p>
               </div>
             </div>
           </div>
@@ -396,6 +393,8 @@
 import { ref, computed } from 'vue';
 import { marked } from 'marked';
 import DrawerPanel from '@/components/common/DrawerPanel.vue';
+import PageHero from '@/components/common/PageHero.vue';
+import heroImage from '@/assets/hero-spec.jpg';
 import { FIVE_SPECS, ROLES, FIVE_STAGE_MGMT, HOSPITAL_NETWORK, AGENT_ASSETS, REQUIREMENT_MGMT, REPLICATION_MODES, GEELIB_LINKS } from '@/data/fde-project-spec';
 
 const fiveSpecs = FIVE_SPECS;
@@ -454,10 +453,47 @@ const copyTemplate = async () => {
 </script>
 
 <style scoped>
-/* 横向内边距与工作台门户(.portal-inner)保持一致,撑满宽度不居中收窄 */
+  .spec-detail__summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    color: hsl(var(--foreground));
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    background: color-mix(in srgb, hsl(var(--primary)) 7%, hsl(var(--background)));
+    border-left: 3px solid hsl(var(--primary));
+  }
+  .spec-detail__summary::-webkit-details-marker { display: none; }
+  .spec-detail__hint { color: #94a3b8; font-size: 11px; font-weight: 400; }
+  .spec-detail[open] .spec-detail__hint i { transform: rotate(180deg); }
+  .spec-detail__hint i { margin-left: 4px; transition: transform .18s; }
+  .spec-rules { padding: 0 16px 6px; }
+  .spec-rule { display: flex; align-items: start; gap: 12px; padding: 11px 0; }
+  .spec-rule:nth-child(1) .text-blue-700 { color: hsl(var(--primary)); }
+  .spec-rule:nth-child(2) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 82%, #7c3aed); }
+  .spec-rule:nth-child(3) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 72%, #059669); }
+  .spec-rule:nth-child(4) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 72%, #d97706); }
+  .spec-rule:nth-child(5) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 78%, #0e7490); }
+  .spec-gate { border-color: hsl(var(--primary) / 16%); background: color-mix(in srgb, hsl(var(--primary)) 4%, hsl(var(--background))); }
+  .spec-gate:nth-child(1) { border-left: 3px solid hsl(var(--primary)); }
+  .spec-gate:nth-child(2) { border-left: 3px solid color-mix(in srgb, hsl(var(--primary)) 70%, #7c3aed); }
+  .spec-gate:nth-child(3) { border-left: 3px solid color-mix(in srgb, hsl(var(--primary)) 60%, #059669); }
+  .spec-gate h3 { color: hsl(var(--foreground)); }
+  .section-title > i { color: hsl(var(--primary)); }
+  .section-no { color: hsl(var(--primary)); background: color-mix(in srgb, hsl(var(--primary)) 11%, hsl(var(--background))); }
+
+.spec-hero-wrap {
+  padding: 16px 40px 0;
+}
+.spec-hero-wrap :deep(.page-hero--spec) { margin: 0; }
 .spec-inner {
   padding: clamp(16px, 2.2vh, 24px) clamp(16px, 3vw, 40px);
 }
+.spec-section--roles .glass-card { background: color-mix(in srgb, hsl(var(--primary)) 4%, hsl(var(--background))); }
+.spec-section--roles .w-8 { background: color-mix(in srgb, hsl(var(--primary)) 12%, hsl(var(--background))); color: hsl(var(--primary)); }
 .section-title {
   display: flex;
   align-items: center;

@@ -71,7 +71,7 @@
           :count="active !== 'projects' ? filtered.length : projectItemCount"
           description="按 FDE 五阶段作战链沉淀真实交付物与知识模板"
           icon="fa-solid fa-book-open"
-          image="../../assets/top.png"
+          :image="heroImage"
           image-class="page-hero__image--center"
         >
           <template #actions>
@@ -81,7 +81,7 @@
         </PageHero>
 
         <!-- 统计条(仅阶段视图) -->
-        <div v-if="active !== 'projects'" class="grid grid-cols-4 gap-4 mb-5">
+        <div v-if="active === 'all'" class="grid grid-cols-4 gap-4 mb-5">
           <div v-for="s in statCards" :key="s.label" class="stat-card">
             <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px ${s.bg}55` }">
               <i :class="'fa-solid ' + s.icon"></i>
@@ -150,7 +150,7 @@
                     </div>
                   </button>
                   <div class="kb-card__footer mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                    <button @click.stop="openProjectDoc(pj, item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>预览</button>
+                    <button @click.stop="openProjectDoc(pj, item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>查看</button>
                     <button
                       @click.stop="openArchive(pj, item)"
                       class="card-action card-action--primary"
@@ -194,9 +194,9 @@
                 </div>
               </button>
               <div class="kb-card__footer mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                <span class="truncate">{{ stageShort(item.stageIndex) }}</span>
-                <div class="flex items-center gap-2 shrink-0">
-                  <button @click.stop="openDoc(item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>预览</button>
+                <span class="min-w-0 truncate">{{ stageShort(item.stageIndex) }}</span>
+                <div class="kb-card__actions flex items-center gap-2 shrink-0">
+                  <button @click.stop="openDoc(item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>查看</button>
                   <button @click.stop="deleteDoc(item)" class="card-action card-action--danger"><i class="fa-solid fa-trash"></i>删除</button>
                 </div>
               </div>
@@ -226,9 +226,9 @@
               </div>
             </button>
             <div class="kb-card__footer mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-              <span class="truncate">{{ stageShort(item.stageIndex) }}</span>
-              <div class="flex items-center gap-2 shrink-0">
-                <button @click.stop="openDoc(item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>预览</button>
+              <span class="min-w-0 truncate">{{ stageShort(item.stageIndex) }}</span>
+              <div class="kb-card__actions flex items-center gap-2 shrink-0">
+                <button @click.stop="openDoc(item)" class="card-action card-action--primary"><i class="fa-solid fa-eye"></i>查看</button>
                 <button @click.stop="deleteDoc(item)" class="card-action card-action--danger"><i class="fa-solid fa-trash"></i>删除</button>
               </div>
             </div>
@@ -357,6 +357,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import DocViewer from '@/components/workbench/DocViewer.vue';
 import PageHero from '@/components/common/PageHero.vue';
+import heroImage from '@/assets/hero-knowledge.jpg';
 
 const CN_NUM = ['一', '二', '三', '四', '五'];
 const STAGE_COLORS = ['#2563eb', '#1d4ed8', '#3b82f6', '#0ea5e9', '#1e40af'];
@@ -866,7 +867,12 @@ function openProjectDoc(pj, item) {
   border-color: #c7d7f5;
 }
 .kb-card:hover .kb-card__accent { opacity: 1; }
-.kb-card__footer { margin-top: auto; }
+.kb-card__footer {
+  min-height: 41px;
+  margin-top: auto;
+}
+.kb-card__actions { width: 118px; justify-content: flex-end; }
+.kb-card__actions .card-action { width: 55px; justify-content: center; }
 
 .fmt-badge {
   width: 40px;

@@ -1,5 +1,6 @@
 <template>
-  <div class="flex-1 flex min-h-0 overflow-hidden">
+  <div class="code-workspace-shell">
+    <div class="code-workspace-main">
     <!-- Left: file tree -->
     <aside
       class="code-sidebar"
@@ -11,11 +12,14 @@
           <i class="fa-solid fa-folder-tree text-blue-600 text-xs"></i>
           <span class="text-[13px] font-semibold text-slate-700 truncate" :title="workspace?.path">{{ workspace?.name || '工作区' }}</span>
         </div>
+        <button class="icon-btn" title="新建文件" @click="beginEntryAction('file', '')"><i class="fa-solid fa-plus text-[11px]"></i></button>
+        <button class="icon-btn" title="新建文件夹" @click="beginEntryAction('folder', '')"><i class="fa-solid fa-folder-plus text-[11px]"></i></button>
+        <button class="icon-btn" title="全部折叠" @click="collapseAllDirs"><i class="fa-solid fa-angles-up text-[11px]"></i></button>
         <button class="icon-btn" title="刷新文件树" @click="refreshTree">
           <i class="fa-solid fa-arrows-rotate text-[11px]"></i>
         </button>
       </div>
-      <div class="code-tree scrollbar-thin">
+      <div class="code-tree scrollbar-thin" @contextmenu.prevent.self="showRootMenu($event)">
         <div v-if="treeLoading" class="p-3 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> 读取目录…</div>
         <div v-else-if="!tree.length" class="p-3 text-xs text-slate-400">空目录</div>
         <FileTree
@@ -25,34 +29,46 @@
           :collapsed="collapsedDirs"
           @select="selectFile"
           @toggle="toggleDir"
+          @contextmenu="showEntryMenu"
         />
         <p v-if="treeTruncated" class="px-3 py-2 text-[11px] text-amber-500">文件较多，仅展示前若干项</p>
       </div>
     </aside>
 
+    <aside
+      v-if="!showTree"
+      class="code-collapsed-rail code-collapsed-rail--left"
+      title="显示文件树"
+      @click="showTree = true"
+    >
+      <i class="fa-solid fa-folder-tree"></i>
+      <span>资源管理器</span>
+    </aside>
+
     <!-- 拖拽把手：文件树 / 主区之间 -->
     <div
       v-if="showTree"
-      class="code-resizer"
+      class="code-resizer code-resizer--left"
       :class="{ 'code-resizer--on': draggingPanel === 'sidebar' }"
       title="拖动调整文件树宽度"
-      @mousedown.prevent="startDrag($event, 'sidebar')"
+      @pointerdown.prevent="startDrag($event, 'sidebar')"
     ></div>
 
-    <!-- Center: chat -->
-    <section class="code-main">
-      <div class="code-main-head">
-        <button class="icon-btn" :title="showTree ? '隐藏文件树' : '显示文件树'" @click="showTree = !showTree">
-          <i class="fa-solid" :class="showTree ? 'fa-angles-left' : 'fa-angles-right'"></i>
-        </button>
+    <!-- 拖拽把手：编辑器 / AI 对话之间 -->
+    <div
+      v-if="showChat"
+      class="code-resizer code-resizer--right"
+      :class="{ 'code-resizer--on': draggingPanel === 'preview' }"
+      title="拖动调整 AI 对话宽度"
+      @pointerdown.prevent="startDrag($event, 'preview')"
+    ></div>
+    <section class="code-main code-chat" :class="{ 'code-chat--hidden': !showChat }" :style="previewW ? { width: previewW + 'px', flex: `0 0 ${previewW}px` } : null">
+      <div class="code-main-head code-chat-head">
         <div class="flex items-center gap-2 min-w-0">
-          <i class="fa-solid fa-robot text-blue-600 text-xs"></i>
-          <span class="text-[13px] font-medium text-slate-600">AI 代码助手</span>
+          <i class="fa-solid fa-sparkles text-blue-600 text-xs"></i>
+          <span class="text-[13px] font-semibold text-slate-700">AI coding</span>
+          <span v-if="selectedFile" class="code-chat-context" :title="selectedFile">{{ selectedFile }}</span>
         </div>
-        <!-- 没选文件时预览区本来就不渲染，切换按钮跟着隐藏，避免点了没反应 -->
-        <button v-if="selectedFile" class="icon-btn ml-auto" :title="showPreview ? '隐藏预览' : '显示预览'" @click="showPreview = !showPreview">
-          <i class="fa-solid" :class="showPreview ? 'fa-angles-right' : 'fa-angles-left'"></i>
-        </button>
       </div>
 
       <!-- 会话 tab 栏（多会话，可并行）-->
@@ -211,6 +227,7 @@
             class="code-input"
             :disabled="isStreaming"
             @keydown.enter.exact="onEnterKey"
+            @input="autoGrowInput"
           ></textarea>
           <button
             v-if="!isStreaming"
@@ -227,40 +244,111 @@
       </div>
     </section>
 
-    <!-- 拖拽把手：主区 / 预览之间 -->
-    <div
-      v-if="showPreview && selectedFile"
-      class="code-resizer code-resizer--right"
-      :class="{ 'code-resizer--on': draggingPanel === 'preview' }"
-      title="拖动调整预览宽度"
-      @mousedown.prevent="startDrag($event, 'preview')"
-    ></div>
-
-    <!-- Right: file preview（没选文件就整块不渲染，不占版面）-->
+    <!-- Center: editor and terminal stack -->
+    <section class="code-center" :class="{ 'code-center--hidden': !showPreview }">
+      <div class="open-file-tabs scrollbar-thin">
+        <button
+          v-for="file in openFiles"
+          :key="file"
+          class="open-file-tab"
+          :class="{ 'open-file-tab--active': file === selectedFile }"
+          :title="file"
+          @click="selectFile(file)"
+        >
+          <i class="fa-regular fa-file-code"></i>
+          <span>{{ file.split('/').pop() }}</span>
+          <i class="fa-solid fa-xmark open-file-close" @click.stop="closeOpenFile(file)"></i>
+        </button>
+        <span v-if="!openFiles.length" class="open-file-placeholder">打开的文件会显示在这里</span>
+      </div>
+      <section class="code-preview code-editor">
+        <div class="code-editor-head">
+          <div class="code-editor-tab" :class="{ 'code-editor-tab--empty': !selectedFile }">
+            <i class="fa-solid fa-file-code text-[11px]"></i>
+            <span class="truncate">{{ selectedFile || '未打开文件' }}</span>
+            <span v-if="editorDirty" class="editor-dirty-dot" title="有未保存修改"></span>
+          </div>
+          <div class="code-editor-actions">
+            <span v-if="editorSaving" class="editor-status">保存中…</span>
+            <span v-else-if="editorDirty" class="editor-status editor-status--dirty">未保存</span>
+            <span v-else-if="selectedFile" class="editor-status">已保存</span>
+            <button class="icon-btn" :disabled="!selectedFile" title="保存 (⌘/Ctrl+S)" @click="saveEditor"><i class="fa-solid fa-floppy-disk text-[11px]"></i></button>
+            <button class="icon-btn" :disabled="!selectedFile" title="重新读取" @click="reloadFile"><i class="fa-solid fa-arrows-rotate text-[11px]"></i></button>
+            <span class="editor-action-divider"></span>
+            <div class="layout-controls" aria-label="工作区布局控制">
+              <button class="layout-btn" :class="{ 'layout-btn--on': showTree }" :title="showTree ? '隐藏左侧栏' : '显示左侧栏'" @click="showTree = !showTree"><span class="layout-glyph layout-glyph--left"></span></button>
+              <button class="layout-btn" :class="{ 'layout-btn--on': terminalOpen }" :title="terminalOpen ? '隐藏终端面板' : '显示终端面板'" @click="toggleTerminal"><span class="layout-glyph layout-glyph--bottom"></span></button>
+              <button class="layout-btn" :class="{ 'layout-btn--on': showChat }" :title="showChat ? '隐藏 AI coding' : '显示 AI coding'" @click="showChat = !showChat"><span class="layout-glyph layout-glyph--right"></span></button>
+              <button class="layout-btn layout-btn--tooltip" aria-label="恢复默认布局" @click="resetWorkspaceLayout"><span class="layout-glyph layout-glyph--grid"></span><span class="layout-tooltip" role="tooltip">恢复默认布局</span></button>
+            </div>
+          </div>
+        </div>
+        <div v-if="!selectedFile" class="code-editor-empty"><i class="fa-solid fa-file-code"></i><strong>从左侧打开一个文件</strong><span>代码会显示在这里，AI 修改文件后也会实时同步。</span></div>
+        <div v-else-if="fileLoading" class="code-editor-empty"><i class="fa-solid fa-spinner fa-spin"></i><span>读取文件中…</span></div>
+        <div v-else-if="fileError" class="code-editor-empty code-editor-empty--error"><i class="fa-solid fa-triangle-exclamation"></i><span>{{ fileError }}</span></div>
+        <div v-else class="editor-surface">
+          <div class="editor-gutter" aria-hidden="true"><span v-for="line in editorLineCount" :key="line">{{ line }}</span></div>
+          <textarea ref="editorRef" v-model="editorDraft" class="editor-input" spellcheck="false" :aria-label="selectedFile ? `编辑 ${selectedFile}` : '代码编辑器'" @input="editorDirty = true" @keydown="handleEditorKeydown"></textarea>
+        </div>
+      </section>
+      <div v-if="terminalOpen" class="terminal-height-resizer" @mousedown.prevent="startTerminalDrag"></div>
+      <section class="terminal-panel" :class="{ 'terminal-panel--closed': !terminalOpen }" :style="{ height: terminalOpen ? `${terminalH}px` : '36px' }">
+        <div class="terminal-head">
+          <div class="terminal-tabs">
+            <button class="terminal-new-btn" title="新建终端" @click="newTerminal"><i class="fa-solid fa-plus"></i></button>
+            <button
+              v-for="item in terminalRecords"
+              :key="item.id"
+              class="terminal-tab"
+              :class="{ 'terminal-tab--active': item.id === activeTerminalId }"
+              @click="selectTerminal(item.id)"
+            >
+              <i class="fa-solid fa-terminal"></i>
+              <span>{{ item.label }}</span>
+              <i class="fa-solid fa-xmark terminal-tab-close" title="关闭终端" @click.stop="closeTerminal(item.id)"></i>
+            </button>
+          </div>
+          <div class="terminal-actions">
+            <span class="terminal-cwd" :title="workspace?.path">{{ workspace?.path || '当前工作区' }}</span>
+            <select v-model="terminalShell" class="terminal-shell-select" title="选择终端"><option v-for="shell in terminalShells" :key="shell.id" :value="shell.id">{{ shell.label }}</option></select>
+            <button class="terminal-icon-btn" title="清空终端" @click="clearTerminal"><i class="fa-solid fa-eraser"></i></button>
+            <button class="terminal-icon-btn" title="重启终端" @click="restartTerminal"><i class="fa-solid fa-arrows-rotate"></i></button>
+            <button class="terminal-icon-btn" :title="terminalOpen ? '收起终端' : '展开终端'" @click="toggleTerminal"><i class="fa-solid" :class="terminalOpen ? 'fa-chevron-down' : 'fa-chevron-up'"></i></button>
+          </div>
+        </div>
+        <div
+          v-for="item in terminalRecords"
+          :key="item.id"
+          :ref="(el) => setTerminalHost(item.id, el)"
+          class="terminal-screen"
+          :class="{ 'terminal-screen--hidden': !terminalOpen || item.id !== activeTerminalId }"
+          @click="focusTerminal(item.id)"
+        ></div>
+      </section>
+    </section>
     <aside
-      v-if="showPreview && selectedFile"
-      class="code-preview"
-      :style="previewW ? { width: previewW + 'px' } : null"
+      v-if="!showChat"
+      class="code-collapsed-rail code-collapsed-rail--right"
+      title="显示 AI coding"
+      @click="showChat = true"
     >
-      <div class="code-preview-head">
-        <span class="text-[12.5px] font-mono text-slate-500 truncate" :title="selectedFile">
-          {{ selectedFile }}
-        </span>
-        <button class="icon-btn" title="重新读取" @click="reloadFile">
-          <i class="fa-solid fa-arrows-rotate text-[11px]"></i>
-        </button>
-        <button class="icon-btn" title="关闭预览" @click="closePreview">
-          <i class="fa-solid fa-xmark text-[11px]"></i>
-        </button>
-      </div>
-      <div class="code-preview-body scrollbar-thin">
-        <div v-if="fileLoading" class="p-4 text-xs text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-1"></i> 读取中…</div>
-        <div v-else-if="fileError" class="p-4 text-xs text-amber-500">{{ fileError }}</div>
-        <pre v-else class="code-source">{{ fileContent }}</pre>
-      </div>
+      <i class="fa-solid fa-sparkles"></i>
+      <span>AI coding</span>
     </aside>
-
-    <!-- Diff approval dialog -->
+    <div v-if="entryAction" class="entry-dialog-backdrop" @click.self="entryAction = null">
+      <div class="entry-dialog">
+        <h3>{{ entryAction.mode === 'rename' ? '重命名' : entryAction.mode === 'file' ? '新建文件' : '新建文件夹' }}</h3>
+        <p>{{ entryAction.mode === 'rename' ? entryAction.path : (entryAction.parent || workspace?.name || '工作区根目录') }}</p>
+        <input ref="entryNameInput" v-model="entryAction.name" type="text" placeholder="输入名称" @keydown.enter="submitEntryAction" @keydown.esc="entryAction = null" />
+        <div class="entry-dialog-actions"><button @click="entryAction = null">取消</button><button class="entry-dialog-confirm" @click="submitEntryAction">确认</button></div>
+      </div>
+    </div>
+    <Teleport to="body">
+      <div v-if="entryMenu" class="entry-menu" :style="{ left: `${entryMenu.x}px`, top: `${entryMenu.y}px` }">
+        <button v-for="action in entryMenu.actions" :key="action.id" @click="runEntryMenuAction(action.id)"><i :class="action.icon"></i>{{ action.label }}</button>
+      </div>
+      <div v-if="entryNotice" class="entry-notice" @click="entryNotice = ''">{{ entryNotice }}</div>
+    </Teleport>
     <DiffApprovalDialog
       v-if="pendingDiff"
       :file-path="pendingDiff.convTitle ? `〔${pendingDiff.convTitle}〕${pendingDiff.filePath}` : pendingDiff.filePath"
@@ -269,11 +357,15 @@
       @approve="respondDiff(true)"
       @reject="respondDiff(false)"
     />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import 'xterm/css/xterm.css';
 import FileTree from '@/components/code/FileTree.vue';
 import DiffApprovalDialog from '@/components/code/DiffApprovalDialog.vue';
 import { useChatComposer } from '@/composables/useChatComposer';
@@ -319,6 +411,120 @@ const treeTruncated = ref(false);
 const collapsedDirs = ref(new Set());
 const showTree = ref(true);
 const showPreview = ref(true);
+const showChat = ref(true);
+const terminalOpen = ref(false);
+const terminalH = ref(240);
+const terminalShell = ref('cmd');
+const terminalShells = ref([{ id: 'cmd', label: '命令提示符' }, { id: 'powershell', label: 'PowerShell' }]);
+const terminalRecords = ref([]);
+const activeTerminalId = ref('');
+const terminalHosts = new Map();
+const terminalInstances = new Map();
+const terminalFits = new Map();
+const terminalUnsubs = new Map();
+let terminalCounter = 1;
+let unsubTerminalExit = null;
+
+const entryAction = ref(null);
+const entryNameInput = ref(null);
+const entryMenu = ref(null);
+const entryNotice = ref('');
+const entryClipboard = ref(null);
+const collapseAllDirs = () => { const dirs = new Set(); const collect = (nodes) => nodes.forEach((n) => { if (n.isDirectory) { dirs.add(n.relPath); collect(n.children || []); } }); collect(tree.value); collapsedDirs.value = dirs; };
+const showRootMenu = (event) => { showEntryMenu({ event, node: { name: workspace.value?.name || '工作区', relPath: '', isDirectory: true } }); };
+const beginEntryAction = (mode, parent = '') => { entryMenu.value = null; entryAction.value = { mode, parent, path: parent, name: '' }; nextTick(() => entryNameInput.value?.focus()); };
+const showEntryMenu = ({ event, node }) => {
+  const actions = node.isDirectory
+    ? [{ id: 'new-file', label: '新建文件', icon: 'fa-regular fa-file' }, { id: 'new-folder', label: '新建文件夹', icon: 'fa-solid fa-folder-plus' }, { id: 'paste', label: '粘贴', icon: 'fa-solid fa-paste' }, { id: 'rename', label: '重命名', icon: 'fa-solid fa-pen' }, { id: 'copy-path', label: '复制路径', icon: 'fa-solid fa-link' }, { id: 'reveal', label: '在系统中显示', icon: 'fa-solid fa-arrow-up-right-from-square' }, { id: 'terminal', label: '在终端中打开', icon: 'fa-solid fa-terminal' }]
+    : [{ id: 'open', label: '打开', icon: 'fa-regular fa-file-code' }, { id: 'copy', label: '复制', icon: 'fa-regular fa-copy' }, { id: 'rename', label: '重命名', icon: 'fa-solid fa-pen' }, { id: 'delete', label: '删除', icon: 'fa-solid fa-trash' }, { id: 'copy-path', label: '复制路径', icon: 'fa-solid fa-link' }, { id: 'reveal', label: '在系统中显示', icon: 'fa-solid fa-arrow-up-right-from-square' }, { id: 'terminal', label: '在终端中打开', icon: 'fa-solid fa-terminal' }];
+  entryMenu.value = { node, x: Math.min(event.clientX, window.innerWidth - 190), y: Math.min(event.clientY, window.innerHeight - actions.length * 34 - 12), actions };
+};
+const submitEntryAction = async () => {
+  const action = entryAction.value; const name = action?.name?.trim(); if (!action || !name) return;
+  let res;
+  if (action.mode === 'rename') res = await window.api.code.renameEntry(props.id, action.path, name);
+  else res = await window.api.code.createEntry(props.id, action.parent || '', name, action.mode === 'folder');
+  if (!res?.success) { entryNotice.value = res?.error || '操作失败'; return; }
+  entryAction.value = null; await refreshTree();
+  if (!res.relPath) return;
+  if (action.mode === 'file' || action.mode === 'rename') selectFile(res.relPath);
+};
+const runEntryMenuAction = async (id) => {
+  const menu = entryMenu.value; if (!menu) return; const node = menu.node; entryMenu.value = null;
+  if (id === 'open') return selectFile(node.relPath);
+  if (id === 'new-file') return beginEntryAction('file', node.relPath);
+  if (id === 'new-folder') return beginEntryAction('folder', node.relPath);
+  if (id === 'rename') return beginEntryAction('rename', node.relPath);
+  if (id === 'delete') { if (!confirm(`确定删除“${node.name}”吗？`)) return; const res = await window.api.code.deleteEntry(props.id, node.relPath); if (!res?.success) { entryNotice.value = res?.error || '删除失败'; return; } closeOpenFile(node.relPath); if (selectedFile.value === node.relPath) closePreview(); return refreshTree(); }
+  if (id === 'copy') { entryClipboard.value = { path: node.relPath, name: node.name }; entryNotice.value = '已复制，可在目标文件夹菜单中粘贴'; return; }
+  if (id === 'paste') { if (!entryClipboard.value) { entryNotice.value = '剪贴板为空'; return; } const res = await window.api.code.copyEntry(props.id, entryClipboard.value.path, node.relPath); if (!res?.success) entryNotice.value = res?.error || '粘贴失败'; else { entryNotice.value = '已粘贴'; refreshTree(); } return; }
+  if (id === 'copy-path') { await navigator.clipboard?.writeText(node.relPath || workspace.value?.path || ''); entryNotice.value = '已复制相对路径'; return; }
+  if (id === 'reveal') { await window.api.code.revealEntry(props.id, node.relPath); return; }
+  if (id === 'terminal') { const record = getTerminalRecord(activeTerminalId.value); if (record?.terminalId) { window.api.code.terminal.cd(record.terminalId, node.isDirectory ? node.relPath : node.relPath.split('/').slice(0, -1).join('/') || '.'); terminalOpen.value = true; } else { terminalOpen.value = true; await newTerminal(); } }
+};
+const resetWorkspaceLayout = () => {
+  showTree.value = true;
+  showPreview.value = true;
+  showChat.value = true;
+  sidebarW.value = 0;
+  previewW.value = 0;
+  terminalH.value = 240;
+};
+const getTerminalRecord = (id) => terminalRecords.value.find((item) => item.id === id);
+const setTerminalHost = (id, el) => { if (el) terminalHosts.set(id, el); else terminalHosts.delete(id); };
+const focusTerminal = (id = activeTerminalId.value) => terminalInstances.get(id)?.focus();
+const fitTerminal = (id = activeTerminalId.value) => {
+  const fit = terminalFits.get(id);
+  const instance = terminalInstances.get(id);
+  if (!terminalOpen.value || !fit || !instance) return;
+  nextTick(() => { fit.fit(); const record = getTerminalRecord(id); if (record?.terminalId) window.api.code.terminal.resize(record.terminalId, instance.cols, instance.rows); });
+};
+const toggleTerminal = async () => {
+  terminalOpen.value = !terminalOpen.value;
+  if (terminalOpen.value && !activeTerminalId.value) await newTerminal();
+  fitTerminal();
+  nextTick(() => focusTerminal());
+};
+const selectTerminal = (id) => { if (!getTerminalRecord(id)) return; activeTerminalId.value = id; fitTerminal(id); nextTick(() => focusTerminal(id)); };
+const clearTerminal = () => terminalInstances.get(activeTerminalId.value)?.clear();
+const startTerminalDrag = (e) => {
+  const startY = e.clientY; const startH = terminalH.value;
+  const onMove = (ev) => { terminalH.value = Math.max(120, Math.min(520, startH + startY - ev.clientY)); fitTerminal(); };
+  const onUp = () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); fitTerminal(); };
+  window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+};
+const killTerminalRecord = async (record) => { if (record?.terminalId) await window.api.code.terminal.kill(record.terminalId).catch(() => {}); };
+const closeTerminal = async (id) => {
+  const record = getTerminalRecord(id); if (!record) return;
+  await killTerminalRecord(record);
+  terminalUnsubs.get(id)?.(); terminalUnsubs.delete(id);
+  terminalInstances.get(id)?.dispose(); terminalInstances.delete(id); terminalFits.delete(id); terminalHosts.delete(id);
+  terminalRecords.value = terminalRecords.value.filter((item) => item.id !== id);
+  if (!terminalRecords.value.length) { activeTerminalId.value = ''; return; }
+  if (activeTerminalId.value === id) selectTerminal(terminalRecords.value[Math.max(0, terminalRecords.value.length - 1)].id);
+};
+const newTerminal = async () => {
+  const id = `terminal-${Date.now()}-${terminalCounter++}`;
+  const instance = new Terminal({ convertEol: true, cursorBlink: true, fontSize: 12, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', theme: { background: '#f8fbff', foreground: '#334155', cursor: '#4f86e8', selectionBackground: '#cfe0f5', black: '#52677f', blue: '#4f86e8', cyan: '#328ea8', green: '#3a9b72', red: '#d45d68', yellow: '#c47b19' } });
+  const fit = new FitAddon(); instance.loadAddon(fit);
+  terminalRecords.value.push({ id, label: terminalShell.value, terminalId: '', shellId: terminalShell.value });
+  terminalInstances.set(id, instance); terminalFits.set(id, fit); activeTerminalId.value = id;
+  await nextTick();
+  const host = terminalHosts.get(id); if (host) instance.open(host);
+  instance.onData((data) => { const record = getTerminalRecord(id); if (record?.terminalId) window.api.code.terminal.input(record.terminalId, data); });
+  instance.onResize(({ cols, rows }) => { const record = getTerminalRecord(id); if (record?.terminalId) window.api.code.terminal.resize(record.terminalId, cols, rows); });
+  const res = await window.api.code.terminal.create(props.id, terminalShell.value);
+  if (!res?.success) { instance.writeln(`\r\n终端启动失败：${res?.error || '未知错误'}`); return; }
+  const record = getTerminalRecord(id); if (!record) return;
+  record.terminalId = res.terminalId; record.label = res.shell.label; record.shellId = res.shell.id;
+  terminalShells.value = res.platform === 'win32' ? [{ id: 'cmd', label: '命令提示符' }, { id: 'powershell', label: 'PowerShell' }] : [{ id: 'zsh', label: 'zsh' }, { id: 'bash', label: 'bash' }];
+  terminalShell.value = res.shell.id;
+  fitTerminal(id); nextTick(() => focusTerminal(id));
+};
+const restartTerminal = async () => { const id = activeTerminalId.value; const record = getTerminalRecord(id); if (!record) return; await killTerminalRecord(record); record.terminalId = ''; const res = await window.api.code.terminal.create(props.id, record.shellId); if (res?.success) { record.terminalId = res.terminalId; record.label = res.shell.label; fitTerminal(id); } };
+const handleTerminalData = (payload) => { const record = terminalRecords.value.find((item) => item.terminalId === payload?.terminalId); if (record) terminalInstances.get(record.id)?.write(payload.data || ''); };
+const handleTerminalExit = (payload) => { const record = terminalRecords.value.find((item) => item.terminalId === payload?.terminalId); if (record) { terminalInstances.get(record.id)?.writeln('\r\n[终端已退出]'); record.terminalId = ''; } };
+watch(terminalShell, async (next, old) => { if (next !== old && activeTerminalId.value) { const record = getTerminalRecord(activeTerminalId.value); if (record) { record.shellId = next; await restartTerminal(); } } });
 // 三栏宽度：侧栏/预览支持拖拽调整，拖动后再固定为像素宽
 const sidebarW = ref(0);      // 0 = 用默认 260px
 const previewW = ref(0);      // 0 = 用默认 380px
@@ -326,31 +532,91 @@ const draggingPanel = ref('');  // '' | 'sidebar' | 'preview'
 
 function startDrag(e, which) {
   draggingPanel.value = which;
+  const handle = e.currentTarget;
+  const panel = which === 'sidebar' ? handle.previousElementSibling : handle.nextElementSibling;
+  const container = handle.parentElement;
+  const startW = panel?.getBoundingClientRect().width || (which === 'sidebar' ? 260 : 380);
   const startX = e.clientX;
-  const el = e.currentTarget?.previousElementSibling || e.currentTarget?.nextElementSibling;
-  const startW = (which === 'sidebar' ? sidebarW.value : previewW.value)
-    || el?.getBoundingClientRect().width
-    || (which === 'sidebar' ? 260 : 380);
+  const minCenter = 320;
+  const minPanel = which === 'sidebar' ? 180 : 300;
+  const maxPanel = Math.max(minPanel, (container?.clientWidth || 1000) - minCenter - (which === 'sidebar' ? (showChat.value ? previewW.value || 380 : 32) : (showTree.value ? sidebarW.value || 260 : 32)) - 10);
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
   const onMove = (ev) => {
-    // 侧栏在左，鼠标右移变宽；预览在右，鼠标左移变宽
     const delta = which === 'sidebar' ? ev.clientX - startX : startX - ev.clientX;
-    const next = Math.min(720, Math.max(200, startW + delta));
+    const next = Math.min(maxPanel, Math.max(minPanel, startW + delta));
     if (which === 'sidebar') sidebarW.value = next;
     else previewW.value = next;
   };
   const onUp = () => {
     draggingPanel.value = '';
-    window.removeEventListener('mousemove', onMove);
-    window.removeEventListener('mouseup', onUp);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    window.removeEventListener('pointermove', onMove);
+    window.removeEventListener('pointerup', onUp);
   };
-  window.addEventListener('mousemove', onMove);
-  window.addEventListener('mouseup', onUp);
+  window.addEventListener('pointermove', onMove);
+  window.addEventListener('pointerup', onUp);
 }
 
 const selectedFile = ref('');
+const openFiles = ref([]);
+const closeOpenFile = (rel) => {
+  if (rel === selectedFile.value && editorDirty.value && !confirm('当前文件有未保存修改，关闭后会丢失。继续吗？')) return;
+  openFiles.value = openFiles.value.filter((file) => file !== rel);
+  if (rel === selectedFile.value) {
+    const next = openFiles.value[openFiles.value.length - 1];
+    closePreview();
+    if (next) selectFile(next);
+  }
+};
 const fileContent = ref(null);
 const fileLoading = ref(false);
 const fileError = ref('');
+const editorRef = ref(null);
+const editorDraft = ref('');
+const editorDirty = ref(false);
+const editorSaving = ref(false);
+const editorLineCount = computed(() => Math.max(1, String(editorDraft.value || '').split('\n').length));
+
+const syncEditorContent = (content) => {
+  fileContent.value = content;
+  editorDraft.value = typeof content === 'string' ? content : '';
+  editorDirty.value = false;
+};
+
+const saveEditor = async () => {
+  if (!selectedFile.value || editorSaving.value) return;
+  editorSaving.value = true;
+  fileError.value = '';
+  try {
+    const res = await window.api.code.writeFile(props.id, selectedFile.value, editorDraft.value);
+    if (!res || !res.success) throw new Error((res && res.error) || '保存失败');
+    syncEditorContent(editorDraft.value);
+    refreshTree();
+  } catch (e) {
+    fileError.value = `保存失败：${e.message}`;
+  } finally {
+    editorSaving.value = false;
+  }
+};
+
+const handleEditorKeydown = (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    saveEditor();
+    return;
+  }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const el = e.currentTarget;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    editorDraft.value = `${editorDraft.value.slice(0, start)}  ${editorDraft.value.slice(end)}`;
+    editorDirty.value = true;
+    nextTick(() => { el.selectionStart = el.selectionEnd = start + 2; });
+  }
+};
 
 // ---- 多会话状态 ----------------------------------------------------------
 // conversations: 该工作区全部会话[{id,title,sessionId,messages[],...}]。
@@ -424,16 +690,21 @@ const loadConversations = async () => {
   }
 };
 
+const ensurePromises = new Map();
 const ensureConvSession = async (convId) => {
   const c = conversations.value.find((x) => x.id === convId);
-  if (!c || c.sessionId) return c?.sessionId || '';
-  try {
-    const r = await window.api.code.ensureSession(props.id, convId);
-    if (r && r.sessionId) c.sessionId = r.sessionId;
-  } catch (e) {
-    console.error('[CodeWorkspace] ensureSession failed:', e);
-  }
-  return c.sessionId || '';
+  if (!c) return '';
+  if (ensurePromises.has(convId)) return ensurePromises.get(convId);
+  const promise = (async () => {
+    try {
+      const r = await window.api.code.ensureSession(props.id, convId);
+      if (r?.sessionId) c.sessionId = r.sessionId;
+      return c.sessionId || '';
+    } catch (e) { console.error('[CodeWorkspace] ensureSession failed:', e); return ''; }
+    finally { ensurePromises.delete(convId); }
+  })();
+  ensurePromises.set(convId, promise);
+  return promise;
 };
 
 const selectConversation = async (convId) => {
@@ -482,7 +753,11 @@ const closeConversation = async (convId) => {
   }
 };
 
-// 把当前会话 messages 落盘(strip 附件 base64，延续附件 session-only 约定)。
+// 把当前会话 messages 落盘。messages 数组元素是 Vue reactive Proxy(thinkingSteps/meta
+// 等字段同理)，ipcRenderer.invoke 走 structured clone，Proxy 直接传会抛
+// "An object could not be cloned"——而且是同步抛在 send() 内部，会把发送流程整个
+// 打断（后面的 window.api.code.prompt 根本没机会跑），表现就是「点发送后 AI 不回复」。
+// 用 JSON.parse(JSON.stringify(...)) 摊平成纯对象，顺带保留 strip 附件 base64 的约定。
 const stripAttachmentsData = (msgs) =>
   msgs.map((m) => {
     if (!m.attachments || !m.attachments.length) return m;
@@ -492,7 +767,14 @@ const stripAttachmentsData = (msgs) =>
 const saveConversation = (convId) => {
   const c = conversations.value.find((x) => x.id === convId);
   if (!c) return;
-  window.api.code.saveConversation(props.id, convId, stripAttachmentsData(c.messages || [])).catch((e) =>
+  let plain;
+  try {
+    plain = JSON.parse(JSON.stringify(stripAttachmentsData(c.messages || [])));
+  } catch (e) {
+    console.error('[CodeWorkspace] saveConversation serialize failed:', e);
+    return;
+  }
+  window.api.code.saveConversation(props.id, convId, plain).catch((e) =>
     console.error('[CodeWorkspace] saveConversation failed:', e)
   );
 };
@@ -522,7 +804,8 @@ const captureLiveEdit = (update) => {
   }
   fileLoading.value = false;
   fileError.value = '';
-  fileContent.value = newText;
+  if (!editorDirty.value || selectedFile.value !== rel) syncEditorContent(newText);
+  else fileContent.value = newText;
 };
 
 // 流式途中节流落盘：一轮可能跑几分钟，中途关窗不该丢掉已输出的内容。
@@ -568,7 +851,10 @@ const toggleDir = (rel) => {
 // ---- file preview --------------------------------------------------------
 
 const selectFile = async (rel) => {
+  if (rel === selectedFile.value) return;
+  if (editorDirty.value && !confirm('当前文件有未保存修改，切换文件会丢失这些修改。继续吗？')) return;
   selectedFile.value = rel;
+  if (!openFiles.value.includes(rel)) openFiles.value.push(rel);
   showPreview.value = true;
   await loadFile(rel);
 };
@@ -579,7 +865,7 @@ const loadFile = async (rel) => {
   fileContent.value = null;
   try {
     const res = await window.api.code.readFile(props.id, rel);
-    if (res && res.success) fileContent.value = res.content;
+    if (res && res.success) syncEditorContent(res.content);
     else fileError.value = (res && res.error) || '读取失败';
   } catch (e) {
     fileError.value = e.message;
@@ -588,12 +874,16 @@ const loadFile = async (rel) => {
   }
 };
 
-const reloadFile = () => { if (selectedFile.value) loadFile(selectedFile.value); };
+const reloadFile = () => {
+  if (selectedFile.value) loadFile(selectedFile.value);
+};
 
 // 关闭预览：清掉选中文件，预览区整块收起（不是只藏起来留个空壳）
 const closePreview = () => {
   selectedFile.value = '';
   fileContent.value = null;
+  editorDraft.value = '';
+  editorDirty.value = false;
   fileError.value = '';
 };
 
@@ -641,6 +931,13 @@ const finishStream = (convId) => {
     // 落本回合小结 + 完成后默认收起思考过程，回归干净的答案视图。
     const meta = pendingMetaByConv.get(convId);
     if (meta) { last.meta = meta; last.thinkOpen = false; }
+    // 引擎一个字都没回（事件丢了/被拒/异常静默）→ 给出可见提示，
+    // 不要只留一条用户消息让人以为「没反应」。
+    if (!last.content && !(last.thinkingSteps || []).length) {
+      last.content = '⚠️ 本轮没有收到回复。可能是引擎连接中断或请求被拒绝，请重试；若持续如此，请到设置里检查 AI 引擎状态。';
+    }
+  } else if (last && last.role === 'user') {
+    msgs.push({ id: Date.now() + Math.random(), role: 'assistant', content: '⚠️ 本轮没有收到回复。请重试，或到设置里检查 AI 引擎状态。' });
   }
   pendingMetaByConv.delete(convId);
   streamingByConv[convId] = false;
@@ -655,10 +952,23 @@ const finishStream = (convId) => {
 };
 
 // 按 data.sessionId 把流式事件路由到对应会话的消息数组——多会话并行不串台的关键。
+// ACP 的通知体是 { sessionId, update: { sessionUpdate: '<类型名>', content } }。
+// 注意 sessionUpdate 是「字符串类型名」而不是嵌套对象——只有下一层确实是对象时
+// 才继续往里解包，否则会把 update 变成一条字符串，后面所有分支都匹配不上、
+// 整轮回复被静默丢弃（表现就是「AI 不回复」）。
+const normalizeUpdate = (data) => {
+  let value = data?.update ?? data;
+  for (let i = 0; i < 3; i++) {
+    if (value && typeof value.update === 'object') { value = value.update; continue; }
+    if (value && typeof value.sessionUpdate === 'object') { value = value.sessionUpdate; continue; }
+    break;
+  }
+  return value && typeof value === 'object' ? value : {};
+};
 const handleSessionUpdate = (data) => {
-  const update = data?.update || data;
-  if (!update) return;
-  const sid = data?.sessionId || '';
+  const update = normalizeUpdate(data);
+  if (!update || typeof update !== 'object') return;
+  const sid = data?.sessionId || data?.session_id || update.sessionId || update.session_id || '';
   const conv = sid ? convBySession(sid) : activeConversation.value;
   if (!conv) { console.warn('[mc] update DROPPED, unknown sid=', sid, 'known=', conversations.value.map(c=>c.sessionId)); return; } // 未知 session：丢弃
   console.log('[mc] update sid=', String(sid).slice(0,8), '→ conv=', conv.title, 'type=', (update.type||update.sessionUpdate));
@@ -769,12 +1079,13 @@ const send = async () => {
   if (!convId) return;
   // 带附件但当前模型不支持多模态 → 提示并阻止（composer 内部弹窗引导切模型）。
   if (!(await composer.checkModelForAttachments())) return;
-  // 首次发送前确保本会话已有 session(路由/持久化都要它)。
-  if (!activeConversation.value?.sessionId) await ensureConvSession(convId);
+  const sid = await ensureConvSession(convId);
+  if (!sid) { const c = conversations.value.find((item) => item.id === convId); c?.messages.push({ id: Date.now(), role: 'assistant', content: '⚠️ AI 会话无法启动。请检查引擎状态，然后重试。' }); return; }
 
   // 快照附件（发送后即清空 composer），随用户气泡一起展示。
   const sentAtts = atts.map((a) => ({ type: a.type, name: a.name, media_type: a.media_type, data: a.data, text: a.text }));
   draft.value = '';
+  if (inputRef.value) inputRef.value.style.height = 'auto';
   composer.clearAttachments();
   // 用 convId 定位目标会话数组，而非 messages.value——避免 await 期间用户切换会话导致推错。
   const sendConv = conversations.value.find((c) => c.id === convId);
@@ -822,6 +1133,14 @@ const send = async () => {
 
 // 中文输入法选词时按回车会触发 keydown.enter，但此时 isComposing 为 true，
 // 不能当成发送——否则选个词就把半句话发出去了。
+// 输入框随内容自增高（1 行起步，最多 160px），发完/清空要缩回去，
+// 不然发一条长消息之后输入框永远占着那么高。
+const autoGrowInput = (e) => {
+  const el = e.target;
+  el.style.height = 'auto';
+  el.style.height = `${Math.min(160, el.scrollHeight)}px`;
+};
+
 const onEnterKey = (e) => {
   if (e.isComposing || e.keyCode === 229) return;
   e.preventDefault();
@@ -842,13 +1161,26 @@ onMounted(async () => {
   await loadWorkspace();
   await loadConversations();
   await refreshTree();
+  if (window.api?.code?.terminal) {
+    unsubTerminalExit = window.api.code.terminal.onExit(handleTerminalExit);
+    window.api.code.terminal.onData(handleTerminalData);
+  }
+  window.addEventListener('resize', fitTerminal);
   if (window.api?.hermes?.onSessionUpdate) unsubUpdate = window.api.hermes.onSessionUpdate(handleSessionUpdate);
   if (window.api?.hermes?.onPermissionRequest) unsubPerm = window.api.hermes.onPermissionRequest(handlePermissionRequest);
 });
 
 onUnmounted(() => {
+  // 必须先摘监听再 dispose，否则下次窗口 resize 会对已销毁的 xterm 调 fit()；
+  // 而且每进一次代码模式就多累积一个（原先还多挂了个匿名的，压根摘不掉）。
+  window.removeEventListener('resize', fitTerminal);
   if (unsubUpdate) unsubUpdate();
   if (unsubPerm) unsubPerm();
+  if (unsubTerminalData) unsubTerminalData();
+  if (unsubTerminalExit) unsubTerminalExit();
+  for (const record of terminalRecords.value) killTerminalRecord(record);
+  for (const instance of terminalInstances.values()) instance.dispose();
+  terminalInstances.clear(); terminalFits.clear(); terminalHosts.clear(); terminalRecords.value = [];
   for (const t of streamEndTimers.values()) clearTimeout(t);
   streamEndTimers.clear();
   // 卸载正好落在节流窗口里时，待存的内容要立刻冲掉，否则这段又丢了
@@ -861,13 +1193,64 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+.entry-dialog-backdrop { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; background: rgba(15,23,42,.18); }
+.entry-dialog { width: 340px; padding: 18px; border: 1px solid #dbe7f5; border-radius: 12px; background: #fff; box-shadow: 0 12px 35px rgba(37,99,235,.18); }
+.entry-dialog h3 { margin: 0 0 4px; color: #334155; font-size: 14px; }
+.entry-dialog p { margin: 0 0 12px; overflow: hidden; color: #94a3b8; font: 11px ui-monospace, monospace; text-overflow: ellipsis; white-space: nowrap; }
+.entry-dialog input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid #cbdced; border-radius: 7px; outline: 0; color: #334155; font-size: 12px; }
+.entry-dialog input:focus { border-color: #70a0e8; box-shadow: 0 0 0 3px rgba(79,134,232,.12); }
+.entry-dialog-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 14px; }
+.entry-dialog-actions button { padding: 6px 12px; border: 0; border-radius: 6px; color: #64748b; background: #f1f5f9; cursor: pointer; font-size: 12px; }
+.entry-dialog-actions .entry-dialog-confirm { color: #fff; background: #4f86e8; }
+.entry-menu { position: fixed; z-index: 2147483647; min-width: 178px; padding: 5px; border: 1px solid #dbe7f5; border-radius: 8px; background: #fff; box-shadow: 0 8px 25px rgba(15,23,42,.16); }
+.entry-menu button { width: 100%; display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 0; border-radius: 5px; color: #475569; background: transparent; cursor: pointer; text-align: left; font-size: 11.5px; }
+.entry-menu button:hover { color: #2563eb; background: #edf5ff; }
+.entry-menu i { width: 14px; color: #8aa1ba; text-align: center; }
+.entry-notice { position: fixed; z-index: 90; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 8px 14px; border-radius: 7px; color: #fff; background: #334155; box-shadow: 0 5px 16px rgba(15,23,42,.2); font-size: 12px; cursor: pointer; }
+
+.code-workspace-shell { flex: 1; min-height: 0; display: flex; overflow: hidden; background: #f1f6fc; }
+.code-workspace-main { position: relative; flex: 1; min-width: 0; min-height: 0; display: flex; overflow: hidden; }
+.code-center { order: 2; flex: 1 1 0; min-width: 320px; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: #f7faff; }
+.code-center--hidden { display: none; }
+.open-file-tabs { height: 35px; flex-shrink: 0; display: flex; align-items: stretch; overflow-x: auto; background: #edf4fc; border-bottom: 1px solid #dbe7f5; }
+.open-file-tab { max-width: 190px; min-width: 92px; display: flex; align-items: center; gap: 7px; padding: 0 10px; border: 0; border-right: 1px solid #dbe7f5; background: #f4f8fd; color: #72869d; font-size: 11.5px; cursor: pointer; }
+.open-file-tab span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.open-file-tab--active { color: #315a8a; background: #fff; box-shadow: inset 0 -2px #4f86e8; }
+.open-file-close { opacity: 0; font-size: 9px; }
+.open-file-tab:hover .open-file-close, .open-file-tab--active .open-file-close { opacity: .65; }
+.open-file-placeholder { padding: 0 12px; align-self: center; color: #9aadc2; font-size: 11px; }
+.terminal-height-resizer { height: 5px; flex-shrink: 0; cursor: row-resize; background: transparent; border-top: 1px solid #cfdff0; }
+.terminal-height-resizer:hover { background: rgba(79,134,232,.25); }
+.terminal-panel { flex: 0 0 auto; min-height: 36px; display: flex; flex-direction: column; background: #f8fbff; border-top: 0; box-shadow: 0 -4px 14px rgba(53, 102, 158, .06); }
+.terminal-head { height: 36px; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 10px 0 14px; background: #eef5fc; border-bottom: 1px solid #dbe7f5; }
+.terminal-tabs, .terminal-actions { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.terminal-new-btn { width: 25px; height: 25px; display: grid; place-items: center; border: 0; border-radius: 6px; color: #7890aa; background: transparent; cursor: pointer; }
+.terminal-new-btn:hover { color: #4f86e8; background: #dfeefa; }
+.terminal-tab { display: inline-flex; align-items: center; gap: 6px; }
+.terminal-tab-close { opacity: .45; font-size: 9px; }
+.terminal-tab:hover .terminal-tab-close { opacity: 1; }
+.terminal-cwd { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #91a3b9; font: 10.5px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.terminal-shell-select { height: 25px; padding: 0 6px; border: 1px solid #cfdeee; border-radius: 6px; outline: 0; background: #fff; color: #52677f; font-size: 11px; }
+.terminal-icon-btn { width: 25px; height: 25px; display: grid; place-items: center; border: 0; border-radius: 6px; color: #7890aa; background: transparent; cursor: pointer; }
+.terminal-icon-btn:hover { color: #4f86e8; background: #dfeefa; }
+.terminal-screen { flex: 1; min-height: 0; padding: 10px 12px; overflow: hidden; }
+.terminal-screen :deep(.xterm) { height: 100%; }
+.terminal-screen :deep(.xterm-viewport) { background: #f8fbff !important; }
+.terminal-screen--hidden { display: none; }
+
 .code-sidebar {
+  order: 0;
   width: 260px; flex-shrink: 0;
   display: flex; flex-direction: column;
-  background: color-mix(in srgb, hsl(var(--background)) 92%, hsl(var(--primary)) 4%);
-  border-right: 1px solid #eef2f7;
+  background: #f7faff;
+  border-right: 1px solid #dbe7f5;
 }
 .code-sidebar--collapsed { display: none; }
+.code-collapsed-rail { width: 32px; flex: 0 0 32px; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 12px; color: #6f8dab; background: #edf4fc; border-right: 1px solid #dbe7f5; cursor: pointer; user-select: none; }
+.code-collapsed-rail--right { order: 5; border-right: 0; border-left: 1px solid #dbe7f5; }
+.code-collapsed-rail:hover { color: #4f86e8; background: #e4effb; }
+.code-collapsed-rail i { font-size: 13px; }
+.code-collapsed-rail span { writing-mode: vertical-rl; font-size: 10px; letter-spacing: .04em; }
 /* 拖拽把手：视觉上只有 1px 分隔线，命中区域 5px 好抓 */
 .code-resizer {
   width: 5px; flex-shrink: 0;
@@ -877,13 +1260,76 @@ onUnmounted(() => {
 }
 .code-resizer:hover,
 .code-resizer--on { background: hsl(var(--primary) / 35%); }
+/* order 顺序：0 文件树 → 1 左分隔线 → 2 编辑器 → 3 右分隔线 → 4 AI coding。
+   之前右分隔线和编辑器同为 order:2，靠 DOM 先后摆位——分隔线写在编辑器前面，
+   于是被挤到「文件树/编辑器」之间，跟真正想拖的「编辑器/AI coding」缝隙对不上，
+   看起来就是拖不动。 */
+.code-resizer--right { order: 3; }
+.code-resizer--right:hover, .code-resizer--right.code-resizer--on { background: hsl(var(--primary) / 45%); }
+.code-resizer--left { order: 1; }
 .code-sidebar-head {
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px; padding: 10px 12px; border-bottom: 1px solid #eef2f7;
 }
 .code-tree { flex: 1; overflow: auto; padding: 6px 4px; }
 
-.code-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: transparent; }
+.code-main { flex: 1 1 0; display: flex; flex-direction: column; min-width: 280px; background: #fff; }
+.code-chat { order: 4; width: 380px; flex: 0 0 380px; min-width: 300px; max-width: 55vw; background: #ffffff; border: 1px solid #e1eaf5; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 24px rgba(37,99,235,.05); }
+.code-chat.code-chat--hidden { display: none !important; }
+.code-chat-head { background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%); border-bottom-color: #dbe7f5; }
+.layout-controls { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; }
+.layout-btn { width: 25px; height: 25px; display: grid; place-items: center; border: 0; border-radius: 6px; background: transparent; color: #71869e; cursor: pointer; }
+.layout-btn:hover { background: #edf4fc; color: #4f86e8; }
+.layout-btn--on { color: #4f86e8; }
+.layout-btn--tooltip { position: relative; }
+.layout-tooltip { position: absolute; z-index: 20; top: calc(100% + 7px); right: 0; width: max-content; padding: 5px 8px; border-radius: 6px; color: #fff; background: #334155; box-shadow: 0 4px 12px rgba(15,23,42,.18); font-size: 11px; line-height: 1.2; pointer-events: none; opacity: 0; transform: translateY(-2px); transition: opacity .12s, transform .12s; }
+.layout-tooltip::before { content: ''; position: absolute; right: 8px; bottom: 100%; border: 4px solid transparent; border-bottom-color: #334155; }
+.layout-btn--tooltip:hover .layout-tooltip, .layout-btn--tooltip:focus-visible .layout-tooltip { opacity: 1; transform: translateY(0); }
+.layout-glyph { position: relative; width: 14px; height: 11px; display: block; border: 1.4px solid currentColor; border-radius: 2px; }
+.layout-glyph--left::before, .layout-glyph--right::before, .layout-glyph--bottom::before { content: ''; position: absolute; background: currentColor; opacity: .8; }
+.layout-glyph--left::before { top: 0; bottom: 0; left: 3px; width: 1px; }
+.layout-glyph--right::before { top: 0; bottom: 0; right: 3px; width: 1px; }
+.layout-glyph--bottom::before { left: 0; right: 0; bottom: 3px; height: 1px; }
+.layout-glyph--grid::before, .layout-glyph--grid::after { content: ''; position: absolute; background: currentColor; opacity: .75; }
+.layout-glyph--grid::before { top: 0; bottom: 0; left: 50%; width: 1px; }
+.layout-glyph--grid::after { left: 0; right: 0; top: 50%; height: 1px; }
+.code-chat-context {
+  min-width: 0; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding-left: 9px; border-left: 1px solid #e2e8f0; color: #94a3b8; font: 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.code-editor {
+  width: auto; flex: 1 1 0; min-height: 0; min-width: 0; display: flex; flex-direction: column;
+  background: #f7faff; border: 0; border-radius: 0;
+  overflow: hidden; box-shadow: none;
+}
+.code-editor--hidden { display: none; }
+.code-editor-head {
+  display: flex; align-items: center; justify-content: space-between; min-height: 46px;
+  padding: 0 12px; background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); border-bottom: 1px solid #dbe7f5;
+}
+.code-editor-tab { display: flex; align-items: center; gap: 8px; min-width: 0; height: 100%; max-width: 65%; padding: 0 13px; color: #334155; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; border-bottom: 2px solid #4f86e8; }
+.code-editor-tab > i { color: #4f86e8; }
+.code-editor-tab--empty { color: #94a3b8; border-bottom-color: transparent; }
+.editor-dirty-dot { width: 7px; height: 7px; flex-shrink: 0; border-radius: 50%; background: #f3ad4b; box-shadow: 0 0 0 3px rgba(243, 173, 75, .14); }
+.code-editor-actions { display: flex; align-items: center; gap: 4px; }
+.editor-action-divider { width: 1px; height: 16px; margin: 0 5px; background: #dbe7f5; }
+.code-editor-actions .layout-controls { margin-left: 0; }
+.editor-status { color: #93a4ba; font-size: 11px; margin-right: 4px; }
+.editor-status--dirty { color: #c47b19; }
+.code-editor-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: #8fa2ba; font-size: 12px; background: radial-gradient(circle at 50% 42%, rgba(219, 234, 254, .52), transparent 32%); }
+.code-editor-empty i { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 4px; border: 1px solid #cfe0f5; border-radius: 16px; color: #5c8fe6; background: #edf5ff; font-size: 22px; }
+.code-editor-empty strong { color: #52677f; font-size: 13px; }
+.code-editor-empty--error { color: #c47b19; }
+.code-editor-empty--error i { color: #e2a23d; background: #fff8e9; border-color: #f1dfb6; }
+.editor-surface { flex: 1; min-height: 0; display: flex; overflow: hidden; background: #f8fbff; }
+.editor-gutter { width: 56px; flex-shrink: 0; padding: 16px 13px 16px 0; overflow: hidden; color: #a4b5c9; background: linear-gradient(90deg, #edf4fc 0%, #f3f8fd 100%); border-right: 1px solid #e0ebf7; font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; text-align: right; user-select: none; }
+.editor-gutter span { display: block; height: 19.2px; }
+.editor-input { flex: 1; min-width: 0; resize: none; border: 0; outline: 0; padding: 16px 20px; overflow: auto; background: #f8fbff; color: #334155; caret-color: #4f86e8; font: 12.5px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; tab-size: 2; white-space: pre; }
+.editor-input::selection { background: rgba(96, 150, 235, .2); }
+.editor-input:focus { box-shadow: inset 2px 0 #7aa7ed; }
+.editor-input::-webkit-scrollbar { width: 10px; height: 10px; }
+.editor-input::-webkit-scrollbar-thumb { border: 3px solid #f8fbff; border-radius: 10px; background: #c9d9ec; }
+.editor-input::-webkit-scrollbar-thumb:hover { background: #a9c3e2; }
 .code-main-head {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 12px; background: #fff; border-bottom: 1px solid #eef2f7;
@@ -891,7 +1337,7 @@ onUnmounted(() => {
 /* 会话 tab 栏 */
 .conv-bar {
   display: flex; align-items: center; gap: 6px;
-  padding: 6px 10px; background: #fff; border-bottom: 1px solid #eef2f7;
+  padding: 7px 10px; background: #f8fbff; border-bottom: 1px solid #e4edf7;
   overflow-x: auto; flex-shrink: 0;
 }
 .conv-tab {
@@ -914,7 +1360,7 @@ onUnmounted(() => {
   cursor: pointer; color: #64748b; background: transparent; transition: all .12s;
 }
 .conv-new:hover { border-color: rgba(37,99,235,.55); color: #1d4ed8; }
-.code-messages { flex: 1; overflow: auto; padding: 20px; }
+.code-messages { flex: 1; overflow: auto; padding: 20px; background: linear-gradient(180deg, #fbfdff 0%, #f5f9fe 100%); }
 .code-welcome { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
 .msg { display: flex; margin-bottom: 18px; }
@@ -1017,7 +1463,7 @@ onUnmounted(() => {
 .tm-dim { color: #cbd5e1; }
 .tm-sep { width: 1px; height: 10px; background: #e2e8f0; }
 
-.code-composer-wrap { background: #fff; border-top: 1px solid #eef2f7; }
+.code-composer-wrap { background: #fff; border-top: 1px solid #dbe7f5; }
 .composer-atts { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 12px 0; }
 .code-composer {
   display: flex; align-items: flex-end; gap: 6px;
@@ -1034,9 +1480,9 @@ onUnmounted(() => {
 .tool-btn--rec { background: #ef4444; color: #fff; }
 .tool-btn--rec:hover:not(:disabled) { background: #dc2626; color: #fff; }
 .code-input {
-  flex: 1; resize: none; max-height: 160px;
+  flex: 1; resize: none; max-height: 160px; overflow-y: auto;
   border: 1px solid #e2e8f0; border-radius: 10px;
-  padding: 10px 12px; font-size: 13.5px; color: #1e293b;
+  padding: 8px 12px; font-size: 13.5px; color: #1e293b; line-height: 1.5;
   outline: none;
 }
 .code-input:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12); }
@@ -1051,11 +1497,7 @@ onUnmounted(() => {
 .send-btn--stop { background: #ef4444; }
 .send-btn--stop:hover { background: #dc2626; }
 
-.code-preview {
-  width: 380px; flex-shrink: 0;
-  display: flex; flex-direction: column;
-  background: #0f172a; border-left: 1px solid #1e293b;
-}
+.code-preview { width: auto; flex-shrink: 0; }
 .code-preview-head {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 10px 12px; background: #1e293b; border-bottom: 1px solid #334155;

@@ -1,19 +1,20 @@
 <template>
   <div class="flex-1 overflow-y-auto p-8">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <div>
-        <h1 class="text-2xl font-bold text-slate-800">我的FDE产品项目</h1>
-        <p class="text-sm text-slate-500 mt-1">管理你的产品设计项目，从需求到原型一站式完成</p>
-      </div>
-      <RouterLink
-        to="/projects/new"
-        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-sm font-medium transition-colors shadow-sm shadow-blue-700/20"
-      >
-        <i class="fa-solid fa-plus text-xs"></i>
-        <span>新建项目</span>
-      </RouterLink>
-    </div>
+    <PageHero
+      class="mb-8"
+      title="我的 FDE 产品项目"
+      :count="projects.length"
+      description="管理产品设计项目，从需求到原型一站式完成"
+      icon="fa-solid fa-folder-open"
+      :image="heroImage"
+      image-class="page-hero__image--center"
+    >
+      <template #actions>
+        <RouterLink to="/projects/new" class="btn-sm-pri">
+          <i class="fa-solid fa-plus"></i>新建项目
+        </RouterLink>
+      </template>
+    </PageHero>
 
     <!-- Loading state -->
     <div v-if="loading" class="flex items-center justify-center py-20">
@@ -205,6 +206,8 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { getStage, getDeliverableMeta, DEFAULT_STAGE } from '@/data/fde-stages';
+import PageHero from '@/components/common/PageHero.vue';
+import heroImage from '@/assets/hero-projects.jpg';
 
 const router = useRouter();
 const projects = ref([]);
