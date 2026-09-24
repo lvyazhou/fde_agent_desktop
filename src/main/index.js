@@ -40,6 +40,9 @@ let hermesProcess = null;
 let prototypeServer = null;
 let prototypeServerPort = null;
 let prototypeServingDir = null;
+let mediaServer = null;        // 媒体流服务（支持 Range，用于视频/音频内嵌播放）
+let mediaServerPort = null;
+const mediaTokenMap = new Map(); // token -> absolute file path（白名单，避免任意读盘）
 let cachedModels = [];       // Cached model list from initialize/session
 let currentModelId = '';     // 当前会话模型 id（来自 session/new 的 modelState）
 let cachedCapabilities = {}; // Cached ACP capabilities
@@ -453,6 +456,79 @@ function startPrototypeServer() {
     prototypeServerPort = prototypeServer.address().port;
     console.log(`[main] Prototype server listening on http://127.0.0.1:${prototypeServerPort}`);
   });
+}
+
+// ---------------------------------------------------------------------------
+// Media streaming server — 支持 HTTP Range 请求，供 <video>/<audio> 内嵌播放
+// （视频若用 data: URI 无法拖动进度条、大文件卡；这里按 token 白名单流式返回）
+// ---------------------------------------------------------------------------
+
+function startMediaServer() {
+  if (mediaServer) return;
+
+  mediaServer = http.createServer((req, res) => {
+    try {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      if (url.pathname !== '/media') {
+        res.writeHead(404); res.end('Not found'); return;
+      }
+      const token = url.searchParams.get('t');
+      const filePath = token && mediaTokenMap.get(token);
+      if (!filePath || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+        res.writeHead(404); res.end('Not found'); return;
+      }
+
+      const stat = fs.statSync(filePath);
+      const total = stat.size;
+      const ext = path.extname(filePath).toLowerCase();
+      const mime = EXTENDED_MIME[ext] || 'application/octet-stream';
+      const range = req.headers.range;
+
+      if (range) {
+        const m = /bytes=(\d*)-(\d*)/.exec(range);
+        let start = m && m[1] ? parseInt(m[1], 10) : 0;
+        let end = m && m[2] ? parseInt(m[2], 10) : total - 1;
+        if (isNaN(start) || start < 0) start = 0;
+        if (isNaN(end) || end >= total) end = total - 1;
+        if (start > end) { res.writeHead(416, { 'Content-Range': `bytes */${total}` }); res.end(); return; }
+        res.writeHead(206, {
+          'Content-Type': mime,
+          'Content-Range': `bytes ${start}-${end}/${total}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': end - start + 1,
+          'Cache-Control': 'no-cache',
+        });
+        fs.createReadStream(filePath, { start, end }).pipe(res);
+      } else {
+        res.writeHead(200, {
+          'Content-Type': mime,
+          'Content-Length': total,
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'no-cache',
+        });
+        fs.createReadStream(filePath).pipe(res);
+      }
+    } catch (err) {
+      res.writeHead(500); res.end(String(err && err.message || err));
+    }
+  });
+
+  mediaServer.listen(0, '127.0.0.1', () => {
+    mediaServerPort = mediaServer.address().port;
+    console.log(`[main] Media server listening on http://127.0.0.1:${mediaServerPort}`);
+  });
+}
+
+// 为一个本地文件登记一个流式播放 URL（幂等：同路径复用同 token）
+function registerMediaUrl(filePath) {
+  const abs = path.resolve(filePath);
+  startMediaServer();
+  for (const [tok, p] of mediaTokenMap) {
+    if (p === abs) return `http://127.0.0.1:${mediaServerPort}/media?t=${tok}`;
+  }
+  const token = require('crypto').randomBytes(12).toString('hex');
+  mediaTokenMap.set(token, abs);
+  return `http://127.0.0.1:${mediaServerPort}/media?t=${token}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -1317,8 +1393,18 @@ const EXTENDED_MIME = {
   '.bmp': 'image/bmp',
   '.mp3': 'audio/mpeg',
   '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.ogg': 'audio/ogg',
+  '.oga': 'audio/ogg',
+  '.flac': 'audio/flac',
   '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
   '.mov': 'video/quicktime',
+  '.webm': 'video/webm',
+  '.ogv': 'video/ogg',
+  '.mkv': 'video/x-matroska',
+  '.avi': 'video/x-msvideo',
   '.txt': 'text/plain',
   '.md': 'text/markdown',
   '.csv': 'text/csv',
@@ -1350,6 +1436,8 @@ function previewKindForExt(ext) {
   const e = (ext || '').toLowerCase();
   if (['.png','.jpg','.jpeg','.gif','.svg','.webp','.bmp','.ico'].includes(e)) return 'image';
   if (e === '.pdf') return 'pdf';
+  if (['.mp4','.m4v','.mov','.webm','.ogv'].includes(e)) return 'video';
+  if (['.mp3','.wav','.m4a','.aac','.ogg','.oga','.flac'].includes(e)) return 'audio';
   if (['.html','.htm'].includes(e)) return 'html';
   if (['.md','.txt','.csv','.json','.js','.ts','.py','.sh','.css','.xml','.yaml','.yml','.vue','.jsx','.tsx'].includes(e)) return 'text';
   return 'unsupported';
@@ -1445,6 +1533,17 @@ ipcMain.handle('fs:read-local-file-data-uri', async (_event, filePath) => {
     const buf = fs.readFileSync(filePath);
     const dataUri = `data:${mime};base64,${buf.toString('base64')}`;
     return { success: true, dataUri, mime, size: stat.size };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+ipcMain.handle('fs:media-url', async (_event, filePath) => {
+  try {
+    if (!filePath || !fs.existsSync(filePath)) return { success: false, error: '文件不存在' };
+    if (fs.statSync(filePath).isDirectory()) return { success: false, error: '不是文件' };
+    const url = registerMediaUrl(filePath);
+    return { success: true, url };
   } catch (err) {
     return { success: false, error: err.message };
   }

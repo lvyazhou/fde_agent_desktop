@@ -79,7 +79,7 @@
           "type": "md",
           "category": "knowledge",
           "previewable": true,
-          "knowledgeType": "技术"
+          "knowledgeType": "产品"
         },
         {
           "file": "8-SDR功能及相关工作规范【知识·技术】.docx",
@@ -108,7 +108,7 @@
         }
       ],
       "counts": {
-        "knowledge": 8,
+        "knowledge": 10,
         "deliverable": 0
       }
     },

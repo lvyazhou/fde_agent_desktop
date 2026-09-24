@@ -682,7 +682,9 @@ function deliveryCardHtml(fp, resolvedMeta) {
   const meta = resolvedMeta || {};
   const sizeLabel = meta.sizeLabel || '';
   const TEXT_EXTS = new Set(['md','txt','csv','json','js','ts','py','sh','css','xml','yaml','yml','vue','jsx','tsx','java','go','rs']);
-  const previewKind = meta.previewKind || (IMG_EXTS_SET.has(ext) ? 'image' : ext === 'pdf' ? 'pdf' : ['html','htm'].includes(ext) ? 'html' : TEXT_EXTS.has(ext) ? 'text' : 'unsupported');
+  const VIDEO_EXTS = new Set(['mp4','m4v','mov','webm','ogv']);
+  const AUDIO_EXTS = new Set(['mp3','wav','m4a','aac','ogg','oga','flac']);
+  const previewKind = meta.previewKind || (IMG_EXTS_SET.has(ext) ? 'image' : ext === 'pdf' ? 'pdf' : VIDEO_EXTS.has(ext) ? 'video' : AUDIO_EXTS.has(ext) ? 'audio' : ['html','htm'].includes(ext) ? 'html' : TEXT_EXTS.has(ext) ? 'text' : 'unsupported');
   const isImg = IMG_EXTS_SET.has(ext);
 
   // Icon mapping

@@ -40,6 +40,24 @@
       <!-- PDF preview -->
       <iframe v-else-if="file.previewKind === 'pdf' && dataUri" :src="dataUri" class="w-full h-full border-0"></iframe>
 
+      <!-- Video preview -->
+      <div v-else-if="file.previewKind === 'video' && mediaUrl" class="flex items-center justify-center p-4 h-full bg-black/90">
+        <video :src="mediaUrl" controls autoplay preload="metadata" class="max-w-full max-h-full rounded-lg shadow-sm outline-none">
+          您的环境不支持内嵌播放该视频。
+        </video>
+      </div>
+
+      <!-- Audio preview -->
+      <div v-else-if="file.previewKind === 'audio' && mediaUrl" class="flex flex-col items-center justify-center gap-5 p-8 h-full">
+        <div class="w-20 h-20 rounded-2xl flex items-center justify-center" :style="{ background: iconBg }">
+          <i class="fa-solid fa-music text-[32px]" :style="{ color: iconColor }"></i>
+        </div>
+        <div class="text-sm font-medium text-slate-700 text-center break-all max-w-full px-4">{{ file.name }}</div>
+        <audio :src="mediaUrl" controls autoplay preload="metadata" class="w-full max-w-md outline-none">
+          您的环境不支持内嵌播放该音频。
+        </audio>
+      </div>
+
       <!-- HTML preview -->
       <iframe v-else-if="file.previewKind === 'html' && previewUrl" :src="previewUrl" class="w-full h-full border-0" sandbox="allow-scripts allow-same-origin"></iframe>
 
@@ -92,6 +110,7 @@ const loading = ref(false);
 const dataUri = ref(null);
 const textContent = ref(null);
 const previewUrl = ref(null);
+const mediaUrl = ref(null);
 
 const EXT_ICON_MAP = {
   pdf: { icon: 'fa-file-pdf', color: '#e11d48', bg: '#fff1f2' },
@@ -113,8 +132,16 @@ const EXT_ICON_MAP = {
   webp: { icon: 'fa-image', color: '#7c3aed', bg: '#f5f3ff' },
   mp3: { icon: 'fa-file-audio', color: '#7c3aed', bg: '#f5f3ff' },
   wav: { icon: 'fa-file-audio', color: '#7c3aed', bg: '#f5f3ff' },
+  m4a: { icon: 'fa-file-audio', color: '#7c3aed', bg: '#f5f3ff' },
+  aac: { icon: 'fa-file-audio', color: '#7c3aed', bg: '#f5f3ff' },
+  ogg: { icon: 'fa-file-audio', color: '#7c3aed', bg: '#f5f3ff' },
+  flac: { icon: 'fa-file-audio', color: '#7c3aed', bg: '#f5f3ff' },
   mp4: { icon: 'fa-file-video', color: '#db2777', bg: '#fdf2f8' },
+  m4v: { icon: 'fa-file-video', color: '#db2777', bg: '#fdf2f8' },
   mov: { icon: 'fa-file-video', color: '#db2777', bg: '#fdf2f8' },
+  webm: { icon: 'fa-file-video', color: '#db2777', bg: '#fdf2f8' },
+  mkv: { icon: 'fa-file-video', color: '#db2777', bg: '#fdf2f8' },
+  avi: { icon: 'fa-file-video', color: '#db2777', bg: '#fdf2f8' },
   html: { icon: 'fa-file-code', color: '#4f46e5', bg: '#eef2ff' },
   htm: { icon: 'fa-file-code', color: '#4f46e5', bg: '#eef2ff' },
   js: { icon: 'fa-file-code', color: '#4f46e5', bg: '#eef2ff' },
@@ -139,7 +166,8 @@ const TYPE_LABELS = {
   pdf: 'PDF', doc: 'Word', docx: 'Word', xls: 'Excel', xlsx: 'Excel', csv: 'CSV',
   ppt: 'PPT', pptx: 'PPT', zip: 'ZIP', rar: 'RAR', '7z': '7Z',
   png: 'PNG', jpg: 'JPEG', jpeg: 'JPEG', gif: 'GIF', svg: 'SVG', webp: 'WebP',
-  mp3: 'MP3', wav: 'WAV', mp4: 'MP4', mov: 'MOV',
+  mp3: 'MP3', wav: 'WAV', m4a: 'M4A', aac: 'AAC', ogg: 'OGG', flac: 'FLAC',
+  mp4: 'MP4', m4v: 'M4V', mov: 'MOV', webm: 'WebM', mkv: 'MKV', avi: 'AVI',
   html: 'HTML', htm: 'HTML', js: 'JavaScript', json: 'JSON', py: 'Python',
   md: 'Markdown', txt: '文本',
 };
@@ -150,6 +178,7 @@ async function loadPreview() {
   dataUri.value = null;
   textContent.value = null;
   previewUrl.value = null;
+  mediaUrl.value = null;
 
   try {
     let fp = props.file.filePath;
@@ -169,6 +198,9 @@ async function loadPreview() {
     if (kind === 'image' || kind === 'pdf') {
       const res = await window.api.fs.readLocalFileDataUri(fp);
       if (res && res.success) dataUri.value = res.dataUri;
+    } else if (kind === 'video' || kind === 'audio') {
+      const res = await window.api.fs.mediaUrl(fp);
+      if (res && res.success) mediaUrl.value = res.url;
     } else if (kind === 'html') {
       const res = await window.api.fs.readLocalFileDataUri(fp);
       if (res && res.success) previewUrl.value = res.dataUri;
