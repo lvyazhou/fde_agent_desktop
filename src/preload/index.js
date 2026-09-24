@@ -11,6 +11,7 @@ const validInvokeChannels = new Set([
   'fs:read-directory',
   'fs:save-local-file',
   'fs:read-local-file-data-uri',
+  'fs:media-url',
   'fs:get-home-dir',
   // 「代码」模式(Codex 式)
   'code:list-workspaces',
@@ -320,6 +321,7 @@ contextBridge.exposeInMainWorld('api', {
     getHomeDir() { return invoke('fs:get-home-dir'); },
     saveLocalFile(srcPath) { return invoke('fs:save-local-file', srcPath); },
     readLocalFileDataUri(filePath) { return invoke('fs:read-local-file-data-uri', filePath); },
+    mediaUrl(filePath) { return invoke('fs:media-url', filePath); },
   },
 
   // Skills

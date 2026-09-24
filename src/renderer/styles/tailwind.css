@@ -130,6 +130,9 @@
   /* 文件类型：图片 / 音频那一支紫 */
   --ui-violet: #7c3aed;
   --ui-violet-soft: #f5f3ff;
+  /* 文件类型：视频那一支粉 */
+  --ui-pink: #db2777;
+  --ui-pink-soft: #fdf2f8;
 
   --ui-ink: #0f172a;           /* 深墨：标题 / 深色块底 */
   --ui-ink-2: #1e293b;
@@ -269,6 +272,9 @@
   --accent-5: #7b5688; --accent-5-soft: #f3eef5; --accent-5-deep: #6a4875;
   --ui-violet: #7b5688;
   --ui-violet-soft: #f3eef5;
+  /* 视频那一支粉同步转暖，避免在暖色主题里跳出来 */
+  --ui-pink: #a8506b;
+  --ui-pink-soft: #f7ecf0;
 
   --ui-ink: #27211b;
   --ui-ink-2: #3b342c;

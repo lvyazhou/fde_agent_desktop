@@ -684,7 +684,9 @@ function deliveryCardHtml(fp, resolvedMeta) {
   const meta = resolvedMeta || {};
   const sizeLabel = meta.sizeLabel || '';
   const TEXT_EXTS = new Set(['md','txt','csv','json','js','ts','py','sh','css','xml','yaml','yml','vue','jsx','tsx','java','go','rs']);
-  const previewKind = meta.previewKind || (IMG_EXTS_SET.has(ext) ? 'image' : ext === 'pdf' ? 'pdf' : ['html','htm'].includes(ext) ? 'html' : TEXT_EXTS.has(ext) ? 'text' : 'unsupported');
+  const VIDEO_EXTS = new Set(['mp4','m4v','mov','webm','ogv']);
+  const AUDIO_EXTS = new Set(['mp3','wav','m4a','aac','ogg','oga','flac']);
+  const previewKind = meta.previewKind || (IMG_EXTS_SET.has(ext) ? 'image' : ext === 'pdf' ? 'pdf' : VIDEO_EXTS.has(ext) ? 'video' : AUDIO_EXTS.has(ext) ? 'audio' : ['html','htm'].includes(ext) ? 'html' : TEXT_EXTS.has(ext) ? 'text' : 'unsupported');
   const isImg = IMG_EXTS_SET.has(ext);
 
   // Icon mapping
@@ -697,7 +699,7 @@ function deliveryCardHtml(fp, resolvedMeta) {
     png: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], jpg: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], jpeg: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'],
     gif: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], svg: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], webp: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'],
     mp3: ['fa-file-audio', 'var(--ui-violet)', 'var(--ui-violet-soft)'], wav: ['fa-file-audio', 'var(--ui-violet)', 'var(--ui-violet-soft)'],
-    mp4: ['fa-file-video', '#db2777', '#fdf2f8'], mov: ['fa-file-video', '#db2777', '#fdf2f8'],
+    mp4: ['fa-file-video', 'var(--ui-pink)', 'var(--ui-pink-soft)'], mov: ['fa-file-video', 'var(--ui-pink)', 'var(--ui-pink-soft)'],
     html: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'], htm: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'],
     js: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'], json: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'], py: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'],
     md: ['fa-file-lines', 'var(--ui-brand)', 'var(--ui-brand-soft)'], txt: ['fa-file-lines', 'var(--ui-brand)', 'var(--ui-brand-soft)'],
