@@ -33,7 +33,7 @@ const { minimize, maximize, close } = useWindowState();
   justify-content: center;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: var(--ui-text-2);
   cursor: pointer;
   -webkit-app-region: no-drag;
 }

@@ -250,11 +250,22 @@ const api = {
     testConnection(params) { return invoke('env:test-connection', params); },
   },
 
+  // 网关档案:多组网关配置并存 + 一键拉取上游模型列表(与 Electron preload 同形)
+  gateway: {
+    listProfiles() { return invoke('gateway:list-profiles'); },
+    saveProfile(profile) { return invoke('gateway:save-profile', { profile }); },
+    deleteProfile(id) { return invoke('gateway:delete-profile', { id }); },
+    activateProfile(id) { return invoke('gateway:activate-profile', { id }); },
+    discoverModels(baseUrl, apiKey) { return invoke('gateway:discover-models', { baseUrl, apiKey }); },
+  },
+
   // 授权:安卓 MVP 阶段跳过 license 校验(桌面机器指纹方案不适用于安卓)
   license: {
     status() { return Promise.resolve({ ok: true, skipped: true, reason: 'android-mvp' }); },
     machineSn() { return Promise.resolve('android-device'); },
     import() { return Promise.resolve({ ok: true, skipped: true }); },
+    activateOnline() { return Promise.resolve({ success: false, error: '安卓端暂不支持在线取证' }); },
+    serverUrl() { return Promise.resolve({ success: true, url: '' }); },
   },
 
   // 安卓专属:网关连接管理(设置页用)

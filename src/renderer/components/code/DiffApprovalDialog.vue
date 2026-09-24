@@ -124,16 +124,16 @@ const onReject = () => emit('reject');
   display: flex; align-items: center; justify-content: space-between;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid #eef2f7;
+  border-bottom: 1px solid var(--ui-brand-soft);
 }
 .diff-badge {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 12px; font-weight: 600; color: #1d4ed8;
-  background: rgba(37, 99, 235, 0.1);
+  font-size: 12px; font-weight: 600; color: var(--ui-brand-dark);
+  background: hsl(var(--primary) / 10%);
   padding: 3px 9px; border-radius: 999px; white-space: nowrap;
 }
 .diff-path {
-  font-size: 12.5px; color: #475569;
+  font-size: 12.5px; color: var(--ui-text);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
@@ -142,33 +142,33 @@ const onReject = () => emit('reject');
 .diff-stat .del { color: #dc2626; }
 .diff-body {
   flex: 1; overflow: auto;
-  background: #0f172a;
+  background: var(--ui-ink);
 }
 .diff-table { width: 100%; border-collapse: collapse; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
 .diff-table td { padding: 0 8px; vertical-align: top; }
-.diff-table .ln { color: #64748b; text-align: right; user-select: none; width: 40px; }
-.diff-table .sign { color: #94a3b8; width: 12px; text-align: center; user-select: none; }
-.diff-table .code pre { margin: 0; white-space: pre-wrap; word-break: break-word; color: #e2e8f0; }
+.diff-table .ln { color: var(--ui-text-2); text-align: right; user-select: none; width: 40px; }
+.diff-table .sign { color: var(--ui-text-3); width: 12px; text-align: center; user-select: none; }
+.diff-table .code pre { margin: 0; white-space: pre-wrap; word-break: break-word; color: var(--ui-line-2); }
 .r-add { background: rgba(22, 163, 74, 0.18); }
 .r-add .code pre { color: #bbf7d0; }
 .r-del { background: rgba(220, 38, 38, 0.16); }
 .r-del .code pre { color: #fecaca; }
 .diff-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  height: 200px; color: #94a3b8; font-size: 13px;
+  height: 200px; color: var(--ui-text-3); font-size: 13px;
 }
 .diff-foot {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 12px 16px; border-top: 1px solid #eef2f7;
+  gap: 12px; padding: 12px 16px; border-top: 1px solid var(--ui-brand-soft);
 }
-.diff-hint { font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 6px; margin: 0; }
+.diff-hint { font-size: 12px; color: var(--ui-text-3); display: flex; align-items: center; gap: 6px; margin: 0; }
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 9px; font-size: 13px; font-weight: 500;
   cursor: pointer; border: none; transition: background 0.15s;
 }
-.btn-ghost { background: #f1f5f9; color: #475569; }
-.btn-ghost:hover { background: #e2e8f0; }
-.btn-primary { background: #2563eb; color: #fff; }
-.btn-primary:hover { background: #1d4ed8; }
+.btn-ghost { background: var(--ui-bg-2); color: var(--ui-text); }
+.btn-ghost:hover { background: var(--ui-line-2); }
+.btn-primary { background: var(--ui-brand); color: #fff; }
+.btn-primary:hover { background: var(--ui-brand-dark); }
 </style>

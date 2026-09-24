@@ -1,47 +1,52 @@
-// 常用模型清单 —— 供「注册引导 Setup」和「设置页 Settings」的模型下拉使用。
+// 网关预设 —— 供「注册引导 Setup」和「设置页 Settings」新建网关档案时用。
 //
-// 这是一份「主用 360 网关」的精选常用模型:均已实测 tool-calling 通过、能稳定驱动 Hermes agent。
-// 想加/删模型直接改这里一处,两个页面同步生效。
+// 主路径是「选预设自动填地址 → 填 Key → 点『获取模型』从网关拉真实模型清单」,
+// 所以这里的 models 只是**兜底建议**:该网关不支持 /models 接口时,让用户有东西可勾,
+// 不必对着空列表手打。真能拉到列表时这份建议不参与。
 //
-// 注意:这份清单是为 360 网关(api.360.cn)准备的。用别的网关的用户,
-// 在下拉里选「自定义」手填模型名即可 —— 不会被这份清单堵死。
-//
-// value = 传给接口的模型全名; label = 下拉里展示的中文友好名。
-export const COMMON_MODELS = [
-  // —— 强 · 首选(复杂任务 / 长链路 agent)——
-  { value: 'deepseek/deepseek-v4-pro',        label: 'DeepSeek V4 Pro（强）',        group: '强 · 首选' },
-  { value: 'anthropic/claude-sonnet-5',       label: 'Claude Sonnet 5',              group: '强 · 首选' },
-  { value: 'anthropic/claude-opus-4.8',       label: 'Claude Opus 4.8（最强）',      group: '强 · 首选' },
-  { value: 'openai/gpt-5.5',                  label: 'GPT-5.5',                      group: '强 · 首选' },
-  { value: 'google/gemini-3-pro-preview',     label: 'Gemini 3 Pro',                 group: '强 · 首选' },
-  // —— 快 · 日常(省钱快速,已验证不泄漏推理)——
-  { value: 'deepseek/deepseek-v4.1-flash',    label: 'DeepSeek V4.1 Flash（快·默认）', group: '快 · 日常' },
-  { value: 'anthropic/claude-haiku-4.5',      label: 'Claude Haiku 4.5（快）',       group: '快 · 日常' },
-  { value: 'z-ai/glm-5.3',                    label: 'GLM-5.3',                      group: '快 · 日常' },
-  { value: 'qwen/qwen3.8-max',                label: '通义千问 3.8 Max',            group: '快 · 日常' },
-  { value: 'moonshotai/kimi-k3',              label: 'Kimi K3',                      group: '快 · 日常' },
-  { value: 'minimax/MiniMax-M3',              label: 'MiniMax M3',                    group: '快 · 日常' },
-  { value: 'minimax/MiniMax-M2.7-highspeed',  label: 'MiniMax M2.7 高速',            group: '快 · 日常' },
+// stripVendorPrefix: 该网关认不认「厂商/模型」前缀名。360 认
+// anthropic/claude-sonnet-5;OpenAI/DeepSeek 官方只认裸名 gpt-4o,带前缀会 400。
+// 档案里显式存这个标记,主进程写 config.yaml 时据此决定是否剥前缀 ——
+// 旧代码在两处用 base_url 是否含 360.cn 去猜,猜不准自建代理。
+export const GATEWAY_PRESETS = [
+  {
+    id: '360',
+    name: '360 网关',
+    baseUrl: 'https://api.360.cn/v1',
+    stripVendorPrefix: false,
+    models: [
+      'anthropic/claude-opus-4.8',
+      'anthropic/claude-sonnet-5',
+      'anthropic/claude-haiku-4.5',
+      'deepseek/deepseek-v4-pro',
+      'deepseek/deepseek-v4.1-flash',
+      'openai/gpt-5.5',
+      'google/gemini-3-pro-preview',
+      'moonshotai/kimi-k3',
+      'z-ai/glm-5.3',
+      'qwen/qwen3.8-max',
+      'minimax/MiniMax-M3',
+    ],
+  },
+  {
+    id: 'openai',
+    name: 'OpenAI 官方',
+    baseUrl: 'https://api.openai.com/v1',
+    stripVendorPrefix: true,
+    models: ['gpt-5.5', 'gpt-5.5-mini', 'gpt-4o', 'gpt-4o-mini'],
+  },
+  {
+    id: 'deepseek',
+    name: 'DeepSeek 官方',
+    baseUrl: 'https://api.deepseek.com/v1',
+    stripVendorPrefix: true,
+    models: ['deepseek-chat', 'deepseek-reasoner'],
+  },
+  {
+    id: 'custom',
+    name: '自定义网关',
+    baseUrl: '',
+    stripVendorPrefix: true,
+    models: [],
+  },
 ];
-
-// 默认模型(下拉初始选中项)。与 config.yaml 的 model.default 保持一致。
-export const DEFAULT_MODEL = 'deepseek/deepseek-v4.1-flash';
-
-// 自定义手填项的哨兵值。
-export const CUSTOM_MODEL = '__custom__';
-
-// 给定模型全名,返回它是否在常用清单里(不在 = 需要走自定义手填)。
-export function isCommonModel(value) {
-  return COMMON_MODELS.some((m) => m.value === value);
-}
-
-// 剥掉模型名的 provider 前缀:'openai/gpt-4o' → 'gpt-4o'。
-// 背景:引擎 provider:custom 桶会把带前缀的模型名【整串透传】给 base_url。
-// 360 网关认 'anthropic/claude-sonnet-5' 这种前缀名;但 OpenAI/DeepSeek 等官方网关
-// 只认裸名 'gpt-4o',带 'openai/' 前缀会 400。故换非360网关时须先剥前缀再写 config。
-// (聚合器如 OpenRouter 反而需要 vendor/model 格式,但本平台默认不走聚合器。)
-export function stripModelPrefix(value) {
-  const s = String(value || '').trim();
-  const i = s.indexOf('/');
-  return i >= 0 ? s.slice(i + 1).trim() : s;
-}

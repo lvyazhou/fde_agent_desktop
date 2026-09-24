@@ -77,7 +77,7 @@
                 <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
               </template>
             </div>
-            <div class="rounded-[18px] px-3.5 py-2 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words inline-block text-left">
+            <div class="rounded-[18px] px-3.5 py-2 leading-relaxed text-[14px] bg-[var(--ui-brand-soft)] text-slate-800 whitespace-pre-wrap break-words inline-block text-left">
               {{ msg.displayContent || msg.content }}
             </div>
           </div>
@@ -201,7 +201,7 @@
         <!-- Doubao-style composer -->
         <div
           class="group/composer rounded-[26px] border transition-all duration-200"
-          :class="isFocused ? 'glass-card border-blue-400/70 shadow-[0_6px_28px_-8px_rgba(59,130,246,0.28)]' : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]'"
+          :class="isFocused ? 'glass-card border-blue-400/70 shadow-[0_6px_28px_-8px_hsl(var(--primary)_/_28%)]' : 'bg-slate-50 border-slate-200 hover:border-slate-300 hover:bg-slate-50/70 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)]'"
         >
           <!-- Attachment preview (images + files) -->
           <div v-if="chatAttachments.length > 0" class="flex items-center gap-2 px-5 pt-4 flex-wrap">
@@ -246,9 +246,9 @@
                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border cursor-pointer hover:opacity-80 transition-colors"
                 :style="{
                   fontSize: '10px', lineHeight: '1',
-                  background: (projectMeta?.aiApp?.color || '#2563eb') + '0d',
-                  borderColor: (projectMeta?.aiApp?.color || '#2563eb') + '30',
-                  color: projectMeta?.aiApp?.color || '#2563eb',
+                  background: `color-mix(in srgb, ${accent(projectMeta?.aiApp?.color)} 5%, transparent)`,
+                  borderColor: `color-mix(in srgb, ${accent(projectMeta?.aiApp?.color)} 19%, transparent)`,
+                  color: accent(projectMeta?.aiApp?.color),
                 }"
               >
                 <i :class="'fa-solid fa-' + (projectMeta?.aiApp?.icon || 'robot')" style="font-size:9px"></i>
@@ -323,6 +323,8 @@
 </template>
 
 <script setup>
+import { useAccentColor } from '@/composables/useAccentColor.js';
+const { accent } = useAccentColor();
 import { ref, reactive, nextTick, watch, computed, onMounted, onBeforeUnmount } from 'vue';
 import { marked } from 'marked';
 import WelcomeHero from './WelcomeHero.vue';
@@ -688,19 +690,19 @@ function deliveryCardHtml(fp, resolvedMeta) {
   // Icon mapping
   const iconMap = {
     pdf: ['fa-file-pdf', '#e11d48', '#fff1f2'],
-    doc: ['fa-file-word', '#2563eb', '#eff6ff'], docx: ['fa-file-word', '#2563eb', '#eff6ff'],
+    doc: ['fa-file-word', 'var(--ui-brand)', 'var(--ui-brand-soft)'], docx: ['fa-file-word', 'var(--ui-brand)', 'var(--ui-brand-soft)'],
     xls: ['fa-file-excel', '#059669', '#ecfdf5'], xlsx: ['fa-file-excel', '#059669', '#ecfdf5'], csv: ['fa-file-excel', '#059669', '#ecfdf5'],
     ppt: ['fa-file-powerpoint', '#ea580c', '#fff7ed'], pptx: ['fa-file-powerpoint', '#ea580c', '#fff7ed'],
     zip: ['fa-file-zipper', '#d97706', '#fffbeb'], rar: ['fa-file-zipper', '#d97706', '#fffbeb'], '7z': ['fa-file-zipper', '#d97706', '#fffbeb'],
-    png: ['fa-image', '#7c3aed', '#f5f3ff'], jpg: ['fa-image', '#7c3aed', '#f5f3ff'], jpeg: ['fa-image', '#7c3aed', '#f5f3ff'],
-    gif: ['fa-image', '#7c3aed', '#f5f3ff'], svg: ['fa-image', '#7c3aed', '#f5f3ff'], webp: ['fa-image', '#7c3aed', '#f5f3ff'],
-    mp3: ['fa-file-audio', '#7c3aed', '#f5f3ff'], wav: ['fa-file-audio', '#7c3aed', '#f5f3ff'],
+    png: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], jpg: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], jpeg: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'],
+    gif: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], svg: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], webp: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'],
+    mp3: ['fa-file-audio', 'var(--ui-violet)', 'var(--ui-violet-soft)'], wav: ['fa-file-audio', 'var(--ui-violet)', 'var(--ui-violet-soft)'],
     mp4: ['fa-file-video', '#db2777', '#fdf2f8'], mov: ['fa-file-video', '#db2777', '#fdf2f8'],
-    html: ['fa-file-code', '#4f46e5', '#eef2ff'], htm: ['fa-file-code', '#4f46e5', '#eef2ff'],
-    js: ['fa-file-code', '#4f46e5', '#eef2ff'], json: ['fa-file-code', '#4f46e5', '#eef2ff'], py: ['fa-file-code', '#4f46e5', '#eef2ff'],
-    md: ['fa-file-lines', '#2563eb', '#eff6ff'], txt: ['fa-file-lines', '#2563eb', '#eff6ff'],
+    html: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'], htm: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'],
+    js: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'], json: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'], py: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'],
+    md: ['fa-file-lines', 'var(--ui-brand)', 'var(--ui-brand-soft)'], txt: ['fa-file-lines', 'var(--ui-brand)', 'var(--ui-brand-soft)'],
   };
-  const [icon, color, bg] = iconMap[ext] || ['fa-file', '#94a3b8', '#f8fafc'];
+  const [icon, color, bg] = iconMap[ext] || ['fa-file', 'var(--ui-text-3)', 'var(--ui-bg-3)'];
 
   // Type label
   const typeLabels = {
@@ -894,28 +896,28 @@ defineExpose({ scrollToBottom, scrollToMessage });
 }
 :deep(.prose th),
 :deep(.prose td) {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   padding: 0.4em 0.6em;
   text-align: left;
 }
 :deep(.prose th) {
-  background: #f8fafc;
+  background: var(--ui-bg-3);
   font-weight: 600;
 }
 :deep(.prose strong) {
   font-weight: 700;
-  color: #1e293b;
+  color: var(--ui-ink-2);
 }
 :deep(.prose code) {
   font-size: 12px;
-  background: #f1f5f9;
+  background: var(--ui-bg-2);
   padding: 0.15em 0.35em;
   border-radius: 4px;
-  color: #475569;
+  color: var(--ui-text);
 }
 :deep(.prose pre) {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: var(--ui-ink-2);
+  color: var(--ui-line-2);
   padding: 0.75em 1em;
   border-radius: 8px;
   overflow-x: auto;
@@ -928,7 +930,7 @@ defineExpose({ scrollToBottom, scrollToMessage });
   color: inherit;
 }
 :deep(.prose hr) {
-  border-color: #e2e8f0;
+  border-color: var(--ui-line-2);
   margin: 0.75em 0;
 }
 :deep(.prose h1),
@@ -938,15 +940,15 @@ defineExpose({ scrollToBottom, scrollToMessage });
   margin-top: 0.8em;
   margin-bottom: 0.3em;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--ui-ink-2);
 }
 :deep(.prose h1) { font-size: 1.1em; }
 :deep(.prose h2) { font-size: 1.05em; }
 :deep(.prose h3) { font-size: 1em; }
 :deep(.prose blockquote) {
-  border-left: 3px solid #2563eb;
+  border-left: 3px solid var(--ui-brand);
   padding-left: 0.75em;
-  color: #475569;
+  color: var(--ui-text);
   margin: 0.5em 0;
 }
 :deep(.chat-delivery-card) {
@@ -964,7 +966,7 @@ defineExpose({ scrollToBottom, scrollToMessage });
   vertical-align: middle;
 }
 :deep(.chat-delivery-card:hover) {
-  border-color: #cbd5e1;
+  border-color: var(--ui-line);
   box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
 :deep(.chat-delivery-icon) {
@@ -984,7 +986,7 @@ defineExpose({ scrollToBottom, scrollToMessage });
 :deep(.chat-delivery-name) {
   font-size: 12.5px;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--ui-ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -992,7 +994,7 @@ defineExpose({ scrollToBottom, scrollToMessage });
 }
 :deep(.chat-delivery-meta) {
   font-size: 10.5px;
-  color: #9ca3af;
+  color: var(--ui-text-3);
   margin-top: 1px;
 }
 :deep(.chat-delivery-thumb) {
@@ -1000,7 +1002,7 @@ defineExpose({ scrollToBottom, scrollToMessage });
   height: 34px;
   object-fit: cover;
   border-radius: 7px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   flex-shrink: 0;
 }
 :deep(.chat-delivery-action) {
@@ -1012,14 +1014,14 @@ defineExpose({ scrollToBottom, scrollToMessage });
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: #b0b7c3;
+  color: var(--ui-text-3);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s, color 0.15s;
   font-size: 11px;
 }
 :deep(.chat-delivery-action:hover) {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--ui-bg-2);
+  color: var(--ui-ink-3);
 }
 </style>

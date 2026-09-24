@@ -60,8 +60,8 @@
           :class="project.slug === currentSlug ? 'bg-slate-100' : 'hover:bg-slate-50'"
         >
           <!-- AI 应用专属彩色 Logo -->
-          <span v-if="project.projectType === 'ai-app' && project.aiApp" class="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" :style="{ background: (project.aiApp.color || '#2563eb') + '14' }">
-            <i :class="'fa-solid fa-' + (project.aiApp.icon || 'robot')" class="text-[11px]" :style="{ color: project.aiApp.color || '#2563eb' }"></i>
+          <span v-if="project.projectType === 'ai-app' && project.aiApp" class="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" :style="{ background: `color-mix(in srgb, ${accent(project.aiApp.color)} 8%, transparent)` }">
+            <i :class="'fa-solid fa-' + (project.aiApp.icon || 'robot')" class="text-[11px]" :style="{ color: accent(project.aiApp.color) }"></i>
           </span>
           <!-- 普通对话图标 -->
           <span v-else class="w-4 shrink-0 flex items-center justify-center">
@@ -82,8 +82,8 @@
           class="w-full text-left px-3 py-2 rounded-lg mb-0.5 transition-all flex items-center gap-2.5 cursor-pointer"
           :class="project.slug === currentSlug ? 'bg-slate-100' : 'hover:bg-slate-50'"
         >
-          <span v-if="project.projectType === 'ai-app' && project.aiApp" class="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" :style="{ background: (project.aiApp.color || '#2563eb') + '14' }">
-            <i :class="'fa-solid fa-' + (project.aiApp.icon || 'robot')" class="text-[11px]" :style="{ color: project.aiApp.color || '#2563eb' }"></i>
+          <span v-if="project.projectType === 'ai-app' && project.aiApp" class="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" :style="{ background: `color-mix(in srgb, ${accent(project.aiApp.color)} 8%, transparent)` }">
+            <i :class="'fa-solid fa-' + (project.aiApp.icon || 'robot')" class="text-[11px]" :style="{ color: accent(project.aiApp.color) }"></i>
           </span>
           <span v-else class="w-4 shrink-0 flex items-center justify-center">
             <i :class="phaseIcon(project.phase)" class="text-[11px] text-slate-400"></i>
@@ -109,8 +109,8 @@
             @click="$emit('select', project.slug)"
             class="w-full text-left px-3 py-1.5 rounded-lg mb-0.5 transition-all flex items-center gap-2 hover:bg-slate-50 cursor-pointer"
           >
-            <span v-if="project.projectType === 'ai-app' && project.aiApp" class="w-5 h-5 rounded shrink-0 flex items-center justify-center" :style="{ background: (project.aiApp.color || '#2563eb') + '14' }">
-              <i :class="'fa-solid fa-' + (project.aiApp.icon || 'robot')" class="text-[9px]" :style="{ color: project.aiApp.color || '#2563eb' }"></i>
+            <span v-if="project.projectType === 'ai-app' && project.aiApp" class="w-5 h-5 rounded shrink-0 flex items-center justify-center" :style="{ background: `color-mix(in srgb, ${accent(project.aiApp.color)} 8%, transparent)` }">
+              <i :class="'fa-solid fa-' + (project.aiApp.icon || 'robot')" class="text-[9px]" :style="{ color: accent(project.aiApp.color) }"></i>
             </span>
             <i v-else class="fa-solid fa-clock-rotate-left text-[9px] text-slate-300 w-4 text-center"></i>
             <span class="flex-1 min-w-0 text-xs text-slate-500 truncate">{{ project.name }}</span>
@@ -128,6 +128,8 @@
 </template>
 
 <script setup>
+import { useAccentColor } from '@/composables/useAccentColor.js';
+const { accent } = useAccentColor();
 import { ref, computed } from 'vue';
 
 const props = defineProps({

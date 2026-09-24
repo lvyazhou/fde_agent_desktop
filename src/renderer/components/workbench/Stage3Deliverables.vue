@@ -158,13 +158,13 @@ textarea { cursor: text; }
 
 .prose :deep(h1),
 .prose :deep(h2),
-.prose :deep(h3) { color: #1e293b; margin-top: 1.4em; margin-bottom: 0.5em; }
+.prose :deep(h3) { color: var(--ui-ink-2); margin-top: 1.4em; margin-bottom: 0.5em; }
 .prose :deep(h1) { font-size: 1.5em; }
-.prose :deep(h2) { font-size: 1.2em; border-bottom: 1px solid #e2e8f0; padding-bottom: 0.3em; }
+.prose :deep(h2) { font-size: 1.2em; border-bottom: 1px solid var(--ui-line-2); padding-bottom: 0.3em; }
 .prose :deep(ul), .prose :deep(ol) { padding-left: 1.5em; }
 .prose :deep(table) { width: 100%; border-collapse: collapse; margin: 1em 0; display: block; overflow-x: auto; }
-.prose :deep(th), .prose :deep(td) { border: 1px solid #e2e8f0; padding: 0.5em 0.75em; text-align: left; }
-.prose :deep(th) { background: #f8fafc; font-weight: 600; }
-.prose :deep(code) { background: #f1f5f9; padding: 0.15em 0.4em; border-radius: 0.25rem; font-size: 0.85em; }
-.prose :deep(blockquote) { border-left: 3px solid #cbd5e1; padding-left: 1em; color: #64748b; margin: 1em 0; }
+.prose :deep(th), .prose :deep(td) { border: 1px solid var(--ui-line-2); padding: 0.5em 0.75em; text-align: left; }
+.prose :deep(th) { background: var(--ui-bg-3); font-weight: 600; }
+.prose :deep(code) { background: var(--ui-bg-2); padding: 0.15em 0.4em; border-radius: 0.25rem; font-size: 0.85em; }
+.prose :deep(blockquote) { border-left: 3px solid var(--ui-line); padding-left: 1em; color: var(--ui-text-2); margin: 1em 0; }
 </style>

@@ -351,7 +351,7 @@
           <!-- Composer -->
           <div v-if="deliverableSelected" class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white/95 to-transparent pt-8 pb-4 px-4">
             <div class="w-full max-w-[640px] mx-auto">
-              <div class="rounded-[22px] border transition-all duration-200 bg-slate-50 border-slate-200 hover:border-slate-300 shadow-[0_2px_10px_-6px_rgba(15,23,42,0.10)] focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_4px_20px_-6px_rgba(59,130,246,0.22)]">
+              <div class="rounded-[22px] border transition-all duration-200 bg-slate-50 border-slate-200 hover:border-slate-300 shadow-[0_2px_10px_-6px_rgba(15,23,42,0.10)] focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_4px_20px_-6px_hsl(var(--primary)_/_22%)]">
                 <div v-if="dlvComposer.attachments.value.length" class="flex items-center gap-2 px-4 pt-3 flex-wrap">
                   <div v-for="(att, ai) in dlvComposer.attachments.value" :key="ai" class="relative">
                     <img v-if="att.type === 'image'" :src="'data:' + att.media_type + ';base64,' + att.data" class="w-12 h-12 object-cover rounded-lg border border-slate-200" />
@@ -689,7 +689,7 @@
                 >
                   <!-- User -->
                   <div v-if="msg.role === 'user'" class="max-w-[80%] flex flex-col items-end">
-                    <div v-if="msg.content" class="rounded-[18px] px-3.5 py-2 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                    <div v-if="msg.content" class="rounded-[18px] px-3.5 py-2 leading-relaxed text-[14px] bg-[var(--ui-brand-soft)] text-slate-800 whitespace-pre-wrap break-words text-left">
                       {{ msg.content }}
                     </div>
                   </div>
@@ -757,7 +757,7 @@
               ></iframe>
             </div>
             <!-- 非 HTML 文件：源码预览 -->
-            <div v-else class="h-full flex flex-col bg-[#0f1b2d] min-h-0">
+            <div v-else class="h-full flex flex-col bg-[var(--ui-ink)] min-h-0">
               <div class="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-white/10">
                 <i class="text-[9px]" :class="[fileIcon(selectedFile).icon, fileIcon(selectedFile).color]"></i>
                 <span class="ws-micro text-slate-300 font-mono truncate">{{ selectedFile }}</span>
@@ -783,7 +783,7 @@
                   </button>
                 </div>
               </div>
-              <div class="rounded-2xl border transition-all duration-200 bg-slate-50 border-slate-200 focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_4px_20px_-8px_rgba(59,130,246,0.25)] flex items-end gap-2 pr-2">
+              <div class="rounded-2xl border transition-all duration-200 bg-slate-50 border-slate-200 focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_4px_20px_-8px_hsl(var(--primary)_/_25%)] flex items-end gap-2 pr-2">
                 <textarea
                   v-model="iterateInput"
                   rows="1"
@@ -866,7 +866,7 @@
                       <AttachmentChip v-else :att="att" @preview-image="openLightbox" />
                     </template>
                   </div>
-                  <div v-if="msg.content" class="rounded-[18px] px-3.5 py-2 leading-relaxed text-[14px] bg-[#e7edf7] text-slate-800 whitespace-pre-wrap break-words text-left">
+                  <div v-if="msg.content" class="rounded-[18px] px-3.5 py-2 leading-relaxed text-[14px] bg-[var(--ui-brand-soft)] text-slate-800 whitespace-pre-wrap break-words text-left">
                     {{ msg.content }}
                   </div>
                 </div>
@@ -928,7 +928,7 @@
                   {{ act.label }}
                 </button>
               </div>
-              <div class="rounded-[26px] border transition-all duration-200 bg-slate-50 border-slate-200 hover:border-slate-300 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)] focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_6px_28px_-8px_rgba(59,130,246,0.28)]">
+              <div class="rounded-[26px] border transition-all duration-200 bg-slate-50 border-slate-200 hover:border-slate-300 shadow-[0_2px_12px_-6px_rgba(15,23,42,0.12)] focus-within:bg-white focus-within:border-blue-400/70 focus-within:shadow-[0_6px_28px_-8px_hsl(var(--primary)_/_28%)]">
                 <!-- 附件预览 -->
                 <div v-if="stage3Composer.attachments.value.length" class="flex items-center gap-2 px-5 pt-4 flex-wrap">
                   <div v-for="(att, ai) in stage3Composer.attachments.value" :key="ai" class="relative group/att">
@@ -1046,7 +1046,8 @@ import Stage3Deliverables from '@/components/workbench/StageDeliverables.vue';
 import ImageLightbox from '@/components/common/ImageLightbox.vue';
 import AttachmentChip from '@/components/common/AttachmentChip.vue';
 import ModelSelector from '@/components/agent/ModelSelector.vue';
-import topBg from '@/assets/top.png';
+import { useHeroImage } from '@/composables/useHeroImage.js';
+const topBg = useHeroImage('top');
 import botAvatar from '@/assets/bot.png';
 import { getStage, DEFAULT_STAGE } from '@/data/fde-stages';
 import { useChatComposer } from '@/composables/useChatComposer';
@@ -1772,16 +1773,16 @@ function deliveryCardHtml(fp) {
   const isImg = IMG_EXTS_SET.has(ext);
   const iconMap = {
     pdf: ['fa-file-pdf', '#e11d48', '#fff1f2'],
-    doc: ['fa-file-word', '#2563eb', '#eff6ff'], docx: ['fa-file-word', '#2563eb', '#eff6ff'],
+    doc: ['fa-file-word', 'var(--ui-brand)', 'var(--ui-brand-soft)'], docx: ['fa-file-word', 'var(--ui-brand)', 'var(--ui-brand-soft)'],
     xls: ['fa-file-excel', '#059669', '#ecfdf5'], xlsx: ['fa-file-excel', '#059669', '#ecfdf5'], csv: ['fa-file-excel', '#059669', '#ecfdf5'],
     ppt: ['fa-file-powerpoint', '#ea580c', '#fff7ed'], pptx: ['fa-file-powerpoint', '#ea580c', '#fff7ed'],
     zip: ['fa-file-zipper', '#d97706', '#fffbeb'], rar: ['fa-file-zipper', '#d97706', '#fffbeb'], '7z': ['fa-file-zipper', '#d97706', '#fffbeb'],
-    png: ['fa-image', '#7c3aed', '#f5f3ff'], jpg: ['fa-image', '#7c3aed', '#f5f3ff'], jpeg: ['fa-image', '#7c3aed', '#f5f3ff'],
-    gif: ['fa-image', '#7c3aed', '#f5f3ff'], svg: ['fa-image', '#7c3aed', '#f5f3ff'], webp: ['fa-image', '#7c3aed', '#f5f3ff'],
-    html: ['fa-file-code', '#4f46e5', '#eef2ff'], htm: ['fa-file-code', '#4f46e5', '#eef2ff'],
-    md: ['fa-file-lines', '#2563eb', '#eff6ff'], txt: ['fa-file-lines', '#2563eb', '#eff6ff'],
+    png: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], jpg: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], jpeg: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'],
+    gif: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], svg: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'], webp: ['fa-image', 'var(--ui-violet)', 'var(--ui-violet-soft)'],
+    html: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'], htm: ['fa-file-code', 'var(--ui-accent)', 'var(--ui-accent-soft)'],
+    md: ['fa-file-lines', 'var(--ui-brand)', 'var(--ui-brand-soft)'], txt: ['fa-file-lines', 'var(--ui-brand)', 'var(--ui-brand-soft)'],
   };
-  const [icon, color, bg] = iconMap[ext] || ['fa-file', '#94a3b8', '#f8fafc'];
+  const [icon, color, bg] = iconMap[ext] || ['fa-file', 'var(--ui-text-3)', 'var(--ui-bg-3)'];
   const typeLabels = { pdf:'PDF', doc:'Word', docx:'Word', xls:'Excel', xlsx:'Excel', csv:'CSV', ppt:'PPT', pptx:'PPT', png:'PNG', jpg:'JPEG', jpeg:'JPEG', gif:'GIF', svg:'SVG', webp:'WebP', html:'HTML', md:'Markdown', txt:'文本' };
   const typeLabel = typeLabels[ext] || ext.toUpperCase() || '文件';
   const thumbHtml = isImg ? `<img src="file:///${escAttr(safePath.replace(/^\//, ''))}" class="chat-delivery-thumb" onerror="this.style.display='none'" />` : '';
@@ -3516,7 +3517,7 @@ textarea {
 .ws-icon-btn:hover:not(:disabled) { background: hsl(var(--primary) / 8%); color: hsl(var(--primary)); }
 .ws-icon-btn:disabled { opacity: .4; cursor: not-allowed; }
 
-/* 用户气泡：淡蓝底（token），替代硬编码 #e7edf7 */
+/* 用户气泡：淡蓝底（token），替代硬编码 var(--ui-brand-soft) */
 .user-bubble {
   background: hsl(var(--primary) / 9%);
 }
@@ -3589,7 +3590,7 @@ textarea {
   word-wrap: break-word;
   font-size: 13.5px;
   line-height: 1.75;
-  color: #1e293b;
+  color: var(--ui-ink-2);
 }
 :deep(.markdown-body p) {
   margin-bottom: 1.1em;
@@ -3607,16 +3608,16 @@ textarea {
   margin-bottom: 0.6em;
   font-weight: 700;
   line-height: 1.3;
-  color: #0f172a;
+  color: var(--ui-ink);
 }
 :deep(.markdown-body h1) { font-size: 1.45em; letter-spacing: -0.01em; }
 :deep(.markdown-body h2) {
   font-size: 1.2em;
-  border-bottom: 1.5px solid #e2e8f0;
+  border-bottom: 1.5px solid var(--ui-line-2);
   padding-bottom: 0.35em;
   letter-spacing: -0.005em;
 }
-:deep(.markdown-body h3) { font-size: 1.05em; font-weight: 600; color: #334155; }
+:deep(.markdown-body h3) { font-size: 1.05em; font-weight: 600; color: var(--ui-ink-3); }
 :deep(.markdown-body ul),
 :deep(.markdown-body ol) {
   margin-top: 0.25em;
@@ -3631,37 +3632,37 @@ textarea {
   padding: 0.18em 0.42em;
   margin: 0;
   font-size: 83%;
-  background-color: #f1f5f9;
+  background-color: var(--ui-bg-2);
   border-radius: 5px;
   font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
-  color: #0f172a;
-  border: 1px solid #e2e8f0;
+  color: var(--ui-ink);
+  border: 1px solid var(--ui-line-2);
 }
 :deep(.markdown-body pre) {
   padding: 16px 18px;
   overflow: auto;
   font-size: 83%;
   line-height: 1.5;
-  background-color: #f8fafc;
+  background-color: var(--ui-bg-3);
   border-radius: 10px;
   margin-bottom: 1.2em;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
 }
 :deep(.markdown-body pre code) {
   padding: 0;
   margin: 0;
   background-color: transparent;
   border: 0;
-  color: #334155;
+  color: var(--ui-ink-3);
   font-size: inherit;
   line-height: inherit;
 }
 :deep(.markdown-body blockquote) {
   padding: 0.3em 1em;
-  color: #64748b;
-  border-left: 3px solid #cbd5e1;
+  color: var(--ui-text-2);
+  border-left: 3px solid var(--ui-line);
   margin-bottom: 1.1em;
-  background: #f8fafc;
+  background: var(--ui-bg-3);
   border-radius: 0 6px 6px 0;
 }
 :deep(.markdown-body table) {
@@ -3677,12 +3678,12 @@ textarea {
 :deep(.markdown-body table th),
 :deep(.markdown-body table td) {
   padding: 7px 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
 }
 :deep(.markdown-body table th) {
-  background: #f8fafc;
+  background: var(--ui-bg-3);
   font-weight: 600;
-  color: #334155;
+  color: var(--ui-ink-3);
 }
 :deep(.markdown-body table tr:nth-child(2n)) {
   background-color: #fafafa;
@@ -3691,7 +3692,7 @@ textarea {
   height: 1.5px;
   padding: 0;
   margin: 1.5em 0;
-  background-color: #e2e8f0;
+  background-color: var(--ui-line-2);
   border: 0;
 }
 
@@ -3708,24 +3709,24 @@ textarea {
   padding: 4px 8px !important;
   margin: 2px 0 !important;
   font-size: 11px !important;
-  background-color: #f8fafc;
+  background-color: var(--ui-bg-3);
   border-radius: 4px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   overflow-x: auto;
 }
 :deep(.compact-markdown pre code) {
   background-color: transparent;
   border: 0;
   padding: 0;
-  color: #334155;
+  color: var(--ui-ink-3);
   font-size: inherit;
 }
 :deep(.compact-markdown code) {
   padding: 0.1em 0.3em;
   font-size: 12px;
-  background-color: #f1f5f9;
+  background-color: var(--ui-bg-2);
   border-radius: 4px;
-  color: #0f172a;
+  color: var(--ui-ink);
   word-break: break-all;
   white-space: pre-wrap;
 }
@@ -3743,7 +3744,7 @@ textarea {
 .prose :deep(h1),
 .prose :deep(h2),
 .prose :deep(h3) {
-  color: #1e293b;
+  color: var(--ui-ink-2);
   margin-top: 1.5em;
   margin-bottom: 0.5em;
 }
@@ -3752,14 +3753,14 @@ textarea {
   padding-left: 1.5em;
 }
 .prose :deep(code) {
-  background: #f1f5f9;
+  background: var(--ui-bg-2);
   padding: 0.15em 0.4em;
   border-radius: 0.25rem;
   font-size: 0.85em;
 }
 .prose :deep(pre) {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: var(--ui-ink-2);
+  color: var(--ui-line-2);
   padding: 1em;
   border-radius: 0.75rem;
   overflow-x: auto;
@@ -3775,12 +3776,12 @@ textarea {
 }
 .prose :deep(th),
 .prose :deep(td) {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   padding: 0.5em 0.75em;
   text-align: left;
 }
 .prose :deep(th) {
-  background: #f8fafc;
+  background: var(--ui-bg-3);
   font-weight: 600;
 }
 :deep(.chat-delivery-card) {
@@ -3798,7 +3799,7 @@ textarea {
   vertical-align: middle;
 }
 :deep(.chat-delivery-card:hover) {
-  border-color: #cbd5e1;
+  border-color: var(--ui-line);
   box-shadow: 0 1px 4px rgba(15,23,42,0.06);
 }
 :deep(.chat-delivery-icon) {
@@ -3818,7 +3819,7 @@ textarea {
 :deep(.chat-delivery-name) {
   font-size: 12.5px;
   font-weight: 500;
-  color: #1e293b;
+  color: var(--ui-ink-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3826,7 +3827,7 @@ textarea {
 }
 :deep(.chat-delivery-meta) {
   font-size: 10.5px;
-  color: #9ca3af;
+  color: var(--ui-text-3);
   margin-top: 1px;
 }
 :deep(.chat-delivery-thumb) {
@@ -3834,7 +3835,7 @@ textarea {
   height: 34px;
   object-fit: cover;
   border-radius: 7px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   flex-shrink: 0;
 }
 :deep(.chat-delivery-action) {
@@ -3846,14 +3847,14 @@ textarea {
   border-radius: 6px;
   border: none;
   background: transparent;
-  color: #b0b7c3;
+  color: var(--ui-text-3);
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.15s, color 0.15s;
   font-size: 11px;
 }
 :deep(.chat-delivery-action:hover) {
-  background: #f1f5f9;
-  color: #334155;
+  background: var(--ui-bg-2);
+  color: var(--ui-ink-3);
 }
 </style>

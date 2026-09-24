@@ -54,7 +54,10 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHero from '@/components/common/PageHero.vue';
-import heroImage from '@/assets/hero-training.jpg';
+import { useHeroImage } from '@/composables/useHeroImage.js';
+import { useTheme } from '@/composables/useTheme.js';
+const heroImage = useHeroImage('training');
+const { theme } = useTheme();
 
 // 两个页面:学员教程 / 讲师版讲稿(都在 public 目录,dev 由 vite 提供、打包后与 index.html 同级)
 const tabs = [
@@ -66,9 +69,11 @@ const loaded = ref(false);
 const iframeEl = ref(null);
 const router = useRouter();
 
+// iframe 不继承宿主的 data-theme，只能把主题拼进 URL，由页内脚本自己打属性
 const guideUrl = computed(() => {
   const t = tabs.find((x) => x.key === active.value) || tabs[0];
-  return `${import.meta.env.BASE_URL}${t.file}`;
+  const q = theme.value === 'brown' ? '?theme=brown' : '';
+  return `${import.meta.env.BASE_URL}${t.file}${q}`;
 });
 
 const switchTab = (key) => {

@@ -93,13 +93,13 @@ function fileIcon(name) {
   gap: 6px;
   padding: 3px 8px;
   font-size: 12.5px;
-  color: #475569;
+  color: var(--ui-text);
   cursor: pointer;
   border-radius: 6px;
   white-space: nowrap;
   overflow: hidden;
 }
 .tree-row:hover { background: rgba(241, 245, 249, 0.9); }
-.tree-row--active { background: rgba(37, 99, 235, 0.1); color: #1d4ed8; }
+.tree-row--active { background: hsl(var(--primary) / 10%); color: var(--ui-brand-dark); }
 .tree-label { overflow: hidden; text-overflow: ellipsis; }
 </style>

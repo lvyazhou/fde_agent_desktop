@@ -28,6 +28,7 @@ const AcpClient = require('./acp-client.js');
 const licenseVerifier = require('./license/verifier.js');
 const licenseStore = require('./license/store.js');
 const licenseFingerprint = require('./license/fingerprint.js');
+const licenseRemote = require('./license/remote.js');
 
 // 统一应用名（菜单栏、关于、macOS 顶栏、任务栏）。
 // 打包后来自 package.json 的 productName；开发态 app.name 默认是 "Electron"，这里显式覆盖。
@@ -186,7 +187,25 @@ function writeConfigModel(modelId) {
 // OPENAI_API_KEY,不会更新 config.yaml,于是别人机器上首装的占位符
 // your-api-key-here 一直生效 → 填了 key 也不生效。这里在保存时把 key 同步进去。
 // 用行级正则替换,保留注释/格式,不引入 YAML 库。
-function writeConfigProviderKey(apiKey, baseUrl, model) {
+// 把向导/设置里填的 API Key 同步写进 config.yaml 的 custom_providers[].api_key。
+// 背景：hermes 选模型的事实来源是 config.yaml；custom_providers 条目的凭据取自
+// 该条目内联的 api_key（或它 key_env 指向的环境变量）。向导只写 .env 的
+// OPENAI_API_KEY,不会更新 config.yaml,于是别人机器上首装的占位符
+// your-api-key-here 一直生效 → 填了 key 也不生效。这里在保存时把 key 同步进去。
+// 用行级正则替换,保留注释/格式,不引入 YAML 库。
+//
+// 关于「多网关」：这里仍然无条件改写 api_key/base_url,不按条目名定位。
+// 原因在引擎侧 —— hermes 解析 provider:custom 用的是**顶层 model.base_url**
+// (runtime_provider.py 的 bare-custom 信任路径 / 凭据池按 base_url 建 key),
+// custom_providers 只是承载凭据的那一份配置,引擎同一时刻只认一个 base_url。
+// 所以多网关并存的「事实来源」是 gateway-profiles.json(桌面侧),config.yaml 只需
+// 反映**当前激活**的那一组;按名改写条目并不会让引擎同时认多个网关。
+//
+// opts.stripVendorPrefix: 显式指定是否剥掉模型名的「厂商/」前缀。不传则按 base_url
+//   是否含 360.cn 猜(旧行为)。
+// opts.replaceModels: 显式指定是否用传入的 models 覆盖 config 里的 models: 列表。
+//   网关档案走这条(用户勾的就是他要的);不传时沿用旧的「只有非360才覆盖」推断。
+function writeConfigProviderKey(apiKey, baseUrl, model, opts = {}) {
   try {
     const key = String(apiKey || '').trim();
     if (!key) return false;
@@ -194,16 +213,22 @@ function writeConfigProviderKey(apiKey, baseUrl, model) {
     if (!fs.existsSync(CONFIG_YAML_PATH)) return false;
     let content = fs.readFileSync(CONFIG_YAML_PATH, 'utf-8');
 
-    // 替换 custom_providers 里每个条目的 api_key: <任意值>（含占位符）。
+    const url = String(baseUrl || '').trim();
+    // 前缀:引擎 provider:custom 桶把带前缀模型名整串透传给 base_url。360 认前缀名
+    //   (anthropic/claude-sonnet-5 能跑);非360官方网关只认裸名(gpt-4o),带 openai/ 前缀会400。
+    //   故非360网关写入前先剥前缀。opts 显式指定优先,否则按 base_url 猜(未填=默认360)。
+    const guessThreeSixty = !url || /(^|\.)360\.cn(\b|\/|:)/i.test(url);
+    const isThreeSixty = opts.stripVendorPrefix === undefined
+      ? guessThreeSixty
+      : !opts.stripVendorPrefix;
+
+    // api_key / base_url:替换所有 custom_providers 条目(含占位符)。
     if (/^[ \t]+api_key:[ \t]*.+$/m.test(content)) {
       content = content.replace(
         /^([ \t]+)api_key:[ \t]*.+$/gm,
         (_full, indent) => `${indent}api_key: ${key}`
       );
     }
-
-    // base_url 同步(可选):替换 model.base_url 与 custom_providers[].base_url。
-    const url = String(baseUrl || '').trim();
     if (url && /^[ \t]+base_url:[ \t]*.+$/m.test(content)) {
       content = content.replace(
         /^([ \t]+)base_url:[ \t]*.+$/gm,
@@ -211,17 +236,6 @@ function writeConfigProviderKey(apiKey, baseUrl, model) {
       );
     }
 
-    // model 同步(可选):model 可以是字符串或字符串数组(非360网关多选)。
-    //   ① model.default 改成第一个模型(始终执行);
-    //   ② custom_providers[].models 列表 —— 仅当换到「非 360」网关时才收敛为用户勾选的这几项。
-    //      背景:models: 就是顶栏下拉框的白名单。360 网关(默认)下模板里那 12 个模型
-    //      本来都能用,若无条件收敛,别人首启向导保存后下拉框就只剩一个模型
-    //      (DEFAULT_MODEL=deepseek/deepseek-v4.1-flash),这是个 bug。换成别的网关时
-    //      360 专用模型名可能不被对方识别,才收敛成用户实际勾选/手填的那几个。
-    //   前缀:引擎 provider:custom 桶把带前缀模型名整串透传给 base_url。360 认前缀名
-    //      (anthropic/claude-sonnet-5 能跑);非360官方网关只认裸名(gpt-4o),带 openai/ 前缀会400。
-    //      故非360网关写入前先剥前缀。是否360以用户填的 base_url 判定,未填=默认360。
-    const isThreeSixty = !url || /(^|\.)360\.cn(\b|\/|:)/i.test(url);
     const stripPrefix = (m) => { const i = m.indexOf('/'); return i >= 0 ? m.slice(i + 1).trim() : m; };
     const models = (Array.isArray(model) ? model : (model != null ? [model] : []))
       .map((m) => String(m || '').trim())
@@ -229,6 +243,7 @@ function writeConfigProviderKey(apiKey, baseUrl, model) {
       .map((m) => (isThreeSixty ? m : stripPrefix(m))) // 非360剥前缀
       .filter(Boolean)
       .filter((m, i, arr) => arr.indexOf(m) === i); // 去重,保序
+
     if (models.length) {
       // ① model 块内的 default:(始终写第一个模型)
       if (/^[ \t]+default:[ \t]*.+$/m.test(content)) {
@@ -237,10 +252,14 @@ function writeConfigProviderKey(apiKey, baseUrl, model) {
           (_full, indent) => `${indent}default: ${models[0]}`
         );
       }
-      // ② 仅非 360 网关收敛 models: 列表。
-      if (!isThreeSixty) {
-        // 定位 "models:" 行,把其后连续的 "- xxx" 缩进列表项整体替换为用户勾选的多行列表
-        // (保留 models: 的缩进层级)。注意 config.yaml 可能是 CRLF,故用 \r?\n 兼容 Windows。
+      // ② 覆盖 models: 列表(= 顶栏下拉框的白名单)。
+      //   旧行为(opts.replaceModels 未传时):只有非 360 网关才覆盖。因为 360 下模板里
+      //   那 11 个模型本来都能用,若无条件收敛成单个默认模型,下拉框就只剩一项(旧 bug)。
+      //   网关档案(显式传 true):用户在「获取模型」里勾了什么就写什么 —— 包括 360,
+      //   否则勾选被静默忽略,顶栏显示的仍是模板里的旧清单,和用户所见不一致。
+      //   CRLF 兼容:config.yaml 在 Windows 上可能是 \r\n,故用 \r?\n。
+      const replaceModels = opts.replaceModels === undefined ? !isThreeSixty : !!opts.replaceModels;
+      if (replaceModels) {
         content = content.replace(
           /^([ \t]+)models:[ \t]*\r?\n(?:[ \t]+-[ \t]*.+\r?\n?)+/m,
           (_full, indent) => `${indent}models:\n` + models.map((m) => `${indent}  - ${m}\n`).join('')
@@ -254,6 +273,118 @@ function writeConfigProviderKey(apiKey, baseUrl, model) {
     console.warn('[main] writeConfigProviderKey failed:', e.message);
     return false;
   }
+}
+
+// --- 网关档案(gateway profiles) -------------------------------------------
+// 多组命名网关配置各自保存 baseUrl/apiKey/models,一次激活一组写进 config.yaml。
+// 切换网关不再覆盖上一组的凭据 —— 这是单一 custom_providers[0] 时代的主要痛点。
+//
+// stripVendorPrefix: 显式声明该网关认不认 "厂商/模型" 前缀名。360 认
+// anthropic/claude-sonnet-5;OpenAI/DeepSeek 官方只认裸名 gpt-4o,带前缀会 400。
+// 旧代码在两处用 base_url 是否含 360.cn 去猜(writeConfigProviderKey / test-connection),
+// 这里改成建档时就定下来,不再猜。
+const GATEWAY_PROFILES_PATH = path.join(PRODUCT_LOBSTER_HOME, 'gateway-profiles.json');
+
+function readGatewayProfiles() {
+  try {
+    if (!fs.existsSync(GATEWAY_PROFILES_PATH)) return { version: 1, activeId: '', profiles: [] };
+    const raw = JSON.parse(fs.readFileSync(GATEWAY_PROFILES_PATH, 'utf-8'));
+    const profiles = Array.isArray(raw && raw.profiles) ? raw.profiles.filter((p) => p && p.id) : [];
+    return { version: 1, activeId: String((raw && raw.activeId) || ''), profiles };
+  } catch (e) {
+    console.error('[main] readGatewayProfiles failed:', e.message);
+    return { version: 1, activeId: '', profiles: [] };
+  }
+}
+
+// 就地更新 .env 里的若干变量:值为 null/'' 的键整行删除,其余就地改值,新键追加。
+// 不整文件重写 —— 用户可能在 .env 里放了别的变量(代理、调试开关),整写会抹掉。
+function upsertEnvVars(vars) {
+  ensureDirs();
+  const nl = '\n';
+  let lines = [];
+  try {
+    if (fs.existsSync(ENV_FILE_PATH)) {
+      lines = fs.readFileSync(ENV_FILE_PATH, 'utf-8').split(/\r?\n/);
+    }
+  } catch (_) { lines = []; }
+
+  const pending = new Map(Object.entries(vars));
+  const out = [];
+  for (const line of lines) {
+    const m = line.match(/^([A-Za-z_][A-Za-z0-9_]*)=/);
+    if (!m || !pending.has(m[1])) { out.push(line); continue; }
+    const key = m[1];
+    const val = pending.get(key);
+    pending.delete(key);
+    if (val === null || val === undefined || val === '') continue; // 删除该行
+    out.push(`${key}=${val}`);
+  }
+  // 剩下的是文件里原本没有的键,追加(空值不写)。
+  for (const [key, val] of pending) {
+    if (val === null || val === undefined || val === '') continue;
+    out.push(`${key}=${val}`);
+  }
+  // 收尾:去掉末尾多余空行,保证正好一个结尾换行。
+  while (out.length && !out[out.length - 1].trim()) out.pop();
+  fs.writeFileSync(ENV_FILE_PATH, out.join(nl) + nl, 'utf-8');
+}
+
+function writeGatewayProfiles(store) {
+  ensureDirs();
+  const payload = {
+    version: 1,
+    activeId: String((store && store.activeId) || ''),
+    profiles: Array.isArray(store && store.profiles) ? store.profiles : [],
+  };
+  // 原子写:profiles 里存着用户的 API Key,写一半被打断会丢凭据。
+  const tmp = `${GATEWAY_PROFILES_PATH}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(payload, null, 2) + '\n', 'utf-8');
+  fs.renameSync(tmp, GATEWAY_PROFILES_PATH);
+}
+
+// 首次使用:把当前 config.yaml + .env 里已生效的那份配置收编成第一个 profile,
+// 老用户升级后打开设置页就能看到自己原有的网关,不用重新填。
+//
+// 只在「确实已配置过」(.env 里有真实 key)时收编。全新安装没有 key,此时不能建档 ——
+// 一是会生成一个空 key 的垃圾档案,二是 ensureDirs 的 models 自愈以「档案文件是否
+// 存在」为开关,提前建档会把自愈永久关掉。全新用户走首启向导正常建档。
+function ensureGatewayProfilesSeeded() {
+  const store = readGatewayProfiles();
+  if (store.profiles.length) return store;
+  const { apiKey } = parseEnvConfig();
+  if (!apiKey) return store; // 尚未配置过 → 不建档,返回空列表让前端进「新增网关」态
+  const models = readDeclaredModelIds();
+  let baseUrl = '';
+  try {
+    if (fs.existsSync(CONFIG_YAML_PATH)) {
+      const m = fs.readFileSync(CONFIG_YAML_PATH, 'utf-8').match(/^[ \t]+base_url:[ \t]*(\S+)[ \t]*$/m);
+      if (m) baseUrl = m[1];
+    }
+  } catch (_) { /* 读不到就留空,下面按 360 兜底 */ }
+  const url = baseUrl || 'https://api.360.cn/v1';
+  const isThreeSixty = /(^|\.)360\.cn(\b|\/|:)/i.test(url);
+  // stripVendorPrefix 必须看「现有 config 里的模型名长什么样」,不能看域名。
+  // 这份 config 是用户已经跑通的配置:里面的模型名带 "厂商/" 前缀,就证明该网关
+  // 认前缀名 —— 各种自建/聚合代理(llm.api.xxx.com 之类)域名里没有 360.cn,但同样
+  // 透传 deepseek/deepseek-v4-pro 这种前缀名。按域名猜会把它们判成"要剥前缀",
+  // 用户一点「保存并启用」就被改写成裸名,直接 400。
+  const declaredHasPrefix = models.some((m) => m.includes('/'));
+  const seeded = {
+    version: 1,
+    activeId: 'default',
+    profiles: [{
+      id: 'default',
+      name: isThreeSixty ? '360 网关' : '当前网关',
+      baseUrl: url,
+      apiKey: apiKey || '',
+      models,
+      // 有带前缀的模型名 → 保留前缀;一个都没有(全裸名或空)→ 回退按域名猜。
+      stripVendorPrefix: declaredHasPrefix ? false : !isThreeSixty,
+    }],
+  };
+  writeGatewayProfiles(seeded);
+  return seeded;
 }
 
 // 从 session/new 的响应里抓模型列表 + 当前模型。
@@ -298,10 +429,15 @@ function ensureDirs() {
   // 列表无条件收敛成一项(DEFAULT_MODEL),导致老用户下拉框只剩一个模型。此处在启动时
   // 检测:若已存在的 config.yaml 是 360 网关且 models: 列表 <2 项(被旧版砍过),就从
   // 模板补回完整列表。非 360 网关(用户自己换的)不动,避免覆盖用户的自定义。
+  //
+  // 网关档案存在时必须跳过:档案里的 models 是用户在「获取模型」里亲手勾的,
+  // 只勾一个模型是完全合法的选择,而这段自愈会把它当成"被旧版砍过"直接覆盖回
+  // 模板的 11 条 —— 用户每次重启都发现下拉框里冒出一堆没勾过的模型。
   try {
     const target = path.join(PRODUCT_LOBSTER_HOME, 'config.yaml');
     const source = path.join(templatesDir, 'config.yaml');
-    if (fs.existsSync(target) && fs.existsSync(source)) {
+    const hasProfiles = fs.existsSync(GATEWAY_PROFILES_PATH);
+    if (!hasProfiles && fs.existsSync(target) && fs.existsSync(source)) {
       const cur = fs.readFileSync(target, 'utf-8');
       // 判定 360 网关:base_url 含 360.cn(未显式换网关即视为默认 360)。
       const nonThreeSixty = /base_url:[ \t]*(\S+)/i.test(cur)
@@ -678,6 +814,11 @@ async function stopHermes() {
   acp = null;
   hermesProcess = null;
   hermesReady = false;
+  // 模型列表是「上一个引擎进程 + 上一份 config」的产物。切网关时新 config 的模型
+  // 与旧列表可能毫无交集,留着它会让顶栏在新引擎 warmup 回填前显示旧网关的模型名。
+  // 清空后 hermes:list-models 会退到 config 声明的清单(当前网关的事实来源)。
+  cachedModels = [];
+  currentModelId = '';
 
   if (dyingAcp) {
     try {
@@ -2355,6 +2496,34 @@ ipcMain.handle('license:import', async () => {
   }
 });
 
+// 在线取证:企业授权码换 .lic,校验通过才落盘
+ipcMain.handle('license:activate-online', async (_event, options) => {
+  try {
+    const { licenseBytes, info } = await licenseRemote.activateOnline({
+      serverUrl: options && options.serverUrl,
+      secretKey: options && options.secretKey,
+      clientVersion: app.getVersion(),
+    });
+    const result = licenseVerifier.loadAndVerify(licenseBytes);
+    if (!result.ok) {
+      return { success: false, rejected: true, status: result.status, reason: result.reason, detail: result };
+    }
+    licenseStore.saveLicense(licenseBytes);
+    return { success: true, status: result.status, sn: result.sn, info };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
+// 默认授权服务地址(授权页用于回填输入框)
+ipcMain.handle('license:server-url', () => {
+  try {
+    return { success: true, url: licenseRemote.defaultServerUrl() };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
+
 // ---------------------------------------------------------------------------
 // IPC handlers — Hermes project management
 // ---------------------------------------------------------------------------
@@ -3178,8 +3347,16 @@ ipcMain.handle('hermes:list-models', async () => {
     const id = m && (m.model_id || m.modelId || m.id || m.name);
     return id && allow.has(bareModelId(id));
   });
-  // 过滤后为空（引擎列表和 config 完全对不上）→ 兜底返回原始，避免下拉空白。
-  return { models: filtered.length ? filtered : cachedModels, current: currentModelId };
+  if (filtered.length) return { models: filtered, current: currentModelId };
+  // 过滤后为空 = 引擎缓存与 config 声明完全不交集。最常见的成因是刚切了网关:
+  // 引擎重启后 cachedModels 可能还是上一个网关的列表(warmup session 尚未回填)。
+  // 此时若兜底返回 cachedModels,顶栏会显示旧网关的模型名,用户点了必然 400
+  // (OpenAI 不认 anthropic/claude-sonnet-5)。所以直接用 config 声明的清单 ——
+  // 它就是用户在设置页勾选的那几个,是当前网关的事实来源。
+  return {
+    models: declared.map((id) => ({ model_id: id, name: id })),
+    current: currentModelId,
+  };
 });
 
 // 读 config.yaml 里 custom_providers[].models 的原始声明 id 列表 + 当前 base_url。
@@ -3200,6 +3377,31 @@ ipcMain.handle('hermes:read-config-models', async () => {
   }
 });
 
+// 让 config.yaml 的改动生效:重启引擎 + 清掉各项目已失效的 sessionId。
+// 切模型(hermes:set-model)与切网关(gateway:activate-profile)共用这一套,
+// 避免两处各写一遍重启逻辑漂移。
+async function applyProfileToEngine() {
+  // 带就绪确认 + 一次重试：初始化失败不静默变砖，让前端能提示重试。
+  const ok = await restartHermes(1);
+  if (!ok || !hermesReady || !acp) {
+    return { ok: false, error: '引擎重启后初始化失败，请重试' };
+  }
+  // 重启后所有旧 sessionId 在新进程里已失效：清掉每个项目的 sessionId，
+  // 下次发消息时 hermes:prompt 会自动 session/new 重建（带项目上下文恢复）。
+  try {
+    if (fs.existsSync(PROJECTS_DIR)) {
+      for (const entry of fs.readdirSync(PROJECTS_DIR, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const m = readProjectMeta(entry.name);
+        if (m && m.sessionId) updateProjectMeta(entry.name, { sessionId: null });
+      }
+    }
+  } catch (e) {
+    console.warn('[main] clear sessionIds after engine restart failed:', e.message);
+  }
+  return { ok: true };
+}
+
 ipcMain.handle('hermes:set-model', async (_event, { slug, modelId }) => {
   // 关键：360 custom provider 下，运行时 session/set_model 会被 hermes 误判成 openrouter
   // provider（detect_provider_for_model 看到 vendor/model 格式即判 openrouter）→ 401。
@@ -3207,25 +3409,8 @@ ipcMain.handle('hermes:set-model', async (_event, { slug, modelId }) => {
   try {
     const persisted = writeConfigModel(modelId);   // 内部会剥掉 openai-api: 等前缀，存裸名
     if (!persisted) return { success: false, error: '写入 config.yaml 失败' };
-    // 重启 hermes 让新模型生效（provider=custom 路由到 360）。
-    // 带就绪确认 + 一次重试：初始化失败不静默变砖，让前端能提示重试。
-    const ok = await restartHermes(1);
-    if (!ok || !hermesReady || !acp) {
-      return { success: false, error: '引擎重启后初始化失败，请重试切换模型' };
-    }
-    // 重启后所有旧 sessionId 在新进程里已失效：清掉每个项目的 sessionId，
-    // 下次发消息时 hermes:prompt 会自动 session/new 重建（带项目上下文恢复）。
-    try {
-      if (fs.existsSync(PROJECTS_DIR)) {
-        for (const entry of fs.readdirSync(PROJECTS_DIR, { withFileTypes: true })) {
-          if (!entry.isDirectory()) continue;
-          const m = readProjectMeta(entry.name);
-          if (m && m.sessionId) updateProjectMeta(entry.name, { sessionId: null });
-        }
-      }
-    } catch (e) {
-      console.warn('[main] clear sessionIds after model switch failed:', e.message);
-    }
+    const applied = await applyProfileToEngine();
+    if (!applied.ok) return { success: false, error: applied.error };
     return { success: true, persisted, restarted: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -3615,11 +3800,122 @@ function postChatCompletion({ apiKey, baseUrl, model, messages, maxTokens = 64, 
         resolve({ ok: status >= 200 && status < 300, status, latencyMs, text, body: body.slice(0, 300) });
       });
     });
-    req.on('error', (err) => resolve({ ok: false, status: 0, error: err.message }));
+    // 同 getJsonAuthed:连接类失败是 AggregateError,message 为空,须看 err.code。
+    // 否则「测试连接」在地址填错时只显示空白错误。
+    req.on('error', (err) => resolve({ ok: false, status: 0, error: describeNetError(err) }));
     req.setTimeout(timeoutMs, () => { req.destroy(); resolve({ ok: false, status: 0, error: '请求超时' }); });
     req.write(payload);
     req.end();
   });
+}
+
+// GET 一个 JSON 接口,带 Bearer 鉴权 + 跟随重定向。用于拉上游模型列表。
+function getJsonAuthed(urlStr, apiKey, { maxRedirects = 5, timeoutMs = 10000 } = {}) {
+  const https = require('https');
+  const http = require('http');
+  return new Promise((resolve) => {
+    let u;
+    try { u = new URL(urlStr); }
+    catch { return resolve({ ok: false, status: 0, error: '地址格式不正确' }); }
+    const lib = u.protocol === 'http:' ? http : https;
+    const req = lib.request({
+      hostname: u.hostname,
+      port: u.port || (u.protocol === 'http:' ? 80 : 443),
+      path: u.pathname + u.search,
+      method: 'GET',
+      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+    }, (res) => {
+      const status = res.statusCode || 0;
+      if (status >= 300 && status < 400 && res.headers.location) {
+        res.resume();
+        if (maxRedirects <= 0) return resolve({ ok: false, status, error: '重定向次数过多' });
+        const next = new URL(res.headers.location, u).toString();
+        return resolve(getJsonAuthed(next, apiKey, { maxRedirects: maxRedirects - 1, timeoutMs }));
+      }
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', (c) => { body += c; });
+      res.on('end', () => {
+        if (status < 200 || status >= 300) {
+          return resolve({ ok: false, status, error: `请求失败(HTTP ${status})`, body: body.slice(0, 300) });
+        }
+        let data;
+        try { data = JSON.parse(body); }
+        catch { return resolve({ ok: false, status, error: '返回的不是 JSON', body: body.slice(0, 300) }); }
+        resolve({ ok: true, status, data });
+      });
+    });
+    // 连接类失败(DNS/拒绝连接)在 Node 里是 AggregateError,它的 message 是空字符串,
+    // 有用信息只在 err.code(ECONNREFUSED/ENOTFOUND)里 —— 只取 message 会得到空错误。
+    req.on('error', (err) => resolve({ ok: false, status: 0, error: describeNetError(err) }));
+    req.setTimeout(timeoutMs, () => { req.destroy(); resolve({ ok: false, status: 0, error: '请求超时' }); });
+    req.end();
+  });
+}
+
+// 把 Node 的网络错误翻译成用户能看懂的一句话。
+function describeNetError(err) {
+  const code = (err && err.code) || '';
+  const msg = (err && err.message) || '';
+  if (code === 'ECONNREFUSED') return '连接被拒绝，请检查地址与端口是否正确';
+  if (code === 'ENOTFOUND') return '域名解析失败，请检查 Base URL';
+  if (code === 'ETIMEDOUT') return '连接超时';
+  if (code === 'CERT_HAS_EXPIRED' || code === 'DEPTH_ZERO_SELF_SIGNED_CERT') return '服务端证书无效';
+  return msg || code || '网络请求失败';
+}
+
+// 判断一个模型 id 是否**不是**对话模型。
+// /v1/models 返回的是该 key 能访问的全部模型,不只是 chat —— 实测某聚合网关回 109 个,
+// 里面有 embedding / 图像生成 / 美妆特效 / OCR / TTS 等一堆用不了的。全塞进下拉框
+// 等于让用户在 100 多项里挑,且点中任何一个非 chat 模型都会报错。
+//
+// 这里用「按类型排除」而不是「按名单收录」:白名单要跟着各家上新不停维护,漏了就
+// 显示不出新模型(历史上 CURATED 白名单就是这么和 config 脱节的);排除关键词只针对
+// 模型类别,新出的对话模型天然放行。
+// 规则按某聚合网关真实返回的 109 个模型逐条核对过(见下面每行的例子)。
+// 只匹配「模型名里的品类词」,不写具体型号,新出的对话模型天然放行。
+const NON_CHAT_MODEL_PATTERNS = [
+  // 向量 / 重排
+  /embed/i,                                   // embedding, RzenEmbed, qwen3-embedding-8b
+  /rerank/i,                                  // bge-reranker-v2-m3, qwen3-vl-reranker-8b
+  // 语音:识别 + 合成
+  /tts|text-to-speech/i,                      // ChatTTS, F5TTS, f5-tts, chattts
+  /whisper|transcri|(^|[-_/])asr([-_/]|$)/i,  // WhisperX, whisperx, qwen3-asr-1.7b
+  /voice|speech|audio|sensevoice|cosyvoice|paraformer|dolphin/i, // SenseVoice, CosyVoice2, ParaformerOffline, DolphinSmall
+  // OCR / 文档解析
+  /(^|[-_/])ocr|paddleocr|mineru/i,           // paddleocr-vl-1.6, mineru2.5-2509-1.2b
+  // 图像生成 / 编辑
+  /image|dall-?e|stable-?diffusion|(^|[-_/])sd-|kolors|wanx|flux/i, // qwen-image-2512, sd-cartoon, stabilityai/sd-cg
+  // 视频生成
+  /video|sora|kling|runway|(^|[-_/])wan\d|[-_/](i2v|t2v)([-_/]|$)/i, // Wan2.1-14B, wan2.1-t2v-14b, wan2.1-i2v-14b-720p
+  // 图像特效 / 分割类小模型
+  /makeup|_layer$|layer$|clip$|try-?on|matting|segment|upscal|super-?resolution/i, // makeup_transfer, ecommerce_layer, reveal_layer, fg-clip
+  // 安全审核 / 打分(非对话用途)
+  /moderation|guard|safety|classif|detect|reward/i, // qwen3guard-gen-8b, skywork-vl-reward
+  // 模型组件,不是可调用模型
+  /(^|[-_/])(vae|lora|controlnet)([-_/]|$)/i,
+];
+
+function isChatModelId(id) {
+  const s = String(id || '').trim();
+  if (!s) return false;
+  return !NON_CHAT_MODEL_PATTERNS.some((re) => re.test(s));
+}
+
+// 从各家不尽相同的模型列表响应里抽出模型 id 数组。
+// 标准 OpenAI 是 { data: [{id}] };部分自建代理回 { models: [...] } 或裸数组。
+function extractModelIds(payload) {
+  const rows = Array.isArray(payload) ? payload
+    : Array.isArray(payload && payload.data) ? payload.data
+      : Array.isArray(payload && payload.models) ? payload.models
+        : null;
+  if (!rows) return [];
+  const ids = rows.map((r) => {
+    if (typeof r === 'string') return r.trim();
+    if (!r || typeof r !== 'object') return '';
+    return String(r.id || r.model_id || r.modelId || r.name || '').trim();
+  }).filter(Boolean);
+  return ids.filter((m, i) => ids.indexOf(m) === i); // 去重,保序
 }
 
 // 环境自检:引擎 / ACP 连接 / API Key
@@ -3651,9 +3947,13 @@ ipcMain.handle('env:test-connection', async (_event, params) => {
   let model = (params && params.model) || cfg.model;
   if (!apiKey) return { ok: false, error: '未填写 API Key' };
   if (!model) return { ok: false, error: '未指定测试模型(请填写该网关支持的模型名)' };
-  // 与引擎写 config 的规则对齐:非360网关剥掉模型名 provider 前缀(官方网关只认裸名),
+  // 与引擎写 config 的规则对齐:该网关只认裸名时剥掉模型名的「厂商/」前缀,
   // 否则测试连接会用 openai/gpt-4o 这种名字打官方 /chat/completions → 400,和引擎实际不一致。
-  const isThreeSixty = !baseUrl || /(^|\.)360\.cn(\b|\/|:)/i.test(baseUrl);
+  // params.stripVendorPrefix 显式指定优先(网关档案带着这个标记);没传才按域名猜旧行为
+  // —— 猜不准自建/聚合代理(域名里没有 360.cn 但同样认前缀名)。
+  const isThreeSixty = params && params.stripVendorPrefix !== undefined
+    ? !params.stripVendorPrefix
+    : (!baseUrl || /(^|\.)360\.cn(\b|\/|:)/i.test(baseUrl));
   if (!isThreeSixty) { const i = model.indexOf('/'); if (i >= 0) model = model.slice(i + 1).trim(); }
   const r = await postChatCompletion({
     apiKey, baseUrl, model,
@@ -3668,6 +3968,166 @@ ipcMain.handle('env:test-connection', async (_event, params) => {
   else if (r.status === 429) reason = '请求过于频繁或额度不足(HTTP 429)';
   else if (r.status >= 500) reason = '服务端错误(HTTP ' + r.status + ')';
   return { ok: false, status: r.status, error: reason, detail: r.body || '' };
+});
+
+// ---------------------------------------------------------------------------
+// 网关档案(gateway profiles) —— 多组网关配置并存 + 一键拉取模型
+// ---------------------------------------------------------------------------
+
+// 一键拉取该网关真实支持的模型列表(ccswitch 式体验:填 key + 地址就能拿到模型)。
+// baseUrl 容错:用户常只粘 https://api.openai.com(漏 /v1),或反过来重复 /v1/v1。
+// 先按用户填的试,404/400 再补 /v1 试一次。都失败才报错。
+ipcMain.handle('gateway:discover-models', async (_event, { baseUrl, apiKey } = {}) => {
+  const key = String(apiKey || '').trim();
+  const base = String(baseUrl || '').trim().replace(/\/+$/, '');
+  if (!key) return { ok: false, error: '请先填写 API Key' };
+  if (!base) return { ok: false, error: '请先填写 Base URL' };
+
+  // 候选地址:原样 → 补 /v1(仅当用户没填 /v1 时)。
+  const candidates = [`${base}/models`];
+  if (!/\/v\d+$/.test(base)) candidates.push(`${base}/v1/models`);
+
+  let last = null;
+  for (const url of candidates) {
+    const r = await getJsonAuthed(url, key, { timeoutMs: 10000 });
+    // 首个候选的失败原因更贴近用户填的地址(第二个是我们替他补的 /v1),
+    // 所以只在还没有任何失败记录时才记,避免真正的报错被兜底候选的 404 盖掉。
+    if (!last || (last.status && !r.status)) last = r;
+    if (!r.ok) continue;
+    const all = extractModelIds(r.data);
+    if (all.length) {
+      // 分成「对话模型」与「其他」两组回给前端:默认只勾对话模型,
+      // 其他(embedding/图像/语音…)仍然列出但不勾 —— 万一我的排除规则误伤了
+      // 某个真的能聊的模型,用户还能自己勾回来,不至于被规则挡死。
+      const chat = all.filter(isChatModelId);
+      const others = all.filter((m) => !isChatModelId(m));
+      return {
+        ok: true,
+        models: chat.length ? chat : all,  // 全被过滤掉(整个网关都是非 chat)→ 退回全量
+        others: chat.length ? others : [],
+        total: all.length,
+        endpoint: url,
+      };
+    }
+    // 200 但结构不认识 → 换下一个候选;都不行则落到下面的报错。
+    last = { ok: false, status: r.status, error: '该网关未返回可识别的模型列表' };
+  }
+
+  // 错误归类,文案与 env:test-connection 对齐。
+  const status = (last && last.status) || 0;
+  // status=0 表示没拿到 HTTP 响应(DNS 失败/连接被拒/超时),此时 error 里是
+  // 底层原因(如 ECONNREFUSED),比泛泛的「获取失败」有用,原样带出来。
+  let reason = (last && last.error) || '获取模型列表失败';
+  if (status === 401 || status === 403) reason = `API Key 无效或无权限(HTTP ${status})`;
+  else if (status === 404) reason = '该网关不支持模型列表接口(HTTP 404)，请手动填写模型名';
+  else if (status === 429) reason = '请求过于频繁或额度不足(HTTP 429)';
+  else if (status >= 500) reason = `服务端错误(HTTP ${status})`;
+  return { ok: false, status, error: reason, detail: (last && last.body) || '' };
+});
+
+ipcMain.handle('gateway:list-profiles', async () => {
+  try {
+    const store = ensureGatewayProfilesSeeded();
+    return { success: true, profiles: store.profiles, activeId: store.activeId };
+  } catch (e) {
+    return { success: false, error: e.message, profiles: [], activeId: '' };
+  }
+});
+
+// 新增或更新一组档案。返回落盘后的完整列表,前端直接替换本地状态。
+ipcMain.handle('gateway:save-profile', async (_event, { profile } = {}) => {
+  try {
+    if (!profile || !String(profile.name || '').trim()) {
+      return { success: false, error: '请填写网关名称' };
+    }
+    const store = readGatewayProfiles();
+    const id = String(profile.id || '').trim() || `gw_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const models = Array.isArray(profile.models)
+      ? profile.models.map((m) => String(m || '').trim()).filter(Boolean)
+      : [];
+    const next = {
+      id,
+      name: String(profile.name).trim(),
+      baseUrl: String(profile.baseUrl || '').trim(),
+      apiKey: String(profile.apiKey || '').trim(),
+      models: models.filter((m, i) => models.indexOf(m) === i),
+      stripVendorPrefix: !!profile.stripVendorPrefix,
+    };
+    const idx = store.profiles.findIndex((p) => p.id === id);
+    if (idx >= 0) store.profiles[idx] = next;
+    else store.profiles.push(next);
+    if (!store.activeId) store.activeId = id;
+    writeGatewayProfiles(store);
+    return { success: true, profile: next, profiles: store.profiles, activeId: store.activeId };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('gateway:delete-profile', async (_event, { id } = {}) => {
+  try {
+    const store = readGatewayProfiles();
+    const target = String(id || '');
+    if (!store.profiles.some((p) => p.id === target)) {
+      return { success: false, error: '档案不存在' };
+    }
+    store.profiles = store.profiles.filter((p) => p.id !== target);
+    // 删掉的正是激活档案:activeId 置空,不自动顺延到下一个。
+    // 因为 config.yaml 里仍是被删档案的 key/base_url,引擎也还在用它 —— 若把
+    // 「生效中」标记挪到另一个档案,界面就在说谎(显示 A 生效,实际跑的是已删的 B)。
+    // 置空后前端提示用户挑一个点「保存并启用」,那一步才真正改 config + 重启引擎。
+    const clearedActive = store.activeId === target;
+    if (clearedActive) store.activeId = '';
+    writeGatewayProfiles(store);
+    return { success: true, profiles: store.profiles, activeId: store.activeId, clearedActive };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+
+// 把某组档案写进 config.yaml 并重启引擎生效。
+// 复用 applyProfileToEngine —— 与 hermes:set-model 共用同一套「重启 + 清 sessionId」流程。
+ipcMain.handle('gateway:activate-profile', async (_event, { id } = {}) => {
+  try {
+    const store = readGatewayProfiles();
+    const profile = store.profiles.find((p) => p.id === String(id || ''));
+    if (!profile) return { success: false, error: '档案不存在' };
+    if (!profile.apiKey) return { success: false, error: '该网关还没填 API Key' };
+    if (!profile.models || !profile.models.length) return { success: false, error: '该网关还没有可用模型' };
+
+    // replaceModels:true —— 档案里的模型清单是用户在「获取模型」里亲手勾的,
+    // 必须原样写进 config 的 models:,否则顶栏下拉显示的还是模板旧清单。
+    const written = writeConfigProviderKey(profile.apiKey, profile.baseUrl, profile.models, {
+      stripVendorPrefix: profile.stripVendorPrefix,
+      replaceModels: true,
+    });
+    if (!written) return { success: false, error: '写入 config.yaml 失败' };
+
+    // .env 同步:引擎的 key_env 兜底路径读 OPENAI_API_KEY,不同步会在 config 写入
+    // 失败时回退到上一组网关的 key。
+    try {
+      upsertEnvVars({
+        OPENAI_API_KEY: profile.apiKey,
+        OPENAI_BASE_URL: profile.baseUrl || '',
+        // 这两个必须清掉,否则会盖掉本次切换:
+        //   ANTHROPIC_API_KEY —— parseEnvConfig 优先它,残留会让测试连接用错 key;
+        //   HERMES_MODEL —— 模型的唯一真值是 config.yaml 的 model.default。
+        ANTHROPIC_API_KEY: null,
+        HERMES_MODEL: null,
+      });
+    } catch (e) {
+      console.warn('[main] activate-profile: sync .env failed:', e.message);
+    }
+
+    store.activeId = profile.id;
+    writeGatewayProfiles(store);
+
+    const applied = await applyProfileToEngine();
+    if (!applied.ok) return { success: false, error: applied.error };
+    return { success: true, activeId: store.activeId, restarted: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
 });
 
 ipcMain.handle('hermes:generate-suggestions', async (_event, { userMessage, aiResponse }) => {

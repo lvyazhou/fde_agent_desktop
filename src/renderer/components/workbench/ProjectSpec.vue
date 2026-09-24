@@ -394,7 +394,8 @@ import { ref, computed } from 'vue';
 import { marked } from 'marked';
 import DrawerPanel from '@/components/common/DrawerPanel.vue';
 import PageHero from '@/components/common/PageHero.vue';
-import heroImage from '@/assets/hero-spec.jpg';
+import { useHeroImage } from '@/composables/useHeroImage.js';
+const heroImage = useHeroImage('spec');
 import { FIVE_SPECS, ROLES, FIVE_STAGE_MGMT, HOSPITAL_NETWORK, AGENT_ASSETS, REQUIREMENT_MGMT, REPLICATION_MODES, GEELIB_LINKS } from '@/data/fde-project-spec';
 
 const fiveSpecs = FIVE_SPECS;
@@ -467,19 +468,19 @@ const copyTemplate = async () => {
     border-left: 3px solid hsl(var(--primary));
   }
   .spec-detail__summary::-webkit-details-marker { display: none; }
-  .spec-detail__hint { color: #94a3b8; font-size: 11px; font-weight: 400; }
+  .spec-detail__hint { color: var(--ui-text-3); font-size: 11px; font-weight: 400; }
   .spec-detail[open] .spec-detail__hint i { transform: rotate(180deg); }
   .spec-detail__hint i { margin-left: 4px; transition: transform .18s; }
   .spec-rules { padding: 0 16px 6px; }
   .spec-rule { display: flex; align-items: start; gap: 12px; padding: 11px 0; }
   .spec-rule:nth-child(1) .text-blue-700 { color: hsl(var(--primary)); }
-  .spec-rule:nth-child(2) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 82%, #7c3aed); }
+  .spec-rule:nth-child(2) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 82%, var(--ui-violet)); }
   .spec-rule:nth-child(3) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 72%, #059669); }
   .spec-rule:nth-child(4) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 72%, #d97706); }
-  .spec-rule:nth-child(5) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 78%, #0e7490); }
+  .spec-rule:nth-child(5) .text-blue-700 { color: color-mix(in srgb, hsl(var(--primary)) 78%, var(--ui-cyan)); }
   .spec-gate { border-color: hsl(var(--primary) / 16%); background: color-mix(in srgb, hsl(var(--primary)) 4%, hsl(var(--background))); }
   .spec-gate:nth-child(1) { border-left: 3px solid hsl(var(--primary)); }
-  .spec-gate:nth-child(2) { border-left: 3px solid color-mix(in srgb, hsl(var(--primary)) 70%, #7c3aed); }
+  .spec-gate:nth-child(2) { border-left: 3px solid color-mix(in srgb, hsl(var(--primary)) 70%, var(--ui-violet)); }
   .spec-gate:nth-child(3) { border-left: 3px solid color-mix(in srgb, hsl(var(--primary)) 60%, #059669); }
   .spec-gate h3 { color: hsl(var(--foreground)); }
   .section-title > i { color: hsl(var(--primary)); }
@@ -500,7 +501,7 @@ const copyTemplate = async () => {
   gap: 0.5rem;
   font-size: 15px;
   font-weight: 600;
-  color: #1e293b; /* slate-800 */
+  color: var(--ui-ink-2); /* slate-800 */
   margin-bottom: 0.75rem;
 }
 .section-no {
@@ -508,7 +509,7 @@ const copyTemplate = async () => {
   height: 1.375rem;
   border-radius: 0.375rem;
   background: var(--color-blue-50);
-  color: #2563eb;
+  color: var(--ui-brand);
   font-size: 12px;
   font-weight: 700;
   display: inline-flex;
@@ -537,7 +538,7 @@ const copyTemplate = async () => {
   font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 13.5px;
   line-height: 1.75;
-  color: #334155; /* slate-700 */
+  color: var(--ui-ink-3); /* slate-700 */
   -webkit-font-smoothing: antialiased;
 }
 .tpl-body :deep(> :first-child) { margin-top: 0; }
@@ -548,10 +549,10 @@ const copyTemplate = async () => {
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: #0f172a; /* slate-900 */
+  color: var(--ui-ink); /* slate-900 */
   margin: 0 0 0.9rem;
   padding-bottom: 0.6rem;
-  border-bottom: 2px solid #eef2f8;
+  border-bottom: 2px solid var(--ui-brand-soft);
 }
 .tpl-body :deep(h2) {
   font-size: 1.02rem;
@@ -577,7 +578,7 @@ const copyTemplate = async () => {
 .tpl-body :deep(li::marker) { color: #8f5a18; }
 .tpl-body :deep(ul ul),
 .tpl-body :deep(ol ol) { margin: 0.2rem 0; }
-.tpl-body :deep(strong) { font-weight: 600; color: #0f172a; }
+.tpl-body :deep(strong) { font-weight: 600; color: var(--ui-ink); }
 
 /* —— 引用块(说明/提示) —— */
 .tpl-body :deep(blockquote) {
@@ -586,7 +587,7 @@ const copyTemplate = async () => {
   background: #ece8de;
   border-left: 3px solid #c8862a;
   border-radius: 0 0.6rem 0.6rem 0;
-  color: #475569;
+  color: var(--ui-text);
   font-style: normal;
 }
 .tpl-body :deep(blockquote p) { margin: 0.2rem 0; font-size: 12.5px; }
@@ -596,7 +597,7 @@ const copyTemplate = async () => {
   border: none;
   height: 1px;
   margin: 1.4rem 0;
-  background: linear-gradient(90deg, transparent, #e2e8f0 20%, #e2e8f0 80%, transparent);
+  background: linear-gradient(90deg, transparent, var(--ui-line-2) 20%, var(--ui-line-2) 80%, transparent);
 }
 
 /* —— 表格 —— */
@@ -606,7 +607,7 @@ const copyTemplate = async () => {
   border-spacing: 0;
   margin: 0.9rem 0;
   font-size: 12.5px;
-  border: 1px solid #e6ebf3;
+  border: 1px solid var(--ui-brand-soft);
   border-radius: 0.7rem;
   overflow: hidden;
 }
@@ -619,17 +620,17 @@ const copyTemplate = async () => {
 .tpl-body :deep(th),
 .tpl-body :deep(td) {
   padding: 0.55rem 0.85rem;
-  border-bottom: 1px solid #eef2f8;
+  border-bottom: 1px solid var(--ui-brand-soft);
 }
 .tpl-body :deep(th:not(:last-child)),
-.tpl-body :deep(td:not(:last-child)) { border-right: 1px solid #eef2f8; }
+.tpl-body :deep(td:not(:last-child)) { border-right: 1px solid var(--ui-brand-soft); }
 .tpl-body :deep(tbody tr:last-child td) { border-bottom: none; }
-.tpl-body :deep(tbody tr:nth-child(even)) { background: #fafbfd; }
+.tpl-body :deep(tbody tr:nth-child(even)) { background: var(--ui-brand-soft); }
 
 /* —— 行内 code / 代码块 —— */
 .tpl-body :deep(:not(pre) > code) {
   font-family: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
-  background: #eef2f8;
+  background: var(--ui-brand-soft);
   color: #8f5a18;
   padding: 0.12em 0.4em;
   border-radius: 0.35rem;
@@ -638,7 +639,7 @@ const copyTemplate = async () => {
 .tpl-body :deep(pre) {
   margin: 0.9rem 0;
   padding: 1rem 1.1rem;
-  background: #0f172a; /* slate-900 */
+  background: var(--ui-ink); /* slate-900 */
   border-radius: 0.75rem;
   overflow-x: auto;
   box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
@@ -646,7 +647,7 @@ const copyTemplate = async () => {
 .tpl-body :deep(pre code) {
   font-family: 'SF Mono', 'JetBrains Mono', 'Cascadia Code', ui-monospace, monospace;
   background: transparent;
-  color: #e2e8f0;
+  color: var(--ui-line-2);
   padding: 0;
   font-size: 12px;
   line-height: 1.7;

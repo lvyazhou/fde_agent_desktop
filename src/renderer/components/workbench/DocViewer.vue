@@ -283,41 +283,41 @@ onMounted(loadContent);
 </script>
 
 <style scoped>
-.handbook-md :deep(h1) { font-size: 1.4em; font-weight: 700; color: #1e293b; margin: 0.6em 0 0.4em; }
-.handbook-md :deep(h2) { font-size: 1.2em; font-weight: 700; color: #1e293b; margin: 1em 0 0.4em; padding-bottom: 0.2em; border-bottom: 1px solid #e2e8f0; }
-.handbook-md :deep(h3) { font-size: 1.05em; font-weight: 600; color: #334155; margin: 0.8em 0 0.3em; }
-.handbook-md :deep(p) { margin: 0.5em 0; line-height: 1.75; color: #475569; font-size: 13px; }
+.handbook-md :deep(h1) { font-size: 1.4em; font-weight: 700; color: var(--ui-ink-2); margin: 0.6em 0 0.4em; }
+.handbook-md :deep(h2) { font-size: 1.2em; font-weight: 700; color: var(--ui-ink-2); margin: 1em 0 0.4em; padding-bottom: 0.2em; border-bottom: 1px solid var(--ui-line-2); }
+.handbook-md :deep(h3) { font-size: 1.05em; font-weight: 600; color: var(--ui-ink-3); margin: 0.8em 0 0.3em; }
+.handbook-md :deep(p) { margin: 0.5em 0; line-height: 1.75; color: var(--ui-text); font-size: 13px; }
 .handbook-md :deep(ul), .handbook-md :deep(ol) { margin: 0.4em 0; padding-left: 1.5em; }
-.handbook-md :deep(li) { margin: 0.2em 0; line-height: 1.7; color: #475569; font-size: 13px; }
+.handbook-md :deep(li) { margin: 0.2em 0; line-height: 1.7; color: var(--ui-text); font-size: 13px; }
 .handbook-md :deep(table) { border-collapse: collapse; width: 100%; margin: 0.8em 0; font-size: 12px; }
-.handbook-md :deep(th), .handbook-md :deep(td) { border: 1px solid #e2e8f0; padding: 0.5em 0.7em; text-align: left; vertical-align: top; }
-.handbook-md :deep(th) { background: #f8fafc; font-weight: 600; color: #334155; }
-.handbook-md :deep(tr:nth-child(even) td) { background: #fafbfc; }
-.handbook-md :deep(strong) { font-weight: 700; color: #1e293b; }
-.handbook-md :deep(blockquote) { border-left: 3px solid #2563eb; padding: 0.2em 0 0.2em 0.9em; margin: 0.6em 0; color: #475569; background: #f8fafc; border-radius: 0 6px 6px 0; }
-.handbook-md :deep(code) { font-size: 12px; background: #f1f5f9; padding: 0.15em 0.4em; border-radius: 4px; color: #475569; }
-.handbook-md :deep(pre) { background: #0f1b2d; color: #e2e8f0; padding: 0.9em 1.1em; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 0.6em 0; }
+.handbook-md :deep(th), .handbook-md :deep(td) { border: 1px solid var(--ui-line-2); padding: 0.5em 0.7em; text-align: left; vertical-align: top; }
+.handbook-md :deep(th) { background: var(--ui-bg-3); font-weight: 600; color: var(--ui-ink-3); }
+.handbook-md :deep(tr:nth-child(even) td) { background: var(--ui-bg-3); }
+.handbook-md :deep(strong) { font-weight: 700; color: var(--ui-ink-2); }
+.handbook-md :deep(blockquote) { border-left: 3px solid var(--ui-brand); padding: 0.2em 0 0.2em 0.9em; margin: 0.6em 0; color: var(--ui-text); background: var(--ui-bg-3); border-radius: 0 6px 6px 0; }
+.handbook-md :deep(code) { font-size: 12px; background: var(--ui-bg-2); padding: 0.15em 0.4em; border-radius: 4px; color: var(--ui-text); }
+.handbook-md :deep(pre) { background: var(--ui-ink); color: var(--ui-line-2); padding: 0.9em 1.1em; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 0.6em 0; }
 .handbook-md :deep(pre code) { background: transparent; padding: 0; color: inherit; }
-.handbook-md :deep(hr) { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
-.handbook-md :deep(a) { color: #2563eb; text-decoration: none; }
+.handbook-md :deep(hr) { border: none; border-top: 1px solid var(--ui-line-2); margin: 1em 0; }
+.handbook-md :deep(a) { color: var(--ui-brand); text-decoration: none; }
 .handbook-md :deep(a.wikilink) {
-  color: #2563eb;
+  color: var(--ui-brand);
   text-decoration: none;
-  border-bottom: 1px dashed #93b4f5;
+  border-bottom: 1px dashed var(--ui-brand-light);
   padding: 0 1px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
 .handbook-md :deep(a.wikilink::before) { content: '\1F517'; font-size: 0.82em; margin-right: 2px; opacity: 0.7; }
-.handbook-md :deep(a.wikilink:hover) { background: #eff6ff; border-bottom-color: #2563eb; }
-.handbook-md :deep(img) { max-width: 100%; height: auto; display: block; margin: 0.8em auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+.handbook-md :deep(a.wikilink:hover) { background: var(--ui-brand-soft); border-bottom-color: var(--ui-brand); }
+.handbook-md :deep(img) { max-width: 100%; height: auto; display: block; margin: 0.8em auto; border: 1px solid var(--ui-line-2); border-radius: 8px; }
 
 /* 项目产物里的源码类文件:深色只读视图 */
 .doc-source {
   margin: 0;
   padding: 1em 1.1em;
-  background: #0f1b2d;
-  color: #e2e8f0;
+  background: var(--ui-ink);
+  color: var(--ui-line-2);
   border-radius: 8px;
   overflow-x: auto;
   font-size: 12px;

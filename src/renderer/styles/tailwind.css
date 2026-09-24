@@ -104,6 +104,44 @@
      状态色只做「文字 / 8px 圆点 / 细边框」的点缀，
      卡片底、图标容器、进度条一律用 primary 家族。
      ============================================================ */
+  /* ============================================================
+     --ui-* :全站 <style> 里写死的 hex 的收口层。
+     为什么不直接引 --color-blue-600 / --color-slate-500：Tailwind v4 会把
+     「没有任何类名用到」的 @theme 变量 tree-shake 掉（实测 --color-sky-800
+     只在 [data-theme] 块里存在、:root 没有），裸 var() 会取不到值。
+     这里是普通 :root 自定义属性，必定输出，且棕色主题只需覆盖同名变量。
+     ============================================================ */
+  --ui-brand: #2563eb;
+  --ui-brand-dark: #1d4ed8;
+  --ui-brand-light: #3b82f6;
+  --ui-brand-deep: #1e40af;
+  --ui-brand-soft: #eff6ff;
+  --ui-brand-soft-2: #dbeafe;
+  --ui-accent: #4f46e5;        /* indigo，代码/技术类点缀 */
+  --ui-accent-soft: #eef2ff;
+  --ui-cyan: #0ea5e9;          /* sky，第三支点缀色 */
+
+  /* 阶段/模块语义强调色：五阶段各一支，刻意保留多色区分(不收敛到 primary)。
+     棕主题下整族换暖色，但仍保持五支互相可辨。 */
+  --accent-2: #3348d8; --accent-2-soft: #eef0ff; --accent-2-deep: #3048c7;
+  --accent-3: #5546d9; --accent-3-soft: #f0efff; --accent-3-deep: #5144c9;
+  --accent-4: #0ea5a0; --accent-4-soft: #e6faf8; --accent-4-deep: #0d9488;
+  --accent-5: #7c3aed; --accent-5-soft: #f3edff; --accent-5-deep: #7c3aed;
+  /* 文件类型：图片 / 音频那一支紫 */
+  --ui-violet: #7c3aed;
+  --ui-violet-soft: #f5f3ff;
+
+  --ui-ink: #0f172a;           /* 深墨：标题 / 深色块底 */
+  --ui-ink-2: #1e293b;
+  --ui-ink-3: #334155;
+  --ui-text: #475569;          /* 正文次级 */
+  --ui-text-2: #64748b;
+  --ui-text-3: #94a3b8;        /* 图标灰 / 占位 */
+  --ui-line: #cbd5e1;          /* 较重分隔线 */
+  --ui-line-2: #e2e8f0;        /* 常规分隔线 */
+  --ui-bg-2: #f1f5f9;          /* 淡底块 */
+  --ui-bg-3: #f8fafc;          /* 更淡底块 */
+
   --primary: 214 95% 44%;
   --background: 0 0% 100%;
   --foreground: 218 45% 14%;
@@ -157,6 +195,44 @@
   --color-indigo-900: #2b1a07;
   --color-indigo-950: #1d1105;
 
+  /* sky 是蓝主题里的第三支冷色(图标点缀/文件类型色)，一并收进棕系，
+     比主棕浅一档，保留原先「比主色亮」的层次关系 */
+  --color-sky-50: #f7f2e9;
+  --color-sky-100: #efe5d2;
+  --color-sky-200: #e0cdaa;
+  --color-sky-300: #ceb07e;
+  --color-sky-400: #b98f4f;
+  --color-sky-500: #a87833;
+  --color-sky-600: #8f5a18;
+  --color-sky-700: #6d4312;
+  --color-sky-800: #57350e;
+  --color-sky-900: #462b0c;
+
+  /* slate/gray 是全站中性层(1000+ 处类名)，冷灰压在暖纸底上会发青，
+     整体转成同色相的暖灰，文字对比度按原色阶等价保留 */
+  --color-slate-50: #faf8f3;
+  --color-slate-100: #f3efe6;
+  --color-slate-200: #e7e1d4;
+  --color-slate-300: #d5ccbb;
+  --color-slate-400: #ab9f8c;
+  --color-slate-500: #877b6b;
+  --color-slate-600: #6d6254;
+  --color-slate-700: #564d42;
+  --color-slate-800: #3b342c;
+  --color-slate-900: #27211b;
+  --color-slate-950: #171310;
+
+  --color-gray-50: #faf8f3;
+  --color-gray-100: #f3efe6;
+  --color-gray-200: #e7e1d4;
+  --color-gray-300: #d5ccbb;
+  --color-gray-400: #ab9f8c;
+  --color-gray-500: #877b6b;
+  --color-gray-600: #6d6254;
+  --color-gray-700: #564d42;
+  --color-gray-800: #3b342c;
+  --color-gray-900: #27211b;
+
   --color-primary: #8f5a18;
   --color-primary-dark: #6d4312;
   --color-primary-soft: #f6f1e8;
@@ -166,16 +242,51 @@
   /* 中性层转暖调 */
   --color-panel: #ece8de;
   --color-border: #dfdbd1;
+  --color-text-soft: #6d6254;
+  --color-ink: #2b2118;
+  --color-ink-soft: #3b2f22;
   --color-sidebar: #f2ede3;
   --color-sidebar-elevated: #e6dfd1;
   --color-sidebar-border: #ddd6c8;
   --color-sidebar-text-strong: #6d4312;  /* 选中文字转深棕，跟随主题 */
   --color-sidebar-active: #8f5a18;
 
+  /* --ui-* 收口层转棕：冷色三支归到棕系，中性层转暖灰 */
+  --ui-brand: #8f5a18;
+  --ui-brand-dark: #6d4312;
+  --ui-brand-light: #ac8347;
+  --ui-brand-deep: #57350e;
+  --ui-brand-soft: #f6f1e8;
+  --ui-brand-soft-2: #ece2d0;
+  --ui-accent: #6d4312;
+  --ui-accent-soft: #f3ece0;
+  --ui-cyan: #a87833;
+
+  /* 五支强调色转暖：赤陶 / 玫紫棕 / 橄榄 / 紫铜，彼此仍可辨 */
+  --accent-2: #b5552e; --accent-2-soft: #f8ece5; --accent-2-deep: #9c4726;
+  --accent-3: #9c5566; --accent-3-soft: #f7ecef; --accent-3-deep: #854856;
+  --accent-4: #6b7c3a; --accent-4-soft: #f0f3e6; --accent-4-deep: #5c6b31;
+  --accent-5: #7b5688; --accent-5-soft: #f3eef5; --accent-5-deep: #6a4875;
+  --ui-violet: #7b5688;
+  --ui-violet-soft: #f3eef5;
+
+  --ui-ink: #27211b;
+  --ui-ink-2: #3b342c;
+  --ui-ink-3: #564d42;
+  --ui-text: #6d6254;
+  --ui-text-2: #877b6b;
+  --ui-text-3: #ab9f8c;
+  --ui-line: #d5ccbb;
+  --ui-line-2: #e7e1d4;
+  --ui-bg-2: #f3efe6;
+  --ui-bg-3: #faf8f3;
+
   /* skill 语义 token：primary 转棕（HSL 三元组） */
   --primary: 30 71% 33%;
   --border: 40 20% 82%;
+  --foreground: 30 22% 13%;
   --muted-foreground: 35 12% 42%;
+  --info: 32 10% 45%;
 
   /* 卡片/导航底改暖纸调 */
   --card-bg: linear-gradient(110deg,
@@ -189,6 +300,17 @@
 /* 棕色主题：body 换暖纸底 + 颗粒磨砂（蓝色主题是光晕渐变，两者互斥） */
 [data-theme='brown'] body {
   background: var(--color-paper);
+}
+/* 滚动条滑块是写死的冷灰 rgba，压在暖纸上发青，棕主题单独转暖 */
+[data-theme='brown'] *::-webkit-scrollbar-thumb,
+[data-theme='brown'] .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(134, 118, 96, 0.3);
+  background-clip: padding-box;
+}
+[data-theme='brown'] *::-webkit-scrollbar-thumb:hover,
+[data-theme='brown'] .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(109, 96, 78, 0.48);
+  background-clip: padding-box;
 }
 [data-theme='brown'] body::before {
   content: '';

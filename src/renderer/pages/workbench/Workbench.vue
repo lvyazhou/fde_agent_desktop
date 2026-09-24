@@ -173,15 +173,12 @@ import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { FDE_STAGES } from '@/data/fde-stages';
 import StageDetail from '@/components/workbench/StageDetail.vue';
-import topHero from '@/assets/hero-workbench-brown.jpg';
-import blueHero from '@/assets/top.png';
-import { useTheme } from '@/composables/useTheme.js';
+import { useHeroImage } from '@/composables/useHeroImage.js';
 
 const router = useRouter();
-const { theme } = useTheme();
 const stages = ref([]);
 const activeStage = ref(null);
-const topHeroImage = computed(() => theme.value === 'brown' ? topHero : blueHero);
+const topHeroImage = useHeroImage('workbench');
 const loading = ref(true);
 
 // 两条并行推进线(流程图节点)——取自手册"全流程一张图"
@@ -254,7 +251,10 @@ onMounted(async () => {
 .hero {
   padding: clamp(14px, 2.4vh, 24px) clamp(20px, 2.6vw, 32px);
   min-height: clamp(128px, 16vh, 170px);
-  background: linear-gradient(120deg, #f4f8ff 0%, #eef4ff 46%, #e8f0ff 100%);
+  background: linear-gradient(120deg,
+    color-mix(in srgb, hsl(var(--primary)) 4%, hsl(var(--background))) 0%,
+    color-mix(in srgb, hsl(var(--primary)) 7%, hsl(var(--background))) 46%,
+    color-mix(in srgb, hsl(var(--primary)) 10%, hsl(var(--background))) 100%);
 }
 .hero-bg {
   position: absolute;
@@ -299,7 +299,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #2563eb;
+  background: var(--ui-brand);
 }
 .stage-icon {
   width: 30px;
@@ -309,16 +309,16 @@ onMounted(async () => {
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  background: #eff4ff;
-  color: #2563eb;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand);
 }
 .stage-chip {
   font-size: 11px;
   padding: 3px 9px;
   border-radius: 6px;
   font-weight: 500;
-  background: #eff4ff;
-  color: #1d4ed8;
+  background: var(--ui-brand-soft);
+  color: var(--ui-brand-dark);
 }
 /* 目标文字固定 3 行高度：保证各卡「交付物」标题在同一水平线对齐 */
 .stage-goal {
@@ -336,28 +336,28 @@ onMounted(async () => {
 }
 .stage-label-icon,
 .stage-dot {
-  color: rgba(37, 99, 235, .7);
+  color: hsl(var(--primary) / 70%);
 }
-.stage-blue .stage-num { background: #2563eb; }
-.stage-blue .stage-icon { background: #eff4ff; color: #2563eb; }
-.stage-blue .stage-chip { background: #eff4ff; color: #1d4ed8; }
-.stage-indigo .stage-num { background: #3348d8; }
-.stage-indigo .stage-icon { background: #eef0ff; color: #3348d8; }
-.stage-indigo .stage-chip { background: #eef0ff; color: #3048c7; }
-.stage-violet .stage-num { background: #5546d9; }
-.stage-violet .stage-icon { background: #f0efff; color: #5546d9; }
-.stage-violet .stage-chip { background: #f0efff; color: #5144c9; }
+.stage-blue .stage-num { background: var(--ui-brand); }
+.stage-blue .stage-icon { background: var(--ui-brand-soft); color: var(--ui-brand); }
+.stage-blue .stage-chip { background: var(--ui-brand-soft); color: var(--ui-brand-dark); }
+.stage-indigo .stage-num { background: var(--accent-2); }
+.stage-indigo .stage-icon { background: var(--accent-2-soft); color: var(--accent-2); }
+.stage-indigo .stage-chip { background: var(--accent-2-soft); color: var(--accent-2-deep); }
+.stage-violet .stage-num { background: var(--accent-3); }
+.stage-violet .stage-icon { background: var(--accent-3-soft); color: var(--accent-3); }
+.stage-violet .stage-chip { background: var(--accent-3-soft); color: var(--accent-3-deep); }
 
-.stage-green .stage-num { background: #0ea5a0; }
-.stage-green .stage-icon { background: #e6faf8; color: #0d9488; }
-.stage-green .stage-chip { background: #e6faf8; color: #0d9488; }
+.stage-green .stage-num { background: var(--accent-4); }
+.stage-green .stage-icon { background: var(--accent-4-soft); color: var(--accent-4-deep); }
+.stage-green .stage-chip { background: var(--accent-4-soft); color: var(--accent-4-deep); }
 .stage-green .stage-label-icon,
-.stage-green .stage-dot { color: #0d9488; }
-.stage-purple .stage-num { background: #7c3aed; }
-.stage-purple .stage-icon { background: #f3edff; color: #7c3aed; }
-.stage-purple .stage-chip { background: #f3edff; color: #7c3aed; }
+.stage-green .stage-dot { color: var(--accent-4-deep); }
+.stage-purple .stage-num { background: var(--accent-5); }
+.stage-purple .stage-icon { background: var(--accent-5-soft); color: var(--accent-5); }
+.stage-purple .stage-chip { background: var(--accent-5-soft); color: var(--accent-5-deep); }
 .stage-purple .stage-label-icon,
-.stage-purple .stage-dot { color: #7c3aed; }
+.stage-purple .stage-dot { color: var(--accent-5-deep); }
 
 /* 五张卡保持统一基线：标题区、交付物区、节奏条不随文案漂移 */
 .stage-card .stage-head { min-height: 190px; }

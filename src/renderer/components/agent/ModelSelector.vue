@@ -78,7 +78,6 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue';
-import { COMMON_MODELS } from '../../constants/models.js';
 
 const props = defineProps({
   // 每项可为字符串，或 { model_id | id, name, description }
@@ -93,14 +92,6 @@ const query = ref('');
 const rootRef = ref(null);
 const searchRef = ref(null);
 
-// hermes 会把 360 全部 400+ 个模型（含视频/embedding/OCR/内部测试变体）一股脑返回。
-// 这里用「精选白名单」筛出干净的一线对话模型：按结尾模型名（去掉 provider 前缀）匹配。
-// 想加/删模型：改这个数组即可。顺序即展示顺序。
-// 白名单 = 共享常用模型清单（src/renderer/constants/models.js），与 Setup/Settings 同源，
-// 加减模型只改那一处。历史上这里曾硬编码一份 CURATED，跟 config 不同步导致
-// v4.1-flash 等新模型不显示、v4-flash 等已删模型残留（就是这个 bug 的根因）。
-const CURATED = COMMON_MODELS.map((m) => m.value);
-
 // 去掉 provider 前缀（openai-api:anthropic/claude-opus-4.8 → anthropic/claude-opus-4.8）
 function stripProvider(id) {
   const s = String(id || '');
@@ -108,7 +99,11 @@ function stripProvider(id) {
   return i >= 0 ? s.slice(i + 1) : s;
 }
 
-// 归一化：统一成 { id, label }，并用白名单筛选 + 排序
+// 归一化：统一成 { id, label }，按去前缀名去重。
+// 数据源是主进程 hermes:list-models，它已按 config.yaml 里当前网关声明的 models: 过滤
+// (readDeclaredModelIds)，所以这里不再叠加前端白名单 —— 早期那份硬编码 CURATED 与
+// config 不同步，正是「新加的模型不显示、已删的模型还在」的根因。用户在设置页
+// 「获取模型」勾选了什么，这里就显示什么。
 const normalized = computed(() => {
   const all = (props.models || []).map((m) => {
     if (typeof m === 'string') return { id: m };
@@ -116,7 +111,7 @@ const normalized = computed(() => {
     return { id, label: m.name };
   }).filter((m) => m.id);
 
-  // 建立 “去前缀名 → 原始项” 映射（同名取第一个，通常是标准 provider）
+  // 同一模型可能带不同 provider 前缀重复出现，按裸名去重（保留第一个）。
   const byBare = new Map();
   for (const m of all) {
     const bare = stripProvider(m.id);
@@ -124,13 +119,8 @@ const normalized = computed(() => {
   }
 
   const picked = [];
-  for (const want of CURATED) {
-    const hit = byBare.get(want);
-    if (hit) picked.push({ id: hit.id, label: shortName(hit.id), description: want });
-  }
-  // 若白名单一个都没命中（列表结构异常），退回展示全部去重项，避免空框
-  if (picked.length === 0) {
-    for (const [bare, m] of byBare) picked.push({ id: m.id, label: shortName(m.id), description: bare });
+  for (const [bare, m] of byBare) {
+    picked.push({ id: m.id, label: m.label || shortName(m.id), description: bare });
   }
   return picked;
 });

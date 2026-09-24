@@ -118,7 +118,8 @@
 import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHero from '@/components/common/PageHero.vue';
-import heroImage from '@/assets/hero-code.jpg';
+import { useHeroImage } from '@/composables/useHeroImage.js';
+const heroImage = useHeroImage('code');
 
 const router = useRouter();
 const workspaces = ref([]);

@@ -101,10 +101,10 @@ defineEmits(['close']);
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--ui-line);
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: var(--ui-text-3);
 }
 </style>

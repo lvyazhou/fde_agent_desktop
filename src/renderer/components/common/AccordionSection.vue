@@ -26,7 +26,7 @@ import { ref } from 'vue';
 const props = defineProps({
   title: { type: String, required: true },
   icon: { type: String, default: 'fa-solid fa-circle-info' },
-  iconColor: { type: String, default: '#64748b' },
+  iconColor: { type: String, default: 'var(--ui-text-2)' },
   defaultOpen: { type: Boolean, default: true },
 });
 

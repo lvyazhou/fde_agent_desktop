@@ -375,18 +375,18 @@ const closeWindow = () => {
 .license-card-title {
   font-size: 18px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--ui-ink);
   margin: 0 0 8px;
 }
 .license-card-desc {
   font-size: 13px;
   line-height: 1.6;
-  color: #475569;
+  color: var(--ui-text);
   margin: 0 0 6px;
 }
 .license-card-detail {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--ui-text-3);
   margin: 0 0 20px;
 }
 .license-card-btn {
@@ -398,14 +398,14 @@ const closeWindow = () => {
   padding: 10px 22px;
   border: none;
   border-radius: 10px;
-  background: #2563eb;
+  background: var(--ui-brand);
   color: #fff;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: background 0.15s;
 }
-.license-card-btn:hover:not(:disabled) { background: #1d4ed8; }
+.license-card-btn:hover:not(:disabled) { background: var(--ui-brand-dark); }
 .license-card-btn:disabled { opacity: 0.6; cursor: default; }
 .license-card-err {
   font-size: 12px;
@@ -414,7 +414,7 @@ const closeWindow = () => {
 }
 .license-card-sn {
   font-size: 11px;
-  color: #cbd5e1;
+  color: var(--ui-line);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   margin: 16px 0 0;
   word-break: break-all;
@@ -436,7 +436,7 @@ const closeWindow = () => {
   height: 100vh;
   overflow: hidden;
   background: var(--color-content-bg);
-  color: #1e293b;
+  color: var(--ui-ink-2);
   font-family: Inter, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -496,7 +496,7 @@ const closeWindow = () => {
 .rail--collapsed .rail-brand { padding: 14px 0 12px; justify-content: center; }
 .rail-logo {
   width: 30px; height: 30px; border-radius: 9px; object-fit: cover; flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 2px 8px hsl(var(--primary) / 20%);
 }
 .rail-brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
 .rail-brand-name { font-size: 13.5px; font-weight: 600; color: var(--color-sidebar-text-strong); white-space: nowrap; }
@@ -549,7 +549,7 @@ const closeWindow = () => {
   font-size: 11px; font-weight: 500;
 }
 .rail-license .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
-.rail-license.lic-gray { color: #64748b; background: rgba(148, 163, 184, 0.14); }
+.rail-license.lic-gray { color: var(--ui-text-2); background: rgba(148, 163, 184, 0.14); }
 .rail-license.lic-amber { color: #b45309; background: #fffbeb; }
 .rail-license.lic-red { color: #b91c1c; background: #fef2f2; }
 .rail-link--settings { margin-bottom: 0; }
@@ -572,9 +572,9 @@ const closeWindow = () => {
 
 /* 状态点(rail-status 复用) */
 .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; position: relative; }
-.dot-blue { background: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16); }
+.dot-blue { background: var(--ui-brand-light); box-shadow: 0 0 0 3px hsl(var(--primary) / 16%); }
 .dot-amber { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.16); }
-.dot-gray { background: #cbd5e1; box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.16); }
+.dot-gray { background: var(--ui-line); box-shadow: 0 0 0 3px rgba(203, 213, 225, 0.16); }
 
 /* Window controls(顶条内,浅底深字) */
 .win-btn {

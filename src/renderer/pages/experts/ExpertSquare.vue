@@ -28,7 +28,7 @@
           :class="active === cat.id ? 'tree-node--active' : ''"
           @click="active = cat.id"
         >
-          <span class="tree-badge" :style="{ background: cat.color }">
+          <span class="tree-badge" :style="{ background: accent(cat.color) }">
             <i :class="'fa-solid fa-' + cat.icon + ' text-[10px]'"></i>
           </span>
           <span class="flex-1 text-left truncate">{{ cat.name }}</span>
@@ -85,7 +85,7 @@
               :key="d.id"
               class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11.5px] bg-transparent border border-slate-200 text-slate-500"
             >
-              <i :class="'fa-solid fa-' + (d.icon || 'rocket') + ' text-[10px]'" :style="{ color: d.color }"></i>
+              <i :class="'fa-solid fa-' + (d.icon || 'rocket') + ' text-[10px]'" :style="{ color: accent(d.color) }"></i>
               {{ d.name }}
               <button
                 @click="restoreBuiltin(d)"
@@ -104,9 +104,9 @@
             :key="app.id"
             class="es-card group"
           >
-            <div class="es-card__accent" :style="{ background: app.color }"></div>
+            <div class="es-card__accent" :style="{ background: accent(app.color) }"></div>
             <div class="flex items-start gap-3">
-              <span class="es-icon" :style="{ background: app.color }">
+              <span class="es-icon" :style="{ background: accent(app.color) }">
                 <i :class="'fa-solid fa-' + (app.icon || 'rocket')"></i>
               </span>
               <div class="flex-1 min-w-0">
@@ -188,7 +188,7 @@
         <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
-              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: accent(selected.color) }">
                 <i :class="'fa-solid fa-' + (selected.icon || 'rocket')"></i>
               </span>
               <div class="min-w-0">
@@ -695,10 +695,13 @@
 </template>
 
 <script setup>
+import { useAccentColor } from '@/composables/useAccentColor.js';
+const { accent } = useAccentColor();
 import { ref, reactive, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import PageHero from '@/components/common/PageHero.vue';
-import heroImage from '@/assets/hero-apps.jpg';
+import { useHeroImage } from '@/composables/useHeroImage.js';
+const heroImage = useHeroImage('apps');
 import {
   aiAppCategories,
   builtinAiApps,
@@ -876,8 +879,8 @@ const statCards = computed(() => {
   const localPub = allApps.value.filter((a) => a.source === 'local' && a.status === 'published').length;
   const draftCount = allApps.value.filter((a) => a.source === 'local' && a.status === 'draft').length;
   const cards = [
-    { label: '应用总数', value: total,        icon: 'fa-layer-group', bg: '#2563eb' },
-    { label: '内置应用', value: builtinCount, icon: 'fa-cubes',       bg: '#1d4ed8' },
+    { label: '应用总数', value: total,        icon: 'fa-layer-group', bg: 'var(--ui-brand)' },
+    { label: '内置应用', value: builtinCount, icon: 'fa-cubes',       bg: 'var(--ui-brand-dark)' },
     { label: '本地发布', value: localPub,     icon: 'fa-rocket',      bg: '#059669' },
   ];
   if (devMode.value) {
@@ -929,7 +932,7 @@ const form = reactive({
   name: '',
   category: 'enterprise',
   icon: 'rocket',
-  color: '#2563eb',
+  color: 'var(--ui-brand)',
   tagline: '',
   summary: '',
   bestForText: '',
@@ -1323,16 +1326,16 @@ async function openAssetDir(type) {
   height: 32px;
   padding: 0 9px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   background: #fff;
-  color: #64748b;
+  color: var(--ui-text-2);
   font-size: 13px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
-.pgn:hover:not(:disabled) { border-color: #93b4fb; color: #2563eb; }
+.pgn:hover:not(:disabled) { border-color: var(--ui-brand-light); color: var(--ui-brand); }
 .pgn:active:not(:disabled) { transform: scale(0.92); }
-.pgn--cur { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 600; }
+.pgn--cur { background: var(--ui-brand); border-color: var(--ui-brand); color: #fff; font-weight: 600; }
 .pgn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .tree-node {
@@ -1343,7 +1346,7 @@ async function openAssetDir(type) {
   padding: 8px 10px;
   border-radius: 9px;
   font-size: 12.5px;
-  color: #475569;
+  color: var(--ui-text);
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.15s;
 }
@@ -1369,8 +1372,8 @@ async function openAssetDir(type) {
 }
 .tree-count {
   font-size: 10.5px;
-  color: #94a3b8;
-  background: #f1f5f9;
+  color: var(--ui-text-3);
+  background: var(--ui-bg-2);
   border-radius: 999px;
   padding: 1px 7px;
   flex-shrink: 0;
@@ -1383,15 +1386,15 @@ async function openAssetDir(type) {
   gap: 10px;
   padding: 10px 12px;
   border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
-  border: 1px solid #e8ecf3;
+  background: linear-gradient(180deg, #ffffff, var(--ui-brand-soft));
+  border: 1px solid var(--ui-bg-2);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
 }
 .stat-card:hover {
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
+  box-shadow: 0 6px 16px hsl(var(--primary) / 8%);
   transform: translateY(-1px);
-  border-color: #d4e2fb;
+  border-color: var(--ui-brand-soft-2);
 }
 .stat-card:active { transform: scale(0.97); }
 .stat-icon {
@@ -1411,7 +1414,7 @@ async function openAssetDir(type) {
   display: block;
   width: 100%;
   background: #fff;
-  border: 1px solid #e8ecf0;
+  border: 1px solid var(--ui-line-2);
   border-radius: 12px;
   padding: 14px;
   overflow: hidden;
@@ -1429,7 +1432,7 @@ async function openAssetDir(type) {
 .es-card:hover {
   box-shadow: 0 8px 20px rgba(30, 58, 138, 0.10);
   transform: translateY(-2px);
-  border-color: #c7d7f5;
+  border-color: var(--ui-brand-soft-2);
 }
 .es-card:active { transform: scale(0.97); box-shadow: 0 2px 8px rgba(30, 58, 138, 0.08); }
 .es-card:hover .es-card__accent { opacity: 1; }
@@ -1467,25 +1470,25 @@ async function openAssetDir(type) {
   padding: 2px 6px;
   border-radius: 999px;
 }
-.src-badge--builtin { background: #eff6ff; color: #2563eb; }
+.src-badge--builtin { background: var(--ui-brand-soft); color: var(--ui-brand); }
 .src-badge--local   { background: #ecfdf5; color: #059669; }
 .src-badge--draft   { background: #fffbeb; color: #d97706; }
-.src-badge--edited  { background: #eef2ff; color: #4f46e5; }
+.src-badge--edited  { background: var(--ui-accent-soft); color: var(--ui-accent); }
 
 /* ── 编辑器表单 ── */
 .ed-label {
   display: block;
   font-size: 11.5px;
   font-weight: 600;
-  color: #64748b;
+  color: var(--ui-text-2);
   margin-bottom: 5px;
 }
 .ed-input {
   width: 100%;
   font-size: 12.5px;
-  color: #334155;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  color: var(--ui-ink-3);
+  background: var(--ui-bg-3);
+  border: 1px solid var(--ui-line-2);
   border-radius: 9px;
   padding: 8px 10px;
   transition: border-color 0.15s, background 0.15s;
@@ -1494,13 +1497,13 @@ async function openAssetDir(type) {
 .ed-input:focus {
   outline: none;
   background: #fff;
-  border-color: #60a5fa;
+  border-color: var(--ui-brand-light);
 }
 .ed-color {
   width: 38px;
   height: 36px;
   padding: 2px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   border-radius: 9px;
   background: #fff;
   cursor: pointer;
@@ -1514,9 +1517,9 @@ async function openAssetDir(type) {
   max-height: 140px;
   overflow-y: auto;
   padding: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   border-radius: 9px;
-  background: #f8fafc;
+  background: var(--ui-bg-3);
 }
 .skill-chip {
   display: inline-flex;
@@ -1526,18 +1529,18 @@ async function openAssetDir(type) {
   padding: 3px 9px;
   border-radius: 999px;
   font-size: 11px;
-  color: #64748b;
+  color: var(--ui-text-2);
   background: #fff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   cursor: pointer;
   transition: all 0.15s;
 }
-.skill-chip:hover { border-color: #93b4fb; color: #2563eb; }
+.skill-chip:hover { border-color: var(--ui-brand-light); color: var(--ui-brand); }
 .skill-chip:active { transform: scale(0.95); }
 .skill-chip--on {
-  background: #eff4ff;
-  border-color: #2563eb;
-  color: #1d4ed8;
+  background: var(--ui-brand-soft);
+  border-color: var(--ui-brand);
+  color: var(--ui-brand-dark);
   font-weight: 500;
 }
 
@@ -1554,15 +1557,15 @@ async function openAssetDir(type) {
   border-radius: 9px 9px 0 0;
   font-size: 12px;
   font-weight: 600;
-  color: #94a3b8;
+  color: var(--ui-text-3);
   border-bottom: 2px solid transparent;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
-.asset-tab:hover { color: #2563eb; }
+.asset-tab:hover { color: var(--ui-brand); }
 .asset-tab--active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
-  background: #f0f5ff;
+  color: var(--ui-brand);
+  border-bottom-color: var(--ui-brand);
+  background: var(--ui-brand-soft);
 }
 </style>

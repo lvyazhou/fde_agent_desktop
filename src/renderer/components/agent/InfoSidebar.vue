@@ -11,10 +11,10 @@
     <!-- Scrollable content (hidden scrollbar) -->
     <div class="flex-1 overflow-y-auto scrollbar-hide">
       <!-- 1. Agent Status -->
-      <AccordionSection title="智能体状态" icon="fa-solid fa-robot" icon-color="#2563eb" :default-open="true">
+      <AccordionSection title="智能体状态" icon="fa-solid fa-robot" icon-color="var(--ui-brand)" :default-open="true">
         <div class="flex items-center gap-2 mb-2">
-          <span v-if="projectMeta?.aiApp?.icon" class="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" :style="{ background: (projectMeta.aiApp.color || '#2563eb') + '14' }">
-            <i :class="'fa-solid fa-' + projectMeta.aiApp.icon" class="text-[10px]" :style="{ color: projectMeta.aiApp.color || '#2563eb' }"></i>
+          <span v-if="projectMeta?.aiApp?.icon" class="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center" :style="{ background: `color-mix(in srgb, ${accent(projectMeta.aiApp.color)} 8%, transparent)` }">
+            <i :class="'fa-solid fa-' + projectMeta.aiApp.icon" class="text-[10px]" :style="{ color: accent(projectMeta.aiApp.color) }"></i>
           </span>
           <span v-else class="w-2 h-2 rounded-full bg-green-500 shrink-0 animate-pulse"></span>
           <span class="text-xs font-semibold text-slate-800">{{ (projectMeta?.aiApp?.name) || '沧澜 AI' }}</span>
@@ -48,7 +48,7 @@
       </AccordionSection>
 
       <!-- 2. Knowledge Base -->
-      <AccordionSection title="知识库" icon="fa-solid fa-book" icon-color="#3b82f6" :default-open="true">
+      <AccordionSection title="知识库" icon="fa-solid fa-book" icon-color="var(--ui-brand-light)" :default-open="true">
         <template #action>
           <button v-if="slug" @click="$emit('upload-knowledge')" class="text-slate-400 hover:text-blue-500 transition-colors cursor-pointer" title="上传参考文档">
             <i class="fa-solid fa-cloud-arrow-up text-[10px]"></i>
@@ -77,7 +77,7 @@
       </AccordionSection>
 
       <!-- 2.5. Execution Plan (Feature 7) -->
-      <AccordionSection v-if="planItems.length > 0" title="执行计划" icon="fa-solid fa-list-ol" icon-color="#2563eb" :default-open="true">
+      <AccordionSection v-if="planItems.length > 0" title="执行计划" icon="fa-solid fa-list-ol" icon-color="var(--ui-brand)" :default-open="true">
         <div class="space-y-1">
           <div
             v-for="(item, i) in planItems"
@@ -97,7 +97,7 @@
       </AccordionSection>
 
       <!-- 3. Skills -->
-      <AccordionSection title="技能" icon="fa-solid fa-wand-magic-sparkles" icon-color="#2563eb" :default-open="true">
+      <AccordionSection title="技能" icon="fa-solid fa-wand-magic-sparkles" icon-color="var(--ui-brand)" :default-open="true">
         <template #action>
           <button @click="$emit('browse-skills')" class="text-slate-400 hover:text-blue-500 transition-colors cursor-pointer" title="浏览技能市场">
             <i class="fa-solid fa-store text-[10px]"></i>
@@ -120,7 +120,7 @@
       </AccordionSection>
 
       <!-- 4. Execution Logs -->
-      <AccordionSection title="执行日志" icon="fa-solid fa-terminal" icon-color="#2563eb" :default-open="true">
+      <AccordionSection title="执行日志" icon="fa-solid fa-terminal" icon-color="var(--ui-brand)" :default-open="true">
         <template #action>
           <button v-if="logs.length > 0" @click="$emit('clear-logs')" class="text-slate-400 hover:text-danger transition-colors" title="清空日志">
             <i class="fa-solid fa-trash-can text-[10px]"></i>
@@ -151,7 +151,7 @@
         v-if="deliverableThreads.length"
         title="交付物对话"
         icon="fa-solid fa-box-open"
-        icon-color="#7c3aed"
+        icon-color="var(--ui-violet)"
         :default-open="false"
       >
         <div class="space-y-1.5">
@@ -177,7 +177,7 @@
       </AccordionSection>
 
       <!-- Suggested Questions -->
-      <AccordionSection title="建议追问" icon="fa-solid fa-comments" icon-color="#2563eb" :default-open="true">
+      <AccordionSection title="建议追问" icon="fa-solid fa-comments" icon-color="var(--ui-brand)" :default-open="true">
         <div v-if="suggestedQuestions.length === 0" class="text-[11px] text-slate-400 text-center py-3">
           对话后将生成建议追问
         </div>
@@ -199,6 +199,8 @@
 </template>
 
 <script setup>
+import { useAccentColor } from '@/composables/useAccentColor.js';
+const { accent } = useAccentColor();
 import { computed } from 'vue';
 import AccordionSection from '@/components/common/AccordionSection.vue';
 

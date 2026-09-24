@@ -207,7 +207,8 @@ import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { getStage, getDeliverableMeta, DEFAULT_STAGE } from '@/data/fde-stages';
 import PageHero from '@/components/common/PageHero.vue';
-import heroImage from '@/assets/hero-projects.jpg';
+import { useHeroImage } from '@/composables/useHeroImage.js';
+const heroImage = useHeroImage('projects');
 
 const router = useRouter();
 const projects = ref([]);

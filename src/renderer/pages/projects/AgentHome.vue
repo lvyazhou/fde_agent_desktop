@@ -102,7 +102,8 @@ import ChatPanel from '@/components/agent/ChatPanel.vue';
 import InfoSidebar from '@/components/agent/InfoSidebar.vue';
 import DeliverablePreviewPanel from '@/components/common/DeliverablePreviewPanel.vue';
 import PageHero from '@/components/common/PageHero.vue';
-import heroImage from '@/assets/hero-chat.jpg';
+import { useHeroImage } from '@/composables/useHeroImage.js';
+const heroImage = useHeroImage('chat');
 import { isMultimodalModel } from '@/composables/useChatComposer';
 import { findBuiltinAiAppById, buildAiAppOpeningPrompt } from '@/data/ai-apps';
 

@@ -38,7 +38,7 @@
           :class="active === 'projects' ? 'tree-node--active' : ''"
           @click="selectProjects"
         >
-          <span class="tree-badge" style="background:#0ea5e9"><i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i></span>
+          <span class="tree-badge" style="background:var(--ui-cyan)"><i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i></span>
           <span class="flex-1 text-left truncate">本项目产物</span>
           <span class="tree-count">{{ projectItemCount }}</span>
         </button>
@@ -83,7 +83,7 @@
         <!-- 统计条(仅阶段视图) -->
         <div v-if="active === 'all'" class="grid grid-cols-4 gap-4 mb-5">
           <div v-for="s in statCards" :key="s.label" class="stat-card">
-            <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px ${s.bg}55` }">
+            <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px color-mix(in srgb, ${s.bg} 33%, transparent)` }">
               <i :class="'fa-solid ' + s.icon"></i>
             </div>
             <div>
@@ -357,10 +357,11 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import DocViewer from '@/components/workbench/DocViewer.vue';
 import PageHero from '@/components/common/PageHero.vue';
-import heroImage from '@/assets/hero-knowledge.jpg';
+import { useHeroImage } from '@/composables/useHeroImage.js';
+const heroImage = useHeroImage('knowledge');
 
 const CN_NUM = ['一', '二', '三', '四', '五'];
-const STAGE_COLORS = ['#2563eb', '#1d4ed8', '#3b82f6', '#0ea5e9', '#1e40af'];
+const STAGE_COLORS = ['var(--ui-brand)', 'var(--ui-brand-dark)', 'var(--ui-brand-light)', 'var(--ui-cyan)', 'var(--ui-brand-deep)'];
 
 const stages = ref([]);       // manifest.stages,并给每个 item 注入 stageDir/stageIndex
 const active = ref('all');    // 'all' | stage.dir
@@ -587,10 +588,10 @@ watch(showKnowledgeTypeFilter, (visible) => { if (!visible) knowledgeTypeFilter.
 watch(totalPages, (tp) => { if (currentPage.value > tp) currentPage.value = tp; });
 
 const statCards = computed(() => [
-  { label: '文档总数', value: allItems.value.length, icon: 'fa-file-lines', bg: '#2563eb' },
-  { label: '交付物', value: allItems.value.filter((i) => i.category === 'deliverable').length, icon: 'fa-box-open', bg: '#3b82f6' },
-  { label: '知识模板', value: allItems.value.filter((i) => i.category === 'knowledge').length, icon: 'fa-lightbulb', bg: '#0ea5e9' },
-  { label: '作战阶段', value: stages.value.length, icon: 'fa-layer-group', bg: '#1d4ed8' },
+  { label: '文档总数', value: allItems.value.length, icon: 'fa-file-lines', bg: 'var(--ui-brand)' },
+  { label: '交付物', value: allItems.value.filter((i) => i.category === 'deliverable').length, icon: 'fa-box-open', bg: 'var(--ui-brand-light)' },
+  { label: '知识模板', value: allItems.value.filter((i) => i.category === 'knowledge').length, icon: 'fa-lightbulb', bg: 'var(--ui-cyan)' },
+  { label: '作战阶段', value: stages.value.length, icon: 'fa-layer-group', bg: 'var(--ui-brand-dark)' },
 ]);
 
 function stageShort(i) {
@@ -608,7 +609,7 @@ function catChipCls(c) {
   }[c] || 'cat-chip--sp';
 }
 function fmtColor(t) {
-  return { md: '#0ea5e9', docx: '#2563eb', doc: '#2563eb', html: '#3b82f6', pdf: '#1e40af', pptx: '#1d4ed8' }[t] || '#64748b';
+  return { md: 'var(--ui-cyan)', docx: 'var(--ui-brand)', doc: 'var(--ui-brand)', html: 'var(--ui-brand-light)', pdf: 'var(--ui-brand-deep)', pptx: 'var(--ui-brand-dark)' }[t] || 'var(--ui-text-2)';
 }
 function openDoc(item) {
   selectedProjectSlug.value = '';   // handbook 模式
@@ -684,10 +685,10 @@ function openProjectDoc(pj, item) {
 .filter-chip {
   height: 31px;
   padding: 0 13px;
-  border: 1px solid #dfe7f2;
+  border: 1px solid var(--ui-brand-soft-2);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.84);
-  color: #526174;
+  color: var(--ui-ink-3);
   font-size: 12.5px;
   font-weight: 500;
   line-height: 1;
@@ -697,20 +698,20 @@ function openProjectDoc(pj, item) {
 }
 .filter-chip:hover {
   transform: translateY(-1px);
-  border-color: #a9c2f5;
-  color: #2563eb;
-  background: #f8fbff;
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
+  border-color: var(--ui-brand-light);
+  color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  box-shadow: 0 6px 16px hsl(var(--primary) / 8%);
 }
 .filter-chip--active {
   color: #fff;
-  border-color: #2563eb;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.20);
+  border-color: var(--ui-brand);
+  background: linear-gradient(135deg, var(--ui-brand), var(--ui-brand-dark));
+  box-shadow: 0 8px 18px hsl(var(--primary) / 20%);
 }
 .filter-chip--active:hover {
   color: #fff;
-  background: linear-gradient(135deg, #1d4ed8, #1e40af);
+  background: linear-gradient(135deg, var(--ui-brand-dark), var(--ui-brand-deep));
 }
 .filter-chip--soft {
   height: 29px;
@@ -721,7 +722,7 @@ function openProjectDoc(pj, item) {
   width: 1px;
   height: 18px;
   margin: 0 2px;
-  background: #dbe3ef;
+  background: var(--ui-brand-soft-2);
 }
 
 /* 分页按钮 */
@@ -730,9 +731,9 @@ function openProjectDoc(pj, item) {
   height: 31px;
   padding: 0 9px;
   border-radius: 9px;
-  border: 1px solid #dfe7f2;
+  border: 1px solid var(--ui-brand-soft-2);
   background: rgba(255, 255, 255, 0.9);
-  color: #64748b;
+  color: var(--ui-text-2);
   font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
@@ -741,17 +742,17 @@ function openProjectDoc(pj, item) {
 }
 .pgn:hover:not(:disabled) {
   transform: translateY(-1px);
-  border-color: #a9c2f5;
-  color: #2563eb;
-  background: #f8fbff;
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.08);
+  border-color: var(--ui-brand-light);
+  color: var(--ui-brand);
+  background: var(--ui-brand-soft);
+  box-shadow: 0 6px 16px hsl(var(--primary) / 8%);
 }
 .pgn--cur {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  border-color: #2563eb;
+  background: linear-gradient(135deg, var(--ui-brand), var(--ui-brand-dark));
+  border-color: var(--ui-brand);
   color: #fff;
   font-weight: 650;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 8px 18px hsl(var(--primary) / 18%);
 }
 .pgn:disabled { opacity: 0.42; cursor: not-allowed; }
 
@@ -764,7 +765,7 @@ function openProjectDoc(pj, item) {
   padding: 7px 10px;
   border-radius: 10px;
   font-size: 12.5px;
-  color: #475569;
+  color: var(--ui-text);
   cursor: pointer;
   transition: background 0.16s ease, color 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
 }
@@ -772,14 +773,14 @@ function openProjectDoc(pj, item) {
   background: rgba(255, 255, 255, 0.72);
   color: var(--color-sidebar-text-strong);
   transform: translateX(1px);
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.06);
+  box-shadow: 0 4px 14px hsl(var(--primary) / 6%);
 }
 .tree-node:hover .tree-badge { transform: scale(1.04); }
 .tree-node--active {
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(59, 130, 246, 0.08));
+  background: linear-gradient(135deg, hsl(var(--primary) / 12%), hsl(var(--primary) / 8%));
   color: var(--color-sidebar-text-strong);
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.09);
+  box-shadow: inset 0 0 0 1px hsl(var(--primary) / 9%);
 }
 
 .tree-badge {
@@ -796,17 +797,17 @@ function openProjectDoc(pj, item) {
   box-shadow: 0 2px 5px rgba(15, 23, 42, 0.14);
   transition: transform 0.15s;
 }
-.tree-badge--all { background: #64748b; }
+.tree-badge--all { background: var(--ui-text-2); }
 
 .tree-count {
   font-size: 10.5px;
-  color: #94a3b8;
-  background: #f1f5f9;
+  color: var(--ui-text-3);
+  background: var(--ui-bg-2);
   border-radius: 999px;
   padding: 1px 7px;
   flex-shrink: 0;
 }
-.tree-node--active .tree-count { color: #2563eb; background: rgba(255, 255, 255, 0.76); }
+.tree-node--active .tree-count { color: var(--ui-brand); background: rgba(255, 255, 255, 0.76); }
 
 .card-action {
   height: 28px;
@@ -825,8 +826,8 @@ function openProjectDoc(pj, item) {
 }
 .card-action:hover { transform: translateY(-1px); }
 .card-action i { font-size: 10.5px; }
-.card-action--primary { color: #2563eb; }
-.card-action--primary:hover { background: #eff6ff; border-color: #dbeafe; color: #1d4ed8; }
+.card-action--primary { color: var(--ui-brand); }
+.card-action--primary:hover { background: var(--ui-brand-soft); border-color: var(--ui-brand-soft-2); color: var(--ui-brand-dark); }
 .card-action--danger { color: #dc2626; }
 .card-action--danger:hover { background: #fef2f2; border-color: #fee2e2; color: #b91c1c; }
 
@@ -837,15 +838,15 @@ function openProjectDoc(pj, item) {
   gap: 12px;
   padding: 15px 16px;
   border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
-  border: 1px solid #e8ecf3;
+  background: linear-gradient(180deg, #ffffff, var(--ui-brand-soft));
+  border: 1px solid var(--ui-bg-2);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
 }
 .stat-card:hover {
-  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.10);
+  box-shadow: 0 10px 26px hsl(var(--primary) / 10%);
   transform: translateY(-2px);
-  border-color: #d4e2fb;
+  border-color: var(--ui-brand-soft-2);
 }
 .stat-icon {
   width: 44px;
@@ -866,7 +867,7 @@ function openProjectDoc(pj, item) {
   width: 100%;
   min-height: 146px;
   background: #fff;
-  border: 1px solid #e8ecf0;
+  border: 1px solid var(--ui-line-2);
   border-radius: 14px;
   padding: 16px;
   overflow: hidden;
@@ -885,7 +886,7 @@ function openProjectDoc(pj, item) {
 .kb-card:hover {
   box-shadow: 0 12px 30px rgba(30, 58, 138, 0.13);
   transform: translateY(-3px);
-  border-color: #c7d7f5;
+  border-color: var(--ui-brand-soft-2);
 }
 .kb-card:hover .kb-card__accent { opacity: 1; }
 .kb-card__footer {
@@ -906,7 +907,7 @@ function openProjectDoc(pj, item) {
   font-size: 9px;
   font-weight: 700;
   flex-shrink: 0;
-  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.22);
+  box-shadow: 0 3px 8px hsl(var(--primary) / 22%);
 }
 
 .cat-chip {
@@ -915,9 +916,9 @@ function openProjectDoc(pj, item) {
   border-radius: 999px;
   font-weight: 500;
 }
-.cat-chip--kn { background: #e0f2fe; color: #0369a1; }
-.cat-chip--dl { background: #eff6ff; color: #2563eb; }
-.cat-chip--sp { background: #f1f5f9; color: #64748b; }
+.cat-chip--kn { background: var(--ui-brand-soft-2); color: var(--ui-cyan); }
+.cat-chip--dl { background: var(--ui-brand-soft); color: var(--ui-brand); }
+.cat-chip--sp { background: var(--ui-bg-2); color: var(--ui-text-2); }
 
 /* 知识子类型分区圆点(蓝色系,深浅区分调研/技术/产品) */
 .ktype-dot {
@@ -930,9 +931,9 @@ function openProjectDoc(pj, item) {
   color: #fff;
   flex-shrink: 0;
 }
-.ktype-dot--调研 { background: #0ea5e9; }
-.ktype-dot--技术 { background: #2563eb; }
-.ktype-dot--产品 { background: #1d4ed8; }
+.ktype-dot--调研 { background: var(--ui-cyan); }
+.ktype-dot--技术 { background: var(--ui-brand); }
+.ktype-dot--产品 { background: var(--ui-brand-dark); }
 
 .line-clamp-2 {
   display: -webkit-box;

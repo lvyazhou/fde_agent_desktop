@@ -26,7 +26,7 @@
           :class="active === 'all' ? 'tree-node--active' : ''"
           @click="active = 'all'"
         >
-          <span class="tree-badge" style="background:#64748b"><i class="fa-solid fa-layer-group text-[10px]"></i></span>
+          <span class="tree-badge" style="background:var(--ui-text-2)"><i class="fa-solid fa-layer-group text-[10px]"></i></span>
           <span class="flex-1 text-left truncate">全部技能</span>
           <span class="tree-count">{{ skills.length }}</span>
         </button>
@@ -42,7 +42,7 @@
           :class="active === g.id ? 'tree-node--active' : ''"
           @click="active = g.id"
         >
-          <span class="tree-badge" :style="{ background: g.color || groupColor(g.id) }">
+          <span class="tree-badge" :style="{ background: accent(g.color || groupColor(g.id)) }">
             <i :class="faIcon(g.icon, 'toolbox') + ' text-[10px]'" />
           </span>
           <span class="flex-1 text-left truncate">{{ g.name }}</span>
@@ -75,7 +75,7 @@
 
         <div v-if="active === 'all'" class="grid grid-cols-4 gap-4 mb-5">
           <div v-for="s in statCards" :key="s.label" class="stat-card">
-            <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px ${s.bg}55` }">
+            <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px color-mix(in srgb, ${s.bg} 33%, transparent)` }">
               <i :class="'fa-solid ' + s.icon"></i>
             </div>
             <div>
@@ -96,9 +96,9 @@
             @keydown.enter.self="openSkill(sk)"
             @keydown.space.prevent.self="openSkill(sk)"
           >
-            <div class="sk-card__accent" :style="{ background: sk.color }"></div>
+            <div class="sk-card__accent" :style="{ background: accent(sk.color) }"></div>
             <div class="flex items-start gap-3">
-              <span class="sk-icon" :style="{ background: sk.color, boxShadow: `0 6px 16px ${sk.color}55` }">
+              <span class="sk-icon" :style="{ background: accent(sk.color), boxShadow: `0 6px 16px color-mix(in srgb, ${accent(sk.color)} 33%, transparent)` }">
                 <i :class="faIcon(sk.icon, 'cube')"></i>
               </span>
               <div class="flex-1 min-w-0">
@@ -149,7 +149,7 @@
         <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
-              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: accent(selected.color) }">
                 <i :class="faIcon(selected.icon, 'cube')"></i>
               </span>
               <div class="min-w-0">
@@ -209,7 +209,7 @@
                 <div>
                   <label class="block text-[12px] font-medium text-slate-600 mb-1.5">图标 <span class="text-slate-400 font-normal">(Font Awesome 名)</span></label>
                   <div class="flex items-center gap-2">
-                    <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: selected.color }">
+                    <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: accent(selected.color) }">
                       <i :class="faIcon(form.icon, 'cube')"></i>
                     </span>
                     <input v-model="form.icon" type="text" placeholder="如 star / wand-magic-sparkles"
@@ -275,7 +275,7 @@
                   :class="hubActiveCat === cat.id ? 'tree-node--active' : ''"
                   @click="hubActiveCat = cat.id"
                 >
-                  <span class="tree-badge" :style="{ background: cat.color }">
+                  <span class="tree-badge" :style="{ background: accent(cat.color) }">
                     <i :class="'fa-solid fa-' + cat.icon + ' text-[10px]'"></i>
                   </span>
                   <span class="flex-1 text-left truncate">{{ cat.name }}</span>
@@ -307,7 +307,7 @@
                 <!-- 卡片网格 -->
                 <div v-else class="hub-grid" :class="hubLoading ? 'opacity-50 pointer-events-none' : ''">
                   <div v-for="item in hubItems" :key="item.slug" class="sk-card cursor-default">
-                    <div class="sk-card__accent" style="background:#2563eb"></div>
+                    <div class="sk-card__accent" style="background:var(--ui-brand)"></div>
                     <div class="flex items-center gap-2">
                       <h3 class="text-[13px] font-semibold text-slate-800 truncate flex-1 min-w-0">{{ item.displayName || item.name }}</h3>
                       <span v-if="item.version" class="text-[10px] text-slate-400 shrink-0">v{{ item.version }}</span>
@@ -430,10 +430,13 @@
 </template>
 
 <script setup>
+import { useAccentColor } from '@/composables/useAccentColor.js';
+const { accent } = useAccentColor();
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { marked } from 'marked';
 import PageHero from '@/components/common/PageHero.vue';
-import heroImage from '@/assets/hero-skills.jpg';
+import { useHeroImage } from '@/composables/useHeroImage.js';
+const heroImage = useHeroImage('skills');
 
 const groups = ref([]);
 const skills = ref([]);
@@ -503,16 +506,16 @@ let hubDebounce = null;
 
 // 分类映射(API tag → 中文名 + 图标 + 颜色)。分类过滤走服务端 tag 参数
 const hubCategories = [
-  { id: 'all', name: '全部分类', icon: 'layer-group', color: '#64748b' },
-  { id: 'efficiency', name: '效率', icon: 'gauge-high', color: '#2563eb' },
-  { id: 'creativity', name: '创作', icon: 'wand-magic-sparkles', color: '#7c3aed' },
-  { id: 'knowledge', name: '知识', icon: 'book', color: '#0891b2' },
-  { id: 'search', name: '搜索', icon: 'magnifying-glass', color: '#0ea5e9' },
+  { id: 'all', name: '全部分类', icon: 'layer-group', color: 'var(--ui-text-2)' },
+  { id: 'efficiency', name: '效率', icon: 'gauge-high', color: 'var(--ui-brand)' },
+  { id: 'creativity', name: '创作', icon: 'wand-magic-sparkles', color: 'var(--ui-violet)' },
+  { id: 'knowledge', name: '知识', icon: 'book', color: 'var(--ui-cyan)' },
+  { id: 'search', name: '搜索', icon: 'magnifying-glass', color: 'var(--ui-cyan)' },
   { id: 'marketing', name: '营销', icon: 'bullhorn', color: '#db2777' },
-  { id: 'development', name: '开发', icon: 'code', color: '#1d4ed8' },
+  { id: 'development', name: '开发', icon: 'code', color: 'var(--ui-brand-dark)' },
   { id: 'data', name: '数据', icon: 'chart-column', color: '#059669' },
   { id: 'collaboration', name: '协作', icon: 'users', color: '#d97706' },
-  { id: 'automation', name: '自动化', icon: 'robot', color: '#4f46e5' },
+  { id: 'automation', name: '自动化', icon: 'robot', color: 'var(--ui-accent)' },
   { id: 'security', name: '安全', icon: 'shield-halved', color: '#dc2626' },
   { id: 'lifestyle', name: '生活', icon: 'mug-hot', color: '#ea580c' },
 ];
@@ -722,17 +725,17 @@ watch([active, keyword], () => { currentPage.value = 1; });
 watch(totalPages, (tp) => { if (currentPage.value > tp) currentPage.value = tp; });
 
 const statCards = computed(() => [
-  { label: '技能总数', value: skills.value.length, icon: 'fa-cubes', bg: '#2563eb' },
-  { label: '能力分组', value: groups.value.length, icon: 'fa-layer-group', bg: '#1d4ed8' },
-  { label: '产文档类', value: skills.value.filter((s) => s.group === 'product-doc').length, icon: 'fa-file-lines', bg: '#0ea5e9' },
-  { label: '出图/可视化', value: skills.value.filter((s) => ['report-image', 'dataviz'].includes(s.group)).length, icon: 'fa-images', bg: '#3b82f6' },
+  { label: '技能总数', value: skills.value.length, icon: 'fa-cubes', bg: 'var(--ui-brand)' },
+  { label: '能力分组', value: groups.value.length, icon: 'fa-layer-group', bg: 'var(--ui-brand-dark)' },
+  { label: '产文档类', value: skills.value.filter((s) => s.group === 'product-doc').length, icon: 'fa-file-lines', bg: 'var(--ui-cyan)' },
+  { label: '出图/可视化', value: skills.value.filter((s) => ['report-image', 'dataviz'].includes(s.group)).length, icon: 'fa-images', bg: 'var(--ui-brand-light)' },
 ]);
 
 function groupName(id) {
   return groups.value.find((g) => g.id === id)?.name || id;
 }
 function groupColor(id) {
-  return { 'product-doc': '#2563eb', prototype: '#1d4ed8', dataviz: '#0ea5e9', 'report-image': '#3b82f6', coach: '#1e40af', thinking: '#0369a1', general: '#64748b' }[id] || '#64748b';
+  return { 'product-doc': 'var(--ui-brand)', prototype: 'var(--ui-brand-dark)', dataviz: 'var(--ui-cyan)', 'report-image': 'var(--ui-brand-light)', coach: 'var(--ui-brand-deep)', thinking: 'var(--ui-cyan)', general: 'var(--ui-text-2)' }[id] || 'var(--ui-text-2)';
 }
 // manifest 里的 icon 是不带 fa- 前缀的图标名(如 headset),这里补全 Font Awesome class
 function faIcon(name, fallback) {
@@ -902,15 +905,15 @@ async function deleteSkill(sk) {
   height: 32px;
   padding: 0 12px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ui-line-2);
   background: #fff;
-  color: #64748b;
+  color: var(--ui-text-2);
   font-size: 12.5px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
-.pgn:hover:not(:disabled) { border-color: #93b4fb; color: #2563eb; }
-.pgn--cur { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: 600; }
+.pgn:hover:not(:disabled) { border-color: var(--ui-brand-light); color: var(--ui-brand); }
+.pgn--cur { background: var(--ui-brand); border-color: var(--ui-brand); color: #fff; font-weight: 600; }
 .pgn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .tree-node {
@@ -921,7 +924,7 @@ async function deleteSkill(sk) {
   padding: 8px 10px;
   border-radius: 9px;
   font-size: 12.5px;
-  color: #475569;
+  color: var(--ui-text);
   cursor: pointer;
   transition: background 0.15s, color 0.15s, transform 0.15s;
 }
@@ -946,8 +949,8 @@ async function deleteSkill(sk) {
 }
 .tree-count {
   font-size: 10.5px;
-  color: #94a3b8;
-  background: #f1f5f9;
+  color: var(--ui-text-3);
+  background: var(--ui-bg-2);
   border-radius: 999px;
   padding: 1px 7px;
   flex-shrink: 0;
@@ -961,15 +964,15 @@ async function deleteSkill(sk) {
   gap: 12px;
   padding: 15px 16px;
   border-radius: 14px;
-  background: linear-gradient(180deg, #ffffff, #fbfdff);
-  border: 1px solid #e8ecf3;
+  background: linear-gradient(180deg, #ffffff, var(--ui-brand-soft));
+  border: 1px solid var(--ui-bg-2);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
   transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
 }
 .stat-card:hover {
-  box-shadow: 0 10px 26px rgba(37, 99, 235, 0.10);
+  box-shadow: 0 10px 26px hsl(var(--primary) / 10%);
   transform: translateY(-2px);
-  border-color: #d4e2fb;
+  border-color: var(--ui-brand-soft-2);
 }
 .stat-icon {
   width: 44px;
@@ -990,7 +993,7 @@ async function deleteSkill(sk) {
   width: 100%;
   min-height: 170px;
   background: #fff;
-  border: 1px solid #e8ecf0;
+  border: 1px solid var(--ui-line-2);
   border-radius: 14px;
   padding: 16px;
   overflow: hidden;
@@ -1009,7 +1012,7 @@ async function deleteSkill(sk) {
 .sk-card:hover {
   box-shadow: 0 12px 30px rgba(30, 58, 138, 0.13);
   transform: translateY(-3px);
-  border-color: #c7d7f5;
+  border-color: var(--ui-brand-soft-2);
 }
 .sk-card:hover .sk-card__accent { opacity: 1; }
 .sk-card__footer {
@@ -1036,8 +1039,8 @@ async function deleteSkill(sk) {
 .card-action:hover:not(:disabled) { transform: translateY(-1px); }
 .card-action:disabled { opacity: 0.5; cursor: not-allowed; }
 .card-action i { font-size: 10.5px; }
-.card-action--primary { color: #2563eb; }
-.card-action--primary:hover:not(:disabled) { background: #eff6ff; border-color: #dbeafe; color: #1d4ed8; }
+.card-action--primary { color: var(--ui-brand); }
+.card-action--primary:hover:not(:disabled) { background: var(--ui-brand-soft); border-color: var(--ui-brand-soft-2); color: var(--ui-brand-dark); }
 .card-action--danger { color: #dc2626; }
 .card-action--danger:hover:not(:disabled) { background: #fef2f2; border-color: #fee2e2; color: #b91c1c; }
 
@@ -1077,19 +1080,19 @@ async function deleteSkill(sk) {
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
 /* 技能说明 markdown 排版(对齐 DocViewer 的 handbook-md) */
-.skill-md :deep(h1) { font-size: 1.4em; font-weight: 700; color: #1e293b; margin: 0.4em 0 0.5em; }
-.skill-md :deep(h2) { font-size: 1.18em; font-weight: 700; color: #1e293b; margin: 1em 0 0.4em; padding-bottom: 0.2em; border-bottom: 1px solid #e2e8f0; }
-.skill-md :deep(h3) { font-size: 1.04em; font-weight: 600; color: #334155; margin: 0.8em 0 0.3em; }
-.skill-md :deep(p) { margin: 0.5em 0; line-height: 1.75; color: #475569; font-size: 13px; }
+.skill-md :deep(h1) { font-size: 1.4em; font-weight: 700; color: var(--ui-ink-2); margin: 0.4em 0 0.5em; }
+.skill-md :deep(h2) { font-size: 1.18em; font-weight: 700; color: var(--ui-ink-2); margin: 1em 0 0.4em; padding-bottom: 0.2em; border-bottom: 1px solid var(--ui-line-2); }
+.skill-md :deep(h3) { font-size: 1.04em; font-weight: 600; color: var(--ui-ink-3); margin: 0.8em 0 0.3em; }
+.skill-md :deep(p) { margin: 0.5em 0; line-height: 1.75; color: var(--ui-text); font-size: 13px; }
 .skill-md :deep(ul), .skill-md :deep(ol) { margin: 0.4em 0; padding-left: 1.5em; }
-.skill-md :deep(li) { margin: 0.2em 0; line-height: 1.7; color: #475569; font-size: 13px; }
+.skill-md :deep(li) { margin: 0.2em 0; line-height: 1.7; color: var(--ui-text); font-size: 13px; }
 .skill-md :deep(table) { border-collapse: collapse; width: 100%; margin: 0.8em 0; font-size: 12px; }
-.skill-md :deep(th), .skill-md :deep(td) { border: 1px solid #e2e8f0; padding: 0.5em 0.7em; text-align: left; vertical-align: top; }
-.skill-md :deep(th) { background: #f8fafc; font-weight: 600; color: #334155; }
-.skill-md :deep(strong) { font-weight: 700; color: #1e293b; }
-.skill-md :deep(code) { font-size: 12px; background: #f1f5f9; padding: 0.15em 0.4em; border-radius: 4px; color: #475569; }
-.skill-md :deep(pre) { background: #1e293b; color: #e2e8f0; padding: 0.9em 1.1em; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 0.6em 0; }
+.skill-md :deep(th), .skill-md :deep(td) { border: 1px solid var(--ui-line-2); padding: 0.5em 0.7em; text-align: left; vertical-align: top; }
+.skill-md :deep(th) { background: var(--ui-bg-3); font-weight: 600; color: var(--ui-ink-3); }
+.skill-md :deep(strong) { font-weight: 700; color: var(--ui-ink-2); }
+.skill-md :deep(code) { font-size: 12px; background: var(--ui-bg-2); padding: 0.15em 0.4em; border-radius: 4px; color: var(--ui-text); }
+.skill-md :deep(pre) { background: var(--ui-ink-2); color: var(--ui-line-2); padding: 0.9em 1.1em; border-radius: 8px; overflow-x: auto; font-size: 12px; margin: 0.6em 0; }
 .skill-md :deep(pre code) { background: transparent; padding: 0; color: inherit; }
-.skill-md :deep(blockquote) { border-left: 3px solid #2563eb; padding: 0.2em 0 0.2em 0.9em; margin: 0.6em 0; color: #475569; background: #f8fafc; border-radius: 0 6px 6px 0; }
-.skill-md :deep(a) { color: #2563eb; text-decoration: none; }
+.skill-md :deep(blockquote) { border-left: 3px solid var(--ui-brand); padding: 0.2em 0 0.2em 0.9em; margin: 0.6em 0; color: var(--ui-text); background: var(--ui-bg-3); border-radius: 0 6px 6px 0; }
+.skill-md :deep(a) { color: var(--ui-brand); text-decoration: none; }
 </style>

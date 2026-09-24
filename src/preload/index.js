@@ -68,6 +68,12 @@ const validInvokeChannels = new Set([
   'hermes:write-env',
   'hermes:sync-provider-key',
   'hermes:restart',
+  // 网关档案(多组网关配置并存 + 一键拉取模型)
+  'gateway:list-profiles',
+  'gateway:save-profile',
+  'gateway:delete-profile',
+  'gateway:activate-profile',
+  'gateway:discover-models',
   // New: 12 features
   'hermes:list-models',
   'hermes:read-config-models',
@@ -109,6 +115,8 @@ const validInvokeChannels = new Set([
   'license:status',
   'license:machine-sn',
   'license:import',
+  'license:activate-online',
+  'license:server-url',
   // AI 应用广场
   'ai-apps:list',
   'ai-apps:get',
@@ -350,11 +358,22 @@ contextBridge.exposeInMainWorld('api', {
     testConnection(params) { return invoke('env:test-connection', params); },
   },
 
+  // 网关档案:多组网关配置并存 + 一键拉取上游模型列表
+  gateway: {
+    listProfiles() { return invoke('gateway:list-profiles'); },
+    saveProfile(profile) { return invoke('gateway:save-profile', { profile }); },
+    deleteProfile(id) { return invoke('gateway:delete-profile', { id }); },
+    activateProfile(id) { return invoke('gateway:activate-profile', { id }); },
+    discoverModels(baseUrl, apiKey) { return invoke('gateway:discover-models', { baseUrl, apiKey }); },
+  },
+
   // 授权(首次启动向导)
   license: {
     status() { return invoke('license:status'); },
     machineSn() { return invoke('license:machine-sn'); },
     import() { return invoke('license:import'); },
+    activateOnline(options) { return invoke('license:activate-online', options); },
+    serverUrl() { return invoke('license:server-url'); },
   },
 
   // AI 应用广场
