@@ -748,7 +748,7 @@ async function saveAndActivate() {
 const showApiKey = ref(false);
 const hermesHome = ref('~/.product-lobster');
 const projectCount = ref(0);
-const appVersion = ref('3.0.0');
+const appVersion = ref('3.3.7');
 const saving = ref(false);
 const saveStatus = ref(''); // '' | 'success' | 'error'
 const saveMsg = ref('');
