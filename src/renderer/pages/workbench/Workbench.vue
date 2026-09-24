@@ -70,30 +70,32 @@
           </div>
           <!-- 需求主线 -->
           <div class="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
-            <span class="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-slate-700 w-24">
+            <span class="shrink-0 flex items-center gap-1.5 text-[12px] font-medium text-slate-600 w-24">
               <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[11px] font-bold shrink-0">1</span>
               需求主线
             </span>
             <template v-for="(node, i) in demandLine" :key="'d'+i">
-              <div class="shrink-0 px-3.5 py-3 rounded-lg bg-blue-50 text-[12px] text-slate-700 whitespace-nowrap">{{ node }}</div>
+              <div class="flow-node shrink-0 px-3.5 rounded-lg bg-blue-50 whitespace-nowrap flex items-center">
+                <span class="flow-node__label">{{ node }}</span>
+              </div>
               <i v-if="i < demandLine.length - 1" class="fa-solid fa-arrow-right text-blue-600/50 text-[10px] shrink-0"></i>
             </template>
           </div>
           <!-- 环境地基线 -->
           <div class="flex items-center gap-2 overflow-x-auto pb-1">
-            <span class="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 w-24">
+            <span class="shrink-0 flex items-center gap-1.5 text-[12px] font-medium text-slate-600 w-24">
               <span class="w-5 h-5 rounded-full bg-slate-500 text-white flex items-center justify-center text-[11px] font-bold shrink-0">2</span>
               实施地基线
             </span>
             <template v-for="(node, i) in envLine" :key="'e'+i">
               <div
-                class="shrink-0 px-3.5 py-2.5 rounded-lg whitespace-nowrap flex flex-col items-start leading-tight"
+                class="flow-node shrink-0 px-3.5 rounded-lg whitespace-nowrap flex flex-col items-start justify-center leading-tight"
                 :class="i === envLine.length - 1 ? 'bg-emerald-50/70 border border-emerald-200/60' : 'bg-blue-50'"
               >
-                <span class="text-[12px] font-medium flex items-center gap-1" :class="i === envLine.length - 1 ? 'text-emerald-700' : 'text-slate-600'">
+                <span class="flow-node__label flex items-center gap-1" :class="i === envLine.length - 1 ? 'text-emerald-700' : ''">
                   <i v-if="i === envLine.length - 1" class="fa-solid fa-circle-check text-[10px]"></i>{{ node.label }}
                 </span>
-                <span class="text-[10px]" :class="i === envLine.length - 1 ? 'text-emerald-500' : 'text-slate-400'">{{ node.hint }}</span>
+                <span class="flow-node__hint" :class="i === envLine.length - 1 ? 'text-emerald-500' : ''">{{ node.hint }}</span>
               </div>
               <i v-if="i < envLine.length - 1" class="fa-solid fa-arrow-right text-slate-300 text-[10px] shrink-0"></i>
             </template>
@@ -283,6 +285,21 @@ onMounted(async () => {
   .hero-desc {
     display: none;
   }
+}
+
+/* 两条流程线:同级节点同字号同字重,有无副标题都等高 */
+.flow-node {
+  min-height: 46px;
+}
+.flow-node__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ui-ink-3);
+}
+.flow-node__hint {
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--ui-text-3);
 }
 
 /* 五阶段卡片行:等比铺满,阶段间箭头不占据弹性宽度 */

@@ -261,7 +261,12 @@
     <transition name="drawer">
       <div v-if="selected" class="fixed inset-0 z-50" @keydown.esc="selected = null">
         <div class="absolute inset-0 bg-slate-900/40" @click="selected = null"></div>
-        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
+        <aside
+          class="drawer-resizable absolute right-0 top-0 bottom-0 glass-card shadow-2xl flex flex-col"
+          :class="{ 'is-resizing': resizing }"
+          :style="{ width: drawerWidth + 'px' }"
+        >
+          <div class="drawer-resizer" @mousedown.prevent="startResize" title="拖动调整宽度"></div>
           <DocViewer :stage="selected.stageDir || ''" :item="selected" :project-slug="selectedProjectSlug" @close="selected = null" @navigate="navigateToDoc" />
         </aside>
       </div>
@@ -358,7 +363,9 @@ import { ref, computed, onMounted, watch } from 'vue';
 import DocViewer from '@/components/workbench/DocViewer.vue';
 import PageHero from '@/components/common/PageHero.vue';
 import { useHeroImage } from '@/composables/useHeroImage.js';
+import { useDrawerResize } from '@/composables/useDrawerResize.js';
 const heroImage = useHeroImage('knowledge');
+const { width: drawerWidth, resizing, startResize } = useDrawerResize('kb.drawerWidth');
 
 const CN_NUM = ['一', '二', '三', '四', '五'];
 const STAGE_COLORS = ['var(--ui-brand)', 'var(--ui-brand-dark)', 'var(--ui-brand-light)', 'var(--ui-cyan)', 'var(--ui-brand-deep)'];
@@ -946,6 +953,40 @@ function openProjectDoc(pj, item) {
 .drawer-enter-active aside, .drawer-leave-active aside { transition: transform 0.25s ease; }
 .drawer-enter-from, .drawer-leave-to { opacity: 0; }
 .drawer-enter-from aside, .drawer-leave-to aside { transform: translateX(100%); }
+
+/* 可拖拽宽度的预览抽屉 */
+.drawer-resizable {
+  max-width: calc(100vw - 48px);
+}
+.drawer-resizable.is-resizing { transition: none !important; }
+.drawer-resizer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  margin-left: -5px;
+  cursor: col-resize;
+  z-index: 10;
+}
+.drawer-resizer::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 46px;
+  border-radius: 2px;
+  background: var(--ui-line-2);
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+.drawer-resizer:hover::after,
+.drawer-resizable.is-resizing .drawer-resizer::after {
+  opacity: 1;
+  background: var(--ui-brand);
+}
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }

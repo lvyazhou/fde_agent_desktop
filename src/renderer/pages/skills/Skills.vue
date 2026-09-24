@@ -73,6 +73,24 @@
           </template>
         </PageHero>
 
+        <div class="flex items-center gap-3 mb-5">
+          <div class="sk-search">
+            <i class="fa-solid fa-magnifying-glass sk-search__icon"></i>
+            <input
+              v-model="keyword"
+              type="text"
+              placeholder="搜索技能名称 / 描述 / 标识…"
+              class="sk-search__input"
+            />
+            <button v-if="keyword" @click="keyword = ''" class="sk-search__clear" title="清空">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+          </div>
+          <span v-if="keyword.trim()" class="text-[12.5px] text-slate-400 shrink-0">
+            匹配 <b class="text-slate-600">{{ filtered.length }}</b> 项
+          </span>
+        </div>
+
         <div v-if="active === 'all'" class="grid grid-cols-4 gap-4 mb-5">
           <div v-for="s in statCards" :key="s.label" class="stat-card">
             <div class="stat-icon" :style="{ background: s.bg, boxShadow: `0 6px 16px color-mix(in srgb, ${s.bg} 33%, transparent)` }">
@@ -146,7 +164,12 @@
     <transition name="drawer">
       <div v-if="selected" class="fixed inset-0 z-50">
         <div class="absolute inset-0 bg-slate-900/40" @click="!editing && (selected = null)"></div>
-        <aside class="absolute right-0 top-0 bottom-0 w-[640px] max-w-[92vw] glass-card shadow-2xl flex flex-col">
+        <aside
+          class="drawer-resizable absolute right-0 top-0 bottom-0 glass-card shadow-2xl flex flex-col"
+          :class="{ 'is-resizing': resizing }"
+          :style="{ width: drawerWidth + 'px' }"
+        >
+          <div class="drawer-resizer" @mousedown.prevent="startResize" title="拖动调整宽度"></div>
           <div class="flex items-center justify-between px-5 py-3 border-b border-slate-200/80 shrink-0">
             <div class="flex items-center gap-3 min-w-0">
               <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0" :style="{ background: accent(selected.color) }">
@@ -436,7 +459,9 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { marked } from 'marked';
 import PageHero from '@/components/common/PageHero.vue';
 import { useHeroImage } from '@/composables/useHeroImage.js';
+import { useDrawerResize } from '@/composables/useDrawerResize.js';
 const heroImage = useHeroImage('skills');
+const { width: drawerWidth, resizing, startResize } = useDrawerResize('sk.drawerWidth');
 
 const groups = ref([]);
 const skills = ref([]);
@@ -892,6 +917,53 @@ async function deleteSkill(sk) {
 
 .sk-tree { width: 240px; background: color-mix(in srgb, hsl(var(--background)) 92%, hsl(var(--primary)) 4%) !important; border-color: var(--color-sidebar-border) !important; }
 
+/* 内容区搜索框 */
+.sk-search {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  max-width: 420px;
+}
+.sk-search__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11.5px;
+  color: var(--ui-text-3);
+  pointer-events: none;
+}
+.sk-search__input {
+  width: 100%;
+  height: 36px;
+  padding: 0 32px 0 32px;
+  border-radius: 999px;
+  border: 1px solid var(--ui-brand-soft-2);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--ui-ink-3);
+  font-size: 12.5px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+.sk-search__input::placeholder { color: var(--ui-text-3); }
+.sk-search__input:focus {
+  outline: none;
+  border-color: var(--ui-brand-light);
+  background: #fff;
+  box-shadow: 0 6px 16px hsl(var(--primary) / 8%);
+}
+.sk-search__clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--ui-text-3);
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.sk-search__clear:hover { color: var(--ui-brand); }
+
 /* 自适应卡片网格:列数随宽度自动增减(最小 280px),窄屏 2 列宽屏可到 4-5 列 */
 .sk-grid {
   display: grid;
@@ -1075,6 +1147,40 @@ async function deleteSkill(sk) {
 .drawer-enter-active aside, .drawer-leave-active aside { transition: transform 0.25s ease; }
 .drawer-enter-from, .drawer-leave-to { opacity: 0; }
 .drawer-enter-from aside, .drawer-leave-to aside { transform: translateX(100%); }
+
+/* 可拖拽宽度的技能说明抽屉 */
+.drawer-resizable {
+  max-width: calc(100vw - 48px);
+}
+.drawer-resizable.is-resizing { transition: none !important; }
+.drawer-resizer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  margin-left: -5px;
+  cursor: col-resize;
+  z-index: 10;
+}
+.drawer-resizer::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 46px;
+  border-radius: 2px;
+  background: var(--ui-line-2);
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+}
+.drawer-resizer:hover::after,
+.drawer-resizable.is-resizing .drawer-resizer::after {
+  opacity: 1;
+  background: var(--ui-brand);
+}
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }

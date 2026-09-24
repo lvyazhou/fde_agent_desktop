@@ -103,14 +103,14 @@
             <i class="fa-solid fa-store text-[10px]"></i>
           </button>
         </template>
-        <div class="flex flex-wrap gap-1">
+        <div class="flex flex-wrap gap-1.5">
           <span
             v-for="skill in displaySkills"
             :key="skill.key"
-            class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors"
+            class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium transition-colors"
             :class="skill.bgClass"
           >
-            <i :class="skill.icon" class="text-[8px]"></i>
+            <i :class="skill.icon" class="text-[9px]"></i>
             {{ skill.label }}
           </span>
           <div v-if="displaySkills.length === 0" class="text-[11px] text-slate-400 py-2 text-center w-full">
