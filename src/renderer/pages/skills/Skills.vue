@@ -2,21 +2,12 @@
   <div class="flex h-full min-h-0 sk-bg">
     <!-- ── 左侧:技能分组树 ────────────────────────── -->
     <aside class="sk-tree shrink-0 flex flex-col border-r">
-      <div class="px-3 pt-3.5 pb-2.5 border-b border-slate-100">
-        <div class="flex items-center gap-2 mb-2.5">
+      <div class="px-3 pt-3.5 pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
           <span class="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center">
             <i class="fa-solid fa-brain text-white text-[11px]"></i>
           </span>
           <span class="text-[12.5px] font-semibold text-slate-700">技能体系</span>
-        </div>
-        <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-300 text-[10px]"></i>
-          <input
-            v-model="keyword"
-            type="text"
-            placeholder="搜索技能…"
-            class="w-full text-[12px] bg-slate-50 border border-transparent focus:bg-white focus:border-blue-400 rounded-md pl-7 pr-2.5 py-1.5 focus:outline-none transition"
-          />
         </div>
       </div>
 
