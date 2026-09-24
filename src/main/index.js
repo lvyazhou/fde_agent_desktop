@@ -36,6 +36,8 @@ app.setName('FDE产设大师');
 
 let mainWindow;
 let splashWindow;
+// 真退出标志：macOS 上「关闭 = 隐藏」，只有 before-quit 之后才允许窗口真的销毁。
+let isQuitting = false;
 let acp = null;
 let hermesProcess = null;
 let prototypeServer = null;
@@ -1380,16 +1382,8 @@ function createWindow() {
     console.error('[main] Failed to load renderer:', error);
   });
 
-  // Window control IPC handlers
-  ipcMain.on('window:minimize', () => mainWindow.minimize());
-  ipcMain.on('window:maximize', () => {
-    if (mainWindow.isMaximized()) {
-      mainWindow.unmaximize();
-    } else {
-      mainWindow.maximize();
-    }
-  });
-  ipcMain.on('window:close', () => mainWindow.close());
+  // 窗口控制 IPC 在模块级注册一次（见 registerWindowControls），
+  // 不能放这里：每次重建窗口都会再注册一遍，监听器只增不减。
 
   mainWindow.on('maximize', () =>
     mainWindow.webContents.send('window:maximized-changed', true),
@@ -1398,7 +1392,34 @@ function createWindow() {
     mainWindow.webContents.send('window:maximized-changed', false),
   );
 
+  // macOS：点「×」只隐藏不销毁。窗口留着，重开瞬时可见，agent 会话与渲染层状态都不丢。
+  // 真正退出（Cmd+Q / before-quit）时 isQuitting 为 true，放行销毁。
+  mainWindow.on('close', (e) => {
+    if (process.platform === 'darwin' && !isQuitting) {
+      e.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
   return mainWindow;
+}
+
+// 窗口控制 IPC：与窗口实例解耦，模块级只注册一次，作用于当前的 mainWindow。
+function registerWindowControls() {
+  ipcMain.on('window:minimize', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize();
+  });
+  ipcMain.on('window:maximize', () => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  });
+  ipcMain.on('window:close', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.close();
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -4883,6 +4904,7 @@ function whenReadyToShow(win, timeoutMs = 8000) {
 app.whenReady().then(async () => {
   ensureDirs();
   buildAppMenu();
+  registerWindowControls();
   startPrototypeServer();
 
   // Show splash
@@ -4914,10 +4936,19 @@ app.whenReady().then(async () => {
   // 先 show 再关启动页，避免中间露出桌面闪一下
   if (splashWindow && !splashWindow.isDestroyed()) splashWindow.close();
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+  // Dock 图标点击 / 应用被重新激活：有窗口就拉回来，没有才重建。
+  // 原实现只在 length === 0 时 createWindow()，但窗口是 show:false 创建的，
+  // 没人 show 它 → 点了图标不出窗口，再点一次连分支都不进，彻底点不动。
+  app.on('activate', async () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+      return;
     }
+    const win = createWindow();
+    await Promise.all([win.__rendererReady, whenReadyToShow(win)]);
+    if (!win.isDestroyed()) win.show();
   });
 });
 
@@ -5545,4 +5576,6 @@ ipcMain.handle('ai-apps:knowledge-open', async (_event, { id } = {}) => {
 });
 
 app.on('will-quit', () => { stopHermes(); for (const terminal of codeTerminals.values()) { try { terminal.pty.kill(); } catch (_) {} } codeTerminals.clear(); });
-app.on('before-quit', () => { stopHermes(); });
+// isQuitting 必须在窗口 close 事件之前置位，否则 macOS 上的「关闭=隐藏」
+// 会把 Cmd+Q 触发的销毁也拦掉，应用退不掉。
+app.on('before-quit', () => { isQuitting = true; stopHermes(); });
