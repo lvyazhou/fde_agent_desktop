@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 700" width="960" height="700">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
+  </style>
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#2563eb"/></marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#16a34a"/></marker>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#0f172a" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="960" height="700" fill="#ffffff"/>
+  <text x="480" y="40" text-anchor="middle" font-size="20" font-weight="600" fill="#0f172a">一条 SQL 查询的链路与心智模型</text>
+  <text x="480" y="63" text-anchor="middle" font-size="13" fill="#64748b">把中文需求按这个顺序拆一遍，SQL 就写出来了</text>
+  <rect x="300" y="116" width="300" height="74" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="300" y="116" width="8" height="74" rx="4" fill="#2563eb"/>
+  <text x="322" y="145" font-size="15" font-weight="600" fill="#1d4ed8">FROM</text>
+  <text x="420" y="145" font-size="13" fill="#334155">从哪张表</text>
+  <text x="322" y="170" font-size="12" fill="#64748b">order / patient</text>
+  <line x1="450.0" y1="190" x2="450.0" y2="202" stroke="#93c5fd" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <rect x="300" y="202" width="300" height="74" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="300" y="202" width="8" height="74" rx="4" fill="#2563eb"/>
+  <text x="322" y="231" font-size="15" font-weight="600" fill="#1d4ed8">SELECT</text>
+  <text x="420" y="231" font-size="13" fill="#334155">挑哪几列</text>
+  <text x="322" y="256" font-size="12" fill="#64748b">name, amount</text>
+  <line x1="450.0" y1="276" x2="450.0" y2="288" stroke="#93c5fd" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <rect x="300" y="288" width="300" height="74" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="300" y="288" width="8" height="74" rx="4" fill="#2563eb"/>
+  <text x="322" y="317" font-size="15" font-weight="600" fill="#1d4ed8">WHERE</text>
+  <text x="420" y="317" font-size="13" fill="#334155">要哪几行</text>
+  <text x="322" y="342" font-size="12" fill="#64748b">9月 且 amount>500</text>
+  <line x1="450.0" y1="362" x2="450.0" y2="374" stroke="#93c5fd" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <rect x="300" y="374" width="300" height="74" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="300" y="374" width="8" height="74" rx="4" fill="#2563eb"/>
+  <text x="322" y="403" font-size="15" font-weight="600" fill="#1d4ed8">GROUP BY</text>
+  <text x="420" y="403" font-size="13" fill="#334155">分组汇总</text>
+  <text x="322" y="428" font-size="12" fill="#64748b">按医生 · COUNT/SUM</text>
+  <line x1="450.0" y1="448" x2="450.0" y2="460" stroke="#93c5fd" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <rect x="300" y="460" width="300" height="74" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5" filter="url(#sh)"/>
+  <rect x="300" y="460" width="8" height="74" rx="4" fill="#2563eb"/>
+  <text x="322" y="489" font-size="15" font-weight="600" fill="#1d4ed8">ORDER BY</text>
+  <text x="420" y="489" font-size="13" fill="#334155">怎么排</text>
+  <text x="322" y="514" font-size="12" fill="#64748b">总额从高到低</text>
+  <text x="450.0" y="102" text-anchor="middle" font-size="12.5" fill="#2563eb" font-weight="600">SELECT 五步：想清楚这五件事，SQL 就成形了</text>
+  <rect x="40" y="116" width="150" height="74" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="115" y="143" text-anchor="middle" font-size="15" font-weight="600" fill="#1e3a8a">中文需求</text>
+  <text x="115" y="166" text-anchor="middle" font-size="10.5" fill="#475569">「9月内科·金额&gt;500·按医生统计」</text>
+  <line x1="190" y1="153.0" x2="296" y2="153.0" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <rect x="210" y="133.0" width="60" height="18" fill="#ffffff" opacity="0.95"/>
+  <text x="240" y="146.0" text-anchor="middle" font-size="11" fill="#2563eb">拆解</text>
+  <rect x="680" y="150" width="230" height="250" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="795.0" y="178" text-anchor="middle" font-size="15" font-weight="600" fill="#166534">数据库 · 表 = Excel</text>
+  <rect x="704" y="198" width="46" height="26" fill="#dcfce7" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="704" y="224" width="46" height="26" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="704" y="250" width="46" height="26" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="704" y="276" width="46" height="26" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="750" y="198" width="46" height="26" fill="#dcfce7" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="750" y="224" width="46" height="26" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="750" y="250" width="46" height="26" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="750" y="276" width="46" height="26" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="796" y="198" width="46" height="26" fill="#dcfce7" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="796" y="224" width="46" height="26" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="796" y="250" width="46" height="26" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="796" y="276" width="46" height="26" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="842" y="198" width="46" height="26" fill="#dcfce7" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="842" y="224" width="46" height="26" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="842" y="250" width="46" height="26" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+  <rect x="842" y="276" width="46" height="26" fill="#ffffff" stroke="#cbd5e1" stroke-width="1"/>
+  <text x="796.0" y="215" text-anchor="middle" font-size="10.5" fill="#166534" font-weight="600">列(字段)</text>
+  <text x="795.0" y="328" text-anchor="middle" font-size="11.5" fill="#475569">表=sheet · 列=字段 · 行=记录</text>
+  <text x="795.0" y="346" text-anchor="middle" font-size="11.5" fill="#475569">JOIN=把多张表靠字段对上号</text>
+  <path d="M 600,153.0 C 640,153.0 640,220 676,220" stroke="#2563eb" stroke-width="2" fill="none" marker-end="url(#arrow-blue)"/>
+  <rect x="612" y="150" width="86" height="18" fill="#ffffff" opacity="0.95"/>
+  <text x="655" y="163" text-anchor="middle" font-size="11" fill="#2563eb">发送查询</text>
+  <rect x="680" y="470" width="230" height="90" rx="8" fill="#f0fdf4" stroke="#86efac" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="795.0" y="500" text-anchor="middle" font-size="15" font-weight="600" fill="#166534">返回结果</text>
+  <text x="795.0" y="523" text-anchor="middle" font-size="11.5" fill="#475569">符合口径的几行几列</text>
+  <text x="795.0" y="541" text-anchor="middle" font-size="11.5" fill="#475569">(自证 / 交研发 / 核口径)</text>
+  <line x1="795.0" y1="400" x2="795.0" y2="470" stroke="#16a34a" stroke-width="2" fill="none" marker-end="url(#arrow-green)"/>
+  <rect x="765.0" y="425" width="60" height="18" fill="#ffffff" opacity="0.95"/>
+  <text x="795.0" y="438" text-anchor="middle" font-size="11" fill="#16a34a">返回</text>
+  <rect x="40" y="560" width="560" height="120" rx="8" fill="#fef2f2" stroke="#fecaca" stroke-width="1.5"/>
+  <text x="60" y="587" font-size="13.5" font-weight="600" fill="#b91c1c">⚠ 生产环境三条红线</text>
+  <text x="60" y="612" font-size="12" fill="#7f1d1d">1. 只读不写：SELECT 为主，慎用 DELETE / UPDATE / DROP</text>
+  <text x="60" y="634" font-size="12" fill="#7f1d1d">2. 先加 LIMIT 试探：SELECT * FROM 表 LIMIT 10; 别一次全捞</text>
+  <text x="60" y="656" font-size="12" fill="#7f1d1d">3. 改数据前先备份、先在测试库跑，确保能回滚</text>
+  <g transform="translate(650, 605)">
+    <line x1="0" y1="6" x2="26" y2="6" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+    <text x="32" y="10" font-size="11.5" fill="#6b7280">查询发出</text>
+    <line x1="120" y1="6" x2="146" y2="6" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+    <text x="152" y="10" font-size="11.5" fill="#6b7280">结果返回</text>
+  </g>
+</svg>

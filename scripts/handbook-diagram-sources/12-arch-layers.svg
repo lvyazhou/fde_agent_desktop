@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 640" width="960" height="640">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
+  </style>
+  <defs>
+    <marker id="ab" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#2563eb"/></marker>
+    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="#0f172a" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="960" height="640" fill="#ffffff"/>
+  <text x="480" y="42" text-anchor="middle" font-size="21" font-weight="600" fill="#0f172a">架构的四层：从"做什么"到"怎么建"</text>
+  <text x="480" y="66" text-anchor="middle" font-size="13" fill="#64748b">越往下越具体 · 上层决定下层 · 上层错了下层白搭</text>
+  <text x="52" y="130" text-anchor="middle" font-size="12" fill="#94a3b8">抽象</text>
+  <line x1="52" y1="145" x2="52" y2="500" stroke="#cbd5e1" stroke-width="1.5" marker-end="url(#ab)"/>
+  <text x="52" y="522" text-anchor="middle" font-size="12" fill="#94a3b8">具体</text>
+  <text x="40" y="330" text-anchor="middle" font-size="12" fill="#94a3b8" transform="rotate(-90 40 330)">越往下越贴近落地</text>
+  <rect x="90" y="100" width="540" height="86" rx="10" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="114" y="130" font-size="17" font-weight="600" fill="#1e3a8a">业务架构</text>
+  <text x="114" y="154" font-size="12.5" fill="#334155">做什么、为谁做、怎么运转</text>
+  <text x="114" y="174" font-size="11.5" fill="#64748b">角色 · 业务能力 · 流程 · 价值</text>
+  <text x="650" y="134" font-size="11" fill="#2563eb" font-weight="600">FDE 该关心</text>
+  <text x="650" y="156" font-size="10.5" fill="#475569">切进哪一环 · 动了会影响谁</text>
+  <line x1="360.0" y1="186" x2="360.0" y2="202" stroke="#2563eb" stroke-width="2" marker-end="url(#ab)"/>
+  <rect x="90" y="202" width="540" height="86" rx="10" fill="#eef2ff" stroke="#c7d2fe" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="114" y="232" font-size="17" font-weight="600" fill="#3730a3">应用 / 产品架构</text>
+  <text x="114" y="256" font-size="12.5" fill="#334155">拆成哪些系统/模块，各管什么，怎么对接</text>
+  <text x="114" y="276" font-size="11.5" fill="#64748b">模块划分 · 模块间接口 · 与现有系统对接</text>
+  <text x="650" y="236" font-size="11" fill="#2563eb" font-weight="600">FDE 该关心</text>
+  <text x="650" y="254" font-size="10.5" fill="#475569">边界清不清</text>
+  <text x="650" y="270" font-size="10.5" fill="#475569">· 和客户现有系统怎么接</text>
+  <line x1="360.0" y1="288" x2="360.0" y2="304" stroke="#2563eb" stroke-width="2" marker-end="url(#ab)"/>
+  <rect x="90" y="304" width="540" height="86" rx="10" fill="#f0f9ff" stroke="#bae6fd" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="114" y="334" font-size="17" font-weight="600" fill="#075985">技术架构</text>
+  <text x="114" y="358" font-size="12.5" fill="#334155">用什么技术把应用建出来、跑在哪</text>
+  <text x="114" y="378" font-size="11.5" fill="#64748b">技术栈 · 部署 · 高可用 · 鉴权/监控/合规</text>
+  <text x="650" y="338" font-size="11" fill="#2563eb" font-weight="600">FDE 该关心</text>
+  <text x="650" y="360" font-size="10.5" fill="#475569">安全/合规/部署等硬约束满不满足</text>
+  <line x1="360.0" y1="390" x2="360.0" y2="406" stroke="#2563eb" stroke-width="2" marker-end="url(#ab)"/>
+  <rect x="90" y="406" width="540" height="86" rx="10" fill="#f0fdfa" stroke="#99f6e4" stroke-width="1.5" filter="url(#sh)"/>
+  <text x="114" y="436" font-size="17" font-weight="600" fill="#115e59">数据架构</text>
+  <text x="114" y="460" font-size="12.5" fill="#334155">数据存哪、怎么流转、口径与权限</text>
+  <text x="114" y="480" font-size="11.5" fill="#64748b">库/表 · 数据中台 · 口径标准 · 脱敏/出域</text>
+  <text x="650" y="440" font-size="11" fill="#2563eb" font-weight="600">FDE 该关心</text>
+  <text x="650" y="458" font-size="10.5" fill="#475569">数据拿不拿得到</text>
+  <text x="650" y="474" font-size="10.5" fill="#475569">· 口径统不统一 · 出不出域</text>
+  <rect x="90" y="516" width="780" height="70" rx="8" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
+  <text x="110" y="543" font-size="13" font-weight="600" fill="#c2410c">另一个维度：单体 / 微服务 / 云原生</text>
+  <text x="110" y="566" font-size="12" fill="#7c2d12">这四层是"从业务到技术"的纵向分层；单体·微服务·云原生讲的是"同一套系统切成几块、部署在哪"，与四层垂直，别混。</text>
+</svg>

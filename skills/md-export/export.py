@@ -123,6 +123,58 @@ def to_pdf(md_file: Path, out_file: Path):
         raise RuntimeError("PDF 生成失败")
 
 
+# ============ 图片预处理 ============
+# python-docx 只认位图(png/jpg/gif/bmp/tiff/emf/wmf),不认 SVG。而 PRD/文档的
+# 自动配图(架构图/流程图/能力图)都是 fireworks 生成的 SVG —— 直接 add_picture 会抛
+# UnrecognizedImageError,炸掉整份 Word。这里把 SVG 先栅格化成 PNG 再插入。
+# 转换器按优先级兜底,分发出去的机器不一定装了哪个;全都不可用则返回 None(调用方跳过该图)。
+def _svg_to_png(svg_path: Path, out_dir: Path) -> "Path | None":
+    png_path = out_dir / (svg_path.stem + "_svg2png.png")
+    # 目标宽度给足,保证嵌进 6 英寸宽时清晰(约 1600px)。
+    W = "1600"
+
+    # ① cairosvg(纯 Python,若装了最省事、跨平台)
+    try:
+        import cairosvg  # noqa
+        cairosvg.svg2png(url=str(svg_path), write_to=str(png_path), output_width=int(W))
+        if png_path.exists() and png_path.stat().st_size > 0:
+            return png_path
+    except Exception:
+        pass
+
+    # ② rsvg-convert(librsvg,mac/linux 上常见)
+    # ③ inkscape  ④ qlmanage(macOS 自带,兜底)
+    candidates = [
+        ["rsvg-convert", "-w", W, "-o", str(png_path), str(svg_path)],
+        ["inkscape", str(svg_path), "--export-type=png", "-w", W, "-o", str(png_path)],
+    ]
+    for cmd in candidates:
+        exe = shutil.which(cmd[0])
+        if not exe:
+            continue
+        try:
+            subprocess.run([exe] + cmd[1:], check=True,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+            if png_path.exists() and png_path.stat().st_size > 0:
+                return png_path
+        except Exception:
+            continue
+
+    # ④ qlmanage:macOS 自带,-t 生成缩略图(png)。输出名固定为 <svg名>.png
+    ql = shutil.which("qlmanage")
+    if ql:
+        try:
+            subprocess.run([ql, "-t", "-s", W, "-o", str(out_dir), str(svg_path)],
+                           check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=60)
+            ql_out = out_dir / (svg_path.name + ".png")
+            if ql_out.exists() and ql_out.stat().st_size > 0:
+                return ql_out
+        except Exception:
+            pass
+
+    return None
+
+
 # ============ Word 导出 ============
 def to_word(md_file: Path, out_file: Path):
     from docx import Document
@@ -387,9 +439,22 @@ def to_word(md_file: Path, out_file: Path):
             ipath = md_file.parent / src
             if not ipath.exists():
                 continue
+            # SVG 先栅格化成 PNG(python-docx 不认 SVG)。转不动就跳过这张,不炸整份文档。
+            if ipath.suffix.lower() == ".svg":
+                png = _svg_to_png(ipath, md_file.parent)
+                if png is None:
+                    print(f"[WARN] 跳过无法转换的 SVG 配图: {src}")
+                    continue
+                ipath = png
             p = doc.add_paragraph()
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            p.add_run().add_picture(str(ipath), width=Inches(6.0))
+            try:
+                p.add_run().add_picture(str(ipath), width=Inches(6.0))
+            except Exception as e:
+                # 图片格式不被 python-docx 接受等:降级为跳过,保住其余内容。
+                print(f"[WARN] 跳过无法嵌入的配图 {src}: {e}")
+                p._element.getparent().remove(p._element)
+                continue
             if img_para is not None:
                 p._element.getparent().remove(p._element)
                 img_para._element.addnext(p._element)

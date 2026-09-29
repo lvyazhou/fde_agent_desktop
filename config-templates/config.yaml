@@ -8,8 +8,13 @@
 
 model:
   provider: custom
-  default: anthropic/claude-sonnet-5
+  default: deepseek/deepseek-v4.1-flash
   base_url: https://api.360.cn/v1
+  # DeepSeek v4 系列真实上下文窗口是 1M。引擎 catalog 只精确认得 `deepseek-v4-flash`
+  # (不带 .1),名字带 .1 时会退回通用兜底 `deepseek`=128k,白白砍掉 87% 窗口 ——
+  # 长任务(原型生成)跑过 128k 就被压缩截断、"越到后面越忘前面"。这里显式钉死为 1M。
+  # 换非 deepseek 模型做默认时,按该模型真实窗口调整或删除本行(让引擎自己探测)。
+  context_length: 1000000
 
 # 图片理解走的辅助 vision 模型。默认 provider:auto 会在 360 custom provider 下
 # 解析出 360 不认识的 vision 模型名 → model_not_found → 图片请求失败。
@@ -28,13 +33,14 @@ custom_providers:
     key_env: OPENAI_API_KEY
     api_key: your-api-key-here
     # 顶栏下拉框可选模型(向导保存时会按所选网关收敛为实际填写的模型)。
+    # 第一项 = 首启/向导保存 key 时写入的默认模型(model.default 跟随 models[0])。
     models:
+      - deepseek/deepseek-v4.1-flash
+      - deepseek/deepseek-v4-pro
       - anthropic/claude-opus-4.8
       - anthropic/claude-opus-5
       - anthropic/claude-sonnet-5
       - anthropic/claude-haiku-4.5
-      - deepseek/deepseek-v4-pro
-      - deepseek/deepseek-v4-flash
       - openai/gpt-5.5
       - moonshotai/kimi-k3
       - z-ai/glm-5.3
