@@ -813,6 +813,8 @@ function resolveHermesAcpCommand() {
   if (app.isPackaged) {
     const bundled = path.join(process.resourcesPath, 'hermes-acp', exe);
     if (fs.existsSync(bundled)) return bundled;
+    console.error(`[main] 打包版未找到内置引擎: ${bundled}`);
+    console.error('[main] 引擎是 onedir(exe + _internal),重新打包前需确保 extraResources 已把它拷贝进 resources/hermes-acp/');
   }
 
   // 2. Dev mode: look in monorepo hermes-agent/.venv
