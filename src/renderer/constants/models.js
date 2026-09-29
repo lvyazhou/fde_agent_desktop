@@ -14,6 +14,8 @@ export const GATEWAY_PRESETS = [
     name: '360 网关',
     baseUrl: 'https://api.360.cn/v1',
     stripVendorPrefix: false,
+    apiMode: 'chat_completions',
+    authMode: 'bearer',
     models: [
       'anthropic/claude-opus-4.8',
       'anthropic/claude-sonnet-5',
@@ -33,6 +35,8 @@ export const GATEWAY_PRESETS = [
     name: 'OpenAI 官方',
     baseUrl: 'https://api.openai.com/v1',
     stripVendorPrefix: true,
+    apiMode: 'codex_responses',
+    authMode: 'bearer',
     models: ['gpt-5.5', 'gpt-5.5-mini', 'gpt-4o', 'gpt-4o-mini'],
   },
   {
@@ -40,6 +44,8 @@ export const GATEWAY_PRESETS = [
     name: 'DeepSeek 官方',
     baseUrl: 'https://api.deepseek.com/v1',
     stripVendorPrefix: true,
+    apiMode: 'chat_completions',
+    authMode: 'bearer',
     models: ['deepseek-chat', 'deepseek-reasoner'],
   },
   {
@@ -47,6 +53,8 @@ export const GATEWAY_PRESETS = [
     name: '自定义网关',
     baseUrl: '',
     stripVendorPrefix: true,
+    apiMode: 'auto',
+    authMode: 'bearer',
     models: [],
   },
 ];

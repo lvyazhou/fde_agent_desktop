@@ -366,7 +366,14 @@ contextBridge.exposeInMainWorld('api', {
     saveProfile(profile) { return invoke('gateway:save-profile', { profile }); },
     deleteProfile(id) { return invoke('gateway:delete-profile', { id }); },
     activateProfile(id) { return invoke('gateway:activate-profile', { id }); },
-    discoverModels(baseUrl, apiKey) { return invoke('gateway:discover-models', { baseUrl, apiKey }); },
+    // 传完整 profile(含 apiMode/authMode/extraHeaders)以便按协议带对鉴权头;
+    // 兼容旧的 (baseUrl, apiKey) 调用形态。
+    discoverModels(profileOrBaseUrl, apiKey) {
+      const profile = profileOrBaseUrl && typeof profileOrBaseUrl === 'object'
+        ? profileOrBaseUrl
+        : { baseUrl: profileOrBaseUrl, apiKey };
+      return invoke('gateway:discover-models', profile);
+    },
   },
 
   // 授权(首次启动向导)

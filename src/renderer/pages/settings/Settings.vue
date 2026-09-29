@@ -292,6 +292,92 @@
             </label>
           </div>
 
+          <!-- 高级协议设置:普通 OpenAI 兼容网关不用碰,原生 Anthropic / Responses / 自定义鉴权网关才需要 -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <button
+              @click="showAdvanced = !showAdvanced"
+              class="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
+              <span class="text-[12.5px] font-medium text-slate-600">
+                <i class="fa-solid mr-1.5 text-[11px]" :class="showAdvanced ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                高级协议设置
+                <span class="ml-1 font-normal text-slate-400">默认自动识别，Anthropic / Responses / 自定义鉴权网关才需要</span>
+              </span>
+              <span class="text-[11px] px-2 py-0.5 rounded-full bg-slate-200 text-slate-500 font-mono">{{ apiModeLabel }}</span>
+            </button>
+
+            <div v-if="showAdvanced" class="p-3.5 space-y-3.5 border-t border-slate-200 bg-white">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-[12px] font-medium text-slate-600 mb-1">协议</label>
+                  <select
+                    v-model="form.apiMode"
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                  >
+                    <option value="auto">自动识别</option>
+                    <option value="chat_completions">OpenAI Chat Completions</option>
+                    <option value="codex_responses">OpenAI Responses</option>
+                    <option value="anthropic_messages">Anthropic Messages</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-[12px] font-medium text-slate-600 mb-1">认证方式</label>
+                  <select
+                    v-model="form.authMode"
+                    class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-[13px] text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                  >
+                    <option value="bearer">Authorization: Bearer</option>
+                    <option value="x-api-key">x-api-key</option>
+                    <option value="custom">自定义 Header</option>
+                  </select>
+                </div>
+              </div>
+
+              <p class="text-xs text-slate-400 leading-relaxed">
+                <i class="fa-solid fa-circle-info mr-1"></i>
+                原生 Anthropic 网关：Base URL 指向 <code class="bg-slate-100 px-1 rounded">…/v1</code>，协议选 Anthropic Messages、认证选 x-api-key。
+                普通 OpenAI 兼容网关保持「自动识别 / Bearer」即可。
+              </p>
+
+              <!-- 额外 Header:增删行。authMode=custom 时这里就是鉴权头本身;其余情况放
+                   组织 ID / 自定义路由标记等附加头。 -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="text-[12px] font-medium text-slate-600 flex items-center gap-1.5">
+                    额外 Header
+                    <button
+                      @click="maskHeaderValues = !maskHeaderValues"
+                      class="text-slate-400 hover:text-slate-600 transition-colors"
+                      :title="maskHeaderValues ? '显示值' : '隐藏值'"
+                    >
+                      <i class="fa-solid text-[11px]" :class="maskHeaderValues ? 'fa-eye' : 'fa-eye-slash'"></i>
+                    </button>
+                  </label>
+                  <button @click="addHeader" class="text-[12px] text-primary hover:underline cursor-pointer">
+                    <i class="fa-solid fa-plus mr-0.5 text-[10px]"></i>添加一行
+                  </button>
+                </div>
+                <div v-for="(h, i) in form.extraHeaders" :key="i" class="flex items-center gap-2 mb-1.5">
+                  <input
+                    v-model="h.name"
+                    placeholder="Header 名，如 x-org-id"
+                    class="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-[12.5px] font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                  />
+                  <input
+                    v-model="h.value"
+                    :type="maskHeaderValues ? 'password' : 'text'"
+                    placeholder="值"
+                    class="flex-1 px-3 py-1.5 border border-slate-200 rounded-lg text-[12.5px] font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                  />
+                  <button @click="removeHeader(i)" class="w-6 h-6 shrink-0 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-[11px]"></i>
+                  </button>
+                </div>
+                <p v-if="!form.extraHeaders.length" class="text-[11px] text-slate-300">没有额外 Header —— 多数网关不需要。</p>
+              </div>
+            </div>
+          </div>
+
           <div class="flex items-center gap-3 pt-2 border-t border-slate-100">
             <button
               @click="saveAndActivate"
@@ -447,7 +533,48 @@ const activeId = ref('');
 const editingId = ref('');
 const isNew = computed(() => editingId.value === NEW_ID);
 
-const form = ref({ name: '', baseUrl: '', apiKey: '', stripVendorPrefix: true });
+const form = ref({ name: '', baseUrl: '', apiKey: '', stripVendorPrefix: true, apiMode: 'auto', authMode: 'bearer', extraHeaders: [] });
+// 高级协议面板的展开态 + Header 值的明文/掩码开关(值里可能是凭据,默认掩码)。
+const showAdvanced = ref(false);
+const maskHeaderValues = ref(true);
+
+// 协议徽标:面板收起时也能一眼看到当前是哪套协议。
+const API_MODE_LABELS = {
+  auto: '自动识别',
+  chat_completions: 'OpenAI Chat',
+  codex_responses: 'Responses',
+  anthropic_messages: 'Anthropic',
+};
+const apiModeLabel = computed(() => {
+  const m = normalizeMode(form.value.apiMode, form.value.baseUrl);
+  return API_MODE_LABELS[m] || m;
+});
+
+// apiMode='auto'/缺省时,按 baseUrl 归一化出实际协议(与主进程 normalizeGatewayMode 一致)。
+function normalizeMode(mode, baseUrl) {
+  if (mode && mode !== 'auto') return mode;
+  const lower = String(baseUrl || '').toLowerCase();
+  if (lower.includes('anthropic.com') || /\/anthropic(?:\/v1)?\/?$/.test(lower)) return 'anthropic_messages';
+  if (lower.includes('api.openai.com')) return 'codex_responses';
+  return 'chat_completions';
+}
+
+// profile.extraHeaders 落盘为 {name:value};表单里是行数组(可增删/保序)。
+function headersObjectToRows(obj) {
+  if (!obj || typeof obj !== 'object') return [];
+  return Object.entries(obj).map(([name, value]) => ({ name, value: String(value ?? '') }));
+}
+function headersRowsToObject(rows) {
+  const out = {};
+  for (const r of rows || []) {
+    const n = String(r && r.name || '').trim();
+    const v = String(r && r.value || '').trim();
+    if (n && v) out[n] = v;
+  }
+  return out;
+}
+function addHeader() { form.value.extraHeaders.push({ name: '', value: '' }); }
+function removeHeader(i) { form.value.extraHeaders.splice(i, 1); }
 // selectedModels = 已选模型(保序,第一个=默认);discoveredModels = 本次拉到的对话模型;
 // otherModels = 同次拉到但判为非对话的(embedding/图像/语音…),折叠区展示,默认不勾。
 const selectedModels = ref([]);
@@ -502,6 +629,8 @@ const suggestedModels = computed(() => {
 function applyPreset(preset) {
   form.value.baseUrl = preset.baseUrl;
   form.value.stripVendorPrefix = preset.stripVendorPrefix;
+  form.value.apiMode = preset.apiMode || 'auto';
+  form.value.authMode = preset.authMode || 'bearer';
   if (!form.value.name.trim() || GATEWAY_PRESETS.some((p) => p.name === form.value.name)) {
     form.value.name = preset.name;
   }
@@ -516,7 +645,8 @@ function applyPreset(preset) {
 
 function startNewProfile() {
   editingId.value = NEW_ID;
-  form.value = { name: '', baseUrl: '', apiKey: '', stripVendorPrefix: true };
+  form.value = { name: '', baseUrl: '', apiKey: '', stripVendorPrefix: true, apiMode: 'auto', authMode: 'bearer', extraHeaders: [] };
+  showAdvanced.value = false;
   selectedModels.value = [];
   discoveredModels.value = [];
   otherModels.value = [];
@@ -536,7 +666,11 @@ function selectProfile(id) {
     baseUrl: p.baseUrl || '',
     apiKey: p.apiKey || '',
     stripVendorPrefix: !!p.stripVendorPrefix,
+    apiMode: p.apiMode || 'auto',
+    authMode: p.authMode || 'bearer',
+    extraHeaders: headersObjectToRows(p.extraHeaders),
   };
+  showAdvanced.value = !!(p.apiMode && p.apiMode !== 'auto') || !!(p.authMode && p.authMode !== 'bearer') || headersObjectToRows(p.extraHeaders).length > 0;
   selectedModels.value = Array.isArray(p.models) ? [...p.models] : [];
   discoveredModels.value = [];
   otherModels.value = [];
@@ -626,7 +760,13 @@ async function discoverModels() {
   discoverMsg.value = '';
   testResult.value = null;
   try {
-    const r = await window.api.gateway.discoverModels(form.value.baseUrl.trim(), form.value.apiKey.trim());
+    const r = await window.api.gateway.discoverModels({
+      baseUrl: form.value.baseUrl.trim(),
+      apiKey: form.value.apiKey.trim(),
+      apiMode: normalizeMode(form.value.apiMode, form.value.baseUrl),
+      authMode: form.value.authMode,
+      extraHeaders: headersRowsToObject(form.value.extraHeaders),
+    });
     if (r && r.ok && Array.isArray(r.models) && r.models.length) {
       discoveredModels.value = r.models;
       otherModels.value = Array.isArray(r.others) ? r.others : [];
@@ -678,6 +818,9 @@ async function testConn() {
       // 该网关认前缀名时不能让主进程按域名猜着剥前缀,否则测的模型名和
       // 引擎实际用的不一致 —— 测通了但真跑起来 400(或反过来)。
       stripVendorPrefix: form.value.stripVendorPrefix,
+      apiMode: normalizeMode(form.value.apiMode, form.value.baseUrl),
+      authMode: form.value.authMode,
+      extraHeaders: headersRowsToObject(form.value.extraHeaders),
     });
     testResult.value = { ...(r || {}), model };
   } catch (e) {
@@ -696,6 +839,9 @@ function buildProfile() {
     apiKey: form.value.apiKey.trim(),
     models: [...selectedModels.value],
     stripVendorPrefix: !!form.value.stripVendorPrefix,
+    apiMode: form.value.apiMode,
+    authMode: form.value.authMode,
+    extraHeaders: headersRowsToObject(form.value.extraHeaders),
   };
 }
 

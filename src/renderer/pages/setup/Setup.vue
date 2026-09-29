@@ -1,14 +1,25 @@
 <template>
   <div class="min-h-screen h-screen flex flex-col bg-gradient-to-br from-slate-50 to-blue-50/40 font-sans text-slate-800 antialiased overflow-hidden">
-    <!-- 顶部可拖拽条 -->
-    <div class="h-10 shrink-0 drag-region flex items-center px-5">
+    <!-- 顶部可拖拽条与窗口控制 -->
+    <div class="h-10 shrink-0 drag-region flex items-center justify-between px-5">
       <div class="flex items-center gap-2 no-drag">
         <img src="../../assets/logo.png" alt="Logo" class="w-6 h-6 rounded-lg object-cover shadow-sm" />
         <span class="font-semibold text-slate-700 text-[13px]">FDE产品设计 · 初始化</span>
       </div>
+      <div class="flex items-center no-drag">
+        <button @click="minimizeWindow" class="setup-win-btn" title="最小化">
+          <i class="fa-solid fa-minus"></i>
+        </button>
+        <button @click="toggleMaximize" class="setup-win-btn" title="最大化">
+          <i class="fa-solid" :class="isMaximized ? 'fa-clone' : 'fa-square'"></i>
+        </button>
+        <button @click="closeWindow" class="setup-win-btn setup-win-btn-close" title="关闭">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
     </div>
 
-    <div class="flex-1 min-h-0 overflow-y-auto flex items-center justify-center p-6">
+    <div class="flex-1 min-h-0 overflow-y-auto flex items-start justify-center p-6">
       <div class="w-full max-w-2xl">
         <!-- 步骤指示 -->
         <div class="flex items-center justify-center gap-2 mb-8">
@@ -189,7 +200,30 @@
               placeholder="https://api.360.cn/v1"
               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 mb-2"
             />
-            <p class="text-[11px] text-slate-400 mb-4">兼容 OpenAI 格式的接口地址。漏写 <code class="bg-slate-100 px-1 rounded">/v1</code> 会自动补齐重试。</p>
+            <p class="text-[11px] text-slate-400 mb-3">OpenAI-compatible 网关可直接使用；原生 Anthropic/Responses 网关可在高级协议中选择协议和认证方式。</p>
+            <button @click="showAdvancedGateway = !showAdvancedGateway" class="text-[11.5px] text-slate-500 hover:text-blue-600 mb-3">
+              <i class="fa-solid mr-1" :class="showAdvancedGateway ? 'fa-chevron-down' : 'fa-chevron-right'"></i>高级协议设置
+            </button>
+            <div v-if="showAdvancedGateway" class="mb-4 p-3 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3">
+              <div class="flex items-center gap-2">
+                <label class="w-20 text-[12px] text-slate-600">协议</label>
+                <select v-model="apiMode" class="flex-1 px-2.5 py-2 rounded-lg border border-slate-200 text-[12px] bg-white">
+                  <option value="auto">自动识别</option><option value="chat_completions">OpenAI Chat</option><option value="codex_responses">OpenAI Responses</option><option value="anthropic_messages">Anthropic Messages</option>
+                </select>
+              </div>
+              <div class="flex items-center gap-2">
+                <label class="w-20 text-[12px] text-slate-600">认证</label>
+                <select v-model="authMode" class="flex-1 px-2.5 py-2 rounded-lg border border-slate-200 text-[12px] bg-white">
+                  <option value="bearer">Authorization Bearer</option><option value="x-api-key">x-api-key</option><option value="custom">自定义 Header</option>
+                </select>
+              </div>
+              <div v-for="(h, i) in extraHeaders" :key="i" class="flex items-center gap-2">
+                <input v-model="h.name" placeholder="Header 名称" class="w-28 px-2.5 py-2 rounded-lg border border-slate-200 text-[12px]" />
+                <input v-model="h.value" placeholder="Header 值" class="flex-1 px-2.5 py-2 rounded-lg border border-slate-200 text-[12px] font-mono" />
+                <button @click="extraHeaders.splice(i, 1)" class="text-slate-400 hover:text-red-500"><i class="fa-solid fa-xmark"></i></button>
+              </div>
+              <button @click="extraHeaders.push({ name: '', value: '' })" class="text-[11px] text-blue-600">+ 添加额外 Header</button>
+            </div>
 
             <!-- 一键获取模型 -->
             <div class="flex items-center gap-2 mb-3">
@@ -207,86 +241,93 @@
             </div>
 
             <!-- 模型清单 -->
-            <div class="mb-4">
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="text-[12px] font-medium text-slate-600">
-                  启用的模型 <span class="text-slate-400 font-normal">已选 {{ selectedModels.length }} 个</span>
-                </label>
-                <div v-if="modelChoices.length" class="flex items-center gap-2 text-[11.5px]">
-                  <button @click="selectAllModels" class="text-blue-600 hover:underline cursor-pointer">
-                    {{ modelQuery.trim() ? '全选结果' : '全选' }}
-                  </button>
-                  <span class="text-slate-300">|</span>
-                  <button @click="clearSelectedModels" class="text-slate-500 hover:underline cursor-pointer">
-                    {{ modelQuery.trim() ? '取消结果' : '清空' }}
-                  </button>
-                </div>
-              </div>
-              <div v-if="selectedModels.length" class="flex flex-wrap gap-2 mb-2">
-                <span
-                  v-for="(m, i) in selectedModels" :key="m"
-                  class="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg text-[12px] font-medium"
-                  :class="i === 0 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-600'"
+            <div class="mb-4 rounded-2xl border border-slate-200/80 bg-white/60 p-3">
+              <div class="flex items-center gap-2">
+                <label class="text-[12px] font-medium text-slate-600 shrink-0">默认模型</label>
+                <select
+                  v-model="testModel"
+                  @change="setDefaultModel(testModel)"
+                  :disabled="!selectedModels.length"
+                  class="min-w-0 flex-1 appearance-none px-3 py-2 rounded-xl border border-slate-200 bg-white text-[12px] text-slate-700 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono"
                 >
-                  <span class="font-mono">{{ m }}</span>
-                  <span v-if="i === 0" class="text-[10px] text-blue-400">默认</span>
-                  <button @click="removeSelected(m)" class="w-4 h-4 rounded-full hover:bg-black/10 flex items-center justify-center">
+                  <option value="" disabled>先获取或添加模型</option>
+                  <option v-for="m in selectedModels" :key="m" :value="m">{{ m }}</option>
+                </select>
+                <span class="shrink-0 text-[11px] text-slate-400">已选 {{ selectedModels.length }}</span>
+                <button
+                  v-if="modelChoices.length"
+                  @click="showModelManager = !showModelManager"
+                  class="shrink-0 inline-flex items-center gap-1 text-[11.5px] text-blue-600 hover:text-blue-700"
+                >
+                  {{ showModelManager ? '收起' : '管理模型' }}
+                  <i class="fa-solid text-[9px]" :class="showModelManager ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </button>
+              </div>
+
+              <div v-if="!selectedModels.length" class="mt-2 text-[12px] text-danger">
+                <i class="fa-solid fa-circle-exclamation mr-1"></i>请先「获取模型」，或展开后手动添加
+              </div>
+
+              <div v-if="showModelManager" class="mt-3 border-t border-slate-100 pt-3">
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="text-[12px] font-medium text-slate-600">可用模型</label>
+                  <div class="flex items-center gap-2 text-[11.5px]">
+                    <button @click="selectAllModels" class="text-blue-600 hover:underline cursor-pointer">
+                      {{ modelQuery.trim() ? '全选结果' : '全选' }}
+                    </button>
+                    <span class="text-slate-300">|</span>
+                    <button @click="clearSelectedModels" class="text-slate-500 hover:underline cursor-pointer">
+                      {{ modelQuery.trim() ? '取消结果' : '清空' }}
+                    </button>
+                  </div>
+                </div>
+                <div v-if="modelChoices.length" class="relative mb-1.5">
+                  <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-300"></i>
+                  <input
+                    v-model="modelQuery"
+                    placeholder="搜索模型…"
+                    class="w-full pl-8 pr-8 py-2 rounded-xl bg-slate-50 border border-transparent text-[12.5px] placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-500/10 transition-all font-mono"
+                  />
+                  <button
+                    v-if="modelQuery"
+                    @click="modelQuery = ''"
+                    class="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 flex items-center justify-center transition-colors"
+                  >
                     <i class="fa-solid fa-xmark text-[10px]"></i>
                   </button>
-                </span>
-              </div>
-              <p v-else class="text-[12px] text-danger mb-2">
-                <i class="fa-solid fa-circle-exclamation mr-1"></i>请先「获取模型」，或在下方手动添加
-              </p>
-
-              <!-- 搜索:网关可能返回上百个模型,靠滚动找不现实 -->
-              <div v-if="modelChoices.length" class="relative mb-1.5">
-                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-300"></i>
-                <input
-                  v-model="modelQuery"
-                  placeholder="搜索模型…"
-                  class="w-full pl-8 pr-8 py-2 rounded-xl bg-slate-50 border border-transparent text-[12.5px] placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-500/10 transition-all font-mono"
-                />
-                <button
-                  v-if="modelQuery"
-                  @click="modelQuery = ''"
-                  class="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 flex items-center justify-center transition-colors"
-                >
-                  <i class="fa-solid fa-xmark text-[10px]"></i>
-                </button>
-              </div>
-
-              <div v-if="modelChoices.length" class="border border-slate-200 rounded-xl p-3 max-h-44 overflow-y-auto space-y-1">
-                <p v-if="!filteredModelChoices.length" class="px-2 py-5 text-center text-[12px] text-slate-400">
-                  没有匹配「{{ modelQuery }}」的模型
-                </p>
-                <label
-                  v-for="m in filteredModelChoices" :key="m"
-                  class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
-                >
+                </div>
+                <div v-if="modelChoices.length" class="border border-slate-200 rounded-xl p-2 max-h-44 overflow-y-auto space-y-1">
+                  <p v-if="!filteredModelChoices.length" class="px-2 py-5 text-center text-[12px] text-slate-400">
+                    没有匹配「{{ modelQuery }}」的模型
+                  </p>
+                  <label
+                    v-for="m in filteredModelChoices" :key="m"
+                    class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="selectedModels.includes(m)"
+                      @change="toggleModel(m)"
+                      class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                    />
+                    <span class="text-[13px] text-slate-700 flex-1 font-mono truncate">{{ m }}</span>
+                  </label>
+                </div>
+                <div class="flex items-center gap-2 mt-2">
                   <input
-                    type="checkbox"
-                    :checked="selectedModels.includes(m)"
-                    @change="toggleModel(m)"
-                    class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                    v-model="extraModelInput"
+                    @keyup.enter="addExtraModel"
+                    placeholder="手动添加模型名（回车添加）"
+                    class="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 font-mono"
                   />
-                  <span class="text-[13px] text-slate-700 flex-1 font-mono truncate">{{ m }}</span>
-                </label>
-              </div>
-              <div class="flex items-center gap-2 mt-2">
-                <input
-                  v-model="extraModelInput"
-                  @keyup.enter="addExtraModel"
-                  placeholder="手动添加模型名（回车添加）"
-                  class="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 font-mono"
-                />
-                <button
-                  @click="addExtraModel"
-                  :disabled="!extraModelInput.trim()"
-                  class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[13px] transition-colors disabled:opacity-40"
-                >
-                  <i class="fa-solid fa-plus mr-1 text-[11px]"></i>添加
-                </button>
+                  <button
+                    @click="addExtraModel"
+                    :disabled="!extraModelInput.trim()"
+                    class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[13px] transition-colors disabled:opacity-40"
+                  >
+                    <i class="fa-solid fa-plus mr-1 text-[11px]"></i>添加
+                  </button>
+                </div>
               </div>
               <p class="text-[11px] text-slate-400 mt-2">第一个模型为默认，之后可在顶栏下拉随时切换。</p>
             </div>
@@ -329,7 +370,7 @@
                 </button>
                 <button
                   @click="saveAndFinish"
-                  :disabled="!(testResult && testResult.ok) || saving || selectedModels.length === 0"
+                  :disabled="saving || !apiKey.trim() || !baseUrl.trim() || selectedModels.length === 0"
                   class="text-[13px] px-4 py-2 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
                 >
                   <i class="fa-solid" :class="saving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
@@ -359,6 +400,14 @@ import { useRouter } from 'vue-router';
 import { GATEWAY_PRESETS } from '../../constants/models.js';
 
 const router = useRouter();
+
+const isMaximized = ref(false);
+const minimizeWindow = () => window.api?.window?.minimize();
+const toggleMaximize = () => {
+  window.api?.window?.maximize();
+  isMaximized.value = !isMaximized.value;
+};
+const closeWindow = () => window.api?.window?.close();
 const steps = ['软件授权', '环境自检', '配置 Key', '完成'];
 const step = ref(0);
 
@@ -532,6 +581,31 @@ const testResult = ref(null);
 const testModel = ref('');
 // 模型勾选区的搜索词
 const modelQuery = ref('');
+const showModelManager = ref(false);
+
+// 高级协议(默认收起):普通 OpenAI 兼容网关用不到,只有原生 Anthropic / Responses /
+// 需要自定义鉴权头的网关才展开。apiMode='auto' 时由 baseUrl 归一化(与主进程一致)。
+const showAdvancedGateway = ref(false);
+const apiMode = ref('auto');
+const authMode = ref('bearer');
+const extraHeaders = ref([]);
+
+function normalizeMode(mode, url) {
+  if (mode && mode !== 'auto') return mode;
+  const lower = String(url || '').toLowerCase();
+  if (lower.includes('anthropic.com') || /\/anthropic(?:\/v1)?\/?$/.test(lower)) return 'anthropic_messages';
+  if (lower.includes('api.openai.com')) return 'codex_responses';
+  return 'chat_completions';
+}
+function headersRowsToObject(rows) {
+  const out = {};
+  for (const r of rows || []) {
+    const n = String(r && r.name || '').trim();
+    const v = String(r && r.value || '').trim();
+    if (n && v) out[n] = v;
+  }
+  return out;
+}
 
 // 当前 baseUrl 命中的预设(高亮 + 取建议模型)。
 const matchedPresetId = computed(() => {
@@ -583,6 +657,12 @@ function clearSelectedModels() {
 function applyPreset(preset) {
   baseUrl.value = preset.baseUrl;
   stripVendorPrefix.value = preset.stripVendorPrefix;
+  // 预设自带协议/认证默认值;切预设后高级面板收敛回默认收起态,避免上一个网关的
+  // 自定义 header 残留到新网关(那些头对新网关多半无效,甚至会让请求被拒)。
+  apiMode.value = preset.apiMode || 'auto';
+  authMode.value = preset.authMode || 'bearer';
+  extraHeaders.value = [];
+  showAdvancedGateway.value = false;
   // 换网关后旧模型多半不适用,清掉等重新获取。
   discoveredModels.value = [];
   selectedModels.value = [];
@@ -605,6 +685,12 @@ function removeSelected(value) {
   const i = selectedModels.value.indexOf(value);
   if (i >= 0) selectedModels.value.splice(i, 1);
 }
+function setDefaultModel(value) {
+  const i = selectedModels.value.indexOf(value);
+  if (i <= 0) return;
+  selectedModels.value.splice(i, 1);
+  selectedModels.value.unshift(value);
+}
 
 // 一键拉取该网关真实支持的模型,成功后默认全选。
 const discoverModels = async () => {
@@ -612,7 +698,13 @@ const discoverModels = async () => {
   discoverMsg.value = '';
   testResult.value = null;
   try {
-    const r = await window.api.gateway.discoverModels(baseUrl.value.trim(), apiKey.value.trim());
+    const r = await window.api.gateway.discoverModels({
+      baseUrl: baseUrl.value.trim(),
+      apiKey: apiKey.value.trim(),
+      apiMode: normalizeMode(apiMode.value, baseUrl.value),
+      authMode: authMode.value,
+      extraHeaders: headersRowsToObject(extraHeaders.value),
+    });
     if (r && r.ok && Array.isArray(r.models) && r.models.length) {
       discoveredModels.value = r.models;
       selectedModels.value = [...r.models];
@@ -624,6 +716,8 @@ const discoverModels = async () => {
       // 网关回的模型名带「厂商/」前缀 → 它认前缀名,不能剥(剥了必然 400)。
       // 这比预设/域名推断都准,自建代理预设猜错也能自动兜回来。
       stripVendorPrefix.value = !r.models.some((m) => String(m).includes('/'));
+      showModelManager.value = false;
+      modelQuery.value = '';
     } else {
       // 拉取失败不阻断:退回建议清单 + 手填,照样能完成向导。
       discoverOk.value = false;
@@ -650,6 +744,9 @@ const testConn = async () => {
       model,
       // 显式传,别让主进程按域名猜着剥前缀 —— 猜错会导致测的模型名和引擎实际用的不一致。
       stripVendorPrefix: stripVendorPrefix.value,
+      apiMode: normalizeMode(apiMode.value, baseUrl.value),
+      authMode: authMode.value,
+      extraHeaders: headersRowsToObject(extraHeaders.value),
     });
     testResult.value = { ...(r || {}), model };
   } catch (e) {
@@ -660,8 +757,7 @@ const testConn = async () => {
 };
 
 const saveAndFinish = async () => {
-  if (!(testResult.value && testResult.value.ok)) return;
-  if (selectedModels.value.length === 0) return;
+  if (!apiKey.value.trim() || !baseUrl.value.trim() || selectedModels.value.length === 0) return;
   saving.value = true;
   try {
     const preset = GATEWAY_PRESETS.find((p) => p.id === matchedPresetId.value);
@@ -671,6 +767,9 @@ const saveAndFinish = async () => {
       apiKey: apiKey.value.trim(),
       models: [...selectedModels.value],
       stripVendorPrefix: stripVendorPrefix.value,
+      apiMode: apiMode.value,
+      authMode: authMode.value,
+      extraHeaders: headersRowsToObject(extraHeaders.value),
     });
     if (!saved || !saved.success) throw new Error((saved && saved.error) || '保存失败');
     // activateProfile 内部负责写 .env / config.yaml 并重启引擎。
@@ -691,6 +790,15 @@ const finishToApp = () => {
 };
 
 onMounted(async () => {
+  if (window.api?.window) {
+    try {
+      isMaximized.value = await window.api.window.isMaximized();
+      window.api.window.onMaximizedChanged((...args) => {
+        const value = args.length > 1 ? args[1] : args[0];
+        if (typeof value === 'boolean') isMaximized.value = value;
+      });
+    } catch { /* ignore */ }
+  }
   await loadSn();
   await loadServerUrl();
   await refreshLicense();
@@ -705,4 +813,18 @@ onMounted(async () => {
 <style scoped>
 .drag-region { -webkit-app-region: drag; }
 .no-drag { -webkit-app-region: no-drag; }
+.setup-win-btn {
+  -webkit-app-region: no-drag;
+  width: 34px;
+  height: 28px;
+  border-radius: 8px;
+  color: #64748b;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color .15s ease, background-color .15s ease;
+}
+.setup-win-btn:hover { color: #334155; background: rgba(148, 163, 184, .16); }
+.setup-win-btn-close:hover { color: #fff; background: #ef4444; }
 </style>

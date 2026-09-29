@@ -210,6 +210,10 @@ function writeConfigModel(modelId) {
 //   是否含 360.cn 猜(旧行为)。
 // opts.replaceModels: 显式指定是否用传入的 models 覆盖 config 里的 models: 列表。
 //   网关档案走这条(用户勾的就是他要的);不传时沿用旧的「只有非360才覆盖」推断。
+// opts.apiMode / opts.extraHeaders: 高级协议。api_mode 写进 custom_providers 条目
+//   让引擎选 transport(anthropic_messages/codex_responses);auto 时省略,交引擎按
+//   URL 自动识别。extra_headers 只写用户自定义头(x-api-key 由运行时用 api_key 生成,
+//   不重复落盘;anthropic 模式补一条 anthropic-version)。
 function writeConfigProviderKey(apiKey, baseUrl, model, opts = {}) {
   try {
     const key = String(apiKey || '').trim();
@@ -272,12 +276,141 @@ function writeConfigProviderKey(apiKey, baseUrl, model, opts = {}) {
       }
     }
 
+    // ③ 高级协议:api_mode + extra_headers。
+    //   config.yaml 是用户手写的、可能有注释,所以只做「删旧块 → 在首个条目 name: 之后
+    //   插入新块」的行级操作,不引入 YAML 库重排。写入前先删掉上一次留下的这两个块,
+    //   避免同一条目里出现两份 api_mode/extra_headers(引擎取值行为未定义)。
+    const apiMode = String(opts.apiMode || '');
+    const modeNeedsBlock = opts.apiMode !== undefined;
+    if (modeNeedsBlock) {
+      content = stripProviderProtocolBlock(content);
+      const extraHeaders = normalizeExtraHeaders(opts.extraHeaders, apiMode, opts.authMode);
+      const lines = [];
+      if (apiMode && apiMode !== 'auto') lines.push(`api_mode: ${apiMode}`);
+      if (extraHeaders) lines.push(extraHeaders);
+      if (lines.length) content = insertAfterFirstProviderName(content, lines.join('\n'));
+    }
+
     fs.writeFileSync(CONFIG_YAML_PATH, content, 'utf-8');
     return true;
   } catch (e) {
     console.warn('[main] writeConfigProviderKey failed:', e.message);
     return false;
   }
+}
+
+// 删除 custom_providers 条目里已有的 api_mode: / extra_headers: 块(含其下缩进子行)。
+// 只删这两个键,不碰条目其它字段。extra_headers 的子行形如 "      name: value",
+// 比父级多一层缩进;遇到同级或更浅缩进的非空行即视为块结束。
+function stripProviderProtocolBlock(content) {
+  const lines = content.split('\n');
+  const out = [];
+  let skipIndent = -1; // >0 表示正在跳过某个块,记录父键缩进
+  for (const line of lines) {
+    if (skipIndent > 0) {
+      // 空行 / 注释行不终结块(块内子行前可能有注释);
+      // 但缩进 <= 父键 的非空非注释行一定是新键 → 结束跳过。
+      if (line.trim() && !/^\s*#/.test(line)) {
+        const indent = line.match(/^[ \t]*/)[0].length;
+        if (indent <= skipIndent) skipIndent = -1;
+      }
+      if (skipIndent > 0) continue;
+    }
+    const m = line.match(/^([ \t]+)(api_mode|extra_headers):/);
+    if (m) { skipIndent = m[1].length; continue; }
+    out.push(line);
+  }
+  return out.join('\n');
+}
+
+// 在第一个 custom_providers 条目名(name:)之后插入协议行块。
+// 条目是列表项:形如 "  - name: \"360ai\"",其下字段(base_url 等)比列表项自身再缩进一层。
+// 以该条目下一个非注释字段行的缩进为基准,保持协议块与条目字段对齐。
+// 找不到 name: 时(异常 config)不动,交由引擎按 URL 自动识别。
+function insertAfterFirstProviderName(content, block) {
+  const lines = content.split('\n');
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^([ \t]*)-[ \t]+name:[ \t]*/);
+    if (!m) continue;
+    // 条目字段缩进 = 紧跟 name: 之后首条非空非注释行的缩进(通常就是 base_url)。
+    let indent = m[1] + '  ';
+    for (let j = i + 1; j < lines.length; j++) {
+      const l = lines[j];
+      if (!l.trim() || /^\s*#/.test(l)) continue;
+      indent = l.match(/^[ \t]*/)[0];
+      break;
+    }
+    const blockLines = block.split('\n').map((l) => indent + l);
+    lines.splice(i + 1, 0, ...blockLines);
+    return lines.join('\n');
+  }
+  return content;
+}
+
+// 组装 extra_headers 的 YAML 块文本(含首行键名),并做安全过滤:
+//   - 丢弃空 name/value;
+//   - bearer/x-api-key 模式下丢弃 x-api-key / authorization:它们的值来自 api_key,
+//     由运行时生成,重复落盘等于把明文 key 多写一份到 config.yaml(且换 key 时容易残留旧值)。
+//   - authMode='custom' 时用户的自定义 Authorization 头就是鉴权凭据本身,保留;
+//   - anthropic 模式补 anthropic-version(引擎不强制,但多数 Anthropic 兼容网关要求)。
+// 返回 '' 表示不需要写 extra_headers 块。
+function normalizeExtraHeaders(extraHeaders, apiMode, authMode = 'bearer') {
+  const entries = [];
+  const seen = new Set();
+  const push = (name, value) => {
+    const n = String(name || '').trim();
+    const v = String(value || '').trim();
+    if (!n || !v) return;
+    const lower = n.toLowerCase();
+    if (seen.has(lower)) return;
+    seen.add(lower);
+    entries.push([n, v]);
+  };
+  if (extraHeaders && typeof extraHeaders === 'object') {
+    for (const [k, v] of Object.entries(extraHeaders)) {
+      const lower = String(k || '').toLowerCase();
+      // 非 custom 模式下 key 不重复落盘;custom 下这是用户亲手填的鉴权头,保留。
+      if (authMode !== 'custom' && (lower === 'x-api-key' || lower === 'authorization')) continue;
+      push(k, v);
+    }
+  }
+  if (apiMode === 'anthropic_messages') push('anthropic-version', '2023-06-01');
+  if (!entries.length) return '';
+  return 'extra_headers:\n' + entries.map(([k, v]) => `  ${k}: ${yamlQuote(v)}`).join('\n');
+}
+
+// YAML 标量加引号:含 : # 等易被解析成结构的字符时用单引号包裹(内部单引号翻倍)。
+// 简单值(字母数字/点/横线)裸写,保持 config 可读。
+function yamlQuote(v) {
+  const s = String(v);
+  if (/^[A-Za-z0-9_.\/\-]+$/.test(s)) return s;
+  return `'${s.replace(/'/g, "''")}'`;
+}
+
+function normalizeGatewayMode(mode, baseUrl) {
+  if (mode && mode !== 'auto') return mode;
+  const lower = String(baseUrl || '').toLowerCase();
+  if (lower.includes('anthropic.com') || /\/anthropic(?:\/v1)?\/?$/.test(lower)) return 'anthropic_messages';
+  if (lower.includes('api.openai.com')) return 'codex_responses';
+  return 'chat_completions';
+}
+
+function buildGatewayHeaders(apiKey, authMode = 'bearer', extraHeaders = {}, apiMode = 'chat_completions') {
+  const headers = { Accept: 'application/json' };
+  // authMode='custom':用户自己用 extraHeaders 传鉴权头,这里不自动加 Authorization,
+  // 否则会和用户的自定义头叠加成两份,网关可能取错那份。
+  if (authMode !== 'custom') {
+    if (authMode === 'x-api-key' || apiMode === 'anthropic_messages') {
+      headers['x-api-key'] = apiKey;
+      if (apiMode === 'anthropic_messages') headers['anthropic-version'] = '2023-06-01';
+    } else {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+  }
+  for (const [name, value] of Object.entries(extraHeaders || {})) {
+    if (String(name).trim() && String(value).trim()) headers[String(name).trim()] = String(value).trim();
+  }
+  return headers;
 }
 
 // --- 网关档案(gateway profiles) -------------------------------------------
@@ -3881,34 +4014,81 @@ function parseEnvConfig() {
       if (mdl) model = mdl[1].trim();
     }
   } catch (e) { /* ignore */ }
-  return { apiKey, baseUrl, model, provider };
+  // 协议来自 config.yaml 的 custom_providers[].api_mode / extra_headers(向导保存时写入)。
+  // 提示词生成等旁路调用要用同一套 transport,否则 Anthropic 网关下会走错端点。
+  const proto = readActiveProviderProtocol();
+  return { apiKey, baseUrl, model, provider, apiMode: proto.apiMode, extraHeaders: proto.extraHeaders };
 }
 
-// 发一次 chat/completions,返回结构化结果(供建议生成 + 连通性测试复用)
-function postChatCompletion({ apiKey, baseUrl, model, messages, maxTokens = 64, timeoutMs = 10000 }) {
+// 从 config.yaml 第一个 custom_providers 条目读 api_mode 和用户自定义 extra_headers。
+// 读不到就留空,调用方按 baseUrl 归一化。
+function readActiveProviderProtocol() {
+  const out = { apiMode: '', extraHeaders: {} };
+  try {
+    if (!fs.existsSync(CONFIG_YAML_PATH)) return out;
+    const content = fs.readFileSync(CONFIG_YAML_PATH, 'utf-8');
+    const m = content.match(/^[ \t]+api_mode:[ \t]*(\S+)[ \t]*$/m);
+    if (m) out.apiMode = m[1].trim();
+    // extra_headers: 块 — 父键下一层缩进的 name: value 行。到同级或更浅缩进结束。
+    const lines = content.split('\n');
+    let inHeaders = false, baseIndent = 0;
+    for (const line of lines) {
+      const hm = line.match(/^([ \t]+)extra_headers:[ \t]*$/);
+      if (hm) { inHeaders = true; baseIndent = hm[1].length; continue; }
+      if (!inHeaders) continue;
+      if (!line.trim() || /^\s*#/.test(line)) continue;
+      const indent = line.match(/^[ \t]*/)[0].length;
+      if (indent <= baseIndent) break;
+      const kv = line.match(/^\s+([^:]+):[ \t]*(.*)$/);
+      if (kv) out.extraHeaders[kv[1].trim()] = kv[2].trim().replace(/^'(.*)'$/, '$1').replace(/''/g, "'");
+    }
+  } catch (e) { /* ignore */ }
+  return out;
+}
+
+// 发一次对话请求,返回结构化结果(供建议生成 + 连通性测试复用)。
+// apiMode 决定 transport:
+//   chat_completions  → POST <base>/chat/completions  {model,messages,max_tokens}
+//   codex_responses   → POST <base>/responses         {model,input,max_output_tokens}
+//   anthropic_messages→ POST <base>/messages          {model,max_tokens,messages} + x-api-key
+function postChatCompletion({
+  apiKey, baseUrl, model, messages, maxTokens = 64, timeoutMs = 10000,
+  apiMode = 'chat_completions', authMode = 'bearer', extraHeaders = {},
+}) {
   const https = require('https');
   const http = require('http');
   return new Promise((resolve) => {
+    const base = (baseUrl || '').replace(/\/+$/, '');
+    const isAnthropic = apiMode === 'anthropic_messages';
+    const isResponses = apiMode === 'codex_responses';
+    const path = isAnthropic ? '/messages' : isResponses ? '/responses' : '/chat/completions';
+
     let url;
-    try { url = new URL((baseUrl || '').replace(/\/$/, '') + '/chat/completions'); }
+    try { url = new URL(base + path); }
     catch { return resolve({ ok: false, status: 0, error: 'baseUrl 格式不正确' }); }
+
     const lib = url.protocol === 'http:' ? http : https;
-    const payload = JSON.stringify({
-      model: model || 'qwen-plus',
-      messages: messages || [{ role: 'user', content: 'ping' }],
-      max_tokens: maxTokens,
-    });
+    const msgs = messages || [{ role: 'user', content: 'ping' }];
+    // 三种协议的请求体字段名不同,不能共用一套:
+    //   Responses 用 input + max_output_tokens,没有 messages/max_tokens。
+    const payloadBody = isResponses
+      ? { model: model || 'gpt-5.5', input: msgs.map((m) => `${m.role}: ${m.content}`).join('\n'), max_output_tokens: maxTokens }
+      : { model: model || (isAnthropic ? 'claude-sonnet-5' : 'qwen-plus'), messages: msgs, max_tokens: maxTokens };
+    const payload = JSON.stringify(payloadBody);
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(payload),
+      ...buildGatewayHeaders(apiKey, authMode, extraHeaders, apiMode),
+    };
+
     const started = Date.now();
     const req = lib.request({
       hostname: url.hostname,
       port: url.port || (url.protocol === 'http:' ? 80 : 443),
       path: url.pathname,
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Length': Buffer.byteLength(payload),
-      },
+      headers,
     }, (res) => {
       let body = '';
       res.on('data', (c) => body += c);
@@ -3916,7 +4096,14 @@ function postChatCompletion({ apiKey, baseUrl, model, messages, maxTokens = 64, 
         const latencyMs = Date.now() - started;
         const status = res.statusCode || 0;
         let text = '';
-        try { text = JSON.parse(body).choices?.[0]?.message?.content || ''; } catch { /* non-json */ }
+        try {
+          const parsed = JSON.parse(body);
+          text = isResponses
+            ? (parsed.output_text || parsed.output?.[0]?.content?.[0]?.text || '')
+            : isAnthropic
+              ? (parsed.content?.[0]?.text || '')
+              : (parsed.choices?.[0]?.message?.content || '');
+        } catch { /* non-json */ }
         resolve({ ok: status >= 200 && status < 300, status, latencyMs, text, body: body.slice(0, 300) });
       });
     });
@@ -3930,7 +4117,7 @@ function postChatCompletion({ apiKey, baseUrl, model, messages, maxTokens = 64, 
 }
 
 // GET 一个 JSON 接口,带 Bearer 鉴权 + 跟随重定向。用于拉上游模型列表。
-function getJsonAuthed(urlStr, apiKey, { maxRedirects = 5, timeoutMs = 10000 } = {}) {
+function getJsonAuthed(urlStr, apiKey, { maxRedirects = 5, timeoutMs = 10000, authMode = 'bearer', extraHeaders = {}, apiMode = 'chat_completions' } = {}) {
   const https = require('https');
   const http = require('http');
   return new Promise((resolve) => {
@@ -3938,19 +4125,20 @@ function getJsonAuthed(urlStr, apiKey, { maxRedirects = 5, timeoutMs = 10000 } =
     try { u = new URL(urlStr); }
     catch { return resolve({ ok: false, status: 0, error: '地址格式不正确' }); }
     const lib = u.protocol === 'http:' ? http : https;
+    const requestHeaders = buildGatewayHeaders(apiKey, authMode, extraHeaders, apiMode);
     const req = lib.request({
       hostname: u.hostname,
       port: u.port || (u.protocol === 'http:' ? 80 : 443),
       path: u.pathname + u.search,
       method: 'GET',
-      headers: { 'Accept': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      headers: requestHeaders,
     }, (res) => {
       const status = res.statusCode || 0;
       if (status >= 300 && status < 400 && res.headers.location) {
         res.resume();
         if (maxRedirects <= 0) return resolve({ ok: false, status, error: '重定向次数过多' });
         const next = new URL(res.headers.location, u).toString();
-        return resolve(getJsonAuthed(next, apiKey, { maxRedirects: maxRedirects - 1, timeoutMs }));
+        return resolve(getJsonAuthed(next, apiKey, { maxRedirects: maxRedirects - 1, timeoutMs, authMode, extraHeaders, apiMode }));
       }
       let body = '';
       res.setEncoding('utf8');
@@ -4075,16 +4263,30 @@ ipcMain.handle('env:test-connection', async (_event, params) => {
     ? !params.stripVendorPrefix
     : (!baseUrl || /(^|\.)360\.cn(\b|\/|:)/i.test(baseUrl));
   if (!isThreeSixty) { const i = model.indexOf('/'); if (i >= 0) model = model.slice(i + 1).trim(); }
+  // 协议参数:档案里存的 apiMode/authMode/extraHeaders。apiMode='auto'/缺省时按 baseUrl
+  // 归一化,和引擎写入 config 的规则保持一致,否则测试用 Chat、引擎用 Messages 会不一致。
+  const apiMode = normalizeGatewayMode(params && params.apiMode, baseUrl);
+  const authMode = (params && params.authMode) || 'bearer';
+  const extraHeaders = (params && params.extraHeaders) || {};
   const r = await postChatCompletion({
     apiKey, baseUrl, model,
     messages: [{ role: 'user', content: 'ping' }],
-    maxTokens: 1, timeoutMs: 8000,
+    maxTokens: apiMode === 'codex_responses' ? 16 : 1,
+    timeoutMs: 8000,
+    apiMode, authMode, extraHeaders,
   });
   if (r.ok) return { ok: true, latencyMs: r.latencyMs };
-  // 归类错误,给用户可读诊断
+  // 归类错误,给用户可读诊断。401(未认证/Key 错)与 403(认证通过但无权)分开:
+  // 403 常见于「Key 有效但没开通该模型」,提示换模型而非换 Key。
   let reason = r.error || `请求失败(HTTP ${r.status})`;
-  if (r.status === 401 || r.status === 403) reason = 'API Key 无效或无权限(HTTP ' + r.status + ')';
-  else if (r.status === 404) reason = '接口地址不对(HTTP 404,检查 Base URL)';
+  if (r.status === 401) reason = 'API Key 无效(HTTP 401)';
+  else if (r.status === 403) reason = 'Key 已认证但无权调用该模型(HTTP 403)，请换一个测试模型；也可以先保存配置';
+  else if (r.status === 404) {
+    reason = apiMode === 'anthropic_messages'
+      ? '接口地址不对(HTTP 404,Anthropic 模式需 Base URL 指向 /v1)'
+      : '接口地址不对(HTTP 404,检查 Base URL)';
+  }
+  else if (r.status === 400) reason = '请求被拒(HTTP 400),可能是协议选错或模型名不匹配本网关';
   else if (r.status === 429) reason = '请求过于频繁或额度不足(HTTP 429)';
   else if (r.status >= 500) reason = '服务端错误(HTTP ' + r.status + ')';
   return { ok: false, status: r.status, error: reason, detail: r.body || '' };
@@ -4097,9 +4299,9 @@ ipcMain.handle('env:test-connection', async (_event, params) => {
 // 一键拉取该网关真实支持的模型列表(ccswitch 式体验:填 key + 地址就能拿到模型)。
 // baseUrl 容错:用户常只粘 https://api.openai.com(漏 /v1),或反过来重复 /v1/v1。
 // 先按用户填的试,404/400 再补 /v1 试一次。都失败才报错。
-ipcMain.handle('gateway:discover-models', async (_event, { baseUrl, apiKey } = {}) => {
-  const key = String(apiKey || '').trim();
-  const base = String(baseUrl || '').trim().replace(/\/+$/, '');
+ipcMain.handle('gateway:discover-models', async (_event, profile = {}) => {
+  const key = String(profile.apiKey || '').trim();
+  const base = String(profile.baseUrl || '').trim().replace(/\/+$/, '');
   if (!key) return { ok: false, error: '请先填写 API Key' };
   if (!base) return { ok: false, error: '请先填写 Base URL' };
 
@@ -4107,9 +4309,14 @@ ipcMain.handle('gateway:discover-models', async (_event, { baseUrl, apiKey } = {
   const candidates = [`${base}/models`];
   if (!/\/v\d+$/.test(base)) candidates.push(`${base}/v1/models`);
 
+  // 协议参数随档案一起透传:anthropic/自定义网关的 /models 也要带对鉴权头,
+  // 否则请求头错了拿到的是 401,而不是「不支持列表接口」的 404,报错就误导人。
+  const apiMode = normalizeGatewayMode(profile.apiMode, base);
+  const authMode = profile.authMode || 'bearer';
+  const extraHeaders = profile.extraHeaders || {};
   let last = null;
   for (const url of candidates) {
-    const r = await getJsonAuthed(url, key, { timeoutMs: 10000 });
+    const r = await getJsonAuthed(url, key, { timeoutMs: 10000, authMode, extraHeaders, apiMode });
     // 首个候选的失败原因更贴近用户填的地址(第二个是我们替他补的 /v1),
     // 所以只在还没有任何失败记录时才记,避免真正的报错被兜底候选的 404 盖掉。
     if (!last || (last.status && !r.status)) last = r;
@@ -4172,6 +4379,10 @@ ipcMain.handle('gateway:save-profile', async (_event, { profile } = {}) => {
       apiKey: String(profile.apiKey || '').trim(),
       models: models.filter((m, i) => models.indexOf(m) === i),
       stripVendorPrefix: !!profile.stripVendorPrefix,
+      apiMode: ['auto', 'chat_completions', 'codex_responses', 'anthropic_messages'].includes(profile.apiMode)
+        ? profile.apiMode : 'auto',
+      authMode: ['bearer', 'x-api-key', 'custom'].includes(profile.authMode) ? profile.authMode : 'bearer',
+      extraHeaders: profile.extraHeaders && typeof profile.extraHeaders === 'object' ? profile.extraHeaders : {},
     };
     const idx = store.profiles.findIndex((p) => p.id === id);
     if (idx >= 0) store.profiles[idx] = next;
@@ -4220,6 +4431,9 @@ ipcMain.handle('gateway:activate-profile', async (_event, { id } = {}) => {
     const written = writeConfigProviderKey(profile.apiKey, profile.baseUrl, profile.models, {
       stripVendorPrefix: profile.stripVendorPrefix,
       replaceModels: true,
+      apiMode: normalizeGatewayMode(profile.apiMode, profile.baseUrl),
+      authMode: profile.authMode || 'bearer',
+      extraHeaders: profile.extraHeaders || {},
     });
     if (!written) return { success: false, error: '写入 config.yaml 失败' };
 
@@ -4252,7 +4466,7 @@ ipcMain.handle('gateway:activate-profile', async (_event, { id } = {}) => {
 
 ipcMain.handle('hermes:generate-suggestions', async (_event, { userMessage, aiResponse }) => {
   // 独立调用 LLM API 生成建议追问，不经过 hermes session，避免干扰主对话流
-  const { apiKey, baseUrl, model } = parseEnvConfig();
+  const { apiKey, baseUrl, model, apiMode, extraHeaders } = parseEnvConfig();
   if (!apiKey) return { suggestions: [] };
 
   const r = await postChatCompletion({
@@ -4262,6 +4476,8 @@ ipcMain.handle('hermes:generate-suggestions', async (_event, { userMessage, aiRe
       { role: 'user', content: `用户问了: "${(userMessage || '').slice(0, 150)}"\nAI回答了: "${(aiResponse || '').slice(0, 500)}"\n\n请生成3个追问建议：` },
     ],
     maxTokens: 200, timeoutMs: 10000,
+    apiMode: normalizeGatewayMode(apiMode, baseUrl),
+    extraHeaders,
   });
   if (!r.ok || !r.text) return { suggestions: [] };
   const lines = r.text.split('\n').map(l => l.trim()).filter(l => l && l.length > 5 && l.length < 100);
