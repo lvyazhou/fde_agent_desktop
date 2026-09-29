@@ -256,7 +256,13 @@ const api = {
     saveProfile(profile) { return invoke('gateway:save-profile', { profile }); },
     deleteProfile(id) { return invoke('gateway:delete-profile', { id }); },
     activateProfile(id) { return invoke('gateway:activate-profile', { id }); },
-    discoverModels(baseUrl, apiKey) { return invoke('gateway:discover-models', { baseUrl, apiKey }); },
+    // 传完整 profile(含 apiMode/authMode/extraHeaders);兼容旧 (baseUrl, apiKey)。
+    discoverModels(profileOrBaseUrl, apiKey) {
+      const profile = profileOrBaseUrl && typeof profileOrBaseUrl === 'object'
+        ? profileOrBaseUrl
+        : { baseUrl: profileOrBaseUrl, apiKey };
+      return invoke('gateway:discover-models', profile);
+    },
   },
 
   // 授权:安卓 MVP 阶段跳过 license 校验(桌面机器指纹方案不适用于安卓)
