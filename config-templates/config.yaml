@@ -51,3 +51,9 @@ providers:
   custom:
     stale_timeout_seconds: 300
 fallback_providers: []
+
+# 便携版没有可写的 site-packages,依赖的 lazy-install(联网 pip 装 boto3 等)永远失败。
+# 关掉它,避免引擎每次会话初始化都联网重试、拖慢/卡死对话(主进程同时设了
+# HERMES_DISABLE_LAZY_INSTALLS=1,双保险)。
+security:
+  allow_lazy_installs: false

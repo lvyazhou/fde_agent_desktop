@@ -861,6 +861,10 @@ function startHermes() {
       ANTHROPIC_BASE_URL: '',
       // 清除可能存在的无关 venv，避免 hermes 探测到坏的 Python 环境
       VIRTUAL_ENV: '',
+      // 便携版(PyInstaller onedir)没有可写的 site-packages,boto3 等 lazy 依赖装了也白装,
+      // 引擎每次会话初始化都会联网 pip 重试 → 每条消息卡 4~15 秒。此开关让 lazy-install
+      // 立刻失败、不发网络请求,引擎随包自带的能力直接继续(引擎官方封禁开关)。
+      HERMES_DISABLE_LAZY_INSTALLS: '1',
       // Hermes 工具执行需要 Git Bash
       HERMES_GIT_BASH_PATH: resolveGitBashPath(),
       // 终端环境不活跃清理阈值（秒），必须 > prompt 超时（600s），
