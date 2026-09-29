@@ -707,12 +707,14 @@ const discoverModels = async () => {
     });
     if (r && r.ok && Array.isArray(r.models) && r.models.length) {
       discoveredModels.value = r.models;
-      selectedModels.value = [...r.models];
+      // 只取第一个作默认:网关常回上百个模型,全选既撑爆界面,写进 config 的
+      // models: 列表也会让顶栏下拉没法用。要更多在「管理模型」里勾。
+      selectedModels.value = [r.models[0]];
       discoverOk.value = true;
       const skipped = Array.isArray(r.others) ? r.others.length : 0;
       discoverMsg.value = skipped
-        ? `拉到 ${r.total} 个，已选中 ${r.models.length} 个对话模型（跳过 ${skipped} 个非对话模型）`
-        : `拉到 ${r.models.length} 个模型，已全选`;
+        ? `拉到 ${r.total} 个，可选 ${r.models.length} 个对话模型（另 ${skipped} 个非对话），可展开勾选更多`
+        : `拉到 ${r.models.length} 个模型，可展开勾选更多`;
       // 网关回的模型名带「厂商/」前缀 → 它认前缀名,不能剥(剥了必然 400)。
       // 这比预设/域名推断都准,自建代理预设猜错也能自动兜回来。
       stripVendorPrefix.value = !r.models.some((m) => String(m).includes('/'));

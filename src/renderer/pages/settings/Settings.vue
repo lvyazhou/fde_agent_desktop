@@ -151,99 +151,77 @@
             </span>
           </div>
 
-          <!-- 模型清单:获取成功后默认全选;也可手填 -->
-          <div>
-            <div class="flex items-center justify-between mb-1.5">
-              <label class="text-sm font-medium text-slate-700">
-                模型 <span class="text-slate-400 font-normal">已选 {{ selectedModels.length }} 个</span>
-              </label>
-              <div v-if="modelChoices.length" class="flex items-center gap-2 text-[12px]">
-                <!-- 有搜索词时只对搜索结果生效,措辞跟着变 —— 否则用户搜完点"全选"
-                     会意外把没在看的模型也勾上。 -->
-                <button @click="selectAllModels" class="text-primary hover:underline cursor-pointer">
-                  {{ modelQuery.trim() ? '全选结果' : '全选' }}
-                </button>
-                <span class="text-slate-300">|</span>
-                <button @click="clearSelectedModels" class="text-slate-500 hover:underline cursor-pointer">
-                  {{ modelQuery.trim() ? '取消结果' : '清空' }}
-                </button>
-              </div>
+          <!-- 模型:只留一行摘要(默认模型 + 数量 + 管理入口)。
+               网关可能回 200+ 个模型,默认全铺开会占满整屏、把「保存」挤到很远,
+               所以列表收进「管理模型」折叠区,收起时就是一行。 -->
+          <div class="rounded-2xl border border-slate-200/80 bg-white/60 p-3">
+            <div class="flex items-center gap-2">
+              <label class="text-sm font-medium text-slate-700 shrink-0">默认模型</label>
+              <select
+                :value="selectedModels[0] || ''"
+                @change="makeDefaultModel($event.target.value)"
+                :disabled="!selectedModels.length"
+                class="min-w-0 flex-1 appearance-none px-3 py-2 rounded-xl border border-slate-200 bg-white text-[12.5px] text-slate-700 disabled:opacity-40 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 font-mono"
+              >
+                <option value="" disabled>先获取或添加模型</option>
+                <option v-for="m in selectedModels" :key="m" :value="m">{{ m }}</option>
+              </select>
+              <span class="shrink-0 text-[11px] text-slate-400">已选 {{ selectedModels.length }}</span>
+              <button
+                v-if="modelChoices.length || selectedModels.length"
+                @click="showModelManager = !showModelManager"
+                class="shrink-0 inline-flex items-center gap-1 text-[11.5px] text-primary hover:underline cursor-pointer"
+              >
+                {{ showModelManager ? '收起' : '管理模型' }}
+                <i class="fa-solid text-[9px]" :class="showModelManager ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+              </button>
             </div>
 
-            <div v-if="selectedModels.length" class="flex flex-wrap gap-2 mb-2">
-              <span
-                v-for="(m, i) in selectedModels" :key="m"
-                class="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg text-[12px] font-medium"
-                :class="i === 0 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-600'"
-              >
-                <!-- 点非默认项即设为默认。勾了几十个模型时,不给这个入口用户就只能
-                     把想要的那个之前的全删掉才能让它排第一。 -->
-                <span
-                  class="font-mono"
-                  :class="i === 0 ? '' : 'cursor-pointer hover:underline'"
-                  :title="i === 0 ? '当前默认模型' : '点击设为默认'"
-                  @click="i === 0 ? null : makeDefaultModel(m)"
-                >{{ m }}</span>
-                <span v-if="i === 0" class="text-[10px] text-blue-400">默认</span>
-                <button @click="removeSelected(m)" class="w-4 h-4 rounded-full hover:bg-black/10 flex items-center justify-center">
-                  <i class="fa-solid fa-xmark text-[10px]"></i>
-                </button>
-              </span>
-            </div>
-            <p v-else class="text-[12px] text-danger mb-2">
-              <i class="fa-solid fa-circle-exclamation mr-1"></i>请先「获取模型」，或在下方手动添加
+            <p v-if="!selectedModels.length" class="text-[12px] text-danger mt-2">
+              <i class="fa-solid fa-circle-exclamation mr-1"></i>请先「获取模型」，或展开后手动添加
             </p>
 
-            <!-- 搜索:网关可能返回上百个模型(实测某聚合网关 109 个),
-                 靠滚动找某一个不现实。 -->
-            <div v-if="modelChoices.length" class="relative mb-1.5">
-              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-300"></i>
-              <input
-                v-model="modelQuery"
-                placeholder="搜索模型…"
-                class="w-full pl-8 pr-8 py-2 rounded-xl bg-slate-50 border border-transparent text-[12.5px] placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-500/10 transition-all font-mono"
-              />
-              <button
-                v-if="modelQuery"
-                @click="modelQuery = ''"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 flex items-center justify-center transition-colors"
-              >
-                <i class="fa-solid fa-xmark text-[10px]"></i>
-              </button>
-            </div>
+            <div v-if="showModelManager" class="mt-3 border-t border-slate-100 pt-3">
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-[12px] font-medium text-slate-600">可用模型</label>
+                <div v-if="modelChoices.length" class="flex items-center gap-2 text-[12px]">
+                  <!-- 有搜索词时只对搜索结果生效,措辞跟着变 —— 否则用户搜完点"全选"
+                       会意外把没在看的模型也勾上。 -->
+                  <button @click="selectAllModels" class="text-primary hover:underline cursor-pointer">
+                    {{ modelQuery.trim() ? '全选结果' : '全选' }}
+                  </button>
+                  <span class="text-slate-300">|</span>
+                  <button @click="clearSelectedModels" class="text-slate-500 hover:underline cursor-pointer">
+                    {{ modelQuery.trim() ? '取消结果' : '清空' }}
+                  </button>
+                </div>
+              </div>
 
-            <!-- 拉取到的模型:勾选 -->
-            <div v-if="modelChoices.length" class="border border-slate-200 rounded-xl p-3 max-h-56 overflow-y-auto space-y-1">
-              <p v-if="!filteredModelChoices.length" class="px-2 py-6 text-center text-[12px] text-slate-400">
-                没有匹配「{{ modelQuery }}」的模型
-              </p>
-              <label
-                v-for="m in filteredModelChoices" :key="m"
-                class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
-              >
+              <!-- 搜索:网关可能返回上百个模型(实测某聚合网关 109 个),
+                   靠滚动找某一个不现实。 -->
+              <div v-if="modelChoices.length" class="relative mb-1.5">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-[11px] text-slate-300"></i>
                 <input
-                  type="checkbox"
-                  :checked="selectedModels.includes(m)"
-                  @change="toggleModel(m)"
-                  class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                  v-model="modelQuery"
+                  placeholder="搜索模型…"
+                  class="w-full pl-8 pr-8 py-2 rounded-xl bg-slate-50 border border-transparent text-[12.5px] placeholder:text-slate-300 focus:outline-none focus:bg-white focus:border-blue-300 focus:ring-2 focus:ring-blue-500/10 transition-all font-mono"
                 />
-                <span class="text-[13px] text-slate-700 flex-1 font-mono truncate">{{ m }}</span>
-              </label>
-            </div>
+                <button
+                  v-if="modelQuery"
+                  @click="modelQuery = ''"
+                  class="absolute right-2.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 flex items-center justify-center transition-colors"
+                >
+                  <i class="fa-solid fa-xmark text-[10px]"></i>
+                </button>
+              </div>
 
-            <!-- 非对话模型:网关把 embedding/图像/语音 也一并返回了,折叠起来默认不勾,
-                 但留着入口 —— 万一判错了(比如某个能聊的模型名里带 image),用户能自己勾回来。 -->
-            <div v-if="otherModels.length" class="mt-2">
-              <button
-                @click="showOthers = !showOthers"
-                class="text-[12px] text-slate-500 hover:text-primary transition-colors cursor-pointer"
-              >
-                <i class="fa-solid mr-1 text-[10px]" :class="showOthers ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                另有 {{ otherModels.length }} 个非对话模型（embedding / 图像 / 语音等，默认不启用）
-              </button>
-              <div v-if="showOthers" class="mt-1.5 border border-slate-200 rounded-xl p-3 max-h-44 overflow-y-auto space-y-1">
+              <!-- 拉取到的模型:勾选 -->
+              <div v-if="modelChoices.length" class="border border-slate-200 rounded-xl p-3 max-h-56 overflow-y-auto space-y-1">
+                <p v-if="!filteredModelChoices.length" class="px-2 py-6 text-center text-[12px] text-slate-400">
+                  没有匹配「{{ modelQuery }}」的模型
+                </p>
                 <label
-                  v-for="m in otherModels" :key="m"
+                  v-for="m in filteredModelChoices" :key="m"
                   class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
                 >
                   <input
@@ -252,44 +230,91 @@
                     @change="toggleModel(m)"
                     class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
                   />
-                  <span class="text-[13px] text-slate-500 flex-1 font-mono truncate">{{ m }}</span>
+                  <span class="text-[13px] text-slate-700 flex-1 font-mono truncate">{{ m }}</span>
                 </label>
               </div>
-            </div>
 
-            <!-- 手动添加(网关不支持 /models 时的退路) -->
-            <div class="flex items-center gap-2 mt-2">
-              <input
-                v-model="extraModelInput"
-                @keyup.enter="addExtraModel"
-                placeholder="手动添加模型名（回车添加）"
-                class="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
-              />
-              <button
-                @click="addExtraModel"
-                :disabled="!extraModelInput.trim()"
-                class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[13px] transition-colors disabled:opacity-40"
-              >
-                <i class="fa-solid fa-plus mr-1 text-[11px]"></i>添加
-              </button>
-            </div>
-            <p class="text-xs text-slate-400 mt-2">第一个模型为默认，之后可在顶栏下拉随时切换。</p>
-
-            <!-- 模型名格式:预设会自动设好,但自建/聚合代理千差万别,必须能手改。
-                 判断依据很直观 —— 看上面「获取模型」拉回来的名字带不带斜杠。 -->
-            <label class="flex items-start gap-2.5 mt-3 p-2.5 rounded-lg bg-slate-50 cursor-pointer">
-              <input
-                type="checkbox"
-                v-model="form.stripVendorPrefix"
-                class="w-4 h-4 mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
-              />
-              <span class="text-[12px] text-slate-600 leading-relaxed">
-                该网关只认<b>裸模型名</b>（如 <code class="bg-white px-1 rounded">gpt-4o</code>），保存时自动去掉「厂商/」前缀。
-                <span class="block text-slate-400 mt-0.5">
-                  若上方拉到的模型名形如 <code class="bg-white px-1 rounded">deepseek/deepseek-v4-pro</code>（带斜杠），请<b>不要</b>勾选。
+              <!-- 已选清单:点非默认项即设为默认,行尾可移除。限高滚动,
+                   勾了几百个也不会把页面撑长。 -->
+              <div v-if="selectedModels.length > 1" class="mt-2 flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+                <span
+                  v-for="(m, i) in selectedModels" :key="m"
+                  class="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg text-[12px] font-medium"
+                  :class="i === 0 ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-slate-100 text-slate-600'"
+                >
+                  <span
+                    class="font-mono"
+                    :class="i === 0 ? '' : 'cursor-pointer hover:underline'"
+                    :title="i === 0 ? '当前默认模型' : '点击设为默认'"
+                    @click="i === 0 ? null : makeDefaultModel(m)"
+                  >{{ m }}</span>
+                  <span v-if="i === 0" class="text-[10px] text-blue-400">默认</span>
+                  <button @click="removeSelected(m)" class="w-4 h-4 rounded-full hover:bg-black/10 flex items-center justify-center">
+                    <i class="fa-solid fa-xmark text-[10px]"></i>
+                  </button>
                 </span>
-              </span>
-            </label>
+              </div>
+
+              <!-- 非对话模型:网关把 embedding/图像/语音 也一并返回了,折叠起来默认不勾,
+                   但留着入口 —— 万一判错了(比如某个能聊的模型名里带 image),用户能自己勾回来。 -->
+              <div v-if="otherModels.length" class="mt-2">
+                <button
+                  @click="showOthers = !showOthers"
+                  class="text-[12px] text-slate-500 hover:text-primary transition-colors cursor-pointer"
+                >
+                  <i class="fa-solid mr-1 text-[10px]" :class="showOthers ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                  另有 {{ otherModels.length }} 个非对话模型（embedding / 图像 / 语音等，默认不启用）
+                </button>
+                <div v-if="showOthers" class="mt-1.5 border border-slate-200 rounded-xl p-3 max-h-44 overflow-y-auto space-y-1">
+                  <label
+                    v-for="m in otherModels" :key="m"
+                    class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="selectedModels.includes(m)"
+                      @change="toggleModel(m)"
+                      class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                    />
+                    <span class="text-[13px] text-slate-500 flex-1 font-mono truncate">{{ m }}</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 手动添加(网关不支持 /models 时的退路) -->
+              <div class="flex items-center gap-2 mt-2">
+                <input
+                  v-model="extraModelInput"
+                  @keyup.enter="addExtraModel"
+                  placeholder="手动添加模型名（回车添加）"
+                  class="flex-1 px-3.5 py-2 border border-slate-200 rounded-xl text-[13px] focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all font-mono"
+                />
+                <button
+                  @click="addExtraModel"
+                  :disabled="!extraModelInput.trim()"
+                  class="shrink-0 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-[13px] transition-colors disabled:opacity-40"
+                >
+                  <i class="fa-solid fa-plus mr-1 text-[11px]"></i>添加
+                </button>
+              </div>
+              <p class="text-xs text-slate-400 mt-2">第一个模型为默认，之后可在顶栏下拉随时切换。</p>
+
+              <!-- 模型名格式:预设会自动设好,但自建/聚合代理千差万别,必须能手改。
+                   判断依据很直观 —— 看上面「获取模型」拉回来的名字带不带斜杠。 -->
+              <label class="flex items-start gap-2.5 mt-3 p-2.5 rounded-lg bg-slate-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  v-model="form.stripVendorPrefix"
+                  class="w-4 h-4 mt-0.5 rounded border-slate-300 text-blue-600 focus:ring-blue-500/30"
+                />
+                <span class="text-[12px] text-slate-600 leading-relaxed">
+                  该网关只认<b>裸模型名</b>（如 <code class="bg-white px-1 rounded">gpt-4o</code>），保存时自动去掉「厂商/」前缀。
+                  <span class="block text-slate-400 mt-0.5">
+                    若上方拉到的模型名形如 <code class="bg-white px-1 rounded">deepseek/deepseek-v4-pro</code>（带斜杠），请<b>不要</b>勾选。
+                  </span>
+                </span>
+              </label>
+            </div>
           </div>
 
           <!-- 高级协议设置:普通 OpenAI 兼容网关不用碰,原生 Anthropic / Responses / 自定义鉴权网关才需要 -->
@@ -581,6 +606,8 @@ const selectedModels = ref([]);
 const discoveredModels = ref([]);
 const otherModels = ref([]);
 const showOthers = ref(false);
+// 模型管理区的展开态:默认收起,收起时整个模型区就一行(默认模型 + 数量)。
+const showModelManager = ref(false);
 const extraModelInput = ref('');
 
 const discovering = ref(false);
@@ -638,6 +665,7 @@ function applyPreset(preset) {
   discoveredModels.value = [];
   otherModels.value = [];
   showOthers.value = false;
+  showModelManager.value = false;
   selectedModels.value = [];
   discoverMsg.value = '';
   testResult.value = null;
@@ -651,6 +679,7 @@ function startNewProfile() {
   discoveredModels.value = [];
   otherModels.value = [];
   showOthers.value = false;
+  showModelManager.value = false;
   extraModelInput.value = '';
   discoverMsg.value = '';
   testResult.value = null;
@@ -675,6 +704,7 @@ function selectProfile(id) {
   discoveredModels.value = [];
   otherModels.value = [];
   showOthers.value = false;
+  showModelManager.value = false;
   extraModelInput.value = '';
   discoverMsg.value = '';
   testResult.value = null;
@@ -770,22 +800,17 @@ async function discoverModels() {
     if (r && r.ok && Array.isArray(r.models) && r.models.length) {
       discoveredModels.value = r.models;
       otherModels.value = Array.isArray(r.others) ? r.others : [];
-      // 保留原本的默认模型:selectedModels[0] 会被写成 config 的 model.default。
-      // 若直接用网关返回的顺序,默认模型就变成列表里碰巧排第一的那个(实测某网关
-      // 排头是 360-deepseek-v3.1 这种老版本),用户原来在用的 v4-pro 被悄悄换掉。
-      // 所以:原默认模型若仍在新列表里,把它提到最前。
+      // 不默认全选:网关常回上百个模型,全选会让勾选清单铺满整屏也不实用。
+      // 只保留原来默认的那个(仍在列表里则续用),否则取第一个 —— 要更多自己展开勾选。
       const prevDefault = selectedModels.value[0];
-      const picked = [...r.models];
-      if (prevDefault && picked.includes(prevDefault)) {
-        picked.splice(picked.indexOf(prevDefault), 1);
-        picked.unshift(prevDefault);
-      }
-      selectedModels.value = picked;
+      const keep = (prevDefault && r.models.includes(prevDefault)) ? prevDefault : r.models[0];
+      selectedModels.value = keep ? [keep] : [];
+      showModelManager.value = false;
       discoverOk.value = true;
       const skipped = otherModels.value.length;
       discoverMsg.value = skipped
-        ? `拉到 ${r.total} 个，已选中 ${r.models.length} 个对话模型（跳过 ${skipped} 个非对话模型）`
-        : `拉到 ${r.models.length} 个模型，已全选`;
+        ? `拉到 ${r.total} 个，可选 ${r.models.length} 个对话模型（另 ${skipped} 个非对话），已设默认 1 个，可展开勾选更多`
+        : `拉到 ${r.models.length} 个模型，已设默认 1 个，可展开勾选更多`;
       // 网关自己报的模型名是最可靠的格式依据:它回的名字带「厂商/」前缀,
       // 就说明它认前缀名,此时绝不能剥(剥了必然 400)。比预设/域名推断都准,
       // 所以拉取成功后直接据此纠正 —— 自建代理的预设猜错也能自动兜回来。
